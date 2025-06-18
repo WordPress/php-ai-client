@@ -1,6 +1,6 @@
 # Requirements
 
-This document outlines the requirements for the PHP AI Client, as well as the bigger picture for how it can eventually be used. The concrete technical architecture is defined and outlined in a separate document, based on these requirements.
+This document outlines the functional requirements for the PHP AI Client, as well as the bigger picture for how it can eventually be used. The concrete technical architecture is defined and outlined in a separate document, based on these requirements.
 
 ## Objective
 
