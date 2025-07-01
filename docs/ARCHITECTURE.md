@@ -15,25 +15,22 @@ The following examples indicate how this SDK could eventually be used.
 #### Generate text using a Google model
 
 ```php
-$text = Ai::generateText(
+$text = Ai::generateTextResult(
     'Write a 2-verse poem about PHP.',
     Google::model('gemini-2.5-flash')
-);
+)->toText();
 ```
 
 #### Generate multiple text candidates using an Anthropic model
 
 ```php
-$result = Ai::generateTextResult(
+$texts = Ai::generateTextResult(
     'Write a 2-verse poem about PHP.',
     Anthropic::model(
         'claude-3.7-sonnet',
         [TextGenerationConfig::CANDIDATE_COUNT => 4]
     )
-);
-$texts = CandidatesUtil::toTexts(
-    $result->getCandidates()
-);
+)->toTexts();
 ```
 
 #### Generate an image using any suitable OpenAI model
@@ -43,13 +40,13 @@ $modelsMetadata = Ai::defaultRegistry()->findProviderModelsMetadataForSupport(
     'openai',
     AiFeature::IMAGE_GENERATION
 );
-$imageFile = Ai::generateImage(
+$imageFile = Ai::generateImageResult(
     'Generate an illustration of the PHP elephant in the Carribean sea.',
     Ai::defaultRegistry()->getProviderModel(
         'openai',
         $modelsMetadata[0]->getId()
     )
-);
+)->toImageFile();
 ```
 
 #### Generate an image using any suitable model from any provider
@@ -58,13 +55,13 @@ $imageFile = Ai::generateImage(
 $providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
     AiFeature::IMAGE_GENERATION
 );
-$imageFile = Ai::generateImage(
+$imageFile = Ai::generateImageResult(
     'Generate an illustration of the PHP elephant in the Carribean sea.',
     Ai::defaultRegistry()->getProviderModel(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId()
     )
-);
+)->toImageFile();
 ```
 
 #### Generate embeddings using any suitable model from any provider
@@ -73,7 +70,7 @@ $imageFile = Ai::generateImage(
 $providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
     AiFeature::EMBEDDING_GENERATION
 );
-$embeddings = Ai::generateEmbeddings(
+$embeddings = Ai::generateEmbeddingsResult(
     [
         'A very long text.',
         'Another very long text.',
@@ -83,7 +80,7 @@ $embeddings = Ai::generateEmbeddings(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId()
     )
-);
+)->getEmbeddings();
 ```
 
 #### Generate text with JSON output using any suitable model from any provider
@@ -97,7 +94,7 @@ $providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
         TextGenerationConfig::OUTPUT_SCHEMA    => true,
     ]
 );
-$imageFile = Ai::generateText(
+$jsonString = Ai::generateTextResult(
     'Transform the following CSV content into a JSON array of row data.',
     Ai::defaultRegistry()->getProviderModel(
         $providerModelsMetadata[0]->getProvider()->getId(),
@@ -122,7 +119,7 @@ $imageFile = Ai::generateText(
             ],
         ]
     )
-);
+)->toText();
 ```
 
 ## Class diagrams
@@ -156,12 +153,6 @@ direction LR
         class AiEntrypoint {
             +defaultRegistry() AiProviderRegistry
             +isConfigured(AiProviderAvailability $availability) bool$
-            +generateText(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) string$
-            +streamGenerateText(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) Generator< string >$
-            +generateImage(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) File$
-            +textToSpeech(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) File$
-            +generateSpeech(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) File$
-            +generateEmbeddings(Message[] $input, AiModel $model) Embedding[]$
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +generateOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateTextResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
@@ -206,12 +197,6 @@ direction LR
         class AiEntrypoint {
             +defaultRegistry() AiProviderRegistry
             +isConfigured(AiProviderAvailability $availability) bool$
-            +generateText(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) string$
-            +streamGenerateText(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) Generator< string >$
-            +generateImage(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) File$
-            +textToSpeech(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) File$
-            +generateSpeech(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) File$
-            +generateEmbeddings(Message[] $input, AiModel $model) Embedding[]$
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +generateOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateTextResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
@@ -304,6 +289,17 @@ direction LR
             +getUsage() TokenUsage
             +getProviderMetadata() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
+            %% The following utility methods transform the result candidates into a specific shape.
+            +toText() string
+            +toImageFile() File
+            +toAudioFile() File
+            +toVideoFile() File
+            +toMessage() Message
+            +toTexts() string[]
+            +toImageFiles() File[]
+            +toAudioFiles() File[]
+            +toVideoFiles() File[]
+            +toMessages() Message[]
         }
         class EmbeddingResult {
             +getId() string
