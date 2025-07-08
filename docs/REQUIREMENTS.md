@@ -19,7 +19,7 @@ Enable calling any generative AI implementation using a uniform API in various p
 This section lists the key requirements that this project must meet. For explanation on specific terms, see the [glossary](./GLOSSARY.md).
 
 * MUST support any kinds of AI implementation, i.e. cloud-based AI, server-side AI, client-side AI.
-* MUST define clear, language-agnostic data structures for AI inputs and outputs, precise enough to allow for consistent implementation across languages (e.g. express in JSON schema).
+* MUST define clear data structures for AI inputs and outputs, precise enough to be reusable in other programming languages (e.g. an eventual client-side JavaScript implementation of the API).
 * MUST support arbitrary combinations of input and output modalities, regardless of which combinations or singular modalities generative AI models support today. Such as (non comprehensive list):
   * Text
   * Image
