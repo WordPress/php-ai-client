@@ -91,7 +91,7 @@ $text = Ai::generateTextResult(
 
 #### Generate text with an image as additional input using any suitable model from any provider
 
-_Note: Since this omits the model parameter, the SDK will automatically determine which models are suitable and use any of them, similar to [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example). Since it knows the input includes an image, it can internally infer that the model needs to not only support `AiFeature::TEXT_GENERATION`, but also `AiCapability::INPUT_MODALITIES => ['text', 'image']`._
+_Note: Since this omits the model parameter, the SDK will automatically determine which models are suitable and use any of them, similar to [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example). Since it knows the input includes an image, it can internally infer that the model needs to not only support `AiFeature::TEXT_GENERATION`, but also `TextGenerationConfig::INPUT_MODALITIES => ['text', 'image']`._
 
 ```php
 $text = Ai::generateTextResult(
@@ -109,7 +109,7 @@ $text = Ai::generateTextResult(
 
 #### Generate text with chat history using any suitable model from any provider
 
-_Note: Similarly to the previous example, even without specifying the model here, the SDK will be able to infer required model capabilities because it can detect that multiple chat messages are passed. Therefore it will internally only consider models that support `AiFeature::TEXT_GENERATION` as well as `AiCapability::CHAT_HISTORY`._
+_Note: Similarly to the previous example, even without specifying the model here, the SDK will be able to infer required model capabilities because it can detect that multiple chat messages are passed. Therefore it will internally only consider models that support `AiFeature::TEXT_GENERATION` as well as `TextGenerationConfig::CHAT_HISTORY`._
 
 ```php
 $text = Ai::generateTextResult(
