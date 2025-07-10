@@ -198,16 +198,9 @@ This section shows comprehensive class diagrams for the proposed architecture. F
 
 **Note:** The class diagrams are also not meant to be comprehensive in terms of any specific configuration keys or parameters which are or will be supported. For now, the relevant definitions don't include any specific parameter names or constants.
 
-### Zoomed out view
+### Overview: Fluent API for AI consumption
 
-Below you find the zoomed out overview class diagram, looking at the two entrypoints for the largely decoupled APIs for:
-
-- Consuming AI capabilities.
-    - This is what the vast majority of developers will use.
-- Registering and implementing AI providers.
-    - This is what only developers that implement additional models or custom providers will use.
-
-Zoomed in views with detailed specifications for both of the APIs are found in the subsequent sections.
+This is a subset of the overall class diagram, purely focused on the fluent API for AI consumption.
 
 ```mermaid
 ---
@@ -219,8 +212,80 @@ classDiagram
 direction LR
     namespace Ai {
         class AiEntrypoint {
-            +defaultRegistry() AiProviderRegistry
-            +isConfigured(AiProviderAvailability $availability) bool$
+            +prompt(?string $text) PromptFacade$
+            +message(?string $text) MessageFacade$
+        }
+
+        class PromptFacade {
+            +withText(string $text) self
+            +withImageFile(File $file) self
+            +withAudioFile(File $file) self
+            +withVideoFile(File $file) self
+            +withFunctionResponse(FunctionResponse $functionResponse) self
+            +withMessageParts(...MessagePart $part) self
+            +withHistory(Message[] $messages) self
+            +usingModel(AiModel $model) self
+            +usingSystemInstruction(string|MessagePart[]|Message $systemInstruction) self
+            +usingTemperature(float $temperature) self
+            +usingTopP(float $topP) self
+            +usingTopK(int $topK) self
+            +usingStopSequences(...string $stopSequences) self
+            +usingCandidateCount(int $candidateCount) self
+            +usingOutputMime(string $mimeType) self
+            +usingOutputSchema(array< string, mixed > $schema) self
+            +usingOutputModalities(...AiModality $modalities) self
+            +generateResult() GenerativeAiResult
+            +generateOperation() GenerativeAiOperation
+            +generateTextResult() GenerativeAiResult
+            +streamGenerateTextResult() Generator< GenerativeAiResult >
+            +generateImageResult() GenerativeAiResult
+            +textToSpeechResult() GenerativeAiResult
+            +generateSpeechResult() GenerativeAiResult
+            +generateEmbeddingsResult() EmbeddingResult
+            +generateTextOperation() GenerativeAiOperation
+            +generateImageOperation() GenerativeAiOperation
+            +textToSpeechOperation() GenerativeAiOperation
+            +generateSpeechOperation() GenerativeAiOperation
+            +generateEmbeddingsOperation() EmbeddingOperation
+            +generateText() string
+            +streamGenerateText() Generator< string >
+            +generateImage() File
+            +textToSpeech() File
+            +generateSpeech() File
+            +generateEmbeddings() Embedding[]
+        }
+
+        class MessageFacade {
+            +usingRole(MessageRole $role) self
+            +withText(string $text) self
+            +withImageFile(File $file) self
+            +withAudioFile(File $file) self
+            +withVideoFile(File $file) self
+            +withFunctionCall(FunctionCall $functionCall) self
+            +withFunctionResponse(FunctionResponse $functionResponse) self
+            +withMessageParts(...MessagePart $part) self
+            +get() Message
+        }
+    }
+
+    AiEntrypoint .. PromptFacade : creates
+    AiEntrypoint .. MessageFacade : creates
+```
+
+### Overview: Traditional method call API for AI consumption
+
+This is a subset of the overall class diagram, purely focused on the traditional method call API for AI consumption.
+
+```mermaid
+---
+config:
+  class:
+    hideEmptyMembersBox: true
+---
+classDiagram
+direction LR
+    namespace Ai {
+        class AiEntrypoint {
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +generateOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateTextResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
@@ -234,6 +299,26 @@ direction LR
             +textToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateEmbeddingsOperation(string[]|Message[] $input, AiModel $model) EmbeddingOperation$
+        }
+    }
+```
+
+### Overview: API for provider registration and implementation
+
+This is a subset of the overall class diagram, purely focused on the API for provider registration and implementation.
+
+```mermaid
+---
+config:
+  class:
+    hideEmptyMembersBox: true
+---
+classDiagram
+direction LR
+    namespace Ai {
+        class AiEntrypoint {
+            +defaultRegistry() AiProviderRegistry$
+            +isConfigured(AiProviderAvailability $availability) bool$
         }
     }
     namespace Ai.Providers {
@@ -251,7 +336,7 @@ direction LR
     AiEntrypoint "1" o-- "1..*" AiProviderRegistry
 ```
 
-### Class diagram zoomed in on AI consumption
+### Details: Class diagram for AI consumption
 
 ```mermaid
 ---
@@ -263,7 +348,9 @@ classDiagram
 direction LR
     namespace Ai {
         class AiEntrypoint {
-            +defaultRegistry() AiProviderRegistry
+            +prompt(?string $text) PromptFacade$
+            +message(?string $text) MessageFacade$
+            +defaultRegistry() AiProviderRegistry$
             +isConfigured(AiProviderAvailability $availability) bool$
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +generateOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
@@ -278,6 +365,57 @@ direction LR
             +textToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateEmbeddingsOperation(string[]|Message[] $input, AiModel $model) EmbeddingOperation$
+        }
+
+        class PromptFacade {
+            +withText(string $text) self
+            +withImageFile(File $file) self
+            +withAudioFile(File $file) self
+            +withVideoFile(File $file) self
+            +withFunctionResponse(FunctionResponse $functionResponse) self
+            +withMessageParts(...MessagePart $part) self
+            +withHistory(Message[] $messages) self
+            +usingModel(AiModel $model) self
+            +usingSystemInstruction(string|MessagePart[]|Message $systemInstruction) self
+            +usingTemperature(float $temperature) self
+            +usingTopP(float $topP) self
+            +usingTopK(int $topK) self
+            +usingStopSequences(...string $stopSequences) self
+            +usingCandidateCount(int $candidateCount) self
+            +usingOutputMime(string $mimeType) self
+            +usingOutputSchema(array< string, mixed > $schema) self
+            +usingOutputModalities(...AiModality $modalities) self
+            +generateResult() GenerativeAiResult
+            +generateOperation() GenerativeAiOperation
+            +generateTextResult() GenerativeAiResult
+            +streamGenerateTextResult() Generator< GenerativeAiResult >
+            +generateImageResult() GenerativeAiResult
+            +textToSpeechResult() GenerativeAiResult
+            +generateSpeechResult() GenerativeAiResult
+            +generateEmbeddingsResult() EmbeddingResult
+            +generateTextOperation() GenerativeAiOperation
+            +generateImageOperation() GenerativeAiOperation
+            +textToSpeechOperation() GenerativeAiOperation
+            +generateSpeechOperation() GenerativeAiOperation
+            +generateEmbeddingsOperation() EmbeddingOperation
+            +generateText() string
+            +streamGenerateText() Generator< string >
+            +generateImage() File
+            +textToSpeech() File
+            +generateSpeech() File
+            +generateEmbeddings() Embedding[]
+        }
+
+        class MessageFacade {
+            +usingRole(MessageRole $role) self
+            +withText(string $text) self
+            +withImageFile(File $file) self
+            +withAudioFile(File $file) self
+            +withVideoFile(File $file) self
+            +withFunctionCall(FunctionCall $functionCall) self
+            +withFunctionResponse(FunctionResponse $functionResponse) self
+            +withMessageParts(...MessagePart $part) self
+            +get() Message
         }
     }
     namespace Ai.Types {
@@ -454,10 +592,17 @@ direction LR
 
     AiEntrypoint .. Message : receives
     AiEntrypoint .. MessagePart : receives
+    AiEntrypoint .. PromptFacade : creates
+    AiEntrypoint .. MessageFacade : creates
     AiEntrypoint .. GenerativeAiResult : creates
     AiEntrypoint .. EmbeddingResult : creates
     AiEntrypoint .. GenerativeAiOperation : creates
     AiEntrypoint .. EmbeddingOperation : creates
+    PromptFacade .. GenerativeAiResult : creates
+    PromptFacade .. EmbeddingResult : creates
+    PromptFacade .. GenerativeAiOperation : creates
+    PromptFacade .. EmbeddingOperation : creates
+    MessageFacade .. Message : creates
     Message "1" *-- "1..*" MessagePart
     MessagePart "1" o-- "0..1" InlineFile
     MessagePart "1" o-- "0..1" RemoteFile
@@ -484,7 +629,7 @@ direction LR
     Result <|-- EmbeddingResult
 ```
 
-### Class diagram zoomed in on AI provider registration and implementation
+### Details: Class diagram for AI provider registration and implementation
 
 ```mermaid
 ---
