@@ -2,6 +2,18 @@
 
 This document outlines the functional requirements for the PHP AI Client, as well as the bigger picture for how it can eventually be used. The concrete technical architecture is defined and outlined in a separate document, based on these requirements.
 
+## Target Audiences
+
+There are two primary developer audiences this client is intended for. This is important to understand as it significantly influences the thinking and complexity around the APIs introduced in this library.a
+
+### Extenders
+
+Extenders are the folks that will be adding providers, models, and otherwise extending the functionality of the client itself. These are highly technical people who likely have a stronger understanding of how models and model APIs work. Given their capabilities, these APIs will be more technical and formal in nature, using things such as interfaces, traits, and so forth, relying on a knowledge of inheritence and composition.
+
+### Implementers
+
+Implementors are the folks that will be utilizing the client to take advantage of AI features. These developers know their own codebase well, but their technical and model knowledge varies. It is important not to rely on this knowledge for them to get significant value from the client. The APIs for these people will be simpler, straightforward, readable, and composable, so they can interact with the model with only what they need to know in mind.
+
 ## Objective
 
 Enable calling any generative AI implementation using a uniform API in various programming languages.
