@@ -485,14 +485,14 @@ direction LR
         }
         class Result {
             +getId() string
-            +getUsage() TokenUsage
+            +getTokenUsage() TokenUsage
             +getProviderMetadata() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
         class GenerativeAiResult {
             +getId() string
             +getCandidates() Candidate[]
-            +getUsage() TokenUsage
+            +getTokenUsage() TokenUsage
             +getProviderMetadata() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
             %% The following utility methods transform the result candidates into a specific shape.
@@ -510,7 +510,7 @@ direction LR
         class EmbeddingResult {
             +getId() string
             +getEmbeddings() Embedding[]
-            +getUsage() TokenUsage
+            +getTokenUsage() TokenUsage
             +getProviderMetadata() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
