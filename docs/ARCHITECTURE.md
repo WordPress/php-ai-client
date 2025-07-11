@@ -224,6 +224,7 @@ direction LR
             +withHistory(...Message $messages) self
             +usingModel(AiModel $model) self
             +usingSystemInstruction(string|MessagePart[]|Message $systemInstruction) self
+            +usingMaxTokens(int $maxTokens) self
             +usingTemperature(float $temperature) self
             +usingTopP(float $topP) self
             +usingTopK(int $topK) self
@@ -377,6 +378,7 @@ direction LR
             +withHistory(...Message $messages) self
             +usingModel(AiModel $model) self
             +usingSystemInstruction(string|MessagePart[]|Message $systemInstruction) self
+            +usingMaxTokens(int $maxTokens) self
             +usingTemperature(float $temperature) self
             +usingTopP(float $topP) self
             +usingTopK(int $topK) self
@@ -831,6 +833,7 @@ direction LR
             INPUT_MODALITIES
             OUTPUT_MODALITIES
             CANDIDATE_COUNT
+            MAX_TOKENS
             TEMPERATURE
             TOP_K
             TOP_P
