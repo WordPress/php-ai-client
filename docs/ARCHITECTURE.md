@@ -196,9 +196,9 @@ This section shows comprehensive class diagrams for the proposed architecture. F
 
 **Note:** The class diagrams are also not meant to be comprehensive in terms of any specific configuration keys or parameters which are or will be supported. For now, the relevant definitions don't include any specific parameter names or constants.
 
-### Overview: Fluent API for AI consumption
+### Overview: Fluent API for AI implementers
 
-This is a subset of the overall class diagram, purely focused on the fluent API for AI consumption.
+This is a subset of the overall class diagram, purely focused on the fluent API for AI implementers.
 
 ```mermaid
 ---
@@ -272,9 +272,9 @@ direction LR
     AiEntrypoint .. MessageBuilder : creates
 ```
 
-### Overview: Traditional method call API for AI consumption
+### Overview: Traditional method call API for AI implementers
 
-This is a subset of the overall class diagram, purely focused on the traditional method call API for AI consumption.
+This is a subset of the overall class diagram, purely focused on the traditional method call API for AI implementers.
 
 ```mermaid
 ---
@@ -303,9 +303,9 @@ direction LR
     }
 ```
 
-### Overview: API for provider registration and implementation
+### Overview: API for AI extenders
 
-This is a subset of the overall class diagram, purely focused on the API for provider registration and implementation.
+This is a subset of the overall class diagram, purely focused on the API for AI extenders.
 
 ```mermaid
 ---
@@ -336,7 +336,7 @@ direction LR
     AiEntrypoint "1" o-- "1..*" AiProviderRegistry
 ```
 
-### Details: Class diagram for AI consumption
+### Details: Class diagram for AI implementers
 
 ```mermaid
 ---
@@ -634,7 +634,7 @@ direction LR
     Result <|-- EmbeddingResult
 ```
 
-### Details: Class diagram for AI provider registration and implementation
+### Details: Class diagram for AI extenders
 
 ```mermaid
 ---
