@@ -223,7 +223,7 @@ direction LR
             +withVideoFile(File $file) self
             +withFunctionResponse(FunctionResponse $functionResponse) self
             +withMessageParts(...MessagePart $part) self
-            +withHistory(Message[] $messages) self
+            +withHistory(...Message $messages) self
             +usingModel(AiModel $model) self
             +usingSystemInstruction(string|MessagePart[]|Message $systemInstruction) self
             +usingTemperature(float $temperature) self
@@ -374,7 +374,7 @@ direction LR
             +withVideoFile(File $file) self
             +withFunctionResponse(FunctionResponse $functionResponse) self
             +withMessageParts(...MessagePart $part) self
-            +withHistory(Message[] $messages) self
+            +withHistory(...Message $messages) self
             +usingModel(AiModel $model) self
             +usingSystemInstruction(string|MessagePart[]|Message $systemInstruction) self
             +usingTemperature(float $temperature) self
