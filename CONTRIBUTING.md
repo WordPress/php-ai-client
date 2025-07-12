@@ -6,6 +6,12 @@ Thank you for your interest in contributing to the PHP AI Client package! Here y
 
 While this project is stewarded by [WordPress AI Team](https://make.wordpress.org/ai/) members and contributors, it is a WordPress agnostic PHP package that can benefit any project in the PHP ecosystem. As such, all code must follow the [PSR-12 Coding Standards](https://www.php-fig.org/psr/psr-12/).
 
+All parameters, return values, and properties must use explicit type hints, except in cases where providing the correct type hint would be impossible given limitations of the oldest supported PHP version (see below).
+
+## PHP Compatibility
+
+All code must be backward compatible with PHP 7.4, which is the minimum required PHP version for this project.
+
 ## Guidelines
 
 - As with all WordPress projects, we want to ensure a welcoming environment for everyone. With that in mind, all contributors are expected to follow our [Code of Conduct](https://make.wordpress.org/handbook/community-code-of-conduct/).
