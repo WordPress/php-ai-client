@@ -37,7 +37,7 @@ $text = AiClient::generateTextResult(
 ##### Fluent API
 ```php
 $text = AiClient::prompt('Write a 2-verse poem about PHP.')
-    ->usingModel('gemini-2.5-flash')
+    ->usingModel(Google::model('gemini-2.5-flash'))
     ->generateText();
 ```
 
@@ -54,7 +54,7 @@ $text = AiClient::generateTextResult(
 ##### Fluent API
 ```php
 $texts = AiClient::prompt('Write a 2-verse poem about PHP.')
-    ->usingModel('claude-3.7-sonnet')
+    ->usingModel(Anthropic::model('claude-3.7-sonnet'))
     ->generateTexts(4);
 ```
 
