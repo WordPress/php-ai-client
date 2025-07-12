@@ -346,38 +346,27 @@ direction LR
             +usingOutputModalities(...AiModality $modalities) self
             +asJsonResponse(?array< string, mixed > $schema) self
             +generateResult() GenerativeAiResult
-            +generateResults(int $candidateCount) GenerativeAiResult[]
             +generateOperation() GenerativeAiOperation
-            +generateOperations(int $candidateCount) GenerativeAiOperation[]
             +generateTextResult() GenerativeAiResult
-            +generateTextResults(int $candidateCount) GenerativeAiResult[]
             +streamGenerateTextResult() Generator< GenerativeAiResult >
             +generateImageResult() GenerativeAiResult
-            +generateImageResults(int $candidateCount) GenerativeAiResult[]
             +convertTextToSpeechResult() GenerativeAiResult
-            +convertTextToSpeechResults(int $candidateCount) GenerativeAiResult[]
             +generateSpeechResult() GenerativeAiResult
-            +generateSpeechResults(int $candidateCount) GenerativeAiResult[]
             +generateEmbeddingsResult() EmbeddingResult
-            +generateEmbeddingsResults(int $candidateCount) EmbeddingResult[]
             +generateTextOperation() GenerativeAiOperation
-            +generateTextOperations(int $candidateCount) GenerativeAiOperation[]
             +generateImageOperation() GenerativeAiOperation
-            +generateImageOperations(int $candidateCount) GenerativeAiOperation[]
             +convertTextToSpeechOperation() GenerativeAiOperation
             +generateSpeechOperation() GenerativeAiOperation
-            +generateSpeechOperations(int $candidateCount) GenerativeAiOperation[]
             +generateEmbeddingsOperation() EmbeddingOperation
-            +generateEmbeddingsOperations(int $candidateCount) EmbeddingOperation[]
             +generateText() string
-            +generateTexts(int $candidateCount) string[]
+            +generateTexts(int $candidateCount) string
             +streamGenerateText() Generator< string >
             +generateImage() File
-            +generateImages(int $candidateCount) File[]
+            +generateImages(int $candidateCount) File
             +convertTextToSpeech() File
-            +convertTextToSpeeches(int $candidateCount) File[]
+            +convertTextToSpeeches(int $candidateCount) File
             +generateSpeech() File
-            +generateSpeeches(int $candidateCount) File[]
+            +generateSpeeches(int $candidateCount) File
             +generateEmbeddings() Embedding[]
             +getModelRequirements() AiModelRequirements
             +isSupported() bool
@@ -518,38 +507,27 @@ direction LR
             +usingOutputModalities(...AiModality $modalities) self
             +asJsonResponse(?array< string, mixed > $schema) self
             +generateResult() GenerativeAiResult
-            +generateResults(int $candidateCount) GenerativeAiResult[]
             +generateOperation() GenerativeAiOperation
-            +generateOperations(int $candidateCount) GenerativeAiOperation[]
             +generateTextResult() GenerativeAiResult
-            +generateTextResults(int $candidateCount) GenerativeAiResult[]
             +streamGenerateTextResult() Generator< GenerativeAiResult >
             +generateImageResult() GenerativeAiResult
-            +generateImageResults(int $candidateCount) GenerativeAiResult[]
             +convertTextToSpeechResult() GenerativeAiResult
-            +convertTextToSpeechResults(int $candidateCount) GenerativeAiResult[]
             +generateSpeechResult() GenerativeAiResult
-            +generateSpeechResults(int $candidateCount) GenerativeAiResult[]
             +generateEmbeddingsResult() EmbeddingResult
-            +generateEmbeddingsResults(int $candidateCount) EmbeddingResult[]
             +generateTextOperation() GenerativeAiOperation
-            +generateTextOperations(int $candidateCount) GenerativeAiOperation[]
             +generateImageOperation() GenerativeAiOperation
-            +generateImageOperations(int $candidateCount) GenerativeAiOperation[]
             +convertTextToSpeechOperation() GenerativeAiOperation
             +generateSpeechOperation() GenerativeAiOperation
-            +generateSpeechOperations(int $candidateCount) GenerativeAiOperation[]
             +generateEmbeddingsOperation() EmbeddingOperation
-            +generateEmbeddingsOperations(int $candidateCount) EmbeddingOperation[]
             +generateText() string
-            +generateTexts(int $candidateCount) string[]
+            +generateTexts(int $candidateCount) string
             +streamGenerateText() Generator< string >
             +generateImage() File
-            +generateImages(int $candidateCount) File[]
+            +generateImages(int $candidateCount) File
             +convertTextToSpeech() File
-            +convertTextToSpeeches(int $candidateCount) File[]
+            +convertTextToSpeeches(int $candidateCount) File
             +generateSpeech() File
-            +generateSpeeches(int $candidateCount) File[]
+            +generateSpeeches(int $candidateCount) File
             +generateEmbeddings() Embedding[]
             +getModelRequirements() AiModelRequirements
             +isSupported() bool
