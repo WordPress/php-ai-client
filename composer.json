@@ -1,0 +1,60 @@
+{
+    "name": "wordpress/php-ai-client",
+    "description": "A provider-agnostic PHP SDK for communicating with generative AI models",
+    "license": "GPL-2.0-or-later",
+    "type": "library",
+    "keywords": [
+        "ai",
+        "api",
+        "llm"
+    ],
+    "authors": [
+        {
+            "name": "WordPress AI Team",
+            "homepage": "https://make.wordpress.org/ai/"
+        }
+    ],
+    "homepage": "https://github.com/WordPress/php-ai-client",
+    "support": {
+        "issues": "https://github.com/WordPress/php-ai-client/issues",
+        "source": "https://github.com/WordPress/php-ai-client"
+    },
+    "require": {
+        "php": ">=7.4 || ^8.0",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.10",
+        "phpunit/phpunit": "^9.5 || ^10.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "WordPress\\AI\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WordPress\\AI\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "optimize-autoloader": true,
+        "platform": {
+            "php": "7.4"
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "analyze": "phpstan analyze",
+        "check": [
+            "@test",
+            "@analyze"
+        ],
+        "test": "phpunit"
+    }
+}
