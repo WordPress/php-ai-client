@@ -1,6 +1,6 @@
 {
     "name": "wordpress/php-ai-client",
-    "description": "A provider-agnostic PHP SDK for communicating with generative AI models",
+    "description": "A provider agnostic PHP AI client SDK to communicate with any generative AI models of various capabilities using a uniform API.",
     "license": "GPL-2.0-or-later",
     "type": "library",
     "keywords": [
