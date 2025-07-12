@@ -75,7 +75,6 @@ $texts = AiClient::generateTextResult(
 ```php
 $imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Carribean sea.')
     ->usingProvider('openai')
-    ->usingModelSupportingImages() // Optional.
     ->generateImage();
 ```
 
@@ -99,7 +98,6 @@ $imageFile = AiClient::generateImageResult(
 ##### Fluent API
 ```php
 $imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Carribean sea.')
-    ->usingModelSupportingImages() // Optional.
     ->generateImage();
 ```
 
@@ -123,8 +121,17 @@ _Note: This does effectively the exact same as [the first code example](#generat
 
 ##### Fluent API
 ```php
+$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
+    new AiModelRequirements([AiCapability::TEXT_GENERATION])
+);
+
 $text = AiClient::prompt('Write a 2-verse poem about PHP.')
-    ->usingModelSupportingText() // Optional.
+    ->withModel(
+        AiClient::defaultRegistry()->getProviderModel(
+            $providerModelsMetadata[0]->getProvider()->getId(),
+            $providerModelsMetadata[0]->getModels()[0]->getId()
+        )
+    )
     ->generateText();
 ```
 
@@ -320,20 +327,6 @@ direction LR
             +withMessageParts(...MessagePart $part) self
             +withHistory(...Message $messages) self
             +usingModel(AiModel $model) self
-            +usingModelSupporting(...AiCapability|AiOption $aiCapabilityOrOption) self
-            +usingModelSupportingCapability(...AiCapability $aiCapability) self
-            +usingModelSupportingOption(...AiOption $aiOption) self
-            +usingModelSupportingAudio() self
-            +usingModelSupportingHistory() self
-            +usingModelSupportingEmbeddings() self
-            +usingModelSupportingImages() self
-            +usingModelSupportingJsonOutput() self
-            +usingModelSupportingMusic() self
-            +usingModelSupportingOutputSchema() self
-            +usingModelSupportingSpeech() self
-            +usingModelSupportingText() self
-            +usingModelSupportingTextToSpeech() self
-            +usingModelSupportingVideo() self
             +usingSystemInstruction(string|MessagePart[]|Message $systemInstruction) self
             +usingMaxTokens(int $maxTokens) self
             +usingTemperature(float $temperature) self
@@ -507,20 +500,6 @@ direction LR
             +withMessageParts(...MessagePart $part) self
             +withHistory(...Message $messages) self
             +usingModel(AiModel $model) self
-            +usingModelSupporting(...AiCapability|AiOption $aiCapabilityOrOption) self
-            +usingModelSupportingCapability(...AiCapability $aiCapability) self
-            +usingModelSupportingOption(...AiOption $aiOption) self
-            +usingModelSupportingAudio() self
-            +usingModelSupportingHistory() self
-            +usingModelSupportingEmbeddings() self
-            +usingModelSupportingImages() self
-            +usingModelSupportingJsonOutput() self
-            +usingModelSupportingMusic() self
-            +usingModelSupportingOutputSchema() self
-            +usingModelSupportingSpeech() self
-            +usingModelSupportingText() self
-            +usingModelSupportingTextToSpeech() self
-            +usingModelSupportingVideo() self
             +usingSystemInstruction(string|MessagePart[]|Message $systemInstruction) self
             +usingMaxTokens(int $maxTokens) self
             +usingTemperature(float $temperature) self
