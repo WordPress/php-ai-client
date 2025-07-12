@@ -20,7 +20,7 @@ The following examples indicate how this SDK could eventually be used.
 #### Generate text using any suitable model from any provider (most basic example)
 
 ```php
-$text = Ai::generateTextResult(
+$text = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.'
 )->toText();
 ```
@@ -28,7 +28,7 @@ $text = Ai::generateTextResult(
 #### Generate text using a Google model
 
 ```php
-$text = Ai::generateTextResult(
+$text = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.',
     Google::model('gemini-2.5-flash')
 )->toText();
@@ -37,7 +37,7 @@ $text = Ai::generateTextResult(
 #### Generate multiple text candidates using an Anthropic model
 
 ```php
-$texts = Ai::generateTextResult(
+$texts = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.',
     Anthropic::model(
         'claude-3.7-sonnet',
@@ -49,13 +49,13 @@ $texts = Ai::generateTextResult(
 #### Generate an image using any suitable OpenAI model
 
 ```php
-$modelsMetadata = Ai::defaultRegistry()->findProviderModelsMetadataForSupport(
+$modelsMetadata = AiClient::defaultRegistry()->findProviderModelsMetadataForSupport(
     'openai',
     AiCapability::IMAGE_GENERATION
 );
-$imageFile = Ai::generateImageResult(
+$imageFile = AiClient::generateImageResult(
     'Generate an illustration of the PHP elephant in the Carribean sea.',
-    Ai::defaultRegistry()->getProviderModel(
+    AiClient::defaultRegistry()->getProviderModel(
         'openai',
         $modelsMetadata[0]->getId()
     )
@@ -65,12 +65,12 @@ $imageFile = Ai::generateImageResult(
 #### Generate an image using any suitable model from any provider
 
 ```php
-$providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
+$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     AiCapability::IMAGE_GENERATION
 );
-$imageFile = Ai::generateImageResult(
+$imageFile = AiClient::generateImageResult(
     'Generate an illustration of the PHP elephant in the Carribean sea.',
-    Ai::defaultRegistry()->getProviderModel(
+    AiClient::defaultRegistry()->getProviderModel(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId()
     )
@@ -82,12 +82,12 @@ $imageFile = Ai::generateImageResult(
 _Note: This does effectively the exact same as [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example), but more verbosely. In other words, if you omit the model parameter, the SDK will do this internally._
 
 ```php
-$providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
+$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     AiCapability::TEXT_GENERATION
 );
-$text = Ai::generateTextResult(
+$text = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.',
-    Ai::defaultRegistry()->getProviderModel(
+    AiClient::defaultRegistry()->getProviderModel(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId()
     )
@@ -99,7 +99,7 @@ $text = Ai::generateTextResult(
 _Note: Since this omits the model parameter, the SDK will automatically determine which models are suitable and use any of them, similar to [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example). Since it knows the input includes an image, it can internally infer that the model needs to not only support `AiCapability::TEXT_GENERATION`, but also `AiOption::INPUT_MODALITIES => ['text', 'image']`._
 
 ```php
-$text = Ai::generateTextResult(
+$text = AiClient::generateTextResult(
     [
         [
             'text' => 'Generate alternative text for this image.',
@@ -117,7 +117,7 @@ $text = Ai::generateTextResult(
 _Note: Similarly to the previous example, even without specifying the model here, the SDK will be able to infer required model capabilities because it can detect that multiple chat messages are passed. Therefore it will internally only consider models that support `AiCapability::TEXT_GENERATION` as well as `AiCapability::CHAT_HISTORY`._
 
 ```php
-$text = Ai::generateTextResult(
+$text = AiClient::generateTextResult(
     [
         [
             'role'  => MessageRole::USER,
@@ -140,7 +140,7 @@ $text = Ai::generateTextResult(
 _Note: Unlike the previous two examples, to require JSON output it is necessary to go the verbose route, since it is impossible for the SDK to detect whether you require JSON output purely from the prompt input. Therefore this code example contains the logic to manually search for suitable models and then use one of them for the task._
 
 ```php
-$providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
+$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     AiCapability::TEXT_GENERATION,
     [
         // Make sure the model supports JSON output as well as following a given schema.
@@ -148,9 +148,9 @@ $providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
         AiOption::OUTPUT_SCHEMA    => true,
     ]
 );
-$jsonString = Ai::generateTextResult(
+$jsonString = AiClient::generateTextResult(
     'Transform the following CSV content into a JSON array of row data.',
-    Ai::defaultRegistry()->getProviderModel(
+    AiClient::defaultRegistry()->getProviderModel(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId(),
         [
@@ -177,16 +177,16 @@ $jsonString = Ai::generateTextResult(
 #### Generate embeddings using any suitable model from any provider
 
 ```php
-$providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
+$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     AiCapability::EMBEDDING_GENERATION
 );
-$embeddings = Ai::generateEmbeddingsResult(
+$embeddings = AiClient::generateEmbeddingsResult(
     [
         'A very long text.',
         'Another very long text.',
         'More long text.',
     ],
-    Ai::defaultRegistry()->getProviderModel(
+    AiClient::defaultRegistry()->getProviderModel(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId()
     )
@@ -214,7 +214,7 @@ config:
 classDiagram
 direction LR
     namespace Ai {
-        class AiEntrypoint {
+        class AiClient {
             +prompt(?string $text) PromptBuilder$
             +message(?string $text) MessageBuilder$
         }
@@ -274,8 +274,8 @@ direction LR
         }
     }
 
-    AiEntrypoint .. PromptBuilder : creates
-    AiEntrypoint .. MessageBuilder : creates
+    AiClient .. PromptBuilder : creates
+    AiClient .. MessageBuilder : creates
 ```
 
 ### Overview: Traditional method call API for AI implementers
@@ -291,7 +291,7 @@ config:
 classDiagram
 direction LR
     namespace Ai {
-        class AiEntrypoint {
+        class AiClient {
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +generateOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateTextResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
@@ -322,7 +322,7 @@ config:
 classDiagram
 direction LR
     namespace Ai {
-        class AiEntrypoint {
+        class AiClient {
             +defaultRegistry() AiProviderRegistry$
             +isConfigured(AiProviderAvailability $availability) bool$
         }
@@ -339,7 +339,7 @@ direction LR
         }
     }
 
-    AiEntrypoint "1" o-- "1..*" AiProviderRegistry
+    AiClient "1" o-- "1..*" AiProviderRegistry
 ```
 
 ### Details: Class diagram for AI implementers
@@ -353,7 +353,7 @@ config:
 classDiagram
 direction LR
     namespace Ai {
-        class AiEntrypoint {
+        class AiClient {
             +prompt(?string $text) PromptBuilder$
             +message(?string $text) MessageBuilder$
             +defaultRegistry() AiProviderRegistry$
@@ -602,14 +602,14 @@ direction LR
     <<Enumeration>> OperationState
     <<Enumeration>> AiModality
 
-    AiEntrypoint .. Message : receives
-    AiEntrypoint .. MessagePart : receives
-    AiEntrypoint .. PromptBuilder : creates
-    AiEntrypoint .. MessageBuilder : creates
-    AiEntrypoint .. GenerativeAiResult : creates
-    AiEntrypoint .. EmbeddingResult : creates
-    AiEntrypoint .. GenerativeAiOperation : creates
-    AiEntrypoint .. EmbeddingOperation : creates
+    AiClient .. Message : receives
+    AiClient .. MessagePart : receives
+    AiClient .. PromptBuilder : creates
+    AiClient .. MessageBuilder : creates
+    AiClient .. GenerativeAiResult : creates
+    AiClient .. EmbeddingResult : creates
+    AiClient .. GenerativeAiOperation : creates
+    AiClient .. EmbeddingOperation : creates
     PromptBuilder .. GenerativeAiResult : creates
     PromptBuilder .. EmbeddingResult : creates
     PromptBuilder .. GenerativeAiOperation : creates
