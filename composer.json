@@ -24,8 +24,10 @@
         "ext-json": "*"
     },
     "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
         "phpstan/phpstan": "^1.10",
-        "phpunit/phpunit": "^9.5 || ^10.0"
+        "phpunit/phpunit": "^9.5 || ^10.0",
+        "squizlabs/php_codesniffer": "^3.7"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -53,8 +55,11 @@
         "analyze": "phpstan analyze",
         "check": [
             "@test",
-            "@analyze"
+            "@analyze",
+            "@cs"
         ],
+        "cs": "phpcs",
+        "cs-fix": "phpcbf",
         "test": "phpunit"
     }
 }
