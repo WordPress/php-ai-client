@@ -816,7 +816,7 @@ direction LR
             +getJsonSchema() array< string, mixed >$
         }
     }
-    namespace Ai.Providers.Enums {
+    namespace Ai.Providers.Types.Enums {
         class AiProviderType {
             CLOUD
             SERVER
