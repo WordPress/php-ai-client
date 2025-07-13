@@ -215,7 +215,7 @@ config:
 ---
 classDiagram
 direction LR
-    namespace Ai {
+    namespace AiClient {
         class AiClient {
             +prompt(?string $text) PromptBuilder$
             +message(?string $text) MessageBuilder$
@@ -292,7 +292,7 @@ config:
 ---
 classDiagram
 direction LR
-    namespace Ai {
+    namespace AiClient {
         class AiClient {
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +generateOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
@@ -323,13 +323,13 @@ config:
 ---
 classDiagram
 direction LR
-    namespace Ai {
+    namespace AiClient {
         class AiClient {
             +defaultRegistry() AiProviderRegistry$
             +isConfigured(AiProviderAvailability $availability) bool$
         }
     }
-    namespace Ai.Providers {
+    namespace AiClient.Providers {
         class AiProviderRegistry {
             +registerProvider(string $className) void
             +hasProvider(string $idOrClassName) bool
@@ -354,7 +354,7 @@ config:
 ---
 classDiagram
 direction LR
-    namespace Ai {
+    namespace AiClient {
         class AiClient {
             +prompt(?string $text) PromptBuilder$
             +message(?string $text) MessageBuilder$
@@ -429,7 +429,7 @@ direction LR
             +get() Message
         }
     }
-    namespace Ai.Types {
+    namespace AiClient.Types {
         class Message {
             +getRole() MessageRole
             +getParts() MessagePart[]
@@ -538,7 +538,7 @@ direction LR
             +getJsonSchema() array< string, mixed >$
         }
     }
-    namespace Ai.Types.Enums {
+    namespace AiClient.Types.Enums {
         class MessageRole {
             USER
             MODEL
@@ -573,7 +573,7 @@ direction LR
             VIDEO
         }
     }
-    namespace Ai.Util {
+    namespace AiClient.Util {
         class MessageUtil {
             +toText(Message $message) string$
             +toImageFile(Message $message) File$
@@ -653,7 +653,7 @@ config:
 ---
 classDiagram
 direction LR
-    namespace Ai.Providers {
+    namespace AiClient.Providers {
         class AiProviderRegistry {
             +registerProvider(string $className) void
             +hasProvider(string $idOrClassName) bool
@@ -664,7 +664,7 @@ direction LR
             +findModelsMetadataForSupport(AiModelRequirements $modelRequirements) AiProviderModelMetadata[]
         }
     }
-    namespace Ai.Providers.Contracts {
+    namespace AiClient.Providers.Contracts {
         class AiProvider {
             +metadata() AiProviderMetadata$
             +model(string $modelId, AiModelConfig|array< string, mixed > $modelConfig) AiModel$
@@ -738,7 +738,7 @@ direction LR
             +getJsonSchema() array< string, mixed >$
         }
     }
-    namespace Ai.Providers.Types {
+    namespace AiClient.Providers.Types {
         class AiProviderMetadata {
             +getId() string
             +getName() string
@@ -816,7 +816,7 @@ direction LR
             +getJsonSchema() array< string, mixed >$
         }
     }
-    namespace Ai.Providers.Types.Enums {
+    namespace AiClient.Providers.Types.Enums {
         class AiProviderType {
             CLOUD
             SERVER
@@ -849,7 +849,7 @@ direction LR
             OUTPUT_SCHEMA
         }
     }
-    namespace Ai.Providers.Util {
+    namespace AiClient.Providers.Util {
         class AiCapabilitiesUtil {
             +getSupportedCapabilities(AiModel|string $modelClass) AiCapability[]$
             +getSupportedOptions(AiModel|string $modelClass) AiSupportedOption[]$
