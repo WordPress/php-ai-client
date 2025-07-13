@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ruleset name="PHP AI Client Coding Standards">
+    <description>PSR-12 coding standards for PHP AI Client SDK</description>
+
+    <!-- Scan these files -->
+    <file>src</file>
+
+    <!-- Ignore vendor directory -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+
+    <!-- Use PSR-12 standard -->
+    <rule ref="PSR12"/>
+
+    <!-- Show progress, show sniff codes in all reports -->
+    <arg value="sp"/>
+
+    <!-- Set minimum supported PHP version -->
+    <config name="testVersion" value="7.4-"/>
+
+    <!-- Enable colors in output -->
+    <arg name="colors"/>
+
+    <!-- Check PHP syntax -->
+    <arg name="parallel" value="8"/>
+</ruleset>
