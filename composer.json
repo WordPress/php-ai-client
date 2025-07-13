@@ -52,14 +52,13 @@
         "sort-packages": true
     },
     "scripts": {
-        "analyze": "phpstan analyze",
-        "check": [
-            "@test",
-            "@analyze",
-            "@cs"
+        "lint": [
+            "@phpcs",
+            "@phpstan"
         ],
-        "cs": "phpcs",
-        "cs-fix": "phpcbf",
-        "test": "phpunit"
+        "phpcbf": "phpcbf",
+        "phpcs": "phpcs",
+        "phpstan": "phpstan analyze",
+        "phpunit": "phpunit"
     }
 }
