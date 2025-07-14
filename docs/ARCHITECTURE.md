@@ -293,7 +293,7 @@ config:
 ---
 classDiagram
 direction LR
-    namespace AiClient {
+    namespace AiClientNamespace {
         class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
             +message(?string $text) MessageBuilder$
@@ -378,7 +378,7 @@ config:
 ---
 classDiagram
 direction LR
-    namespace AiClient {
+    namespace AiClientNamespace {
         class AiClient {
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +generateOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
@@ -409,13 +409,13 @@ config:
 ---
 classDiagram
 direction LR
-    namespace AiClient {
+    namespace AiClientNamespace {
         class AiClient {
             +defaultRegistry() AiProviderRegistry$
             +isConfigured(AiProviderAvailability $availability) bool$
         }
     }
-    namespace AiClient.Providers {
+    namespace AiClientNamespace.Providers {
         class AiProviderRegistry {
             +registerProvider(string $className) void
             +hasProvider(string $idOrClassName) bool
@@ -440,7 +440,7 @@ config:
 ---
 classDiagram
 direction LR
-    namespace AiClient {
+    namespace AiClientNamespace {
         class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
             +message(?string $text) MessageBuilder$
@@ -523,7 +523,7 @@ direction LR
             +get() Message
         }
     }
-    namespace AiClient.Types {
+    namespace AiClientNamespace.Types {
         class Message {
             +getRole() MessageRole
             +getParts() MessagePart[]
@@ -632,7 +632,7 @@ direction LR
             +getJsonSchema() array< string, mixed >$
         }
     }
-    namespace AiClient.Types.Enums {
+    namespace AiClientNamespace.Types.Enums {
         class MessageRole {
             USER
             MODEL
@@ -667,7 +667,7 @@ direction LR
             VIDEO
         }
     }
-    namespace AiClient.Util {
+    namespace AiClientNamespace.Util {
         class MessageUtil {
             +toText(Message $message) string$
             +toImageFile(Message $message) File$
@@ -747,7 +747,7 @@ config:
 ---
 classDiagram
 direction LR
-    namespace AiClient.Providers {
+    namespace AiClientNamespace.Providers {
         class AiProviderRegistry {
             +registerProvider(string $className) void
             +hasProvider(string $idOrClassName) bool
@@ -758,7 +758,7 @@ direction LR
             +findModelsMetadataForSupport(AiModelRequirements $modelRequirements) AiProviderModelMetadata[]
         }
     }
-    namespace AiClient.Providers.Contracts {
+    namespace AiClientNamespace.Providers.Contracts {
         class AiProvider {
             +metadata() AiProviderMetadata$
             +model(string $modelId, AiModelConfig|array< string, mixed > $modelConfig) AiModel$
@@ -832,7 +832,7 @@ direction LR
             +getJsonSchema() array< string, mixed >$
         }
     }
-    namespace AiClient.Providers.Types {
+    namespace AiClientNamespace.Providers.Types {
         class AiProviderMetadata {
             +getId() string
             +getName() string
@@ -910,7 +910,7 @@ direction LR
             +getJsonSchema() array< string, mixed >$
         }
     }
-    namespace AiClient.Providers.Types.Enums {
+    namespace AiClientNamespace.Providers.Types.Enums {
         class AiProviderType {
             CLOUD
             SERVER
@@ -943,7 +943,7 @@ direction LR
             OUTPUT_SCHEMA
         }
     }
-    namespace AiClient.Providers.Util {
+    namespace AiClientNamespace.Providers.Util {
         class AiCapabilitiesUtil {
             +getSupportedCapabilities(AiModel|string $modelClass) AiCapability[]$
             +getSupportedOptions(AiModel|string $modelClass) AiSupportedOption[]$
