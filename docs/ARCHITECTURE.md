@@ -362,14 +362,14 @@ direction LR
             +generateSpeechOperation() GenerativeAiOperation
             +generateEmbeddingsOperation() EmbeddingOperation
             +generateText() string
-            +generateTexts(int $candidateCount) string
+            +generateTexts(int $candidateCount) string[]
             +streamGenerateText() Generator< string >
             +generateImage() File
-            +generateImages(int $candidateCount) File
+            +generateImages(int $candidateCount) File[]
             +convertTextToSpeech() File
-            +convertTextToSpeeches(int $candidateCount) File
+            +convertTextToSpeeches(int $candidateCount) File[]
             +generateSpeech() File
-            +generateSpeeches(int $candidateCount) File
+            +generateSpeeches(int $candidateCount) File[]
             +generateEmbeddings() Embedding[]
             +getModelRequirements() AiModelRequirements
             +isSupported() bool
@@ -524,14 +524,14 @@ direction LR
             +generateSpeechOperation() GenerativeAiOperation
             +generateEmbeddingsOperation() EmbeddingOperation
             +generateText() string
-            +generateTexts(int $candidateCount) string
+            +generateTexts(int $candidateCount) string[]
             +streamGenerateText() Generator< string >
             +generateImage() File
-            +generateImages(int $candidateCount) File
+            +generateImages(int $candidateCount) File[]
             +convertTextToSpeech() File
-            +convertTextToSpeeches(int $candidateCount) File
+            +convertTextToSpeeches(int $candidateCount) File[]
             +generateSpeech() File
-            +generateSpeeches(int $candidateCount) File
+            +generateSpeeches(int $candidateCount) File[]
             +generateEmbeddings() Embedding[]
             +getModelRequirements() AiModelRequirements
             +isSupported() bool
