@@ -322,7 +322,7 @@ direction LR
     namespace Ai {
         class AiClient {
             +prompt(string|Message ...$text) PromptBuilder$
-            +message(string $text) MessageBuilder$
+            +message(?string $text) MessageBuilder$
         }
 
         class PromptBuilder {
@@ -469,7 +469,7 @@ direction LR
     namespace Ai {
         class AiClient {
             +prompt(string|Message ...$text) PromptBuilder$
-            +message(string $text) MessageBuilder$
+            +message(?string $text) MessageBuilder$
             +defaultRegistry() AiProviderRegistry$
             +isConfigured(AiProviderAvailability $availability) bool$
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
