@@ -19,6 +19,13 @@ The following examples indicate how this SDK could eventually be used.
 
 #### Generate text using any suitable model from any provider (most basic example)
 
+##### Fluent API
+```php
+$text = AiClient::prompt('Write a 2-verse poem about PHP.')
+    ->generateText();
+```
+
+##### Traditional API
 ```php
 $text = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.'
@@ -27,6 +34,14 @@ $text = AiClient::generateTextResult(
 
 #### Generate text using a Google model
 
+##### Fluent API
+```php
+$text = AiClient::prompt('Write a 2-verse poem about PHP.')
+    ->usingModel(Google::model('gemini-2.5-flash'))
+    ->generateText();
+```
+
+##### Traditional API
 ```php
 $text = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.',
@@ -36,6 +51,14 @@ $text = AiClient::generateTextResult(
 
 #### Generate multiple text candidates using an Anthropic model
 
+##### Fluent API
+```php
+$texts = AiClient::prompt('Write a 2-verse poem about PHP.')
+    ->usingModel(Anthropic::model('claude-3.7-sonnet'))
+    ->generateTexts(4);
+```
+
+##### Traditional API
 ```php
 $texts = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.',
@@ -48,6 +71,14 @@ $texts = AiClient::generateTextResult(
 
 #### Generate an image using any suitable OpenAI model
 
+##### Fluent API
+```php
+$imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Carribean sea.')
+    ->usingProvider('openai')
+    ->generateImage();
+```
+
+##### Traditional API
 ```php
 $modelsMetadata = AiClient::defaultRegistry()->findProviderModelsMetadataForSupport(
     'openai',
@@ -64,6 +95,13 @@ $imageFile = AiClient::generateImageResult(
 
 #### Generate an image using any suitable model from any provider
 
+##### Fluent API
+```php
+$imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Carribean sea.')
+    ->generateImage();
+```
+
+##### Traditional API
 ```php
 $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     new AiModelRequirements([AiCapability::IMAGE_GENERATION])
@@ -81,6 +119,23 @@ $imageFile = AiClient::generateImageResult(
 
 _Note: This does effectively the exact same as [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example), but more verbosely. In other words, if you omit the model parameter, the SDK will do this internally._
 
+##### Fluent API
+```php
+$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
+    new AiModelRequirements([AiCapability::TEXT_GENERATION])
+);
+
+$text = AiClient::prompt('Write a 2-verse poem about PHP.')
+    ->withModel(
+        AiClient::defaultRegistry()->getProviderModel(
+            $providerModelsMetadata[0]->getProvider()->getId(),
+            $providerModelsMetadata[0]->getModels()[0]->getId()
+        )
+    )
+    ->generateText();
+```
+
+##### Traditional API
 ```php
 $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     new AiModelRequirements([AiCapability::TEXT_GENERATION])
@@ -98,6 +153,14 @@ $text = AiClient::generateTextResult(
 
 _Note: Since this omits the model parameter, the SDK will automatically determine which models are suitable and use any of them, similar to [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example). Since it knows the input includes an image, it can internally infer that the model needs to not only support `AiCapability::TEXT_GENERATION`, but also `AiOption::INPUT_MODALITIES => ['text', 'image']`._
 
+##### Fluent API
+```php
+$text = AiClient::prompt('Generate alternative text for this image.')
+    ->withInlineImage($base64Blob, 'image/png')
+    ->generateText();
+```
+
+##### Traditional API
 ```php
 $text = AiClient::generateTextResult(
     [
@@ -116,6 +179,18 @@ $text = AiClient::generateTextResult(
 
 _Note: Similarly to the previous example, even without specifying the model here, the SDK will be able to infer required model capabilities because it can detect that multiple chat messages are passed. Therefore it will internally only consider models that support `AiCapability::TEXT_GENERATION` as well as `AiCapability::CHAT_HISTORY`._
 
+##### Fluent API
+```php
+$text = AiClient::prompt()
+    ->withHistory(
+        new UserMessage('Do you spell it WordPress or Wordpress?'),
+        new AgentMessage('The correct spelling is WordPress.'),
+    )
+    ->withText('Can you repeat that please?')
+    ->generateText();
+```
+
+##### Traditional API
 ```php
 $text = AiClient::generateTextResult(
     [
@@ -139,6 +214,28 @@ $text = AiClient::generateTextResult(
 
 _Note: Unlike the previous two examples, to require JSON output it is necessary to go the verbose route, since it is impossible for the SDK to detect whether you require JSON output purely from the prompt input. Therefore this code example contains the logic to manually search for suitable models and then use one of them for the task._
 
+##### Fluent API
+```php
+$text = AiClient::prompt('Transform the following CSV content into a JSON array of row data.')
+    ->asJsonResponse()
+    ->usingOutputSchema([
+        'type'  => 'array',
+        'items' => [
+            'type'       => 'object',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                ],
+                'age'  => [
+                    'type' => 'integer',
+                ],
+            ],
+        ],
+    ])
+    ->generateText();
+```
+
+##### Traditional API
 ```php
 $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     new AiModelRequirements(
@@ -176,25 +273,6 @@ $jsonString = AiClient::generateTextResult(
 )->toText();
 ```
 
-#### Generate embeddings using any suitable model from any provider
-
-```php
-$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
-    new AiModelRequirements([AiCapability::EMBEDDING_GENERATION])
-);
-$embeddings = AiClient::generateEmbeddingsResult(
-    [
-        'A very long text.',
-        'Another very long text.',
-        'More long text.',
-    ],
-    AiClient::defaultRegistry()->getProviderModel(
-        $providerModelsMetadata[0]->getProvider()->getId(),
-        $providerModelsMetadata[0]->getModels()[0]->getId()
-    )
-)->getEmbeddings();
-```
-
 ## Class diagrams
 
 This section shows comprehensive class diagrams for the proposed architecture. For explanation on specific terms, see the [glossary](./GLOSSARY.md).
@@ -217,12 +295,15 @@ classDiagram
 direction LR
     namespace AiClient {
         class AiClient {
-            +prompt(?string $text) PromptBuilder$
+            +prompt(string|Message|null $text = null) PromptBuilder$
             +message(?string $text) MessageBuilder$
         }
 
         class PromptBuilder {
             +withText(string $text) self
+            +withInlineImage(string $base64Blob, string $mimeType)
+            +withLocalImage(string $path, string $mimeType)
+            +withRemoteImage(string $uri, string $mimeType)
             +withImageFile(File $file) self
             +withAudioFile(File $file) self
             +withVideoFile(File $file) self
@@ -240,6 +321,7 @@ direction LR
             +usingOutputMime(string $mimeType) self
             +usingOutputSchema(array< string, mixed > $schema) self
             +usingOutputModalities(...AiModality $modalities) self
+            +asJsonResponse(?array< string, mixed > $schema) self
             +generateResult() GenerativeAiResult
             +generateOperation() GenerativeAiOperation
             +generateTextResult() GenerativeAiResult
@@ -254,10 +336,14 @@ direction LR
             +generateSpeechOperation() GenerativeAiOperation
             +generateEmbeddingsOperation() EmbeddingOperation
             +generateText() string
+            +generateTexts(?int $candidateCount) string[]
             +streamGenerateText() Generator< string >
             +generateImage() File
+            +generateImages(?int $candidateCount) File[]
             +convertTextToSpeech() File
+            +convertTextToSpeeches(?int $candidateCount) File[]
             +generateSpeech() File
+            +generateSpeeches(?int $candidateCount) File[]
             +generateEmbeddings() Embedding[]
             +getModelRequirements() AiModelRequirements
             +isSupported() bool
@@ -356,7 +442,7 @@ classDiagram
 direction LR
     namespace AiClient {
         class AiClient {
-            +prompt(?string $text) PromptBuilder$
+            +prompt(string|Message|null $text = null) PromptBuilder$
             +message(?string $text) MessageBuilder$
             +defaultRegistry() AiProviderRegistry$
             +isConfigured(AiProviderAvailability $availability) bool$
@@ -377,6 +463,9 @@ direction LR
 
         class PromptBuilder {
             +withText(string $text) self
+            +withInlineImage(string $base64Blob, string $mimeType)
+            +withLocalImage(string $path, string $mimeType)
+            +withRemoteImage(string $uri, string $mimeType)
             +withImageFile(File $file) self
             +withAudioFile(File $file) self
             +withVideoFile(File $file) self
@@ -394,6 +483,7 @@ direction LR
             +usingOutputMime(string $mimeType) self
             +usingOutputSchema(array< string, mixed > $schema) self
             +usingOutputModalities(...AiModality $modalities) self
+            +asJsonResponse(?array< string, mixed > $schema) self
             +generateResult() GenerativeAiResult
             +generateOperation() GenerativeAiOperation
             +generateTextResult() GenerativeAiResult
@@ -408,10 +498,14 @@ direction LR
             +generateSpeechOperation() GenerativeAiOperation
             +generateEmbeddingsOperation() EmbeddingOperation
             +generateText() string
+            +generateTexts(?int $candidateCount) string[]
             +streamGenerateText() Generator< string >
             +generateImage() File
+            +generateImages(?int $candidateCount) File[]
             +convertTextToSpeech() File
+            +convertTextToSpeeches(?int $candidateCount) File[]
             +generateSpeech() File
+            +generateSpeeches(?int $candidateCount) File[]
             +generateEmbeddings() Embedding[]
             +getModelRequirements() AiModelRequirements
             +isSupported() bool
