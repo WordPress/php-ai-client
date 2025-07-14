@@ -273,32 +273,6 @@ $jsonString = AiClient::generateTextResult(
 )->toText();
 ```
 
-#### Generate embeddings using any suitable model from any provider
-
-##### Fluent API
-```php
-$embeddings = AiClient::prompt('A very long text.', 'Another very long text.', 'More long text.')
-    ->generateEmbeddings();
-```
-
-##### Traditional API
-```php
-$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
-    new AiModelRequirements([AiCapability::EMBEDDING_GENERATION])
-);
-$embeddings = AiClient::generateEmbeddingsResult(
-    [
-        'A very long text.',
-        'Another very long text.',
-        'More long text.',
-    ],
-    AiClient::defaultRegistry()->getProviderModel(
-        $providerModelsMetadata[0]->getProvider()->getId(),
-        $providerModelsMetadata[0]->getModels()[0]->getId()
-    )
-)->getEmbeddings();
-```
-
 ## Class diagrams
 
 This section shows comprehensive class diagrams for the proposed architecture. For explanation on specific terms, see the [glossary](./GLOSSARY.md).
