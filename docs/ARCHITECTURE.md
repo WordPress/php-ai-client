@@ -295,7 +295,7 @@ classDiagram
 direction LR
     namespace Ai {
         class AiClient {
-            +prompt(string|Message ...$text) PromptBuilder$
+            +prompt(string|Message|null $text = null) PromptBuilder$
             +message(?string $text) MessageBuilder$
         }
 
@@ -442,7 +442,7 @@ classDiagram
 direction LR
     namespace Ai {
         class AiClient {
-            +prompt(string|Message ...$text) PromptBuilder$
+            +prompt(string|Message|null $text = null) PromptBuilder$
             +message(?string $text) MessageBuilder$
             +defaultRegistry() AiProviderRegistry$
             +isConfigured(AiProviderAvailability $availability) bool$
