@@ -181,13 +181,12 @@ _Note: Similarly to the previous example, even without specifying the model here
 
 ##### Fluent API
 ```php
-$history = [
-    new UserMessage('Do you spell it WordPress or Wordpress?'),
-    new AgentMessage('The correct spelling is WordPress.'),
-];
-
-$text = AiClient::prompt('Can you repeat that please?')
-    ->withHistory(...$history)
+$text = AiClient::prompt()
+    ->withHistory(
+        new UserMessage('Do you spell it WordPress or Wordpress?'),
+        new AgentMessage('The correct spelling is WordPress.'),
+    )
+    ->withText('Can you repeat that please?')
     ->generateText();
 ```
 
