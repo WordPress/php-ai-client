@@ -1,0 +1,13 @@
+.editorconfig          export-ignore
+.gitattributes         export-ignore
+/.github/              export-ignore
+.gitignore             export-ignore
+/*.md                  export-ignore
+/LICENSE.md           -export-ignore
+/README.md            -export-ignore
+/docs/                 export-ignore
+/tests/                export-ignore
+/vendor/               export-ignore
+/phpcs.xml.dist        export-ignore
+/phpstan.neon.dist     export-ignore
+/phpunit.xml.dist      export-ignore
