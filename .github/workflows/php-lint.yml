@@ -1,0 +1,59 @@
+name: PHP Code Linting
+
+on:
+  push:
+    branches:
+      - trunk
+      - 'feature/**'
+      - 'release/**'
+    # Only run if PHP-related files changed.
+    paths:
+      - '.github/workflows/php-lint.yml'
+      - '**.php'
+      - 'phpcs.xml.dist'
+      - 'phpstan.neon.dist'
+      - 'composer.json'
+      - 'composer.lock'
+  pull_request:
+    # Only run if PHP-related files changed.
+    paths:
+      - '.github/workflows/php-lint.yml'
+      - '**.php'
+      - 'phpcs.xml.dist'
+      - 'phpstan.neon.dist'
+      - 'composer.json'
+      - 'composer.lock'
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  php-lint:
+    name: PHP
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: 'latest'
+
+      - name: Validate Composer configuration
+        run: composer validate
+
+      - name: Install PHP dependencies
+        uses: ramsey/composer-install@v3
+        with:
+          composer-options: '--prefer-dist'
+
+      - name: PHPStan
+        run: composer phpstan
+
+      - name: PHP Code Sniffer
+        run: composer phpcs
