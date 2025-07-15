@@ -460,7 +460,9 @@ direction LR
             +generateSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateEmbeddingsOperation(string[]|Message[] $input, AiModel $model) EmbeddingOperation$
         }
+    }
 
+    namespace AiClientNamespace.Builders {
         class PromptBuilder {
             +withText(string $text) self
             +withInlineImage(string $base64Blob, string $mimeType)
@@ -523,17 +525,11 @@ direction LR
             +get() Message
         }
     }
-    namespace AiClientNamespace.Types {
+    namespace AiClientNamespace.Messages {
         class Message {
             +getRole() MessageRole
             +getParts() MessagePart[]
             +getJsonSchema() array< string, mixed >$
-        }
-        class UserMessage {
-        }
-        class ModelMessage {
-        }
-        class SystemMessage {
         }
         class MessagePart {
             +getType() MessagePartType
@@ -544,23 +540,30 @@ direction LR
             +getFunctionResponse() FunctionResponse?
             +getJsonSchema() array< string, mixed >$
         }
-        class File {
+        class ModelMessage {
         }
-        class InlineFile {
-            +getMimeType() string
-            +getBase64Data() string
-            +getJsonSchema() array< string, mixed >$
+        class SystemMessage {
         }
-        class RemoteFile {
-            +getMimeType() string
-            +getUrl() string
-            +getJsonSchema() array< string, mixed >$
+        class UserMessage {
         }
-        class LocalFile {
-            +getMimeType() string
-            +getPath() string
-            +getJsonSchema() array< string, mixed >$
+    }
+
+    namespace AiClientNamespace.Messages.Enums {
+        class MessagePartType {
+            TEXT
+            INLINE_FILE
+            REMOTE_FILE
+            FUNCTION_CALL
+            FUNCTION_RESPONSE
         }
+        class MessageRole {
+            USER
+            MODEL
+            SYSTEM
+        }
+    }
+
+    namespace AiClientNamespace.Messages.Functions {
         class FunctionCall {
             +getId() string
             +getName() string
@@ -573,31 +576,46 @@ direction LR
             +getResponse() mixed
             +getJsonSchema() array< string, mixed >$
         }
+    }
+
+    namespace AiClientNamespace.Files {
+        class InlineFile {
+            +getMimeType() string
+            +getBase64Data() string
+            +getJsonSchema() array< string, mixed >$
+        }
+        class LocalFile {
+            +getMimeType() string
+            +getPath() string
+            +getJsonSchema() array< string, mixed >$
+        }
+        class RemoteFile {
+            +getMimeType() string
+            +getUrl() string
+            +getJsonSchema() array< string, mixed >$
+        }
+    }
+
+    namespace AiClientNamespace.Files.Contracts {
+        class File {
+        }
+    }
+
+    namespace AiClientNamespace.Providers.Models {
+        class Candidate {
+            +getMessage() Message
+            +getFinishReason() FinishReason
+            +getTokenCount() int
+            +getJsonSchema() array< string, mixed >$
+        }
         class Embedding {
             +getVector() float[]
             +getDimension() int
-        }
-        class Operation {
-            +getId() string
-            +getState() OperationState
-            +getJsonSchema() array< string, mixed >$
         }
         class GenerativeAiOperation {
             +getId() string
             +getState() OperationState
             +getResult() GenerativeAiResult
-            +getJsonSchema() array< string, mixed >$
-        }
-        class EmbeddingOperation {
-            +getId() string
-            +getState() OperationState
-            +getResult() EmbeddingResult
-            +getJsonSchema() array< string, mixed >$
-        }
-        class Result {
-            +getId() string
-            +getTokenUsage() TokenUsage
-            +getProviderMetadata() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
         class GenerativeAiResult {
@@ -618,17 +636,17 @@ direction LR
             +toVideoFiles() File[]
             +toMessages() Message[]
         }
+        class EmbeddingOperation {
+            +getId() string
+            +getState() OperationState
+            +getResult() EmbeddingResult
+            +getJsonSchema() array< string, mixed >$
+        }
         class EmbeddingResult {
             +getId() string
             +getEmbeddings() Embedding[]
             +getTokenUsage() TokenUsage
             +getProviderMetadata() array< string, mixed >
-            +getJsonSchema() array< string, mixed >$
-        }
-        class Candidate {
-            +getMessage() Message
-            +getFinishReason() FinishReason
-            +getTokenCount() int
             +getJsonSchema() array< string, mixed >$
         }
         class TokenUsage {
@@ -638,18 +656,28 @@ direction LR
             +getJsonSchema() array< string, mixed >$
         }
     }
-    namespace AiClientNamespace.Types.Enums {
-        class MessageRole {
-            USER
-            MODEL
-            SYSTEM
+
+    namespace AiClientNamespace.Providers.Models.Contracts {
+        class Operation {
+            +getId() string
+            +getState() OperationState
+            +getJsonSchema() array< string, mixed >$
         }
-        class MessagePartType {
+        class Result {
+            +getId() string
+            +getTokenUsage() TokenUsage
+            +getProviderMetadata() array< string, mixed >
+            +getJsonSchema() array< string, mixed >$
+        }
+    }
+
+    namespace AiClientNamespace.Enums {
+        class AiModality {
             TEXT
-            INLINE_FILE
-            REMOTE_FILE
-            FUNCTION_CALL
-            FUNCTION_RESPONSE
+            DOCUMENT
+            IMAGE
+            AUDIO
+            VIDEO
         }
         class FinishReason {
             STOP
@@ -665,21 +693,8 @@ direction LR
             FAILED
             CANCELED
         }
-        class AiModality {
-            TEXT
-            DOCUMENT
-            IMAGE
-            AUDIO
-            VIDEO
-        }
     }
     namespace AiClientNamespace.Util {
-        class MessageUtil {
-            +toText(Message $message) string$
-            +toImageFile(Message $message) File$
-            +toAudioFile(Message $message) File$
-            +toVideoFile(Message $message) File$
-        }
         class CandidatesUtil {
             +toTexts(Candidate[] $candidates) string[]$
             +toImageFiles(Candidate[] $candidates) File[]$
@@ -689,6 +704,12 @@ direction LR
             +toFirstImageFile(Candidate[] $candidates) File$
             +toFirstAudioFile(Candidate[] $candidates) File$
             +toFirstVideoFile(Candidate[] $candidates) File$
+        }
+        class MessageUtil {
+            +toText(Message $message) string$
+            +toImageFile(Message $message) File$
+            +toAudioFile(Message $message) File$
+            +toVideoFile(Message $message) File$
         }
         class RequirementsUtil {
             +inferRequirements(Message[] $messages, AiModelConfig $modelConfig) AiModelRequirements$
@@ -757,6 +778,17 @@ config:
 classDiagram
 direction LR
     namespace AiClientNamespace.Providers {
+        class AiProviderMetadata {
+            +getId() string
+            +getName() string
+            +getType() AiProviderType
+            +getJsonSchema() array< string, mixed >$
+        }
+        class AiProviderModelsMetadata {
+            +getProvider() AiProviderMetadata
+            +getModels() AiModelMetadata[]
+            +getJsonSchema() array< string, mixed >$
+        }
         class AiProviderRegistry {
             +registerProvider(string $className) void
             +hasProvider(string $idOrClassName) bool
@@ -768,65 +800,23 @@ direction LR
         }
     }
     namespace AiClientNamespace.Providers.Contracts {
+        class AiModelMetadataDirectory {
+            +listModelMetadata() AiModelMetadata[]
+            +hasModelMetadata(string $modelId) bool
+            +getModelMetadata(string $modelId) AiModelMetadata
+        }
         class AiProvider {
             +metadata() AiProviderMetadata$
             +model(string $modelId, AiModelConfig|array< string, mixed > $modelConfig) AiModel$
             +availability() AiProviderAvailability$
             +modelMetadataDirectory() AiModelMetadataDirectory$
         }
-        class AiModel {
-            +metadata() AiModelMetadata
-            +setConfig(AiModelConfig $config) void
-            +getConfig() AiModelConfig
-        }
         class AiProviderAvailability {
             +isConfigured() bool
         }
-        class AiModelMetadataDirectory {
-            +listModelMetadata() AiModelMetadata[]
-            +hasModelMetadata(string $modelId) bool
-            +getModelMetadata(string $modelId) AiModelMetadata
-        }
-        class WithGenerativeAiOperations {
-            +getOperation(string $operationId) GenerativeAiOperation
-        }
-        class WithEmbeddingOperations {
-            +getOperation(string $operationId) EmbeddingOperation
-        }
-        class AiTextGenerationModel {
-            +generateTextResult(Message[] $prompt) GenerativeAiResult
-            +streamGenerateTextResult(Message[] $prompt) Generator< GenerativeAiResult >
-        }
-        class AiImageGenerationModel {
-            +generateImageResult(Message[] $prompt) GenerativeAiResult
-        }
-        class AiTextToSpeechConversionModel {
-            +convertTextToSpeechResult(Message[] $prompt) GenerativeAiResult
-        }
-        class AiSpeechGenerationModel {
-            +generateSpeechResult(Message[] $prompt) GenerativeAiResult
-        }
-        class AiEmbeddingGenerationModel {
-            +generateEmbeddingsResult(Message[] $input) EmbeddingResult
-        }
-        class AiTextGenerationOperationModel {
-            +generateTextOperation(Message[] $prompt) GenerativeAiOperation
-        }
-        class AiImageGenerationOperationModel {
-            +generateImageOperation(Message[] $prompt) GenerativeAiOperation
-        }
-        class AiTextToSpeechConversionOperationModel {
-            +convertTextToSpeechOperation(Message[] $prompt) GenerativeAiOperation
-        }
-        class AiSpeechGenerationOperationModel {
-            +generateSpeechOperation(Message[] $prompt) GenerativeAiOperation
-        }
-        class AiEmbeddingGenerationOperationModel {
-            +generateEmbeddingsOperation(Message[] $input) EmbeddingOperation
-        }
-        class WithHttpClient {
-            +setHttpClient(HttpClient $client) void
-            +getHttpClient() HttpClient
+        class Authentication {
+            +authenticate(RequestInterface $request) void
+            +getJsonSchema() array< string, mixed >$
         }
         class HttpClient {
             +send(RequestInterface $request, array< string, mixed > $options) ResponseInterface
@@ -836,34 +826,19 @@ direction LR
             +setAuthentication(Authentication $authentication) void
             +getAuthentication() Authentication
         }
-        class Authentication {
-            +authenticate(RequestInterface $request) void
-            +getJsonSchema() array< string, mixed >$
+        class WithEmbeddingOperations {
+            +getOperation(string $operationId) EmbeddingOperation
+        }
+        class WithGenerativeAiOperations {
+            +getOperation(string $operationId) GenerativeAiOperation
+        }
+        class WithHttpClient {
+            +setHttpClient(HttpClient $client) void
+            +getHttpClient() HttpClient
         }
     }
-    namespace AiClientNamespace.Providers.Types {
-        class AiProviderMetadata {
-            +getId() string
-            +getName() string
-            +getType() AiProviderType
-            +getJsonSchema() array< string, mixed >$
-        }
-        class AiModelMetadata {
-            +getId() string
-            +getName() string
-            +getSupportedCapabilities() AiCapability[]
-            +getSupportedOptions() AiSupportedOption[]
-            +getJsonSchema() array< string, mixed >$
-        }
-        class AiProviderModelsMetadata {
-            +getProvider() AiProviderMetadata
-            +getModels() AiModelMetadata[]
-            +getJsonSchema() array< string, mixed >$
-        }
-        class AiModelRequirements {
-            getRequiredCapabilities() AiCapability[]
-            getRequiredOptions() AiRequiredOption[]
-        }
+
+    namespace AiClientNamespace.Providers.Models {
         class AiModelConfig {
             +setOutputModalities(AiModality[] $modalities) void
             +getOutputModalities() AiModality[]
@@ -890,6 +865,74 @@ direction LR
             +getTools() Tool[]
             +getJsonSchema() array< string, mixed >$
         }
+        class AiModelMetadata {
+            +getId() string
+            +getName() string
+            +getSupportedCapabilities() AiCapability[]
+            +getSupportedOptions() AiSupportedOption[]
+            +getJsonSchema() array< string, mixed >$
+        }
+        class AiModelRequirements {
+            getRequiredCapabilities() AiCapability[]
+            getRequiredOptions() AiRequiredOption[]
+        }
+    }
+
+    namespace AiClientNamespace.Providers.Models.Contracts {
+        class AiModel {
+            +metadata() AiModelMetadata
+            +setConfig(AiModelConfig $config) void
+            +getConfig() AiModelConfig
+        }
+    }
+
+    namespace AiClientNamespace.Providers.Models.EmbeddingGeneration.Contracts {
+        class AiEmbeddingGenerationModel {
+            +generateEmbeddingsResult(Message[] $input) EmbeddingResult
+        }
+        class AiEmbeddingGenerationOperationModel {
+            +generateEmbeddingsOperation(Message[] $input) EmbeddingOperation
+        }
+    }
+
+    namespace AiClientNamespace.Providers.Models.ImageGeneration.Contracts {
+        class AiImageGenerationModel {
+            +generateImageResult(Message[] $prompt) GenerativeAiResult
+        }
+        class AiImageGenerationOperationModel {
+            +generateImageOperation(Message[] $prompt) GenerativeAiOperation
+        }
+    }
+
+    namespace AiClientNamespace.Providers.Models.SpeechGeneration.Contracts {
+        class AiSpeechGenerationModel {
+            +generateSpeechResult(Message[] $prompt) GenerativeAiResult
+        }
+        class AiSpeechGenerationOperationModel {
+            +generateSpeechOperation(Message[] $prompt) GenerativeAiOperation
+        }
+    }
+
+    namespace AiClientNamespace.Providers.Models.TextGeneration.Contracts {
+        class AiTextGenerationModel {
+            +generateTextResult(Message[] $prompt) GenerativeAiResult
+            +streamGenerateTextResult(Message[] $prompt) Generator< GenerativeAiResult >
+        }
+        class AiTextGenerationOperationModel {
+            +generateTextOperation(Message[] $prompt) GenerativeAiOperation
+        }
+    }
+
+    namespace AiClientNamespace.Providers.Models.TextToSpeechConversion.Contracts {
+        class AiTextToSpeechConversionModel {
+            +convertTextToSpeechResult(Message[] $prompt) GenerativeAiResult
+        }
+        class AiTextToSpeechConversionOperationModel {
+            +convertTextToSpeechOperation(Message[] $prompt) GenerativeAiOperation
+        }
+    }
+
+    namespace AiClientNamespace.Providers.Tools {
         class Tool {
             +getType() ToolType
             +getFunctionDeclarations() FunctionDeclaration[]?
@@ -907,6 +950,9 @@ direction LR
             +getDisallowedDomains() string[]
             +getJsonSchema() array< string, mixed >$
         }
+    }
+
+    namespace AiClientNamespace.Providers.Options {
         class AiSupportedOption {
             +getName() string
             +isSupportedValue(mixed $value) bool
@@ -919,16 +965,7 @@ direction LR
             +getJsonSchema() array< string, mixed >$
         }
     }
-    namespace AiClientNamespace.Providers.Types.Enums {
-        class AiProviderType {
-            CLOUD
-            SERVER
-            CLIENT
-        }
-        class ToolType {
-            FUNCTION_DECLARATIONS
-            WEB_SEARCH
-        }
+    namespace AiClientNamespace.Providers.Enums {
         class AiCapability {
             TEXT_GENERATION
             IMAGE_GENERATION
@@ -950,6 +987,15 @@ direction LR
             TOP_P
             OUTPUT_MIME_TYPE
             OUTPUT_SCHEMA
+        }
+        class AiProviderType {
+            CLOUD
+            SERVER
+            CLIENT
+        }
+        class ToolType {
+            FUNCTION_DECLARATIONS
+            WEB_SEARCH
         }
     }
     namespace AiClientNamespace.Providers.Util {
