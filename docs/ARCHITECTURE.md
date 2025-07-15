@@ -596,6 +596,14 @@ direction LR
         }
     }
 
+    namespace AiClient.Operations.Contracts {
+        class OperationInterface {
+            +getId() string
+            +getState() OperationStateEnum
+            +getJsonSchema() array< string, mixed >$
+        }
+    }
+
     namespace AiClient.Operations.DTO {
         class EmbeddingOperation {
             +getId() string
@@ -611,15 +619,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Models.Contracts {
-        class OperationInterface {
-            +getId() string
-            +getState() OperationStateEnum
-            +getJsonSchema() array< string, mixed >$
-        }
-    }
-
-    namespace AiClient.Provider.Models.Enums {
+    namespace AiClient.Providers.Models.Enums {
         class ModalityEnum {
             TEXT
             DOCUMENT
