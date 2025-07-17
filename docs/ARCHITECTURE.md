@@ -21,13 +21,13 @@ The following examples indicate how this SDK could eventually be used.
 
 ##### Fluent API
 ```php
-$text = Client::prompt('Write a 2-verse poem about PHP.')
+$text = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->generateText();
 ```
 
 ##### Traditional API
 ```php
-$text = Client::generateTextResult(
+$text = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.'
 )->toText();
 ```
@@ -36,14 +36,14 @@ $text = Client::generateTextResult(
 
 ##### Fluent API
 ```php
-$text = Client::prompt('Write a 2-verse poem about PHP.')
+$text = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->usingModel(Google::model('gemini-2.5-flash'))
     ->generateText();
 ```
 
 ##### Traditional API
 ```php
-$text = Client::generateTextResult(
+$text = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.',
     Google::model('gemini-2.5-flash')
 )->toText();
@@ -53,14 +53,14 @@ $text = Client::generateTextResult(
 
 ##### Fluent API
 ```php
-$texts = Client::prompt('Write a 2-verse poem about PHP.')
+$texts = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->usingModel(Anthropic::model('claude-3.7-sonnet'))
     ->generateTexts(4);
 ```
 
 ##### Traditional API
 ```php
-$texts = Client::generateTextResult(
+$texts = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.',
     Anthropic::model(
         'claude-3.7-sonnet',
@@ -73,20 +73,20 @@ $texts = Client::generateTextResult(
 
 ##### Fluent API
 ```php
-$imageFile = Client::prompt('Generate an illustration of the PHP elephant in the Carribean sea.')
+$imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Carribean sea.')
     ->usingProvider('openai')
     ->generateImage();
 ```
 
 ##### Traditional API
 ```php
-$modelsMetadata = Client::defaultRegistry()->findProviderModelsMetadataForSupport(
+$modelsMetadata = AiClient::defaultRegistry()->findProviderModelsMetadataForSupport(
     'openai',
     new ModelRequirements([CapabilityEnum::IMAGE_GENERATION])
 );
-$imageFile = Client::generateImageResult(
+$imageFile = AiClient::generateImageResult(
     'Generate an illustration of the PHP elephant in the Carribean sea.',
-    Client::defaultRegistry()->getProviderModel(
+    AiClient::defaultRegistry()->getProviderModel(
         'openai',
         $modelsMetadata[0]->getId()
     )
@@ -97,18 +97,18 @@ $imageFile = Client::generateImageResult(
 
 ##### Fluent API
 ```php
-$imageFile = Client::prompt('Generate an illustration of the PHP elephant in the Carribean sea.')
+$imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Carribean sea.')
     ->generateImage();
 ```
 
 ##### Traditional API
 ```php
-$providerModelsMetadata = Client::defaultRegistry()->findModelsMetadataForSupport(
+$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     new ModelRequirements([CapabilityEnum::IMAGE_GENERATION])
 );
-$imageFile = Client::generateImageResult(
+$imageFile = AiClient::generateImageResult(
     'Generate an illustration of the PHP elephant in the Carribean sea.',
-    Client::defaultRegistry()->getProviderModel(
+    AiClient::defaultRegistry()->getProviderModel(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId()
     )
@@ -121,13 +121,13 @@ _Note: This does effectively the exact same as [the first code example](#generat
 
 ##### Fluent API
 ```php
-$providerModelsMetadata = Client::defaultRegistry()->findModelsMetadataForSupport(
+$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     new ModelRequirements([CapabilityEnum::TEXT_GENERATION])
 );
 
-$text = Client::prompt('Write a 2-verse poem about PHP.')
+$text = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->withModel(
-        Client::defaultRegistry()->getProviderModel(
+        AiClient::defaultRegistry()->getProviderModel(
             $providerModelsMetadata[0]->getProvider()->getId(),
             $providerModelsMetadata[0]->getModels()[0]->getId()
         )
@@ -137,12 +137,12 @@ $text = Client::prompt('Write a 2-verse poem about PHP.')
 
 ##### Traditional API
 ```php
-$providerModelsMetadata = Client::defaultRegistry()->findModelsMetadataForSupport(
+$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     new ModelRequirements([CapabilityEnum::TEXT_GENERATION])
 );
-$text = Client::generateTextResult(
+$text = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.',
-    Client::defaultRegistry()->getProviderModel(
+    AiClient::defaultRegistry()->getProviderModel(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId()
     )
@@ -155,14 +155,14 @@ _Note: Since this omits the model parameter, the SDK will automatically determin
 
 ##### Fluent API
 ```php
-$text = Client::prompt('Generate alternative text for this image.')
+$text = AiClient::prompt('Generate alternative text for this image.')
     ->withInlineImage($base64Blob, 'image/png')
     ->generateText();
 ```
 
 ##### Traditional API
 ```php
-$text = Client::generateTextResult(
+$text = AiClient::generateTextResult(
     [
         [
             'text' => 'Generate alternative text for this image.',
@@ -181,7 +181,7 @@ _Note: Similarly to the previous example, even without specifying the model here
 
 ##### Fluent API
 ```php
-$text = Client::prompt()
+$text = AiClient::prompt()
     ->withHistory(
         new UserMessage('Do you spell it WordPress or Wordpress?'),
         new ModelMessage('The correct spelling is WordPress.'),
@@ -192,7 +192,7 @@ $text = Client::prompt()
 
 ##### Traditional API
 ```php
-$text = Client::generateTextResult(
+$text = AiClient::generateTextResult(
     [
         [
             'role'  => MessageRoleEnum::USER,
@@ -216,7 +216,7 @@ _Note: Unlike the previous two examples, to require JSON output it is necessary 
 
 ##### Fluent API
 ```php
-$text = Client::prompt('Transform the following CSV content into a JSON array of row data.')
+$text = AiClient::prompt('Transform the following CSV content into a JSON array of row data.')
     ->asJsonResponse()
     ->usingOutputSchema([
         'type'  => 'array',
@@ -237,7 +237,7 @@ $text = Client::prompt('Transform the following CSV content into a JSON array of
 
 ##### Traditional API
 ```php
-$providerModelsMetadata = Client::defaultRegistry()->findModelsMetadataForSupport(
+$providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     new ModelRequirements(
         [CapabilityEnum::TEXT_GENERATION],
         [
@@ -247,9 +247,9 @@ $providerModelsMetadata = Client::defaultRegistry()->findModelsMetadataForSuppor
         ]
     )
 );
-$jsonString = Client::generateTextResult(
+$jsonString = AiClient::generateTextResult(
     'Transform the following CSV content into a JSON array of row data.',
-    Client::defaultRegistry()->getProviderModel(
+    AiClient::defaultRegistry()->getProviderModel(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId(),
         [
@@ -293,14 +293,14 @@ config:
 ---
 classDiagram
 direction LR
-    namespace AiClient {
-        class Client {
+    namespace AiClientNamespace {
+        class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
             +message(?string $text) MessageBuilder$
         }
     }
 
-    namespace AiClient.Builders {
+    namespace AiClientNamespace.Builders {
         class PromptBuilder {
             +withText(string $text) self
             +withInlineImage(string $base64Blob, string $mimeType)
@@ -364,8 +364,8 @@ direction LR
         }
     }
 
-    Client .. PromptBuilder : creates
-    Client .. MessageBuilder : creates
+    AiClient .. PromptBuilder : creates
+    AiClient .. MessageBuilder : creates
 ```
 
 ### Overview: Traditional method call API for AI implementers
@@ -380,8 +380,8 @@ config:
 ---
 classDiagram
 direction LR
-    namespace AiClient {
-        class Client {
+    namespace AiClientNamespace {
+        class AiClient {
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateTextResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
@@ -411,13 +411,13 @@ config:
 ---
 classDiagram
 direction LR
-    namespace AiClient {
-        class Client {
+    namespace AiClientNamespace {
+        class AiClient {
             +defaultRegistry() ProviderRegistry$
             +isConfigured(ProviderAvailabilityInterface $availability) bool$
         }
     }
-    namespace AiClient.Providers {
+    namespace AiClientNamespace.Providers {
         class ProviderRegistry {
             +registerProvider(string $className) void
             +hasProvider(string $idOrClassName) bool
@@ -429,7 +429,7 @@ direction LR
         }
     }
 
-    Client "1" o-- "1..*" ProviderRegistry
+    AiClient "1" o-- "1..*" ProviderRegistry
 ```
 
 ### Details: Class diagram for AI implementers
@@ -442,8 +442,8 @@ config:
 ---
 classDiagram
 direction LR
-    namespace AiClient {
-        class Client {
+    namespace AiClientNamespace {
+        class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
             +message(?string $text) MessageBuilder$
             +defaultRegistry() ProviderRegistry$
@@ -464,7 +464,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Builders {
+    namespace AiClientNamespace.Builders {
         class PromptBuilder {
             +withText(string $text) self
             +withInlineImage(string $base64Blob, string $mimeType)
@@ -528,19 +528,19 @@ direction LR
         }
     }
 
-    namespace AiClient.Embeddings.DTO {
+    namespace AiClientNamespace.Embeddings.DTO {
         class Embedding {
             +getVector() float[]
             +getDimension() int
         }
     }
 
-    namespace AiClient.Files.Contracts {
+    namespace AiClientNamespace.Files.Contracts {
         class FileInterface {
         }
     }
 
-    namespace AiClient.Files.DTO {
+    namespace AiClientNamespace.Files.DTO {
         class InlineFile {
             +getMimeType() string
             +getBase64Data() string
@@ -558,7 +558,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Messages.DTO {
+    namespace AiClientNamespace.Messages.DTO {
         class Message {
             +getRole() MessageRoleEnum
             +getParts() MessagePart[]
@@ -581,7 +581,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Messages.Enums {
+    namespace AiClientNamespace.Messages.Enums {
         class MessagePartTypeEnum {
             TEXT
             INLINE_FILE
@@ -596,7 +596,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Operations.Contracts {
+    namespace AiClientNamespace.Operations.Contracts {
         class OperationInterface {
             +getId() string
             +getState() OperationStateEnum
@@ -604,7 +604,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Operations.DTO {
+    namespace AiClientNamespace.Operations.DTO {
         class EmbeddingOperation {
             +getId() string
             +getState() OperationStateEnum
@@ -619,7 +619,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Models.Enums {
+    namespace AiClientNamespace.Providers.Models.Enums {
         class ModalityEnum {
             TEXT
             DOCUMENT
@@ -643,7 +643,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Results.Contracts {
+    namespace AiClientNamespace.Results.Contracts {
         class ResultInterface {
             +getId() string
             +getTokenUsage() TokenUsage
@@ -652,7 +652,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Results.DTO {
+    namespace AiClientNamespace.Results.DTO {
         class Candidate {
             +getMessage() Message
             +getFinishReason() FinishReasonEnum
@@ -692,7 +692,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Tools.DTO {
+    namespace AiClientNamespace.Tools.DTO {
         class FunctionCall {
             +getId() string
             +getName() string
@@ -707,7 +707,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Util {
+    namespace AiClientNamespace.Util {
         class CandidatesUtil {
             +toTexts(Candidate[] $candidates) string[]$
             +toImageFiles(Candidate[] $candidates) FileInterface[]$
@@ -738,14 +738,14 @@ direction LR
     <<Enumeration>> OperationStateEnum
     <<Enumeration>> ModalityEnum
 
-    Client .. Message : receives
-    Client .. MessagePart : receives
-    Client .. PromptBuilder : creates
-    Client .. MessageBuilder : creates
-    Client .. GenerativeAiResult : creates
-    Client .. EmbeddingResult : creates
-    Client .. GenerativeAiOperation : creates
-    Client .. EmbeddingOperation : creates
+    AiClient .. Message : receives
+    AiClient .. MessagePart : receives
+    AiClient .. PromptBuilder : creates
+    AiClient .. MessageBuilder : creates
+    AiClient .. GenerativeAiResult : creates
+    AiClient .. EmbeddingResult : creates
+    AiClient .. GenerativeAiOperation : creates
+    AiClient .. EmbeddingOperation : creates
     PromptBuilder .. GenerativeAiResult : creates
     PromptBuilder .. EmbeddingResult : creates
     PromptBuilder .. GenerativeAiOperation : creates
@@ -790,7 +790,7 @@ config:
 ---
 classDiagram
 direction LR
-    namespace AiClient.Providers {
+    namespace AiClientNamespace.Providers {
         class ProviderRegistry {
             +registerProvider(string $className) void
             +hasProvider(string $idOrClassName) bool
@@ -802,7 +802,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Contracts {
+    namespace AiClientNamespace.Providers.Contracts {
         class AuthenticationInterface {
             +authenticate(RequestInterface $request) void
             +getJsonSchema() array< string, mixed >$
@@ -827,7 +827,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.DTO {
+    namespace AiClientNamespace.Providers.DTO {
         class ProviderMetadata {
             +getId() string
             +getName() string
@@ -841,7 +841,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Enums {
+    namespace AiClientNamespace.Providers.Enums {
         class ProviderTypeEnum {
             CLOUD
             SERVER
@@ -853,7 +853,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Models.Contracts {
+    namespace AiClientNamespace.Providers.Models.Contracts {
         class ModelInterface {
             +metadata() ModelMetadata
             +setConfig(ModelConfig $config) void
@@ -875,7 +875,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Models.DTO {
+    namespace AiClientNamespace.Providers.Models.DTO {
         class ModelConfig {
             +setOutputModalities(ModalityEnum[] $modalities) void
             +getOutputModalities() ModalityEnum[]
@@ -926,7 +926,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Models.Enums {
+    namespace AiClientNamespace.Providers.Models.Enums {
         class CapabilityEnum {
             TEXT_GENERATION
             IMAGE_GENERATION
@@ -951,7 +951,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Models.EmbeddingGeneration.Contracts {
+    namespace AiClientNamespace.Providers.Models.EmbeddingGeneration.Contracts {
         class EmbeddingGenerationModelInterface {
             +generateEmbeddingsResult(Message[] $input) EmbeddingResult
         }
@@ -960,7 +960,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Models.ImageGeneration.Contracts {
+    namespace AiClientNamespace.Providers.Models.ImageGeneration.Contracts {
         class ImageGenerationModelInterface {
             +generateImageResult(Message[] $prompt) GenerativeAiResult
         }
@@ -969,7 +969,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Models.SpeechGeneration.Contracts {
+    namespace AiClientNamespace.Providers.Models.SpeechGeneration.Contracts {
         class SpeechGenerationModelInterface {
             +generateSpeechResult(Message[] $prompt) GenerativeAiResult
         }
@@ -978,7 +978,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Models.TextGeneration.Contracts {
+    namespace AiClientNamespace.Providers.Models.TextGeneration.Contracts {
         class TextGenerationModelInterface {
             +generateTextResult(Message[] $prompt) GenerativeAiResult
             +streamGenerateTextResult(Message[] $prompt) Generator< GenerativeAiResult >
@@ -988,7 +988,7 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Models.TextToSpeechConversion.Contracts {
+    namespace AiClientNamespace.Providers.Models.TextToSpeechConversion.Contracts {
         class TextToSpeechConversionModelInterface {
             +convertTextToSpeechResult(Message[] $prompt) GenerativeAiResult
         }
@@ -997,14 +997,14 @@ direction LR
         }
     }
 
-    namespace AiClient.Providers.Models.Util {
+    namespace AiClientNamespace.Providers.Models.Util {
         class CapabilitiesUtil {
             +getSupportedCapabilities(ModelInterface|string $modelClass) CapabilityEnum[]$
             +getSupportedOptions(ModelInterface|string $modelClass) SupportedOption[]$
         }
     }
 
-    namespace AiClient.Tools.DTO {
+    namespace AiClientNamespace.Tools.DTO {
         class FunctionDeclaration {
             +getName() string
             +getDescription() string
