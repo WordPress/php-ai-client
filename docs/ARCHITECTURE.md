@@ -535,16 +535,6 @@ direction LR
         }
     }
 
-    namespace AiClientNamespace.Enums {
-        class ModalityEnum {
-            TEXT
-            DOCUMENT
-            IMAGE
-            AUDIO
-            VIDEO
-        }
-    }
-
     namespace AiClientNamespace.Files.Contracts {
         class FileInterface {
         }
@@ -604,6 +594,13 @@ direction LR
             MODEL
             SYSTEM
         }
+        class ModalityEnum {
+            TEXT
+            DOCUMENT
+            IMAGE
+            AUDIO
+            VIDEO
+        }
     }
 
     namespace AiClientNamespace.Operations.Contracts {
@@ -648,16 +645,6 @@ direction LR
         }
     }
 
-    namespace AiClientNamespace.Results.Enums {
-        class FinishReasonEnum {
-            STOP
-            LENGTH
-            CONTENT_FILTER
-            TOOL_CALLS
-            ERROR
-        }
-    }
-
     namespace AiClientNamespace.Results.DTO {
         class Candidate {
             +getMessage() Message
@@ -695,6 +682,16 @@ direction LR
             +getCompletionTokens() int
             +getTotalTokens() int
             +getJsonSchema() array< string, mixed >$
+        }
+    }
+
+    namespace AiClientNamespace.Results.Enums {
+        class FinishReasonEnum {
+            STOP
+            LENGTH
+            CONTENT_FILTER
+            TOOL_CALLS
+            ERROR
         }
     }
 
