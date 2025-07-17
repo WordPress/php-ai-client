@@ -21,47 +21,135 @@ use ReflectionClass;
  * }
  *
  * // Usage:
+ * $enum = PersonEnum::from('first'); // Creates instance with value 'first'
+ * $enum = PersonEnum::tryFrom('invalid'); // Returns null
  * $enum = PersonEnum::firstName(); // Creates instance with value 'first'
- * $enum->isFirstName(); // Returns true
+ * $enum->name; // 'FIRST_NAME'
+ * $enum->value; // 'first'
  * $enum->equals('first'); // Returns true
  * $enum->is(PersonEnum::firstName()); // Returns true
+ * PersonEnum::cases(); // Returns array of all enum instances
  */
 abstract class AbstractEnum
 {
     /**
-     * @var string|int|float The value of the enum instance
+     * @var string|int The value of the enum instance
      */
     private $value;
 
     /**
-     * @var array<string, array<string, string|int|float>> Cache for reflection data
+     * @var string The name of the enum constant
+     */
+    private $name;
+
+    /**
+     * @var array<string, array<string, string|int>> Cache for reflection data
      */
     private static $cache = [];
 
     /**
+     * @var array<string, array<string, self>> Cache for enum instances
+     */
+    private static $instances = [];
+
+    /**
      * Constructor is private to ensure instances are created through static methods
      *
-     * @param string|int|float $value The enum value
+     * @param string|int $value The enum value
+     * @param string $name The constant name
      */
-    private function __construct($value)
+    private function __construct($value, string $name)
     {
         $this->value = $value;
+        $this->name = $name;
     }
 
     /**
-     * Get the value of the enum instance
+     * Magic getter to provide read-only access to properties
      *
-     * @return string|int|float
+     * @param string $property The property name
+     * @return mixed
+     * @throws BadMethodCallException If property doesn't exist
      */
-    public function getValue()
+    public function __get(string $property)
     {
-        return $this->value;
+        if ($property === 'value' || $property === 'name') {
+            return $this->$property;
+        }
+
+        throw new BadMethodCallException(
+            sprintf('Property %s::%s does not exist', static::class, $property)
+        );
+    }
+
+    /**
+     * Magic setter to prevent property modification
+     *
+     * @param string $property The property name
+     * @param mixed $value The value to set
+     * @throws BadMethodCallException Always, as enum properties are read-only
+     */
+    public function __set(string $property, $value): void
+    {
+        throw new BadMethodCallException(
+            sprintf('Cannot modify property %s::%s - enum properties are read-only', static::class, $property)
+        );
+    }
+
+    /**
+     * Create an enum instance from a value, throws exception if invalid
+     *
+     * @param string|int $value The enum value
+     * @return static
+     * @throws InvalidArgumentException If the value is not valid
+     */
+    public static function from($value): self
+    {
+        $instance = self::tryFrom($value);
+        if ($instance === null) {
+            throw new InvalidArgumentException(
+                sprintf('%s is not a valid backing value for enum %s', (string) $value, static::class)
+            );
+        }
+        return $instance;
+    }
+
+    /**
+     * Try to create an enum instance from a value, returns null if invalid
+     *
+     * @param string|int $value The enum value
+     * @return static|null
+     */
+    public static function tryFrom($value): ?self
+    {
+        $constants = self::getConstants();
+        foreach ($constants as $name => $constantValue) {
+            if ($constantValue === $value) {
+                return self::getInstance($constantValue, $name);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get all enum cases
+     *
+     * @return static[]
+     */
+    public static function cases(): array
+    {
+        $cases = [];
+        $constants = self::getConstants();
+        foreach ($constants as $name => $value) {
+            $cases[] = self::getInstance($value, $name);
+        }
+        return $cases;
     }
 
     /**
      * Check if this enum has the same value as the given value
      *
-     * @param string|int|float|self $other The value or enum to compare
+     * @param string|int|self $other The value or enum to compare
      * @return bool
      */
     public function equals($other): bool
@@ -81,13 +169,13 @@ abstract class AbstractEnum
      */
     public function is(self $other): bool
     {
-        return get_class($this) === get_class($other) && $this->value === $other->getValue();
+        return $this === $other; // Since we're using singletons, we can use identity comparison
     }
 
     /**
      * Get all valid values for this enum
      *
-     * @return array<string, string|int|float>
+     * @return array<string, string|int>
      */
     public static function getValues(): array
     {
@@ -97,7 +185,7 @@ abstract class AbstractEnum
     /**
      * Check if a value is valid for this enum
      *
-     * @param string|int|float $value The value to check
+     * @param string|int $value The value to check
      * @return bool
      */
     public static function isValidValue($value): bool
@@ -106,28 +194,48 @@ abstract class AbstractEnum
     }
 
     /**
-     * Create an enum instance from a value
+     * Create an enum instance from a value (deprecated, use from() instead)
      *
-     * @param string|int|float $value The enum value
+     * @param string|int $value The enum value
      * @return static
      * @throws InvalidArgumentException If the value is not valid
+     * @deprecated Use from() method instead
      */
     public static function fromValue($value): self
     {
-        if (!self::isValidValue($value)) {
-            throw new InvalidArgumentException(
-                sprintf('Invalid value "%s" for enum %s', (string) $value, static::class)
-            );
+        return self::from($value);
+    }
+
+    /**
+     * Get or create a singleton instance for the given value and name
+     *
+     * @param string|int $value The enum value
+     * @param string $name The constant name
+     * @return static
+     * @phpstan-return static
+     */
+    private static function getInstance($value, string $name): self
+    {
+        $className = static::class;
+        $key = $name;
+
+        if (!isset(self::$instances[$className])) {
+            self::$instances[$className] = [];
         }
 
-        $className = static::class;
-        return new $className($value);
+        if (!isset(self::$instances[$className][$key])) {
+            $instance = new $className($value, $name);
+            self::$instances[$className][$key] = $instance;
+        }
+
+        /** @var static */
+        return self::$instances[$className][$key];
     }
 
     /**
      * Get all constants for this enum class
      *
-     * @return array<string, string|int|float>
+     * @return array<string, string|int>
      */
     protected static function getConstants(): array
     {
@@ -142,7 +250,7 @@ abstract class AbstractEnum
             foreach ($constants as $name => $value) {
                 if (
                     preg_match('/^[A-Z][A-Z0-9_]*$/', $name)
-                    && (is_string($value) || is_int($value) || is_float($value))
+                    && (is_string($value) || is_int($value))
                 ) {
                     $enumConstants[$name] = $value;
                 }
@@ -193,8 +301,7 @@ abstract class AbstractEnum
         $constants = self::getConstants();
 
         if (isset($constants[$constantName])) {
-            $className = static::class;
-            return new $className($constants[$constantName]);
+            return self::getInstance($constants[$constantName], $constantName);
         }
 
         throw new BadMethodCallException(
