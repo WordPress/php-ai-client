@@ -282,7 +282,7 @@ abstract class AbstractEnum
     }
 
     /**
-     * Handle dynamic method calls for enum creation and checking
+     * Handle dynamic method calls for enum checking
      *
      * @param string $name The method name
      * @param array<mixed> $arguments The method arguments
