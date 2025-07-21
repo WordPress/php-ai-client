@@ -58,7 +58,7 @@ abstract class AbstractEnum
      * @param string|int $value The enum value
      * @param string $name The constant name
      */
-    private function __construct($value, string $name)
+    final private function __construct($value, string $name)
     {
         $this->value = $value;
         $this->name = $name;
@@ -71,7 +71,7 @@ abstract class AbstractEnum
      * @return mixed
      * @throws BadMethodCallException If property doesn't exist
      */
-    public function __get(string $property)
+    final public function __get(string $property)
     {
         if ($property === 'value' || $property === 'name') {
             return $this->$property;
@@ -89,7 +89,7 @@ abstract class AbstractEnum
      * @param mixed $value The value to set
      * @throws BadMethodCallException Always, as enum properties are read-only
      */
-    public function __set(string $property, $value): void
+    final public function __set(string $property, $value): void
     {
         throw new BadMethodCallException(
             sprintf('Cannot modify property %s::%s - enum properties are read-only', static::class, $property)
@@ -103,7 +103,7 @@ abstract class AbstractEnum
      * @return static
      * @throws InvalidArgumentException If the value is not valid
      */
-    public static function from($value): self
+    final public static function from($value): self
     {
         $instance = self::tryFrom($value);
         if ($instance === null) {
@@ -120,7 +120,7 @@ abstract class AbstractEnum
      * @param string|int $value The enum value
      * @return static|null
      */
-    public static function tryFrom($value): ?self
+    final public static function tryFrom($value): ?self
     {
         $constants = self::getConstants();
         foreach ($constants as $name => $constantValue) {
@@ -136,7 +136,7 @@ abstract class AbstractEnum
      *
      * @return static[]
      */
-    public static function cases(): array
+    final public static function cases(): array
     {
         $cases = [];
         $constants = self::getConstants();
@@ -152,7 +152,7 @@ abstract class AbstractEnum
      * @param string|int|self $other The value or enum to compare
      * @return bool
      */
-    public function equals($other): bool
+    final public function equals($other): bool
     {
         if ($other instanceof self) {
             return $this->is($other);
@@ -167,7 +167,7 @@ abstract class AbstractEnum
      * @param self $other The other enum to compare
      * @return bool
      */
-    public function is(self $other): bool
+    final public function is(self $other): bool
     {
         return $this === $other; // Since we're using singletons, we can use identity comparison
     }
@@ -177,7 +177,7 @@ abstract class AbstractEnum
      *
      * @return array<string, string|int>
      */
-    public static function getValues(): array
+    final public static function getValues(): array
     {
         return self::getConstants();
     }
@@ -188,22 +188,9 @@ abstract class AbstractEnum
      * @param string|int $value The value to check
      * @return bool
      */
-    public static function isValidValue($value): bool
+    final public static function isValidValue($value): bool
     {
         return in_array($value, self::getValues(), true);
-    }
-
-    /**
-     * Create an enum instance from a value (deprecated, use from() instead)
-     *
-     * @param string|int $value The enum value
-     * @return static
-     * @throws InvalidArgumentException If the value is not valid
-     * @deprecated Use from() method instead
-     */
-    public static function fromValue($value): self
-    {
-        return self::from($value);
     }
 
     /**
@@ -212,7 +199,6 @@ abstract class AbstractEnum
      * @param string|int $value The enum value
      * @param string $name The constant name
      * @return static
-     * @phpstan-return static
      */
     private static function getInstance($value, string $name): self
     {
@@ -237,7 +223,7 @@ abstract class AbstractEnum
      * @return array<string, string|int>
      * @throws \RuntimeException If invalid constant found
      */
-    protected static function getConstants(): array
+    final protected static function getConstants(): array
     {
         $className = static::class;
 
@@ -289,7 +275,7 @@ abstract class AbstractEnum
      * @return bool
      * @throws BadMethodCallException If the method doesn't exist
      */
-    public function __call(string $name, array $arguments)
+    final public function __call(string $name, array $arguments): bool
     {
         // Handle is* methods
         if (strpos($name, 'is') === 0) {
@@ -314,7 +300,7 @@ abstract class AbstractEnum
      * @return static
      * @throws BadMethodCallException If the method doesn't exist
      */
-    public static function __callStatic(string $name, array $arguments)
+    final public static function __callStatic(string $name, array $arguments): self
     {
         $constantName = self::camelCaseToConstant($name);
         $constants = self::getConstants();
@@ -348,7 +334,7 @@ abstract class AbstractEnum
      *
      * @return string
      */
-    public function __toString(): string
+    final public function __toString(): string
     {
         return (string) $this->value;
     }
