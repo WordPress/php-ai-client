@@ -170,13 +170,6 @@ class AbstractEnumTest extends TestCase
         $this->assertFalse(ValidTestEnum::isValidValue(43));
     }
 
-    public function testFromValueDeprecatedMethod(): void
-    {
-        $enum = ValidTestEnum::fromValue('first');
-        $this->assertInstanceOf(ValidTestEnum::class, $enum);
-        $this->assertSame('first', $enum->value);
-    }
-
     public function testPropertiesAreReadOnly(): void
     {
         $enum = ValidTestEnum::firstName();
