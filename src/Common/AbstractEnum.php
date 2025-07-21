@@ -40,17 +40,17 @@ abstract class AbstractEnum
     /**
      * @var string The name of the enum constant
      */
-    private $name;
+    private string $name;
 
     /**
      * @var array<string, array<string, string|int>> Cache for reflection data
      */
-    private static $cache = [];
+    private static array $cache = [];
 
     /**
      * @var array<string, array<string, self>> Cache for enum instances
      */
-    private static $instances = [];
+    private static array $instances = [];
 
     /**
      * Constructor is private to ensure instances are created through static methods
