@@ -20,8 +20,12 @@
         "source": "https://github.com/WordPress/php-ai-client"
     },
     "require": {
-        "php": ">=7.4",
-        "ext-json": "*"
+        "php": ">=8.2",
+        "ext-json": "*",
+        "alle-ai/anthropic-api-php": "^1.3",
+        "google-gemini-php/client": "^2.5",
+        "guzzlehttp/guzzle": "^7.9",
+        "openai-php/client": "^0.14.0"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
@@ -43,11 +47,12 @@
     },
     "config": {
         "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "php-http/discovery": true
         },
         "optimize-autoloader": true,
         "platform": {
-            "php": "7.4"
+            "php": "8.2"
         },
         "sort-packages": true
     },
