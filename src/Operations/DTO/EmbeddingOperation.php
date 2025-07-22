@@ -49,10 +49,9 @@ class EmbeddingOperation implements OperationInterface
     }
 
     /**
-     * Get the operation ID
+     * {@inheritDoc}
      *
      * @since n.e.x.t
-     * @return string The unique identifier
      */
     public function getId(): string
     {
@@ -60,10 +59,9 @@ class EmbeddingOperation implements OperationInterface
     }
 
     /**
-     * Get the current state of the operation
+     * {@inheritDoc}
      *
      * @since n.e.x.t
-     * @return OperationStateEnum The operation state
      */
     public function getState(): OperationStateEnum
     {
@@ -82,10 +80,9 @@ class EmbeddingOperation implements OperationInterface
     }
 
     /**
-     * Get the JSON schema for this DTO
+     * {@inheritDoc}
      *
      * @since n.e.x.t
-     * @return array<string, mixed> The JSON schema
      */
     public static function getJsonSchema(): array
     {

@@ -76,10 +76,9 @@ class Message implements WithJsonSchema
     }
 
     /**
-     * Get the JSON schema for this DTO
+     * {@inheritDoc}
      *
      * @since n.e.x.t
-     * @return array<string, mixed> The JSON schema
      */
     public static function getJsonSchema(): array
     {

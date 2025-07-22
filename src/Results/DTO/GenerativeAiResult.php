@@ -57,10 +57,9 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Get the result ID
+     * {@inheritDoc}
      *
      * @since n.e.x.t
-     * @return string The unique identifier
      */
     public function getId(): string
     {
@@ -79,10 +78,9 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Get token usage information
+     * {@inheritDoc}
      *
      * @since n.e.x.t
-     * @return TokenUsage Token usage statistics
      */
     public function getTokenUsage(): TokenUsage
     {
@@ -90,10 +88,9 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Get provider-specific metadata
+     * {@inheritDoc}
      *
      * @since n.e.x.t
-     * @return array<string, mixed> Provider metadata
      */
     public function getProviderMetadata(): array
     {
@@ -273,10 +270,9 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Get the JSON schema for this DTO
+     * {@inheritDoc}
      *
      * @since n.e.x.t
-     * @return array<string, mixed> The JSON schema
      */
     public static function getJsonSchema(): array
     {
