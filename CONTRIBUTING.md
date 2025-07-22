@@ -25,7 +25,7 @@ All code must be properly documented with PHPDoc blocks following these standard
 ### General rules
 - All descriptions must end with a period.
 - Use `@since n.e.x.t` for new code (will be replaced with actual version on release).
-- Place `@since` tags below the description and above `@param` tags.
+- Place `@since` tags below the description and above `@param` tags, with spaces around it.
 
 ### Method documentation
 - Method descriptions must start with a third-person verb (e.g., "Creates", "Returns", "Checks").
@@ -49,6 +49,7 @@ class AuthHandler
      * Validates user credentials against the database.
      *
      * @since n.e.x.t
+     * 
      * @param string $username The username to validate.
      * @param string $password The password to validate.
      * @return bool True if credentials are valid, false otherwise.
