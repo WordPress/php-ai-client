@@ -10,6 +10,7 @@ use WordPress\AiClient\Common\AbstractEnum;
  * Enum for provider types.
  *
  * @since n.e.x.t
+ *
  * @method static self cloud() Creates an instance for CLOUD type.
  * @method static self server() Creates an instance for SERVER type.
  * @method static self client() Creates an instance for CLIENT type.

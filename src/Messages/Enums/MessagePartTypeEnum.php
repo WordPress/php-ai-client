@@ -10,6 +10,7 @@ use WordPress\AiClient\Common\AbstractEnum;
  * Enum for message part types.
  *
  * @since n.e.x.t
+ *
  * @method static self text() Creates an instance for TEXT type.
  * @method static self inlineFile() Creates an instance for INLINE_FILE type.
  * @method static self remoteFile() Creates an instance for REMOTE_FILE type.

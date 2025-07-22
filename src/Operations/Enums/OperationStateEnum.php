@@ -10,6 +10,7 @@ use WordPress\AiClient\Common\AbstractEnum;
  * Enum for operation states.
  *
  * @since n.e.x.t
+ *
  * @method static self starting() Creates an instance for STARTING state.
  * @method static self processing() Creates an instance for PROCESSING state.
  * @method static self succeeded() Creates an instance for SUCCEEDED state.
