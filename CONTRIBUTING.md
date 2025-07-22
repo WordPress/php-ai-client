@@ -25,7 +25,7 @@ All code must be properly documented with PHPDoc blocks following these standard
 ### General rules
 - All descriptions must end with a period.
 - Use `@since n.e.x.t` for new code (will be replaced with actual version on release).
-- Place `@since` tags below the description and above `@param` tags, with spaces around it.
+- Place `@since` tags below the description and above `@param` tags, with blank comment lines around it.
 
 ### Method documentation
 - Method descriptions must start with a third-person verb (e.g., "Creates", "Returns", "Checks").
