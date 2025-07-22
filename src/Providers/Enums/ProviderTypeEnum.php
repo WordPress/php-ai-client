@@ -21,17 +21,17 @@ use WordPress\AiClient\Common\AbstractEnum;
 class ProviderTypeEnum extends AbstractEnum
 {
     /**
-     * Cloud-based AI provider (e.g., OpenAI, Google, Anthropic).
+     * Cloud-based AI provider (e.g. models available via external REST APIs).
      */
     public const CLOUD = 'cloud';
 
     /**
-     * Server-side AI provider (e.g., self-hosted models).
+     * Server-side AI provider (e.g. self-hosted models).
      */
     public const SERVER = 'server';
 
     /**
-     * Client-side AI provider (e.g., browser-based models).
+     * Client-side AI provider (e.g. browser-based models).
      */
     public const CLIENT = 'client';
 }
