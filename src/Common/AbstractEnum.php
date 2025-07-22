@@ -9,7 +9,7 @@ use InvalidArgumentException;
 use ReflectionClass;
 
 /**
- * Abstract base class for enum-like behavior in PHP 7.4
+ * Abstract base class for enum-like behavior in PHP 7.4.
  *
  * This class provides enum-like functionality for PHP versions that don't support native enums.
  * Child classes should define uppercase snake_case constants for enum values.
@@ -35,22 +35,22 @@ use ReflectionClass;
 abstract class AbstractEnum
 {
     /**
-     * @var string The value of the enum instance
+     * @var string The value of the enum instance.
      */
     private string $value;
 
     /**
-     * @var string The name of the enum constant
+     * @var string The name of the enum constant.
      */
     private string $name;
 
     /**
-     * @var array<string, array<string, string>> Cache for reflection data
+     * @var array<string, array<string, string>> Cache for reflection data.
      */
     private static array $cache = [];
 
     /**
-     * @var array<string, array<string, self>> Cache for enum instances
+     * @var array<string, array<string, self>> Cache for enum instances.
      */
     private static array $instances = [];
 
