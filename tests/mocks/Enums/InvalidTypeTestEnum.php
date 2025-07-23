@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Common;
+namespace WordPress\AiClient\Tests\mocks\Enums;
 
 use WordPress\AiClient\Common\AbstractEnum;
 
 /**
- * Invalid test enum with float value
+ * Invalid test enum with float value.
  */
 class InvalidTypeTestEnum extends AbstractEnum
 {
     public const VALID_VALUE = 'valid';
-    public const FLOAT_VALUE = 3.14; // This should cause an exception
+    public const INT_VALUE = 42; // This should cause an exception
 }

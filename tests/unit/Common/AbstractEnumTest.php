@@ -8,12 +8,18 @@ use BadMethodCallException;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use WordPress\AiClient\Tests\mocks\Enums\InvalidNameTestEnum;
+use WordPress\AiClient\Tests\mocks\Enums\InvalidTypeTestEnum;
+use WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum;
 
 /**
  * @covers \WordPress\AiClient\Common\AbstractEnum
  */
 class AbstractEnumTest extends TestCase
 {
+    /**
+     * Tests that from() creates an enum instance with a valid value.
+     */
     public function testFromWithValidValue(): void
     {
         $enum = ValidTestEnum::from('first');
@@ -22,21 +28,20 @@ class AbstractEnumTest extends TestCase
         $this->assertSame('FIRST_NAME', $enum->name);
     }
 
-    public function testFromWithValidIntValue(): void
-    {
-        $enum = ValidTestEnum::from(42);
-        $this->assertInstanceOf(ValidTestEnum::class, $enum);
-        $this->assertSame(42, $enum->value);
-        $this->assertSame('AGE', $enum->name);
-    }
 
+    /**
+     * Tests that from() throws an exception for invalid values.
+     */
     public function testFromWithInvalidValueThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('invalid is not a valid backing value for enum WordPress\AiClient\Tests\unit\Common\ValidTestEnum');
+        $this->expectExceptionMessage('invalid is not a valid backing value for enum WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum');
         ValidTestEnum::from('invalid');
     }
 
+    /**
+     * Tests that tryFrom() returns an enum instance for valid values.
+     */
     public function testTryFromWithValidValue(): void
     {
         $enum = ValidTestEnum::tryFrom('first');
@@ -44,28 +49,35 @@ class AbstractEnumTest extends TestCase
         $this->assertSame('first', $enum->value);
     }
 
+    /**
+     * Tests that tryFrom() returns null for invalid values.
+     */
     public function testTryFromWithInvalidValueReturnsNull(): void
     {
         $enum = ValidTestEnum::tryFrom('invalid');
         $this->assertNull($enum);
     }
 
+    /**
+     * Tests that cases() returns all enum instances.
+     */
     public function testCasesReturnsAllEnumInstances(): void
     {
         $cases = ValidTestEnum::cases();
-        $this->assertCount(3, $cases);
+        $this->assertCount(2, $cases);
 
         $values = array_map(fn($case) => $case->value, $cases);
         $this->assertContains('first', $values);
         $this->assertContains('last', $values);
-        $this->assertContains(42, $values);
 
         $names = array_map(fn($case) => $case->name, $cases);
         $this->assertContains('FIRST_NAME', $names);
         $this->assertContains('LAST_NAME', $names);
-        $this->assertContains('AGE', $names);
     }
 
+    /**
+     * Tests that enum instances are singletons.
+     */
     public function testSingletonBehavior(): void
     {
         $enum1 = ValidTestEnum::from('first');
@@ -76,6 +88,9 @@ class AbstractEnumTest extends TestCase
         $this->assertSame($enum1, $enum3);
     }
 
+    /**
+     * Tests static factory methods for creating enum instances.
+     */
     public function testStaticFactoryMethods(): void
     {
         $firstName = ValidTestEnum::firstName();
@@ -85,41 +100,48 @@ class AbstractEnumTest extends TestCase
         $lastName = ValidTestEnum::lastName();
         $this->assertSame('last', $lastName->value);
         $this->assertSame('LAST_NAME', $lastName->name);
-
-        $age = ValidTestEnum::age();
-        $this->assertSame(42, $age->value);
-        $this->assertSame('AGE', $age->name);
     }
 
+    /**
+     * Tests that invalid static methods throw exceptions.
+     */
     public function testInvalidStaticMethodThrowsException(): void
     {
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage(
-            'Method WordPress\AiClient\Tests\unit\Common\ValidTestEnum::invalidMethod does not exist'
+            'Method WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum::invalidMethod does not exist'
         );
         ValidTestEnum::invalidMethod();
     }
 
+    /**
+     * Tests the is* check methods.
+     */
     public function testIsCheckMethods(): void
     {
         $enum = ValidTestEnum::firstName();
 
         $this->assertTrue($enum->isFirstName());
         $this->assertFalse($enum->isLastName());
-        $this->assertFalse($enum->isAge());
     }
 
+    /**
+     * Tests that invalid is* methods throw exceptions.
+     */
     public function testInvalidIsMethodThrowsException(): void
     {
         $enum = ValidTestEnum::firstName();
 
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage(
-            'Method WordPress\AiClient\Tests\unit\Common\ValidTestEnum::isInvalidMethod does not exist'
+            'Method WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum::isInvalidMethod does not exist'
         );
         $enum->isInvalidMethod();
     }
 
+    /**
+     * Tests the equals() method with various values.
+     */
     public function testEqualsWithSameValue(): void
     {
         $enum = ValidTestEnum::firstName();
@@ -130,15 +152,10 @@ class AbstractEnumTest extends TestCase
         $this->assertFalse($enum->equals(ValidTestEnum::lastName()));
     }
 
-    public function testEqualsWithIntValue(): void
-    {
-        $enum = ValidTestEnum::age();
 
-        $this->assertTrue($enum->equals(42));
-        $this->assertFalse($enum->equals('42')); // Strict comparison
-        $this->assertFalse($enum->equals(43));
-    }
-
+    /**
+     * Tests the is() method for identity comparison.
+     */
     public function testIsMethodForIdentityComparison(): void
     {
         $enum1 = ValidTestEnum::firstName();
@@ -149,6 +166,9 @@ class AbstractEnumTest extends TestCase
         $this->assertFalse($enum1->is($enum3)); // Different instance
     }
 
+    /**
+     * Tests that getValues() returns all valid enum values.
+     */
     public function testGetValuesReturnsAllValidValues(): void
     {
         $values = ValidTestEnum::getValues();
@@ -156,69 +176,82 @@ class AbstractEnumTest extends TestCase
         $this->assertSame([
             'FIRST_NAME' => 'first',
             'LAST_NAME' => 'last',
-            'AGE' => 42,
         ], $values);
     }
 
+    /**
+     * Tests the isValidValue() method.
+     */
     public function testIsValidValue(): void
     {
         $this->assertTrue(ValidTestEnum::isValidValue('first'));
         $this->assertTrue(ValidTestEnum::isValidValue('last'));
-        $this->assertTrue(ValidTestEnum::isValidValue(42));
 
         $this->assertFalse(ValidTestEnum::isValidValue('invalid'));
-        $this->assertFalse(ValidTestEnum::isValidValue(43));
     }
 
+    /**
+     * Tests that enum properties are read-only.
+     */
     public function testPropertiesAreReadOnly(): void
     {
         $enum = ValidTestEnum::firstName();
 
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage(
-            'Cannot modify property WordPress\AiClient\Tests\unit\Common\ValidTestEnum::value - enum properties are read-only'
+            'Cannot modify property WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum::value - enum properties are read-only'
         );
         $enum->value = 'modified';
     }
 
+    /**
+     * Tests that accessing invalid properties throws exceptions.
+     */
     public function testInvalidPropertyAccessThrowsException(): void
     {
         $enum = ValidTestEnum::firstName();
 
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage(
-            'Property WordPress\AiClient\Tests\unit\Common\ValidTestEnum::invalid does not exist'
+            'Property WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum::invalid does not exist'
         );
         $enum->invalid;
     }
 
+    /**
+     * Tests the __toString() method.
+     */
     public function testToString(): void
     {
         $stringEnum = ValidTestEnum::firstName();
-        $intEnum = ValidTestEnum::age();
 
         $this->assertSame('first', (string) $stringEnum);
-        $this->assertSame('42', (string) $intEnum);
     }
 
+    /**
+     * Tests that invalid constant names throw exceptions.
+     */
     public function testInvalidConstantNameThrowsException(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
             'Invalid enum constant name "invalid_name" in ' .
-            'WordPress\AiClient\Tests\unit\Common\InvalidNameTestEnum. Constants must be UPPER_SNAKE_CASE.'
+            'WordPress\AiClient\Tests\mocks\Enums\InvalidNameTestEnum. Constants must be UPPER_SNAKE_CASE.'
         );
 
         InvalidNameTestEnum::cases();
     }
 
+    /**
+     * Tests that invalid constant types throw exceptions.
+     */
     public function testInvalidConstantTypeThrowsException(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
             'Invalid enum value type for constant ' .
-            'WordPress\AiClient\Tests\unit\Common\InvalidTypeTestEnum::FLOAT_VALUE. ' .
-            'Only string and int values are allowed, double given.'
+            'WordPress\AiClient\Tests\mocks\Enums\InvalidTypeTestEnum::INT_VALUE. ' .
+            'Only string values are allowed, integer given.'
         );
 
         InvalidTypeTestEnum::cases();

@@ -18,6 +18,49 @@ The following naming conventions must be followed for consistency and autoloadin
 - File names are the same as the class, trait, and interface name for PSR-4 autoloading.
 - Classes, interfaces, and traits, and namespaces are not prefixed with `Ai`, exluding the root namespace.
 
+## Documentation standards
+
+All code must be properly documented with PHPDoc blocks following these standards:
+
+### General rules
+- All descriptions must end with a period.
+- Use `@since n.e.x.t` for new code (will be replaced with actual version on release).
+- Place `@since` tags below the description and above `@param` tags, with blank comment lines around it.
+
+### Method documentation
+- Method descriptions must start with a third-person verb (e.g., "Creates", "Returns", "Checks").
+- Exceptions: Constructors and magic methods may use different phrasing.
+- All `@return` annotations must include a description.
+
+### Interface implementations
+- Use `{@inheritDoc}` instead of duplicating descriptions when implementing interface methods.
+- Only provide a unique description if it adds value beyond the interface documentation.
+
+### Example
+```php
+/**
+ * Class for handling user authentication requests.
+ *
+ * @since n.e.x.t
+ */
+class AuthHandler
+{
+    /**
+     * Validates user credentials against the database.
+     *
+     * @since n.e.x.t
+     * 
+     * @param string $username The username to validate.
+     * @param string $password The password to validate.
+     * @return bool True if credentials are valid, false otherwise.
+     */
+    public function validate(string $username, string $password): bool
+    {
+        // Implementation
+    }
+}
+```
+
 ## PHP Compatibility
 
 All code must be backward compatible with PHP 7.4, which is the minimum required PHP version for this project.

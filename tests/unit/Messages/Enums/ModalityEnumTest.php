@@ -15,11 +15,21 @@ class ModalityEnumTest extends TestCase
 {
     use EnumTestTrait;
 
+    /**
+     * Gets the enum class to test.
+     *
+     * @return string
+     */
     protected function getEnumClass(): string
     {
         return ModalityEnum::class;
     }
 
+    /**
+     * Gets the expected enum values.
+     *
+     * @return array
+     */
     protected function getExpectedValues(): array
     {
         return [
@@ -31,6 +41,11 @@ class ModalityEnumTest extends TestCase
         ];
     }
 
+    /**
+     * Tests the specific enum methods.
+     *
+     * @return void
+     */
     public function testSpecificEnumMethods(): void
     {
         $text = ModalityEnum::text();

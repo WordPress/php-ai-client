@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Common;
+namespace WordPress\AiClient\Tests\mocks\Enums;
 
 use WordPress\AiClient\Common\AbstractEnum;
 
 /**
- * Invalid test enum with lowercase constant name
+ * Invalid test enum with lowercase constant name.
  */
 class InvalidNameTestEnum extends AbstractEnum
 {

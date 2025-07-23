@@ -15,11 +15,21 @@ class CapabilityEnumTest extends TestCase
 {
     use EnumTestTrait;
 
+    /**
+     * Gets the enum class to test.
+     *
+     * @return string
+     */
     protected function getEnumClass(): string
     {
         return CapabilityEnum::class;
     }
 
+    /**
+     * Gets the expected enum values.
+     *
+     * @return array
+     */
     protected function getExpectedValues(): array
     {
         return [
@@ -34,6 +44,11 @@ class CapabilityEnumTest extends TestCase
         ];
     }
 
+    /**
+     * Tests the specific enum methods.
+     *
+     * @return void
+     */
     public function testSpecificEnumMethods(): void
     {
         $textGen = CapabilityEnum::textGeneration();

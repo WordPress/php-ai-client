@@ -7,44 +7,45 @@ namespace WordPress\AiClient\Messages\Enums;
 use WordPress\AiClient\Common\AbstractEnum;
 
 /**
- * Enum for input/output modalities
+ * Enum for input/output modalities.
  *
  * @since n.e.x.t
- * @method static self text() Create an instance for TEXT modality
- * @method static self document() Create an instance for DOCUMENT modality
- * @method static self image() Create an instance for IMAGE modality
- * @method static self audio() Create an instance for AUDIO modality
- * @method static self video() Create an instance for VIDEO modality
- * @method bool isText() Check if the modality is TEXT
- * @method bool isDocument() Check if the modality is DOCUMENT
- * @method bool isImage() Check if the modality is IMAGE
- * @method bool isAudio() Check if the modality is AUDIO
- * @method bool isVideo() Check if the modality is VIDEO
+ *
+ * @method static self text() Creates an instance for TEXT modality.
+ * @method static self document() Creates an instance for DOCUMENT modality.
+ * @method static self image() Creates an instance for IMAGE modality.
+ * @method static self audio() Creates an instance for AUDIO modality.
+ * @method static self video() Creates an instance for VIDEO modality.
+ * @method bool isText() Checks if the modality is TEXT.
+ * @method bool isDocument() Checks if the modality is DOCUMENT.
+ * @method bool isImage() Checks if the modality is IMAGE.
+ * @method bool isAudio() Checks if the modality is AUDIO.
+ * @method bool isVideo() Checks if the modality is VIDEO.
  */
 class ModalityEnum extends AbstractEnum
 {
     /**
-     * Text modality
+     * Text modality.
      */
     public const TEXT = 'text';
 
     /**
-     * Document modality (PDFs, Word docs, etc.)
+     * Document modality (PDFs, Word docs, etc.).
      */
     public const DOCUMENT = 'document';
 
     /**
-     * Image modality
+     * Image modality.
      */
     public const IMAGE = 'image';
 
     /**
-     * Audio modality
+     * Audio modality.
      */
     public const AUDIO = 'audio';
 
     /**
-     * Video modality
+     * Video modality.
      */
     public const VIDEO = 'video';
 }

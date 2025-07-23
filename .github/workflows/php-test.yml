@@ -4,14 +4,34 @@ on:
   push:
     branches:
       - trunk
+      - 'feature/**'
+      - 'release/**'
+    # Only run if PHP-related files changed.
+    paths:
+      - '.github/workflows/php-test.yml'
+      - '**.php'
+      - 'phpunit.xml.dist'
+      - 'composer.json'
+      - 'composer.lock'
   pull_request:
+    # Only run if PHP-related files changed.
+    paths:
+      - '.github/workflows/php-test.yml'
+      - '**.php'
+      - 'phpunit.xml.dist'
+      - 'composer.json'
+      - 'composer.lock'
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: ['7.4', '8.4']
+        php-version: ['7.4', '8.0', '8.4']
 
     steps:
     - uses: actions/checkout@v4

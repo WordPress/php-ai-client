@@ -7,24 +7,27 @@ namespace WordPress\AiClient\Tests\unit;
 use WordPress\AiClient\Common\AbstractEnum;
 
 /**
- * Trait for testing enum classes
+ * Trait for testing enum classes.
  */
 trait EnumTestTrait
 {
     /**
-     * Get the enum class name to test
+     * Gets the enum class name to test.
      *
-     * @return class-string<AbstractEnum>
+     * @return class-string<AbstractEnum> The enum class name.
      */
     abstract protected function getEnumClass(): string;
 
     /**
-     * Get expected enum values and their constant names
+     * Gets expected enum values and their constant names.
      *
-     * @return array<string, string|int> Array of CONSTANT_NAME => value
+     * @return array<string, string> Array of CONSTANT_NAME => value.
      */
     abstract protected function getExpectedValues(): array;
 
+    /**
+     * Tests that the enum has expected values.
+     */
     public function testEnumHasExpectedValues(): void
     {
         $enumClass = $this->getEnumClass();
@@ -35,6 +38,9 @@ trait EnumTestTrait
         $this->assertEquals($expectedValues, $actualValues);
     }
 
+    /**
+     * Tests that enum cases return correct instances.
+     */
     public function testEnumCasesReturnCorrectInstances(): void
     {
         $enumClass = $this->getEnumClass();
@@ -52,6 +58,9 @@ trait EnumTestTrait
         }
     }
 
+    /**
+     * Tests that the from() method works correctly.
+     */
     public function testEnumFromMethodWorks(): void
     {
         $enumClass = $this->getEnumClass();
@@ -65,6 +74,9 @@ trait EnumTestTrait
         }
     }
 
+    /**
+     * Tests that the tryFrom() method works correctly.
+     */
     public function testEnumTryFromMethodWorks(): void
     {
         $enumClass = $this->getEnumClass();
@@ -80,6 +92,9 @@ trait EnumTestTrait
         $this->assertNull($invalidEnum);
     }
 
+    /**
+     * Tests enum singleton behavior.
+     */
     public function testEnumSingletonBehavior(): void
     {
         $enumClass = $this->getEnumClass();
@@ -97,6 +112,9 @@ trait EnumTestTrait
         $this->assertSame($enum1, $enum2);
     }
 
+    /**
+     * Tests that enum properties are read-only.
+     */
     public function testEnumPropertiesAreReadOnly(): void
     {
         $enumClass = $this->getEnumClass();

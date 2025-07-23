@@ -15,11 +15,21 @@ class MessageRoleEnumTest extends TestCase
 {
     use EnumTestTrait;
 
+    /**
+     * Gets the enum class to test.
+     *
+     * @return string
+     */
     protected function getEnumClass(): string
     {
         return MessageRoleEnum::class;
     }
 
+    /**
+     * Gets the expected enum values.
+     *
+     * @return array
+     */
     protected function getExpectedValues(): array
     {
         return [
@@ -29,6 +39,11 @@ class MessageRoleEnumTest extends TestCase
         ];
     }
 
+    /**
+     * Tests the specific enum methods.
+     *
+     * @return void
+     */
     public function testSpecificEnumMethods(): void
     {
         $user = MessageRoleEnum::user();

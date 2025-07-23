@@ -23,8 +23,5 @@
         <include>
             <directory suffix=".php">src</directory>
         </include>
-        <exclude>
-            <file>src/DummyForAnalysis.php</file>
-        </exclude>
     </coverage>
 </phpunit>
