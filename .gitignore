@@ -21,3 +21,9 @@ vendor/
 CLAUDE.md
 .cursor/
 GEMINI.md
+
+############
+## PHPUnit
+############
+
+.phpunit.cache/
