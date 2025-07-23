@@ -8,19 +8,17 @@ on:
       - 'release/**'
     # Only run if PHP-related files changed.
     paths:
-      - '.github/workflows/php-lint.yml'
+      - '.github/workflows/php-test.yml'
       - '**.php'
-      - 'phpcs.xml.dist'
-      - 'phpstan.neon.dist'
+      - 'phpunit.xml.dist'
       - 'composer.json'
       - 'composer.lock'
   pull_request:
     # Only run if PHP-related files changed.
     paths:
-      - '.github/workflows/php-lint.yml'
+      - '.github/workflows/php-test.yml'
       - '**.php'
-      - 'phpcs.xml.dist'
-      - 'phpstan.neon.dist'
+      - 'phpunit.xml.dist'
       - 'composer.json'
       - 'composer.lock'
     types:
