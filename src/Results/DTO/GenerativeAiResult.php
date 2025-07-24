@@ -274,6 +274,35 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
+     * Converts all candidates to files.
+     *
+     * @since n.e.x.t
+     *
+     * @return FileInterface[] Array of files.
+     */
+    public function toFiles(): array
+    {
+        $files = [];
+        foreach ($this->candidates as $candidate) {
+            $message = $candidate->getMessage();
+            foreach ($message->getParts() as $part) {
+                $inlineFile = $part->getInlineFile();
+                if ($inlineFile !== null) {
+                    $files[] = $inlineFile;
+                    break;
+                }
+
+                $remoteFile = $part->getRemoteFile();
+                if ($remoteFile !== null) {
+                    $files[] = $remoteFile;
+                    break;
+                }
+            }
+        }
+        return $files;
+    }
+
+    /**
      * Converts all candidates to image files.
      *
      * @since n.e.x.t
@@ -282,24 +311,10 @@ class GenerativeAiResult implements ResultInterface
      */
     public function toImageFiles(): array
     {
-        $files = [];
-        foreach ($this->candidates as $candidate) {
-            $message = $candidate->getMessage();
-            foreach ($message->getParts() as $part) {
-                $inlineFile = $part->getInlineFile();
-                if ($inlineFile !== null && $inlineFile->getMimeType()->isImage()) {
-                    $files[] = $inlineFile;
-                    break;
-                }
-
-                $remoteFile = $part->getRemoteFile();
-                if ($remoteFile !== null && $remoteFile->getMimeType()->isImage()) {
-                    $files[] = $remoteFile;
-                    break;
-                }
-            }
-        }
-        return $files;
+        return array_filter(
+            $this->toFiles(),
+            fn(FileInterface $file) => $file->getMimeType()->isImage()
+        );
     }
 
     /**
@@ -311,24 +326,10 @@ class GenerativeAiResult implements ResultInterface
      */
     public function toAudioFiles(): array
     {
-        $files = [];
-        foreach ($this->candidates as $candidate) {
-            $message = $candidate->getMessage();
-            foreach ($message->getParts() as $part) {
-                $inlineFile = $part->getInlineFile();
-                if ($inlineFile !== null && $inlineFile->getMimeType()->isAudio()) {
-                    $files[] = $inlineFile;
-                    break;
-                }
-
-                $remoteFile = $part->getRemoteFile();
-                if ($remoteFile !== null && $remoteFile->getMimeType()->isAudio()) {
-                    $files[] = $remoteFile;
-                    break;
-                }
-            }
-        }
-        return $files;
+        return array_filter(
+            $this->toFiles(),
+            fn(FileInterface $file) => $file->getMimeType()->isAudio()
+        );
     }
 
     /**
@@ -340,24 +341,10 @@ class GenerativeAiResult implements ResultInterface
      */
     public function toVideoFiles(): array
     {
-        $files = [];
-        foreach ($this->candidates as $candidate) {
-            $message = $candidate->getMessage();
-            foreach ($message->getParts() as $part) {
-                $inlineFile = $part->getInlineFile();
-                if ($inlineFile !== null && $inlineFile->getMimeType()->isVideo()) {
-                    $files[] = $inlineFile;
-                    break;
-                }
-
-                $remoteFile = $part->getRemoteFile();
-                if ($remoteFile !== null && $remoteFile->getMimeType()->isVideo()) {
-                    $files[] = $remoteFile;
-                    break;
-                }
-            }
-        }
-        return $files;
+        return array_filter(
+            $this->toFiles(),
+            fn(FileInterface $file) => $file->getMimeType()->isVideo()
+        );
     }
 
     /**
