@@ -108,7 +108,7 @@ final class MimeType
             );
         }
 
-        $this->value = $value;
+        $this->value = strtolower($value);
     }
 
     /**
@@ -236,7 +236,13 @@ final class MimeType
             return $this->value === $other->value;
         }
 
-        return $this->value === $other;
+        if (is_string($other)) {
+            return $this->value === strtolower($other);
+        }
+
+        throw new \InvalidArgumentException(
+            sprintf('Invalid MIME type comparison: %s', gettype($other))
+        );
     }
 
     /**
