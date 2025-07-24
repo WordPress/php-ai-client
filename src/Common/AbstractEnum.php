@@ -30,6 +30,9 @@ use ReflectionClass;
  * $enum->is(PersonEnum::firstName()); // Returns true
  * PersonEnum::cases(); // Returns array of all enum instances
  *
+ * @property-read string $value The value of the enum instance.
+ * @property-read string $name The name of the enum constant.
+ *
  * @since n.e.x.t
  */
 abstract class AbstractEnum
