@@ -34,4 +34,20 @@ trait HasMimeType
     {
         return $this->mimeType;
     }
+
+    /**
+     * Gets the JSON schema for the MIME type property.
+     *
+     * @return array{type: string, description: string, pattern: string} The JSON schema for the mimeType property.
+     *
+     * @since n.e.x.t
+     */
+    protected static function getMimeTypePropertySchema(): array
+    {
+        return [
+            'type' => 'string',
+            'description' => 'The MIME type of the file.',
+            'pattern' => '^[a-zA-Z0-9][a-zA-Z0-9!#$&\\-\\^_+.]*\\/[a-zA-Z0-9][a-zA-Z0-9!#$&\\-\\^_+.]*$',
+        ];
+    }
 }

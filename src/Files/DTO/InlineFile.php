@@ -79,11 +79,7 @@ class InlineFile implements FileInterface, WithJsonSchemaInterface
         return [
             'type' => 'object',
             'properties' => [
-                'mimeType' => [
-                    'type' => 'string',
-                    'description' => 'The MIME type of the file.',
-                    'pattern' => '^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*$',
-                ],
+                'mimeType' => self::getMimeTypePropertySchema(),
                 'base64Data' => [
                     'type' => 'string',
                     'description' => 'The base64-encoded file data.',
