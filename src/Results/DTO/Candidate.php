@@ -104,7 +104,7 @@ class Candidate implements WithJsonSchemaInterface
                 'message' => Message::getJsonSchema(),
                 'finishReason' => [
                     'type' => 'string',
-                    'enum' => ['stop', 'length', 'content_filter', 'tool_calls', 'error'],
+                    'enum' => FinishReasonEnum::getValues(),
                     'description' => 'The reason generation stopped.',
                 ],
                 'tokenCount' => [
