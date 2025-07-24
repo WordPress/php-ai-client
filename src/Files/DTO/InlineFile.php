@@ -30,13 +30,13 @@ class InlineFile implements FileInterface, WithJsonSchemaInterface
      *
      * @since n.e.x.t
      *
-     * @param string $mimeType The MIME type of the file.
      * @param string $base64Data The base64-encoded file data.
+     * @param string $mimeType The MIME type of the file.
      */
-    public function __construct(string $mimeType, string $base64Data)
+    public function __construct(string $base64Data, string $mimeType)
     {
-        $this->mimeType = $mimeType;
         $this->base64Data = $base64Data;
+        $this->mimeType = $mimeType;
     }
 
     /**

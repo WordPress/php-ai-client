@@ -30,13 +30,13 @@ class LocalFile implements FileInterface, WithJsonSchemaInterface
      *
      * @since n.e.x.t
      *
-     * @param string $mimeType The MIME type of the file.
      * @param string $path The local filesystem path to the file.
+     * @param string $mimeType The MIME type of the file.
      */
-    public function __construct(string $mimeType, string $path)
+    public function __construct(string $path, string $mimeType)
     {
-        $this->mimeType = $mimeType;
         $this->path = $path;
+        $this->mimeType = $mimeType;
     }
 
     /**

@@ -30,13 +30,13 @@ class RemoteFile implements FileInterface, WithJsonSchemaInterface
      *
      * @since n.e.x.t
      *
-     * @param string $mimeType The MIME type of the file.
      * @param string $url The URL to the remote file.
+     * @param string $mimeType The MIME type of the file.
      */
-    public function __construct(string $mimeType, string $url)
+    public function __construct(string $url, string $mimeType)
     {
-        $this->mimeType = $mimeType;
         $this->url = $url;
+        $this->mimeType = $mimeType;
     }
 
     /**
