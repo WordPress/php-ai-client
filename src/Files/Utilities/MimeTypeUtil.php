@@ -101,4 +101,81 @@ class MimeTypeUtil
 
         return self::$mimeTypes[$extension] ?? 'text/plain';
     }
+
+    /**
+     * Checks if a MIME type is an image type.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $mimeType The MIME type to check.
+     * @return bool True if the MIME type is an image type.
+     */
+    public static function isImageType(string $mimeType): bool
+    {
+        return strpos($mimeType, 'image/') === 0;
+    }
+
+    /**
+     * Checks if a MIME type is an audio type.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $mimeType The MIME type to check.
+     * @return bool True if the MIME type is an audio type.
+     */
+    public static function isAudioType(string $mimeType): bool
+    {
+        return strpos($mimeType, 'audio/') === 0;
+    }
+
+    /**
+     * Checks if a MIME type is a video type.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $mimeType The MIME type to check.
+     * @return bool True if the MIME type is a video type.
+     */
+    public static function isVideoType(string $mimeType): bool
+    {
+        return strpos($mimeType, 'video/') === 0;
+    }
+
+    /**
+     * Checks if a MIME type is a text type.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $mimeType The MIME type to check.
+     * @return bool True if the MIME type is a text type.
+     */
+    public static function isTextType(string $mimeType): bool
+    {
+        return strpos($mimeType, 'text/') === 0;
+    }
+
+    /**
+     * Checks if a MIME type is a document type.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $mimeType The MIME type to check.
+     * @return bool True if the MIME type is a document type.
+     */
+    public static function isDocumentType(string $mimeType): bool
+    {
+        $documentTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/vnd.oasis.opendocument.text',
+            'application/vnd.oasis.opendocument.spreadsheet',
+        ];
+
+        return in_array($mimeType, $documentTypes, true);
+    }
 }

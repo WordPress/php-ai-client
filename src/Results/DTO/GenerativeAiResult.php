@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Results\DTO;
 
 use WordPress\AiClient\Files\Contracts\FileInterface;
+use WordPress\AiClient\Files\Utilities\MimeTypeUtil;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
@@ -48,9 +49,14 @@ class GenerativeAiResult implements ResultInterface
      * @param Candidate[] $candidates The generated candidates.
      * @param TokenUsage $tokenUsage Token usage statistics.
      * @param array<string, mixed> $providerMetadata Provider-specific metadata.
+     * @throws \InvalidArgumentException If no candidates provided.
      */
     public function __construct(string $id, array $candidates, TokenUsage $tokenUsage, array $providerMetadata = [])
     {
+        if (empty($candidates)) {
+            throw new \InvalidArgumentException('At least one candidate must be provided');
+        }
+
         $this->id = $id;
         $this->candidates = $candidates;
         $this->tokenUsage = $tokenUsage;
@@ -100,27 +106,74 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
+     * Gets the total number of candidates.
+     *
+     * @since n.e.x.t
+     *
+     * @return int The total number of candidates.
+     */
+    public function getTotalCandidates(): int
+    {
+        return count($this->candidates);
+    }
+
+    /**
+     * Checks if the result has multiple candidates.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if there are multiple candidates, false otherwise.
+     */
+    public function hasMultipleCandidates(): bool
+    {
+        return count($this->candidates) > 1;
+    }
+
+    /**
      * Converts the first candidate to text.
      *
      * @since n.e.x.t
      *
      * @return string The text content.
-     * @throws \RuntimeException If no candidates or no text content.
+     * @throws \RuntimeException If no text content.
      */
     public function toText(): string
     {
-        if (empty($this->candidates)) {
-            throw new \RuntimeException('No candidates available');
-        }
-
         $message = $this->candidates[0]->getMessage();
         foreach ($message->getParts() as $part) {
-            if ($part->getType()->equals(MessagePartTypeEnum::text()) && $part->getText() !== null) {
-                return $part->getText();
+            $text = $part->getText();
+            if ($text !== null) {
+                return $text;
             }
         }
 
         throw new \RuntimeException('No text content found in first candidate');
+    }
+
+    /**
+     * Converts the first candidate to a file.
+     *
+     * @since n.e.x.t
+     *
+     * @return FileInterface The file.
+     * @throws \RuntimeException If no file content.
+     */
+    public function toFile(): FileInterface
+    {
+        $message = $this->candidates[0]->getMessage();
+        foreach ($message->getParts() as $part) {
+            $inlineFile = $part->getInlineFile();
+            if ($inlineFile !== null) {
+                return $inlineFile;
+            }
+
+            $remoteFile = $part->getRemoteFile();
+            if ($remoteFile !== null) {
+                return $remoteFile;
+            }
+        }
+
+        throw new \RuntimeException('No file content found in first candidate');
     }
 
     /**
@@ -129,25 +182,19 @@ class GenerativeAiResult implements ResultInterface
      * @since n.e.x.t
      *
      * @return FileInterface The image file.
-     * @throws \RuntimeException If no candidates or no image content.
+     * @throws \RuntimeException If no image content.
      */
     public function toImageFile(): FileInterface
     {
-        if (empty($this->candidates)) {
-            throw new \RuntimeException('No candidates available');
+        $file = $this->toFile();
+
+        if (!MimeTypeUtil::isImageType($file->getMimeType())) {
+            throw new \RuntimeException(
+                sprintf('File is not an image. MIME type: %s', $file->getMimeType())
+            );
         }
 
-        $message = $this->candidates[0]->getMessage();
-        foreach ($message->getParts() as $part) {
-            if ($part->getType()->equals(MessagePartTypeEnum::inlineFile()) && $part->getInlineFile() !== null) {
-                return $part->getInlineFile();
-            }
-            if ($part->getType()->equals(MessagePartTypeEnum::remoteFile()) && $part->getRemoteFile() !== null) {
-                return $part->getRemoteFile();
-            }
-        }
-
-        throw new \RuntimeException('No image content found in first candidate');
+        return $file;
     }
 
     /**
@@ -156,12 +203,19 @@ class GenerativeAiResult implements ResultInterface
      * @since n.e.x.t
      *
      * @return FileInterface The audio file.
-     * @throws \RuntimeException If no candidates or no audio content.
+     * @throws \RuntimeException If no audio content.
      */
     public function toAudioFile(): FileInterface
     {
-        // Similar implementation to toImageFile, but checking for audio MIME types
-        return $this->toImageFile(); // Simplified for now
+        $file = $this->toFile();
+
+        if (!MimeTypeUtil::isAudioType($file->getMimeType())) {
+            throw new \RuntimeException(
+                sprintf('File is not an audio file. MIME type: %s', $file->getMimeType())
+            );
+        }
+
+        return $file;
     }
 
     /**
@@ -170,12 +224,19 @@ class GenerativeAiResult implements ResultInterface
      * @since n.e.x.t
      *
      * @return FileInterface The video file.
-     * @throws \RuntimeException If no candidates or no video content.
+     * @throws \RuntimeException If no video content.
      */
     public function toVideoFile(): FileInterface
     {
-        // Similar implementation to toImageFile, but checking for video MIME types
-        return $this->toImageFile(); // Simplified for now
+        $file = $this->toFile();
+
+        if (!MimeTypeUtil::isVideoType($file->getMimeType())) {
+            throw new \RuntimeException(
+                sprintf('File is not a video file. MIME type: %s', $file->getMimeType())
+            );
+        }
+
+        return $file;
     }
 
     /**
@@ -184,14 +245,9 @@ class GenerativeAiResult implements ResultInterface
      * @since n.e.x.t
      *
      * @return Message The message.
-     * @throws \RuntimeException If no candidates available.
      */
     public function toMessage(): Message
     {
-        if (empty($this->candidates)) {
-            throw new \RuntimeException('No candidates available');
-        }
-
         return $this->candidates[0]->getMessage();
     }
 
@@ -208,8 +264,9 @@ class GenerativeAiResult implements ResultInterface
         foreach ($this->candidates as $candidate) {
             $message = $candidate->getMessage();
             foreach ($message->getParts() as $part) {
-                if ($part->getType()->equals(MessagePartTypeEnum::text()) && $part->getText() !== null) {
-                    $texts[] = $part->getText();
+                $text = $part->getText();
+                if ($text !== null) {
+                    $texts[] = $text;
                     break;
                 }
             }
@@ -230,12 +287,15 @@ class GenerativeAiResult implements ResultInterface
         foreach ($this->candidates as $candidate) {
             $message = $candidate->getMessage();
             foreach ($message->getParts() as $part) {
-                if ($part->getType()->equals(MessagePartTypeEnum::inlineFile()) && $part->getInlineFile() !== null) {
-                    $files[] = $part->getInlineFile();
+                $inlineFile = $part->getInlineFile();
+                if ($inlineFile !== null && MimeTypeUtil::isImageType($inlineFile->getMimeType())) {
+                    $files[] = $inlineFile;
                     break;
                 }
-                if ($part->getType()->equals(MessagePartTypeEnum::remoteFile()) && $part->getRemoteFile() !== null) {
-                    $files[] = $part->getRemoteFile();
+
+                $remoteFile = $part->getRemoteFile();
+                if ($remoteFile !== null && MimeTypeUtil::isImageType($remoteFile->getMimeType())) {
+                    $files[] = $remoteFile;
                     break;
                 }
             }
@@ -252,8 +312,24 @@ class GenerativeAiResult implements ResultInterface
      */
     public function toAudioFiles(): array
     {
-        // Similar implementation to toImageFiles, but checking for audio MIME types
-        return $this->toImageFiles(); // Simplified for now
+        $files = [];
+        foreach ($this->candidates as $candidate) {
+            $message = $candidate->getMessage();
+            foreach ($message->getParts() as $part) {
+                $inlineFile = $part->getInlineFile();
+                if ($inlineFile !== null && MimeTypeUtil::isAudioType($inlineFile->getMimeType())) {
+                    $files[] = $inlineFile;
+                    break;
+                }
+
+                $remoteFile = $part->getRemoteFile();
+                if ($remoteFile !== null && MimeTypeUtil::isAudioType($remoteFile->getMimeType())) {
+                    $files[] = $remoteFile;
+                    break;
+                }
+            }
+        }
+        return $files;
     }
 
     /**
@@ -265,8 +341,24 @@ class GenerativeAiResult implements ResultInterface
      */
     public function toVideoFiles(): array
     {
-        // Similar implementation to toImageFiles, but checking for video MIME types
-        return $this->toImageFiles(); // Simplified for now
+        $files = [];
+        foreach ($this->candidates as $candidate) {
+            $message = $candidate->getMessage();
+            foreach ($message->getParts() as $part) {
+                $inlineFile = $part->getInlineFile();
+                if ($inlineFile !== null && MimeTypeUtil::isVideoType($inlineFile->getMimeType())) {
+                    $files[] = $inlineFile;
+                    break;
+                }
+
+                $remoteFile = $part->getRemoteFile();
+                if ($remoteFile !== null && MimeTypeUtil::isVideoType($remoteFile->getMimeType())) {
+                    $files[] = $remoteFile;
+                    break;
+                }
+            }
+        }
+        return $files;
     }
 
     /**
@@ -298,6 +390,7 @@ class GenerativeAiResult implements ResultInterface
                 'candidates' => [
                     'type' => 'array',
                     'items' => Candidate::getJsonSchema(),
+                    'minItems' => 1,
                     'description' => 'The generated candidates.',
                 ],
                 'tokenUsage' => TokenUsage::getJsonSchema(),
