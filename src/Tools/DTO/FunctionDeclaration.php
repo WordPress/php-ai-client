@@ -102,7 +102,7 @@ class FunctionDeclaration implements WithJsonSchemaInterface
                     'description' => 'A description of what the function does.',
                 ],
                 'parameters' => [
-                    'type' => 'object',
+                    'type' => ['string', 'number', 'boolean', 'object', 'array', 'null'],
                     'description' => 'The JSON schema for the function parameters.',
                 ],
             ],
