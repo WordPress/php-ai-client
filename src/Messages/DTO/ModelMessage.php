@@ -27,17 +27,4 @@ class ModelMessage extends Message
     {
         parent::__construct(MessageRoleEnum::model(), $parts);
     }
-
-    /**
-     * Creates a model message from a simple text string.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $text The text content.
-     * @return self
-     */
-    public static function text(string $text): self
-    {
-        return new self([MessagePart::text($text)]);
-    }
 }

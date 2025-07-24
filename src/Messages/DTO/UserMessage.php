@@ -26,17 +26,4 @@ class UserMessage extends Message
     {
         parent::__construct(MessageRoleEnum::user(), $parts);
     }
-
-    /**
-     * Creates a user message from a simple text string.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $text The text content.
-     * @return self
-     */
-    public static function text(string $text): self
-    {
-        return new self([MessagePart::text($text)]);
-    }
 }
