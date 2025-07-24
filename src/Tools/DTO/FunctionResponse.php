@@ -102,6 +102,7 @@ class FunctionResponse implements WithJsonSchemaInterface
                     'description' => 'The name of the function that was called.',
                 ],
                 'response' => [
+                    'type' => ['string', 'number', 'boolean', 'object', 'array', 'null'],
                     'description' => 'The response data from the function.',
                 ],
             ],
