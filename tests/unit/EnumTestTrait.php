@@ -35,7 +35,10 @@ trait EnumTestTrait
 
         $actualValues = $enumClass::getValues();
 
-        $this->assertEquals($expectedValues, $actualValues);
+        // Since getValues() now returns just the values, we need to extract values from expected
+        $expectedValuesList = array_values($expectedValues);
+
+        $this->assertEquals($expectedValuesList, $actualValues);
     }
 
     /**
