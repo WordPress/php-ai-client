@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Files\Contracts;
 
+use WordPress\AiClient\Files\ValueObjects\MimeType;
+
 /**
  * Interface for file representations in the AI client.
  *
@@ -18,7 +20,7 @@ interface FileInterface
      * Gets the MIME type of the file.
      *
      * @since n.e.x.t
-     * @return string The MIME type (e.g., 'image/png', 'audio/mp3').
+     * @return MimeType The MIME type (e.g., 'image/png', 'audio/mp3').
      */
-    public function getMimeType(): string;
+    public function getMimeType(): MimeType;
 }

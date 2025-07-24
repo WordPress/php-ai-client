@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Results\DTO;
 
 use WordPress\AiClient\Files\Contracts\FileInterface;
-use WordPress\AiClient\Files\Utilities\MimeTypeUtil;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
@@ -188,7 +187,7 @@ class GenerativeAiResult implements ResultInterface
     {
         $file = $this->toFile();
 
-        if (!MimeTypeUtil::isImageType($file->getMimeType())) {
+        if (!$file->getMimeType()->isImage()) {
             throw new \RuntimeException(
                 sprintf('File is not an image. MIME type: %s', $file->getMimeType())
             );
@@ -209,7 +208,7 @@ class GenerativeAiResult implements ResultInterface
     {
         $file = $this->toFile();
 
-        if (!MimeTypeUtil::isAudioType($file->getMimeType())) {
+        if (!$file->getMimeType()->isAudio()) {
             throw new \RuntimeException(
                 sprintf('File is not an audio file. MIME type: %s', $file->getMimeType())
             );
@@ -230,7 +229,7 @@ class GenerativeAiResult implements ResultInterface
     {
         $file = $this->toFile();
 
-        if (!MimeTypeUtil::isVideoType($file->getMimeType())) {
+        if (!$file->getMimeType()->isVideo()) {
             throw new \RuntimeException(
                 sprintf('File is not a video file. MIME type: %s', $file->getMimeType())
             );
@@ -288,13 +287,13 @@ class GenerativeAiResult implements ResultInterface
             $message = $candidate->getMessage();
             foreach ($message->getParts() as $part) {
                 $inlineFile = $part->getInlineFile();
-                if ($inlineFile !== null && MimeTypeUtil::isImageType($inlineFile->getMimeType())) {
+                if ($inlineFile !== null && $inlineFile->getMimeType()->isImage()) {
                     $files[] = $inlineFile;
                     break;
                 }
 
                 $remoteFile = $part->getRemoteFile();
-                if ($remoteFile !== null && MimeTypeUtil::isImageType($remoteFile->getMimeType())) {
+                if ($remoteFile !== null && $remoteFile->getMimeType()->isImage()) {
                     $files[] = $remoteFile;
                     break;
                 }
@@ -317,13 +316,13 @@ class GenerativeAiResult implements ResultInterface
             $message = $candidate->getMessage();
             foreach ($message->getParts() as $part) {
                 $inlineFile = $part->getInlineFile();
-                if ($inlineFile !== null && MimeTypeUtil::isAudioType($inlineFile->getMimeType())) {
+                if ($inlineFile !== null && $inlineFile->getMimeType()->isAudio()) {
                     $files[] = $inlineFile;
                     break;
                 }
 
                 $remoteFile = $part->getRemoteFile();
-                if ($remoteFile !== null && MimeTypeUtil::isAudioType($remoteFile->getMimeType())) {
+                if ($remoteFile !== null && $remoteFile->getMimeType()->isAudio()) {
                     $files[] = $remoteFile;
                     break;
                 }
@@ -346,13 +345,13 @@ class GenerativeAiResult implements ResultInterface
             $message = $candidate->getMessage();
             foreach ($message->getParts() as $part) {
                 $inlineFile = $part->getInlineFile();
-                if ($inlineFile !== null && MimeTypeUtil::isVideoType($inlineFile->getMimeType())) {
+                if ($inlineFile !== null && $inlineFile->getMimeType()->isVideo()) {
                     $files[] = $inlineFile;
                     break;
                 }
 
                 $remoteFile = $part->getRemoteFile();
-                if ($remoteFile !== null && MimeTypeUtil::isVideoType($remoteFile->getMimeType())) {
+                if ($remoteFile !== null && $remoteFile->getMimeType()->isVideo()) {
                     $files[] = $remoteFile;
                     break;
                 }

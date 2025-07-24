@@ -2,24 +2,29 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Files\Utilities;
+namespace WordPress\AiClient\Files\ValueObjects;
 
 /**
- * Utility class for MIME type operations.
+ * Value object representing a MIME type.
  *
- * Provides static methods for working with MIME types, including
- * determining MIME types from file extensions.
+ * This immutable value object encapsulates MIME type validation and
+ * provides convenient methods for checking MIME type categories.
  *
  * @since n.e.x.t
  */
-class MimeTypeUtil
+final class MimeType
 {
+    /**
+     * @var string The MIME type value.
+     */
+    private string $value;
+
     /**
      * Common MIME type mappings for file extensions.
      *
      * @var array<string, string>
      */
-    private static array $mimeTypes = [
+    private static array $extensionMap = [
         // Text
         'txt' => 'text/plain',
         'html' => 'text/html',
@@ -88,81 +93,119 @@ class MimeTypeUtil
     ];
 
     /**
-     * Gets the MIME type for a given file extension.
+     * Constructor.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $value The MIME type value.
+     * @throws \InvalidArgumentException If the MIME type is invalid.
+     */
+    public function __construct(string $value)
+    {
+        if (!self::isValid($value)) {
+            throw new \InvalidArgumentException(
+                sprintf('Invalid MIME type: %s', $value)
+            );
+        }
+
+        $this->value = $value;
+    }
+
+    /**
+     * Creates a MimeType from a file extension.
      *
      * @since n.e.x.t
      *
      * @param string $extension The file extension (without the dot).
-     * @return string The MIME type, or 'text/plain' if unknown.
+     * @return self The MimeType instance.
+     * @throws \InvalidArgumentException If the extension is not recognized.
      */
-    public static function getMimeTypeForExtension(string $extension): string
+    public static function fromExtension(string $extension): self
     {
         $extension = strtolower($extension);
 
-        return self::$mimeTypes[$extension] ?? 'text/plain';
+        if (!isset(self::$extensionMap[$extension])) {
+            throw new \InvalidArgumentException(
+                sprintf('Unknown file extension: %s', $extension)
+            );
+        }
+
+        return new self(self::$extensionMap[$extension]);
     }
 
     /**
-     * Checks if a MIME type is an image type.
+     * Checks if a MIME type string is valid.
      *
      * @since n.e.x.t
      *
-     * @param string $mimeType The MIME type to check.
-     * @return bool True if the MIME type is an image type.
+     * @param string $mimeType The MIME type to validate.
+     * @return bool True if valid.
      */
-    public static function isImageType(string $mimeType): bool
+    public static function isValid(string $mimeType): bool
     {
-        return strpos($mimeType, 'image/') === 0;
+        // Basic MIME type validation: type/subtype
+        return (bool) preg_match(
+            '/^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*$/',
+            $mimeType
+        );
     }
 
     /**
-     * Checks if a MIME type is an audio type.
+     * Checks if this is an image MIME type.
      *
      * @since n.e.x.t
      *
-     * @param string $mimeType The MIME type to check.
-     * @return bool True if the MIME type is an audio type.
+     * @return bool True if this is an image type.
      */
-    public static function isAudioType(string $mimeType): bool
+    public function isImage(): bool
     {
-        return strpos($mimeType, 'audio/') === 0;
+        return strpos($this->value, 'image/') === 0;
     }
 
     /**
-     * Checks if a MIME type is a video type.
+     * Checks if this is an audio MIME type.
      *
      * @since n.e.x.t
      *
-     * @param string $mimeType The MIME type to check.
-     * @return bool True if the MIME type is a video type.
+     * @return bool True if this is an audio type.
      */
-    public static function isVideoType(string $mimeType): bool
+    public function isAudio(): bool
     {
-        return strpos($mimeType, 'video/') === 0;
+        return strpos($this->value, 'audio/') === 0;
     }
 
     /**
-     * Checks if a MIME type is a text type.
+     * Checks if this is a video MIME type.
      *
      * @since n.e.x.t
      *
-     * @param string $mimeType The MIME type to check.
-     * @return bool True if the MIME type is a text type.
+     * @return bool True if this is a video type.
      */
-    public static function isTextType(string $mimeType): bool
+    public function isVideo(): bool
     {
-        return strpos($mimeType, 'text/') === 0;
+        return strpos($this->value, 'video/') === 0;
     }
 
     /**
-     * Checks if a MIME type is a document type.
+     * Checks if this is a text MIME type.
      *
      * @since n.e.x.t
      *
-     * @param string $mimeType The MIME type to check.
-     * @return bool True if the MIME type is a document type.
+     * @return bool True if this is a text type.
      */
-    public static function isDocumentType(string $mimeType): bool
+    public function isText(): bool
+    {
+        return strpos($this->value, 'text/') === 0;
+    }
+
+    /**
+     * Checks if this is a document MIME type.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if this is a document type.
+     */
+    public function isDocument(): bool
     {
         $documentTypes = [
             'application/pdf',
@@ -176,6 +219,35 @@ class MimeTypeUtil
             'application/vnd.oasis.opendocument.spreadsheet',
         ];
 
-        return in_array($mimeType, $documentTypes, true);
+        return in_array($this->value, $documentTypes, true);
+    }
+
+    /**
+     * Checks if this MIME type equals another.
+     *
+     * @since n.e.x.t
+     *
+     * @param self|string $other The other MIME type to compare.
+     * @return bool True if equal.
+     */
+    public function equals($other): bool
+    {
+        if ($other instanceof self) {
+            return $this->value === $other->value;
+        }
+
+        return $this->value === $other;
+    }
+
+    /**
+     * Gets the string representation of the MIME type.
+     *
+     * @since n.e.x.t
+     *
+     * @return string The MIME type value.
+     */
+    public function __toString(): string
+    {
+        return $this->value;
     }
 }

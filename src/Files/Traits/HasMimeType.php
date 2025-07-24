@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Files\Traits;
 
+use WordPress\AiClient\Files\ValueObjects\MimeType;
+
 /**
  * Provides MIME type functionality for file objects.
  *
@@ -17,18 +19,18 @@ trait HasMimeType
     /**
      * The MIME type of the file.
      *
-     * @var string
+     * @var MimeType
      */
-    protected string $mimeType;
+    protected MimeType $mimeType;
 
     /**
      * Gets the MIME type of the file.
      *
-     * @return string The MIME type.
+     * @return MimeType The MIME type.
      *
      * @since 1.0.0
      */
-    public function getMimeType(): string
+    public function getMimeType(): MimeType
     {
         return $this->mimeType;
     }

@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Files\DTO;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Files\Contracts\FileInterface;
 use WordPress\AiClient\Files\Traits\HasMimeType;
+use WordPress\AiClient\Files\ValueObjects\MimeType;
 
 /**
  * Represents a file with inline base64-encoded data.
@@ -31,9 +32,9 @@ class InlineFile implements FileInterface, WithJsonSchemaInterface
      * @since n.e.x.t
      *
      * @param string $base64Data The base64-encoded file data.
-     * @param string|null $mimeType The MIME type of the file.
+     * @param MimeType|string $mimeType The MIME type of the file.
      */
-    public function __construct(string $base64Data, string $mimeType = null)
+    public function __construct(string $base64Data, $mimeType)
     {
         // RFC 2397: dataurl := "data:" [ mediatype ] ";base64," data
         // mediatype is optional; if omitted, defaults to text/plain;charset=US-ASCII
@@ -49,17 +50,10 @@ class InlineFile implements FileInterface, WithJsonSchemaInterface
 
         $this->base64Data = $base64Data;
 
-        if ($mimeType === null) {
-            // Extract MIME type from data URL if present
-            if (!empty($matches[1])) {
-                // MIME type was provided in the data URL
-                $this->mimeType = $matches[1];
-            } else {
-                // No MIME type provided; default to text/plain per RFC 2397
-                $this->mimeType = 'text/plain';
-            }
-        } else {
+        if ($mimeType instanceof MimeType) {
             $this->mimeType = $mimeType;
+        } else {
+            $this->mimeType = new MimeType($mimeType);
         }
     }
 
@@ -88,6 +82,7 @@ class InlineFile implements FileInterface, WithJsonSchemaInterface
                 'mimeType' => [
                     'type' => 'string',
                     'description' => 'The MIME type of the file.',
+                    'pattern' => '^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*$',
                 ],
                 'base64Data' => [
                     'type' => 'string',

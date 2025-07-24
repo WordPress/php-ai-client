@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Files\DTO;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Files\Contracts\FileInterface;
 use WordPress\AiClient\Files\Traits\HasMimeType;
-use WordPress\AiClient\Files\Utilities\MimeTypeUtil;
+use WordPress\AiClient\Files\ValueObjects\MimeType;
 
 /**
  * Represents a file stored locally on the filesystem.
@@ -32,24 +32,18 @@ class LocalFile implements FileInterface, WithJsonSchemaInterface
      * @since n.e.x.t
      *
      * @param string $path The local filesystem path to the file.
-     * @param string|null $mimeType The MIME type of the file.
+     * @param MimeType|string|null $mimeType The MIME type of the file.
      */
-    public function __construct(string $path, string $mimeType = null)
+    public function __construct(string $path, $mimeType = null)
     {
         $this->path = $path;
 
-        if ($mimeType !== null) {
+        if ($mimeType instanceof MimeType) {
             $this->mimeType = $mimeType;
+        } elseif (is_string($mimeType)) {
+            $this->mimeType = new MimeType($mimeType);
         } else {
-            // Extract extension from path
-            $extension = pathinfo($path, PATHINFO_EXTENSION);
-
-            if (!empty($extension)) {
-                $this->mimeType = MimeTypeUtil::getMimeTypeForExtension($extension);
-            } else {
-                // No extension found, default to text/plain
-                $this->mimeType = 'text/plain';
-            }
+            $this->mimeType = $this->getMimeTypeFromExtension($path);
         }
     }
 
@@ -66,6 +60,31 @@ class LocalFile implements FileInterface, WithJsonSchemaInterface
     }
 
     /**
+     * Extracts MIME type from file extension.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $path The file path.
+     * @return MimeType The MIME type.
+     */
+    private function getMimeTypeFromExtension(string $path): MimeType
+    {
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+        if (!empty($extension)) {
+            try {
+                return MimeType::fromExtension($extension);
+            } catch (\InvalidArgumentException $e) {
+                // Unknown extension, default to text/plain
+                return new MimeType('text/plain');
+            }
+        }
+
+        // No extension found, default to text/plain
+        return new MimeType('text/plain');
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since n.e.x.t
@@ -78,6 +97,7 @@ class LocalFile implements FileInterface, WithJsonSchemaInterface
                 'mimeType' => [
                     'type' => 'string',
                     'description' => 'The MIME type of the file.',
+                    'pattern' => '^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*$',
                 ],
                 'path' => [
                     'type' => 'string',

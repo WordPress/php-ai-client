@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Files\DTO;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Files\Contracts\FileInterface;
 use WordPress\AiClient\Files\Traits\HasMimeType;
-use WordPress\AiClient\Files\Utilities\MimeTypeUtil;
+use WordPress\AiClient\Files\ValueObjects\MimeType;
 
 /**
  * Represents a file accessible via a remote URL.
@@ -32,35 +32,18 @@ class RemoteFile implements FileInterface, WithJsonSchemaInterface
      * @since n.e.x.t
      *
      * @param string $url The URL to the remote file.
-     * @param string|null $mimeType The MIME type of the file.
+     * @param MimeType|string|null $mimeType The MIME type of the file.
      */
-    public function __construct(string $url, string $mimeType = null)
+    public function __construct(string $url, $mimeType = null)
     {
         $this->url = $url;
 
-        if ($mimeType !== null) {
+        if ($mimeType instanceof MimeType) {
             $this->mimeType = $mimeType;
+        } elseif (is_string($mimeType)) {
+            $this->mimeType = new MimeType($mimeType);
         } else {
-            // Parse URL to extract filename and extension
-            $parsedUrl = parse_url($url);
-            $path = $parsedUrl['path'] ?? '';
-
-            // Remove query string and fragment if present in the path
-            $cleanPath = strtok($path, '?#');
-
-            if ($cleanPath === false) {
-                $cleanPath = $path;
-            }
-
-            // Extract extension from the path
-            $extension = pathinfo($cleanPath, PATHINFO_EXTENSION);
-
-            if (!empty($extension)) {
-                $this->mimeType = MimeTypeUtil::getMimeTypeForExtension($extension);
-            } else {
-                // No extension found, default to text/plain
-                $this->mimeType = 'text/plain';
-            }
+            $this->mimeType = $this->getMimeTypeFromExtension($url);
         }
     }
 
@@ -77,6 +60,43 @@ class RemoteFile implements FileInterface, WithJsonSchemaInterface
     }
 
     /**
+     * Extracts MIME type from URL extension.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $url The file URL.
+     * @return MimeType The MIME type.
+     */
+    private function getMimeTypeFromExtension(string $url): MimeType
+    {
+        // Parse URL to extract filename and extension
+        $parsedUrl = parse_url($url);
+        $path = $parsedUrl['path'] ?? '';
+
+        // Remove query string and fragment if present in the path
+        $cleanPath = strtok($path, '?#');
+
+        if ($cleanPath === false) {
+            $cleanPath = $path;
+        }
+
+        // Extract extension from the path
+        $extension = pathinfo($cleanPath, PATHINFO_EXTENSION);
+
+        if (!empty($extension)) {
+            try {
+                return MimeType::fromExtension($extension);
+            } catch (\InvalidArgumentException $e) {
+                // Unknown extension, default to text/plain
+                return new MimeType('text/plain');
+            }
+        }
+
+        // No extension found, default to text/plain
+        return new MimeType('text/plain');
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since n.e.x.t
@@ -89,6 +109,7 @@ class RemoteFile implements FileInterface, WithJsonSchemaInterface
                 'mimeType' => [
                     'type' => 'string',
                     'description' => 'The MIME type of the file.',
+                    'pattern' => '^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*$',
                 ],
                 'url' => [
                     'type' => 'string',
