@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Operations\Contracts;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 
 /**
@@ -15,7 +15,7 @@ use WordPress\AiClient\Operations\Enums\OperationStateEnum;
  *
  * @since n.e.x.t
  */
-interface OperationInterface extends WithJsonSchema
+interface OperationInterface extends WithJsonSchemaInterface
 {
     /**
      * Gets the operation ID.

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Files\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Files\Contracts\FileInterface;
+use WordPress\AiClient\Files\Traits\HasMimeType;
 
 /**
  * Represents a file accessible via a remote URL.
@@ -15,12 +16,9 @@ use WordPress\AiClient\Files\Contracts\FileInterface;
  *
  * @since n.e.x.t
  */
-class RemoteFile implements FileInterface, WithJsonSchema
+class RemoteFile implements FileInterface, WithJsonSchemaInterface
 {
-    /**
-     * @var string The MIME type of the file.
-     */
-    private string $mimeType;
+    use HasMimeType;
 
     /**
      * @var string The URL to the remote file.
@@ -39,18 +37,6 @@ class RemoteFile implements FileInterface, WithJsonSchema
     {
         $this->mimeType = $mimeType;
         $this->url = $url;
-    }
-
-    /**
-     * Gets the MIME type of the file.
-     *
-     * @since n.e.x.t
-     *
-     * @return string The MIME type.
-     */
-    public function getMimeType(): string
-    {
-        return $this->mimeType;
     }
 
     /**

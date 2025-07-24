@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 
 /**
  * Represents a function declaration for AI models.
@@ -14,7 +14,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
  *
  * @since n.e.x.t
  */
-class FunctionDeclaration implements WithJsonSchema
+class FunctionDeclaration implements WithJsonSchemaInterface
 {
     /**
      * @var string The name of the function.

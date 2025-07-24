@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
@@ -15,7 +15,7 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  *
  * @since n.e.x.t
  */
-class Message implements WithJsonSchema
+class Message implements WithJsonSchemaInterface
 {
     /**
      * @var MessageRoleEnum The role of the message sender.

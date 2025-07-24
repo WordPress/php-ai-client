@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Files\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Files\Contracts\FileInterface;
+use WordPress\AiClient\Files\Traits\HasMimeType;
 
 /**
  * Represents a file with inline base64-encoded data.
@@ -15,12 +16,9 @@ use WordPress\AiClient\Files\Contracts\FileInterface;
  *
  * @since n.e.x.t
  */
-class InlineFile implements FileInterface, WithJsonSchema
+class InlineFile implements FileInterface, WithJsonSchemaInterface
 {
-    /**
-     * @var string The MIME type of the file.
-     */
-    private string $mimeType;
+    use HasMimeType;
 
     /**
      * @var string The base64-encoded file data.
@@ -39,18 +37,6 @@ class InlineFile implements FileInterface, WithJsonSchema
     {
         $this->mimeType = $mimeType;
         $this->base64Data = $base64Data;
-    }
-
-    /**
-     * Gets the MIME type of the file.
-     *
-     * @since n.e.x.t
-     *
-     * @return string The MIME type.
-     */
-    public function getMimeType(): string
-    {
-        return $this->mimeType;
     }
 
     /**

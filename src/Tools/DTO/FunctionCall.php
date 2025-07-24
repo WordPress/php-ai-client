@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 
 /**
  * Represents a function call request from an AI model.
@@ -14,7 +14,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
  *
  * @since n.e.x.t
  */
-class FunctionCall implements WithJsonSchema
+class FunctionCall implements WithJsonSchemaInterface
 {
     /**
      * @var string Unique identifier for this function call.

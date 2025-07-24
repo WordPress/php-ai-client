@@ -12,7 +12,7 @@ namespace WordPress\AiClient\Common\Contracts;
  *
  * @since n.e.x.t
  */
-interface WithJsonSchema
+interface WithJsonSchemaInterface
 {
     /**
      * Gets the JSON schema representation of the object.

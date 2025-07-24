@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 
 /**
  * Represents web search configuration for AI models.
@@ -14,7 +14,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
  *
  * @since n.e.x.t
  */
-class WebSearch implements WithJsonSchema
+class WebSearch implements WithJsonSchemaInterface
 {
     /**
      * @var string[] List of domains that are allowed for web search.

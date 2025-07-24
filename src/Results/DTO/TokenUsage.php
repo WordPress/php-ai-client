@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 
 /**
  * Represents token usage statistics for an AI operation.
@@ -14,7 +14,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
  *
  * @since n.e.x.t
  */
-class TokenUsage implements WithJsonSchema
+class TokenUsage implements WithJsonSchemaInterface
 {
     /**
      * @var int Number of tokens in the prompt.

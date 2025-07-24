@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 
 /**
  * Represents a response to a function call.
@@ -14,7 +14,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
  *
  * @since n.e.x.t
  */
-class FunctionResponse implements WithJsonSchema
+class FunctionResponse implements WithJsonSchemaInterface
 {
     /**
      * @var string The ID of the function call this is responding to.

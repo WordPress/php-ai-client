@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
 
 /**
@@ -15,7 +15,7 @@ use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
  *
  * @since n.e.x.t
  */
-class Tool implements WithJsonSchema
+class Tool implements WithJsonSchemaInterface
 {
     /**
      * @var ToolTypeEnum The type of tool.

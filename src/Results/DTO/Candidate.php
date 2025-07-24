@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
@@ -16,7 +16,7 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *
  * @since n.e.x.t
  */
-class Candidate implements WithJsonSchema
+class Candidate implements WithJsonSchemaInterface
 {
     /**
      * @var Message The generated message.

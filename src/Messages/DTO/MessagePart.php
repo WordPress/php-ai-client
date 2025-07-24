@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Files\DTO\InlineFile;
 use WordPress\AiClient\Files\DTO\RemoteFile;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
@@ -19,7 +19,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  *
  * @since n.e.x.t
  */
-class MessagePart implements WithJsonSchema
+class MessagePart implements WithJsonSchemaInterface
 {
     /**
      * @var MessagePartTypeEnum The type of this message part.
