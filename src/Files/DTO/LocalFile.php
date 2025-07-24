@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Files\DTO;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Files\Contracts\FileInterface;
 use WordPress\AiClient\Files\Traits\HasMimeType;
+use WordPress\AiClient\Files\Utilities\MimeTypeUtil;
 
 /**
  * Represents a file stored locally on the filesystem.
@@ -31,12 +32,25 @@ class LocalFile implements FileInterface, WithJsonSchemaInterface
      * @since n.e.x.t
      *
      * @param string $path The local filesystem path to the file.
-     * @param string $mimeType The MIME type of the file.
+     * @param string|null $mimeType The MIME type of the file.
      */
-    public function __construct(string $path, string $mimeType)
+    public function __construct(string $path, string $mimeType = null)
     {
         $this->path = $path;
-        $this->mimeType = $mimeType;
+
+        if ($mimeType !== null) {
+            $this->mimeType = $mimeType;
+        } else {
+            // Extract extension from path
+            $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+            if (!empty($extension)) {
+                $this->mimeType = MimeTypeUtil::getMimeTypeForExtension($extension);
+            } else {
+                // No extension found, default to text/plain
+                $this->mimeType = 'text/plain';
+            }
+        }
     }
 
     /**
