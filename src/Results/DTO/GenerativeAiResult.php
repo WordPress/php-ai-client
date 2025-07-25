@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
-use WordPress\AiClient\Files\Contracts\FileInterface;
+use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
@@ -154,10 +154,10 @@ class GenerativeAiResult implements ResultInterface
      *
      * @since n.e.x.t
      *
-     * @return FileInterface The file.
+     * @return File The file.
      * @throws \RuntimeException If no file content.
      */
-    public function toFile(): FileInterface
+    public function toFile(): File
     {
         $message = $this->candidates[0]->getMessage();
         foreach ($message->getParts() as $part) {
@@ -175,10 +175,10 @@ class GenerativeAiResult implements ResultInterface
      *
      * @since n.e.x.t
      *
-     * @return FileInterface The image file.
+     * @return File The image file.
      * @throws \RuntimeException If no image content.
      */
-    public function toImageFile(): FileInterface
+    public function toImageFile(): File
     {
         $file = $this->toFile();
 
@@ -196,10 +196,10 @@ class GenerativeAiResult implements ResultInterface
      *
      * @since n.e.x.t
      *
-     * @return FileInterface The audio file.
+     * @return File The audio file.
      * @throws \RuntimeException If no audio content.
      */
-    public function toAudioFile(): FileInterface
+    public function toAudioFile(): File
     {
         $file = $this->toFile();
 
@@ -217,10 +217,10 @@ class GenerativeAiResult implements ResultInterface
      *
      * @since n.e.x.t
      *
-     * @return FileInterface The video file.
+     * @return File The video file.
      * @throws \RuntimeException If no video content.
      */
-    public function toVideoFile(): FileInterface
+    public function toVideoFile(): File
     {
         $file = $this->toFile();
 
@@ -273,7 +273,7 @@ class GenerativeAiResult implements ResultInterface
      *
      * @since n.e.x.t
      *
-     * @return FileInterface[] Array of files.
+     * @return File[] Array of files.
      */
     public function toFiles(): array
     {
@@ -296,13 +296,13 @@ class GenerativeAiResult implements ResultInterface
      *
      * @since n.e.x.t
      *
-     * @return FileInterface[] Array of image files.
+     * @return File[] Array of image files.
      */
     public function toImageFiles(): array
     {
         return array_filter(
             $this->toFiles(),
-            fn(FileInterface $file) => $file->isImage()
+            fn(File $file) => $file->isImage()
         );
     }
 
@@ -311,13 +311,13 @@ class GenerativeAiResult implements ResultInterface
      *
      * @since n.e.x.t
      *
-     * @return FileInterface[] Array of audio files.
+     * @return File[] Array of audio files.
      */
     public function toAudioFiles(): array
     {
         return array_filter(
             $this->toFiles(),
-            fn(FileInterface $file) => $file->isAudio()
+            fn(File $file) => $file->isAudio()
         );
     }
 
@@ -326,13 +326,13 @@ class GenerativeAiResult implements ResultInterface
      *
      * @since n.e.x.t
      *
-     * @return FileInterface[] Array of video files.
+     * @return File[] Array of video files.
      */
     public function toVideoFiles(): array
     {
         return array_filter(
             $this->toFiles(),
-            fn(FileInterface $file) => $file->isVideo()
+            fn(File $file) => $file->isVideo()
         );
     }
 

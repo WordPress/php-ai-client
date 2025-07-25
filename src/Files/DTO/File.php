@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Files\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Files\Contracts\FileInterface;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\ValueObjects\MimeType;
 
@@ -17,7 +16,7 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  *
  * @since n.e.x.t
  */
-class File implements FileInterface, WithJsonSchemaInterface
+class File implements WithJsonSchemaInterface
 {
     /**
      * @var MimeType The MIME type of the file.
