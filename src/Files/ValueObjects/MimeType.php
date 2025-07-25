@@ -93,6 +93,23 @@ final class MimeType
     ];
 
     /**
+     * Document MIME types.
+     *
+     * @var array<string>
+     */
+    private static array $documentTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/vnd.oasis.opendocument.text',
+        'application/vnd.oasis.opendocument.spreadsheet',
+    ];
+
+    /**
      * Constructor.
      *
      * @since n.e.x.t
@@ -207,19 +224,7 @@ final class MimeType
      */
     public function isDocument(): bool
     {
-        $documentTypes = [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/vnd.ms-powerpoint',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'application/vnd.oasis.opendocument.text',
-            'application/vnd.oasis.opendocument.spreadsheet',
-        ];
-
-        return in_array($this->value, $documentTypes, true);
+        return in_array($this->value, self::$documentTypes, true);
     }
 
     /**
