@@ -300,10 +300,10 @@ class GenerativeAiResult implements ResultInterface
      */
     public function toImageFiles(): array
     {
-        return array_filter(
+        return array_values(array_filter(
             $this->toFiles(),
             fn(File $file) => $file->isImage()
-        );
+        ));
     }
 
     /**
@@ -315,10 +315,10 @@ class GenerativeAiResult implements ResultInterface
      */
     public function toAudioFiles(): array
     {
-        return array_filter(
+        return array_values(array_filter(
             $this->toFiles(),
             fn(File $file) => $file->isAudio()
-        );
+        ));
     }
 
     /**
@@ -330,10 +330,10 @@ class GenerativeAiResult implements ResultInterface
      */
     public function toVideoFiles(): array
     {
-        return array_filter(
+        return array_values(array_filter(
             $this->toFiles(),
             fn(File $file) => $file->isVideo()
-        );
+        ));
     }
 
     /**

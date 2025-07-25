@@ -84,6 +84,14 @@ class File implements WithJsonSchemaInterface
             return;
         }
 
+        // Check if it's a local file path (before base64 check)
+        if (file_exists($file) && is_file($file)) {
+            $this->fileType = FileTypeEnum::inline();
+            $this->base64Data = $this->convertFileToBase64($file);
+            $this->mimeType = $this->determineMimeType($providedMimeType, null, $file);
+            return;
+        }
+
         // Check if it's plain base64
         if (preg_match('/^[A-Za-z0-9+\/]*={0,2}$/', $file)) {
             if ($providedMimeType === null) {
@@ -94,14 +102,6 @@ class File implements WithJsonSchemaInterface
             $this->fileType = FileTypeEnum::inline();
             $this->base64Data = $file;
             $this->mimeType = new MimeType($providedMimeType);
-            return;
-        }
-
-        // If none of the above, assume it's a local file path
-        if (file_exists($file)) {
-            $this->fileType = FileTypeEnum::inline();
-            $this->base64Data = $this->convertFileToBase64($file);
-            $this->mimeType = $this->determineMimeType($providedMimeType, null, $file);
             return;
         }
 
