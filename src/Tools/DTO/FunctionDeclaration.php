@@ -27,7 +27,7 @@ class FunctionDeclaration implements WithJsonSchemaInterface
     private string $description;
 
     /**
-     * @var mixed The JSON schema for the function parameters.
+     * @var mixed|null The JSON schema for the function parameters.
      */
     private $parameters;
 
@@ -38,9 +38,9 @@ class FunctionDeclaration implements WithJsonSchemaInterface
      *
      * @param string $name The name of the function.
      * @param string $description A description of what the function does.
-     * @param mixed $parameters The JSON schema for the function parameters.
+     * @param mixed|null $parameters The JSON schema for the function parameters.
      */
-    public function __construct(string $name, string $description, $parameters)
+    public function __construct(string $name, string $description, $parameters = null)
     {
         $this->name = $name;
         $this->description = $description;
@@ -76,7 +76,7 @@ class FunctionDeclaration implements WithJsonSchemaInterface
      *
      * @since n.e.x.t
      *
-     * @return mixed The parameters schema.
+     * @return mixed|null The parameters schema.
      */
     public function getParameters()
     {
@@ -106,7 +106,7 @@ class FunctionDeclaration implements WithJsonSchemaInterface
                     'description' => 'The JSON schema for the function parameters.',
                 ],
             ],
-            'required' => ['name', 'description', 'parameters'],
+            'required' => ['name', 'description'],
         ];
     }
 }

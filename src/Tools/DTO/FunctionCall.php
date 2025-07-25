@@ -17,14 +17,14 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 class FunctionCall implements WithJsonSchemaInterface
 {
     /**
-     * @var string Unique identifier for this function call.
+     * @var string|null Unique identifier for this function call.
      */
-    private string $id;
+    private ?string $id;
 
     /**
-     * @var string The name of the function to call.
+     * @var string|null The name of the function to call.
      */
-    private string $name;
+    private ?string $name;
 
     /**
      * @var array<string, mixed> The arguments to pass to the function.
@@ -36,12 +36,17 @@ class FunctionCall implements WithJsonSchemaInterface
      *
      * @since n.e.x.t
      *
-     * @param string $id Unique identifier for this function call.
-     * @param string $name The name of the function to call.
+     * @param string|null $id Unique identifier for this function call.
+     * @param string|null $name The name of the function to call.
      * @param array<string, mixed> $args The arguments to pass to the function.
+     * @throws \InvalidArgumentException If neither id nor name is provided.
      */
-    public function __construct(string $id, string $name, array $args)
+    public function __construct(?string $id = null, ?string $name = null, array $args = [])
     {
+        if ($id === null && $name === null) {
+            throw new \InvalidArgumentException('At least one of id or name must be provided.');
+        }
+
         $this->id = $id;
         $this->name = $name;
         $this->args = $args;
@@ -52,9 +57,9 @@ class FunctionCall implements WithJsonSchemaInterface
      *
      * @since n.e.x.t
      *
-     * @return string The unique identifier.
+     * @return string|null The unique identifier.
      */
-    public function getId(): string
+    public function getId(): ?string
     {
         return $this->id;
     }
@@ -64,9 +69,9 @@ class FunctionCall implements WithJsonSchemaInterface
      *
      * @since n.e.x.t
      *
-     * @return string The function name.
+     * @return string|null The function name.
      */
-    public function getName(): string
+    public function getName(): ?string
     {
         return $this->name;
     }
@@ -107,7 +112,17 @@ class FunctionCall implements WithJsonSchemaInterface
                     'additionalProperties' => true,
                 ],
             ],
-            'required' => ['id', 'name', 'args'],
+            'oneOf' => [
+                [
+                    'required' => ['id'],
+                ],
+                [
+                    'required' => ['name'],
+                ],
+                [
+                    'required' => ['id', 'name'],
+                ],
+            ],
         ];
     }
 }
