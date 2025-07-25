@@ -335,6 +335,11 @@ class File implements WithJsonSchemaInterface
             'oneOf' => [
                 [
                     'properties' => [
+                        'fileType' => [
+                            'type' => 'string',
+                            'const' => FileTypeEnum::REMOTE,
+                            'description' => 'The file type.',
+                        ],
                         'mimeType' => [
                             'type' => 'string',
                             'description' => 'The MIME type of the file.',
@@ -347,10 +352,15 @@ class File implements WithJsonSchemaInterface
                             'description' => 'The URL to the remote file.',
                         ],
                     ],
-                    'required' => ['mimeType', 'url'],
+                    'required' => ['fileType', 'mimeType', 'url'],
                 ],
                 [
                     'properties' => [
+                        'fileType' => [
+                            'type' => 'string',
+                            'const' => FileTypeEnum::INLINE,
+                            'description' => 'The file type.',
+                        ],
                         'mimeType' => [
                             'type' => 'string',
                             'description' => 'The MIME type of the file.',
@@ -362,7 +372,7 @@ class File implements WithJsonSchemaInterface
                             'description' => 'The base64-encoded file data.',
                         ],
                     ],
-                    'required' => ['mimeType', 'base64Data'],
+                    'required' => ['fileType', 'mimeType', 'base64Data'],
                 ],
             ],
         ];
