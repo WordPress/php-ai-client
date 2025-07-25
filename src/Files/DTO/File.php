@@ -158,13 +158,12 @@ class File implements WithJsonSchemaInterface
      *
      * @since n.e.x.t
      *
-     * @return string The URL.
-     * @throws \RuntimeException If the file is not remote.
+     * @return string|null The URL, or null if not a remote file.
      */
-    public function getUrl(): string
+    public function getUrl(): ?string
     {
         if (!$this->fileType->isRemote()) {
-            throw new \RuntimeException('Cannot get URL for non-remote file.');
+            return null;
         }
 
         return $this->data;
@@ -175,30 +174,28 @@ class File implements WithJsonSchemaInterface
      *
      * @since n.e.x.t
      *
-     * @return string The plain base64-encoded data (without data URI prefix).
-     * @throws \RuntimeException If the file is not inline.
+     * @return string|null The plain base64-encoded data (without data URI prefix), or null if not an inline file.
      */
-    public function getBase64Data(): string
+    public function getBase64Data(): ?string
     {
         if (!$this->fileType->isInline()) {
-            throw new \RuntimeException('Cannot get base64 data for non-inline file.');
+            return null;
         }
 
         return $this->data;
     }
 
     /**
-     * Gets the data as a data URL for inline files.
+     * Gets the data as a data URI for inline files.
      *
      * @since n.e.x.t
      *
-     * @return string The data URL in format: data:[mimeType];base64,[data].
-     * @throws \RuntimeException If the file is not inline.
+     * @return string|null The data URI in format: data:[mimeType];base64,[data], or null if not an inline file.
      */
-    public function getDataUrl(): string
+    public function getDataUri(): ?string
     {
         if (!$this->fileType->isInline()) {
-            throw new \RuntimeException('Cannot get data URL for non-inline file.');
+            return null;
         }
 
         return sprintf('data:%s;base64,%s', $this->getMimeType(), $this->data);
