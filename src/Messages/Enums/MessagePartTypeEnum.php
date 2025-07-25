@@ -12,13 +12,11 @@ use WordPress\AiClient\Common\AbstractEnum;
  * @since n.e.x.t
  *
  * @method static self text() Creates an instance for TEXT type.
- * @method static self inlineFile() Creates an instance for INLINE_FILE type.
- * @method static self remoteFile() Creates an instance for REMOTE_FILE type.
+ * @method static self file() Creates an instance for FILE type.
  * @method static self functionCall() Creates an instance for FUNCTION_CALL type.
  * @method static self functionResponse() Creates an instance for FUNCTION_RESPONSE type.
  * @method bool isText() Checks if the type is TEXT.
- * @method bool isInlineFile() Checks if the type is INLINE_FILE.
- * @method bool isRemoteFile() Checks if the type is REMOTE_FILE.
+ * @method bool isFile() Checks if the type is FILE.
  * @method bool isFunctionCall() Checks if the type is FUNCTION_CALL.
  * @method bool isFunctionResponse() Checks if the type is FUNCTION_RESPONSE.
  */
@@ -30,14 +28,9 @@ class MessagePartTypeEnum extends AbstractEnum
     public const TEXT = 'text';
 
     /**
-     * Inline file content (base64 encoded).
+     * File content (inline or remote).
      */
-    public const INLINE_FILE = 'inline_file';
-
-    /**
-     * Remote file reference (URL).
-     */
-    public const REMOTE_FILE = 'remote_file';
+    public const FILE = 'file';
 
     /**
      * Function call request.

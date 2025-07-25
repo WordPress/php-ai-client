@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Messages\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Files\DTO\InlineFile;
-use WordPress\AiClient\Files\DTO\RemoteFile;
+use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -32,14 +31,9 @@ class MessagePart implements WithJsonSchemaInterface
     private ?string $text = null;
 
     /**
-     * @var InlineFile|null Inline file data (when type is INLINE_FILE).
+     * @var File|null File data (when type is FILE).
      */
-    private ?InlineFile $inlineFile = null;
-
-    /**
-     * @var RemoteFile|null Remote file reference (when type is REMOTE_FILE).
-     */
-    private ?RemoteFile $remoteFile = null;
+    private ?File $file = null;
 
     /**
      * @var FunctionCall|null Function call request (when type is FUNCTION_CALL).
@@ -64,12 +58,9 @@ class MessagePart implements WithJsonSchemaInterface
         if (is_string($content)) {
             $this->type = MessagePartTypeEnum::text();
             $this->text = $content;
-        } elseif ($content instanceof InlineFile) {
-            $this->type = MessagePartTypeEnum::inlineFile();
-            $this->inlineFile = $content;
-        } elseif ($content instanceof RemoteFile) {
-            $this->type = MessagePartTypeEnum::remoteFile();
-            $this->remoteFile = $content;
+        } elseif ($content instanceof File) {
+            $this->type = MessagePartTypeEnum::file();
+            $this->file = $content;
         } elseif ($content instanceof FunctionCall) {
             $this->type = MessagePartTypeEnum::functionCall();
             $this->functionCall = $content;
@@ -80,7 +71,7 @@ class MessagePart implements WithJsonSchemaInterface
             $type = is_object($content) ? get_class($content) : gettype($content);
             throw new \InvalidArgumentException(
                 sprintf(
-                    'Unsupported content type %s. Expected string, InlineFile, RemoteFile, '
+                    'Unsupported content type %s. Expected string, File, '
                     . 'FunctionCall, or FunctionResponse.',
                     $type
                 )
@@ -113,27 +104,15 @@ class MessagePart implements WithJsonSchemaInterface
     }
 
     /**
-     * Gets the inline file.
+     * Gets the file.
      *
      * @since n.e.x.t
      *
-     * @return InlineFile|null The inline file or null if not an inline file part.
+     * @return File|null The file or null if not a file part.
      */
-    public function getInlineFile(): ?InlineFile
+    public function getFile(): ?File
     {
-        return $this->inlineFile;
-    }
-
-    /**
-     * Gets the remote file.
-     *
-     * @since n.e.x.t
-     *
-     * @return RemoteFile|null The remote file or null if not a remote file part.
-     */
-    public function getRemoteFile(): ?RemoteFile
-    {
-        return $this->remoteFile;
+        return $this->file;
     }
 
     /**
@@ -189,23 +168,11 @@ class MessagePart implements WithJsonSchemaInterface
                     'properties' => [
                         'type' => [
                             'type' => 'string',
-                            'const' => MessagePartTypeEnum::inlineFile()->value,
+                            'const' => MessagePartTypeEnum::file()->value,
                         ],
-                        'inlineFile' => InlineFile::getJsonSchema(),
+                        'file' => File::getJsonSchema(),
                     ],
-                    'required' => ['type', 'inlineFile'],
-                    'additionalProperties' => false,
-                ],
-                [
-                    'type' => 'object',
-                    'properties' => [
-                        'type' => [
-                            'type' => 'string',
-                            'const' => MessagePartTypeEnum::remoteFile()->value,
-                        ],
-                        'remoteFile' => RemoteFile::getJsonSchema(),
-                    ],
-                    'required' => ['type', 'remoteFile'],
+                    'required' => ['type', 'file'],
                     'additionalProperties' => false,
                 ],
                 [

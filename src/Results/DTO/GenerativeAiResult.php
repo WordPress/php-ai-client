@@ -161,14 +161,9 @@ class GenerativeAiResult implements ResultInterface
     {
         $message = $this->candidates[0]->getMessage();
         foreach ($message->getParts() as $part) {
-            $inlineFile = $part->getInlineFile();
-            if ($inlineFile !== null) {
-                return $inlineFile;
-            }
-
-            $remoteFile = $part->getRemoteFile();
-            if ($remoteFile !== null) {
-                return $remoteFile;
+            $file = $part->getFile();
+            if ($file !== null) {
+                return $file;
             }
         }
 
@@ -286,15 +281,9 @@ class GenerativeAiResult implements ResultInterface
         foreach ($this->candidates as $candidate) {
             $message = $candidate->getMessage();
             foreach ($message->getParts() as $part) {
-                $inlineFile = $part->getInlineFile();
-                if ($inlineFile !== null) {
-                    $files[] = $inlineFile;
-                    break;
-                }
-
-                $remoteFile = $part->getRemoteFile();
-                if ($remoteFile !== null) {
-                    $files[] = $remoteFile;
+                $file = $part->getFile();
+                if ($file !== null) {
+                    $files[] = $file;
                     break;
                 }
             }

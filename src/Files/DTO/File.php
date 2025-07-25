@@ -1,0 +1,377 @@
+<?php
+
+declare(strict_types=1);
+
+namespace WordPress\AiClient\Files\DTO;
+
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Files\Contracts\FileInterface;
+use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\ValueObjects\MimeType;
+
+/**
+ * Represents a file in the AI client.
+ *
+ * This DTO automatically detects whether a file is a URL, base64 data, or local file path
+ * and handles them appropriately.
+ *
+ * @since n.e.x.t
+ */
+class File implements FileInterface, WithJsonSchemaInterface
+{
+    /**
+     * @var MimeType The MIME type of the file.
+     */
+    private MimeType $mimeType;
+
+    /**
+     * @var FileTypeEnum The type of file storage.
+     */
+    private FileTypeEnum $fileType;
+
+    /**
+     * @var string The file data (URL for remote, base64 for inline).
+     */
+    private string $data;
+
+    /**
+     * Constructor.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $file The file string (URL, base64 data, or local path).
+     * @param string|null $mimeType The MIME type of the file (optional).
+     * @throws \InvalidArgumentException If the file format is invalid or MIME type cannot be determined.
+     */
+    public function __construct(string $file, ?string $mimeType = null)
+    {
+        // Detect and process the file type (will set MIME type if possible)
+        $this->detectAndProcessFile($file, $mimeType);
+    }
+
+    /**
+     * Detects the file type and processes it accordingly.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $file The file string to process.
+     * @param string|null $providedMimeType The explicitly provided MIME type.
+     * @throws \InvalidArgumentException If the file format is invalid or MIME type cannot be determined.
+     */
+    private function detectAndProcessFile(string $file, ?string $providedMimeType): void
+    {
+        // Check if it's a URL
+        if ($this->isUrl($file)) {
+            $this->fileType = FileTypeEnum::remote();
+            $this->data = $file;
+            $this->mimeType = $this->determineMimeType($providedMimeType, null, $file);
+            return;
+        }
+
+        // Check if it's a data URI
+        $dataUriPattern = '/^data:(?:([a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*'
+            . '(?:;[a-zA-Z0-9\-]+=[a-zA-Z0-9\-]+)*)?;)?base64,([A-Za-z0-9+\/]*={0,2})$/';
+
+        if (preg_match($dataUriPattern, $file, $matches)) {
+            $this->fileType = FileTypeEnum::inline();
+            $this->data = $matches[2]; // Extract just the base64 data
+            $extractedMimeType = empty($matches[1]) ? null : $matches[1];
+            $this->mimeType = $this->determineMimeType($providedMimeType, $extractedMimeType, null);
+            return;
+        }
+
+        // Check if it's plain base64
+        if (preg_match('/^[A-Za-z0-9+\/]*={0,2}$/', $file)) {
+            if ($providedMimeType === null) {
+                throw new \InvalidArgumentException(
+                    'MIME type is required when providing plain base64 data without data URI format.'
+                );
+            }
+            $this->fileType = FileTypeEnum::inline();
+            $this->data = $file;
+            $this->mimeType = new MimeType($providedMimeType);
+            return;
+        }
+
+        // If none of the above, assume it's a local file path
+        if (file_exists($file)) {
+            $this->fileType = FileTypeEnum::inline();
+            $this->data = $this->convertFileToBase64($file);
+            $this->mimeType = $this->determineMimeType($providedMimeType, null, $file);
+            return;
+        }
+
+        throw new \InvalidArgumentException(
+            'Invalid file provided. Expected URL, base64 data, or valid local file path.'
+        );
+    }
+
+    /**
+     * Checks if a string is a valid URL.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $string The string to check.
+     * @return bool True if the string is a URL.
+     */
+    private function isUrl(string $string): bool
+    {
+        return filter_var($string, FILTER_VALIDATE_URL) !== false
+            && preg_match('/^https?:\/\//i', $string);
+    }
+
+    /**
+     * Converts a local file to base64.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $filePath The path to the local file.
+     * @return string The base64-encoded file data.
+     * @throws \RuntimeException If the file cannot be read.
+     */
+    private function convertFileToBase64(string $filePath): string
+    {
+        $fileContent = @file_get_contents($filePath);
+
+        if ($fileContent === false) {
+            throw new \RuntimeException(
+                sprintf('Unable to read file: %s', $filePath)
+            );
+        }
+
+        return base64_encode($fileContent);
+    }
+
+    /**
+     * Gets the file type.
+     *
+     * @since n.e.x.t
+     *
+     * @return FileTypeEnum The file type.
+     */
+    public function getFileType(): FileTypeEnum
+    {
+        return $this->fileType;
+    }
+
+    /**
+     * Gets the URL for remote files.
+     *
+     * @since n.e.x.t
+     *
+     * @return string The URL.
+     * @throws \RuntimeException If the file is not remote.
+     */
+    public function getUrl(): string
+    {
+        if (!$this->fileType->isRemote()) {
+            throw new \RuntimeException('Cannot get URL for non-remote file.');
+        }
+
+        return $this->data;
+    }
+
+    /**
+     * Gets the base64-encoded data for inline files.
+     *
+     * @since n.e.x.t
+     *
+     * @return string The plain base64-encoded data (without data URI prefix).
+     * @throws \RuntimeException If the file is not inline.
+     */
+    public function getBase64Data(): string
+    {
+        if (!$this->fileType->isInline()) {
+            throw new \RuntimeException('Cannot get base64 data for non-inline file.');
+        }
+
+        return $this->data;
+    }
+
+    /**
+     * Gets the data as a data URL for inline files.
+     *
+     * @since n.e.x.t
+     *
+     * @return string The data URL in format: data:[mimeType];base64,[data].
+     * @throws \RuntimeException If the file is not inline.
+     */
+    public function getDataUrl(): string
+    {
+        if (!$this->fileType->isInline()) {
+            throw new \RuntimeException('Cannot get data URL for non-inline file.');
+        }
+
+        return sprintf('data:%s;base64,%s', $this->getMimeType(), $this->data);
+    }
+
+    /**
+     * Gets the MIME type of the file as a string.
+     *
+     * @since n.e.x.t
+     *
+     * @return string The MIME type string value.
+     */
+    public function getMimeType(): string
+    {
+        return (string) $this->mimeType;
+    }
+
+    /**
+     * Gets the MIME type object.
+     *
+     * @since n.e.x.t
+     *
+     * @return MimeType The MIME type object.
+     */
+    public function getMimeTypeObject(): MimeType
+    {
+        return $this->mimeType;
+    }
+
+    /**
+     * Checks if the file is a video.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if the file is a video.
+     */
+    public function isVideo(): bool
+    {
+        return $this->mimeType->isVideo();
+    }
+
+    /**
+     * Checks if the file is an image.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if the file is an image.
+     */
+    public function isImage(): bool
+    {
+        return $this->mimeType->isImage();
+    }
+
+    /**
+     * Checks if the file is audio.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if the file is audio.
+     */
+    public function isAudio(): bool
+    {
+        return $this->mimeType->isAudio();
+    }
+
+    /**
+     * Checks if the file is text.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if the file is text.
+     */
+    public function isText(): bool
+    {
+        return $this->mimeType->isText();
+    }
+
+    /**
+     * Determines the MIME type from various sources.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|null $providedMimeType The explicitly provided MIME type.
+     * @param string|null $extractedMimeType The MIME type extracted from data URI.
+     * @param string|null $pathOrUrl The file path or URL to extract extension from.
+     * @return MimeType The determined MIME type.
+     * @throws \InvalidArgumentException If MIME type cannot be determined.
+     */
+    private function determineMimeType(
+        ?string $providedMimeType,
+        ?string $extractedMimeType,
+        ?string $pathOrUrl
+    ): MimeType {
+        // Prefer explicitly provided MIME type
+        if ($providedMimeType !== null) {
+            return new MimeType($providedMimeType);
+        }
+
+        // Use extracted MIME type from data URI
+        if ($extractedMimeType !== null) {
+            return new MimeType($extractedMimeType);
+        }
+
+        // Try to determine from file extension
+        if ($pathOrUrl !== null) {
+            $parsedUrl = parse_url($pathOrUrl);
+            $path = $parsedUrl['path'] ?? $pathOrUrl;
+
+            // Remove query string and fragment if present
+            $cleanPath = strtok($path, '?#');
+            if ($cleanPath === false) {
+                $cleanPath = $path;
+            }
+
+            $extension = pathinfo($cleanPath, PATHINFO_EXTENSION);
+            if (!empty($extension)) {
+                try {
+                    return MimeType::fromExtension($extension);
+                } catch (\InvalidArgumentException $e) {
+                    // Extension not recognized, continue to error
+                    unset($e);
+                }
+            }
+        }
+
+        throw new \InvalidArgumentException(
+            'Unable to determine MIME type. Please provide it explicitly.'
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function getJsonSchema(): array
+    {
+        return [
+            'type' => 'object',
+            'oneOf' => [
+                [
+                    'properties' => [
+                        'mimeType' => [
+                            'type' => 'string',
+                            'description' => 'The MIME type of the file.',
+                            'pattern' => '^[a-zA-Z0-9][a-zA-Z0-9!#$&\\-\\^_+.]*\\/[a-zA-Z0-9]'
+                                . '[a-zA-Z0-9!#$&\\-\\^_+.]*$',
+                        ],
+                        'url' => [
+                            'type' => 'string',
+                            'format' => 'uri',
+                            'description' => 'The URL to the remote file.',
+                        ],
+                    ],
+                    'required' => ['mimeType', 'url'],
+                ],
+                [
+                    'properties' => [
+                        'mimeType' => [
+                            'type' => 'string',
+                            'description' => 'The MIME type of the file.',
+                            'pattern' => '^[a-zA-Z0-9][a-zA-Z0-9!#$&\\-\\^_+.]*\\/[a-zA-Z0-9]'
+                                . '[a-zA-Z0-9!#$&\\-\\^_+.]*$',
+                        ],
+                        'base64Data' => [
+                            'type' => 'string',
+                            'description' => 'The base64-encoded file data.',
+                        ],
+                    ],
+                    'required' => ['mimeType', 'base64Data'],
+                ],
+            ],
+        ];
+    }
+}
