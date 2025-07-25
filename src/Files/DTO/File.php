@@ -29,9 +29,14 @@ class File implements WithJsonSchemaInterface
     private FileTypeEnum $fileType;
 
     /**
-     * @var string The file data (URL for remote, base64 for inline).
+     * @var string|null The URL for remote files.
      */
-    private string $data;
+    private ?string $url = null;
+
+    /**
+     * @var string|null The base64 data for inline files.
+     */
+    private ?string $data = null;
 
     /**
      * Constructor.
@@ -62,7 +67,7 @@ class File implements WithJsonSchemaInterface
         // Check if it's a URL
         if ($this->isUrl($file)) {
             $this->fileType = FileTypeEnum::remote();
-            $this->data = $file;
+            $this->url = $file;
             $this->mimeType = $this->determineMimeType($providedMimeType, null, $file);
             return;
         }
@@ -162,11 +167,7 @@ class File implements WithJsonSchemaInterface
      */
     public function getUrl(): ?string
     {
-        if (!$this->fileType->isRemote()) {
-            return null;
-        }
-
-        return $this->data;
+        return $this->url;
     }
 
     /**
@@ -178,10 +179,6 @@ class File implements WithJsonSchemaInterface
      */
     public function getBase64Data(): ?string
     {
-        if (!$this->fileType->isInline()) {
-            return null;
-        }
-
         return $this->data;
     }
 
@@ -194,7 +191,7 @@ class File implements WithJsonSchemaInterface
      */
     public function getDataUri(): ?string
     {
-        if (!$this->fileType->isInline()) {
+        if ($this->data === null) {
             return null;
         }
 
