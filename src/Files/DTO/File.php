@@ -36,7 +36,7 @@ class File implements WithJsonSchemaInterface
     /**
      * @var string|null The base64 data for inline files.
      */
-    private ?string $data = null;
+    private ?string $base64Data = null;
 
     /**
      * Constructor.
@@ -78,7 +78,7 @@ class File implements WithJsonSchemaInterface
 
         if (preg_match($dataUriPattern, $file, $matches)) {
             $this->fileType = FileTypeEnum::inline();
-            $this->data = $matches[2]; // Extract just the base64 data
+            $this->base64Data = $matches[2]; // Extract just the base64 data
             $extractedMimeType = empty($matches[1]) ? null : $matches[1];
             $this->mimeType = $this->determineMimeType($providedMimeType, $extractedMimeType, null);
             return;
@@ -92,7 +92,7 @@ class File implements WithJsonSchemaInterface
                 );
             }
             $this->fileType = FileTypeEnum::inline();
-            $this->data = $file;
+            $this->base64Data = $file;
             $this->mimeType = new MimeType($providedMimeType);
             return;
         }
@@ -100,7 +100,7 @@ class File implements WithJsonSchemaInterface
         // If none of the above, assume it's a local file path
         if (file_exists($file)) {
             $this->fileType = FileTypeEnum::inline();
-            $this->data = $this->convertFileToBase64($file);
+            $this->base64Data = $this->convertFileToBase64($file);
             $this->mimeType = $this->determineMimeType($providedMimeType, null, $file);
             return;
         }
@@ -179,7 +179,7 @@ class File implements WithJsonSchemaInterface
      */
     public function getBase64Data(): ?string
     {
-        return $this->data;
+        return $this->base64Data;
     }
 
     /**
@@ -191,11 +191,11 @@ class File implements WithJsonSchemaInterface
      */
     public function getDataUri(): ?string
     {
-        if ($this->data === null) {
+        if ($this->base64Data === null) {
             return null;
         }
 
-        return sprintf('data:%s;base64,%s', $this->getMimeType(), $this->data);
+        return sprintf('data:%s;base64,%s', $this->getMimeType(), $this->base64Data);
     }
 
     /**
