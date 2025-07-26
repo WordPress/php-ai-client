@@ -38,7 +38,7 @@ class FunctionDeclaration implements WithJsonSchemaInterface
      *
      * @param string $name The name of the function.
      * @param string $description A description of what the function does.
-     * @param mixed|null $parameters The JSON schema for the function parameters.
+     * @param mixed $parameters The JSON schema for the function parameters.
      */
     public function __construct(string $name, string $description, $parameters = null)
     {
