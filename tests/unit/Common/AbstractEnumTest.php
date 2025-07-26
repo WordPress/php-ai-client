@@ -173,10 +173,7 @@ class AbstractEnumTest extends TestCase
     {
         $values = ValidTestEnum::getValues();
 
-        $this->assertSame([
-            'FIRST_NAME' => 'first',
-            'LAST_NAME' => 'last',
-        ], $values);
+        $this->assertSame(['first', 'last'], $values);
     }
 
     /**

@@ -34,8 +34,7 @@ class MessagePartTypeEnumTest extends TestCase
     {
         return [
             'TEXT' => 'text',
-            'INLINE_FILE' => 'inline_file',
-            'REMOTE_FILE' => 'remote_file',
+            'FILE' => 'file',
             'FUNCTION_CALL' => 'function_call',
             'FUNCTION_RESPONSE' => 'function_response',
         ];
@@ -50,11 +49,11 @@ class MessagePartTypeEnumTest extends TestCase
     {
         $text = MessagePartTypeEnum::text();
         $this->assertTrue($text->isText());
-        $this->assertFalse($text->isInlineFile());
+        $this->assertFalse($text->isFile());
 
-        $inlineFile = MessagePartTypeEnum::inlineFile();
-        $this->assertTrue($inlineFile->isInlineFile());
-        $this->assertFalse($inlineFile->isRemoteFile());
+        $file = MessagePartTypeEnum::file();
+        $this->assertTrue($file->isFile());
+        $this->assertFalse($file->isText());
 
         $functionCall = MessagePartTypeEnum::functionCall();
         $this->assertTrue($functionCall->isFunctionCall());
