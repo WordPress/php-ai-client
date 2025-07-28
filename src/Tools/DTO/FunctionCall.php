@@ -14,7 +14,7 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @since n.e.x.t
  *
- * @phpstan-type FunctionCallArrayShape array{id?: string, name?: string, args?: mixed}
+ * @phpstan-type FunctionCallArrayShape array{id?: string, name?: string, args?: array<string, mixed>}
  *
  * @extends AbstractDataValueObject<FunctionCallArrayShape>
  */
@@ -163,13 +163,10 @@ final class FunctionCall extends AbstractDataValueObject
      */
     public static function fromArray(array $array): FunctionCall
     {
-        /** @var array<string, mixed> $args */
-        $args = $array['args'] ?? [];
-
         return new self(
-            isset($array['id']) ? $array['id'] : null,
-            isset($array['name']) ? $array['name'] : null,
-            $args
+            $array['id'] ?? null,
+            $array['name'] ?? null,
+            $array['args'] ?? []
         );
     }
 }
