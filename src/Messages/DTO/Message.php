@@ -122,6 +122,8 @@ class Message implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
+     *
+     * @return self|UserMessage|ModelMessage|SystemMessage
      */
     final public static function fromJson(array $json): Message
     {
@@ -133,17 +135,13 @@ class Message implements WithJsonSchemaInterface, WithJsonSerialization
 
         // Determine which concrete class to instantiate based on role
         if ($role->isUser()) {
-            /** @phpstan-ignore-next-line */
             return new UserMessage($parts);
         } elseif ($role->isModel()) {
-            /** @phpstan-ignore-next-line */
             return new ModelMessage($parts);
         } elseif ($role->isSystem()) {
-            /** @phpstan-ignore-next-line */
             return new SystemMessage($parts);
         }
 
-        /** @phpstan-ignore-next-line */
         return new self($role, $parts);
     }
 }
