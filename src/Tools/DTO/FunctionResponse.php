@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
 
 /**
  * Represents a response to a function call.
@@ -14,7 +15,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
  *
  * @since n.e.x.t
  */
-class FunctionResponse implements WithJsonSchemaInterface
+class FunctionResponse implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var string The ID of the function call this is responding to.
@@ -108,5 +109,35 @@ class FunctionResponse implements WithJsonSchemaInterface
             ],
             'required' => ['id', 'name', 'response'],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'response' => $this->response,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): FunctionResponse
+    {
+        return new self(
+            (string) $json['id'],
+            (string) $json['name'],
+            $json['response']
+        );
     }
 }

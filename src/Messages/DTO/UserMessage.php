@@ -26,4 +26,20 @@ class UserMessage extends Message
     {
         parent::__construct(MessageRoleEnum::user(), $parts);
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): UserMessage
+    {
+        /** @var array<array<string, mixed>> $partsData */
+        $partsData = $json['parts'];
+        $parts = array_map(function (array $partData) {
+            return MessagePart::fromJson($partData);
+        }, $partsData);
+
+        return new self($parts);
+    }
 }

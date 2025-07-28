@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
 
 /**
@@ -15,7 +16,7 @@ use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
  *
  * @since n.e.x.t
  */
-class Tool implements WithJsonSchemaInterface
+class Tool implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var ToolTypeEnum The type of tool.
@@ -131,5 +132,52 @@ class Tool implements WithJsonSchemaInterface
                 ],
             ],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        $data = ['type' => $this->type->value];
+
+        if ($this->type->isFunctionDeclarations() && $this->functionDeclarations !== null) {
+            $data['functionDeclarations'] = array_map(function (FunctionDeclaration $declaration) {
+                return $declaration->jsonSerialize();
+            }, $this->functionDeclarations);
+        } elseif ($this->type->isWebSearch() && $this->webSearch !== null) {
+            $data['webSearch'] = $this->webSearch->jsonSerialize();
+        }
+
+        return $data;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): Tool
+    {
+        $type = ToolTypeEnum::from((string) $json['type']);
+
+        if ($type->isFunctionDeclarations()) {
+            /** @var array<array<string, mixed>> $declarationsData */
+            $declarationsData = $json['functionDeclarations'];
+            $declarations = array_map(function (array $declarationData) {
+                return FunctionDeclaration::fromJson($declarationData);
+            }, $declarationsData);
+            return new self($declarations);
+        } elseif ($type->isWebSearch()) {
+            /** @var array<string, mixed> $webSearchData */
+            $webSearchData = $json['webSearch'];
+            return new self(WebSearch::fromJson($webSearchData));
+        }
+
+        throw new \InvalidArgumentException(sprintf('Unknown tool type: %s', $json['type']));
     }
 }

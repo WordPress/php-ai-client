@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
 
 /**
  * Represents web search configuration for AI models.
@@ -14,7 +15,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
  *
  * @since n.e.x.t
  */
-class WebSearch implements WithJsonSchemaInterface
+class WebSearch implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var string[] List of domains that are allowed for web search.
@@ -91,5 +92,38 @@ class WebSearch implements WithJsonSchemaInterface
             ],
             'required' => [],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'allowedDomains' => $this->allowedDomains,
+            'disallowedDomains' => $this->disallowedDomains,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): WebSearch
+    {
+        /** @var string[] $allowedDomains */
+        $allowedDomains = $json['allowedDomains'] ?? [];
+        /** @var string[] $disallowedDomains */
+        $disallowedDomains = $json['disallowedDomains'] ?? [];
+
+        return new self(
+            $allowedDomains,
+            $disallowedDomains
+        );
     }
 }

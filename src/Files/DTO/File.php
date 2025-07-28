@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Files\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\ValueObjects\MimeType;
 
@@ -16,7 +17,7 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  *
  * @since n.e.x.t
  */
-class File implements WithJsonSchemaInterface
+class File implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var MimeType The MIME type of the file.
@@ -376,5 +377,46 @@ class File implements WithJsonSchemaInterface
                 ],
             ],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        $data = [
+            'fileType' => $this->fileType->value,
+            'mimeType' => $this->getMimeType(),
+        ];
+
+        if ($this->fileType->isRemote()) {
+            $data['url'] = $this->url;
+        } else {
+            $data['base64Data'] = $this->base64Data;
+        }
+
+        return $data;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): File
+    {
+        $fileType = FileTypeEnum::from((string) $json['fileType']);
+
+        if ($fileType->isRemote()) {
+            return new self((string) $json['url'], (string) $json['mimeType']);
+        } else {
+            // Create data URI from base64 data and mime type
+            $dataUri = sprintf('data:%s;base64,%s', (string) $json['mimeType'], (string) $json['base64Data']);
+            return new self($dataUri);
+        }
     }
 }

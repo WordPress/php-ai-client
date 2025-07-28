@@ -378,4 +378,49 @@ class GenerativeAiResult implements ResultInterface
             'required' => ['id', 'candidates', 'tokenUsage'],
         ];
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'id' => $this->id,
+            'candidates' => array_map(function (Candidate $candidate) {
+                return $candidate->jsonSerialize();
+            }, $this->candidates),
+            'tokenUsage' => $this->tokenUsage->jsonSerialize(),
+            'providerMetadata' => $this->providerMetadata,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): GenerativeAiResult
+    {
+        /** @var array<array<string, mixed>> $candidatesData */
+        $candidatesData = $json['candidates'];
+        $candidates = array_map(function (array $candidateData) {
+            return Candidate::fromJson($candidateData);
+        }, $candidatesData);
+
+        /** @var array<string, mixed> $tokenUsageData */
+        $tokenUsageData = $json['tokenUsage'];
+        /** @var array<string, mixed> $providerMetadata */
+        $providerMetadata = $json['providerMetadata'] ?? [];
+
+        return new self(
+            (string) $json['id'],
+            $candidates,
+            TokenUsage::fromJson($tokenUsageData),
+            $providerMetadata
+        );
+    }
 }

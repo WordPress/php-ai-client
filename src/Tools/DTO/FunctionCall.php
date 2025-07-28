@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
 
 /**
  * Represents a function call request from an AI model.
@@ -14,7 +15,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
  *
  * @since n.e.x.t
  */
-class FunctionCall implements WithJsonSchemaInterface
+class FunctionCall implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var string|null Unique identifier for this function call.
@@ -124,5 +125,48 @@ class FunctionCall implements WithJsonSchemaInterface
                 ],
             ],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        $data = [];
+
+        if ($this->id !== null) {
+            $data['id'] = $this->id;
+        }
+
+        if ($this->name !== null) {
+            $data['name'] = $this->name;
+        }
+
+        if (!empty($this->args)) {
+            $data['args'] = $this->args;
+        }
+
+        return $data;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): FunctionCall
+    {
+        /** @var array<string, mixed> $args */
+        $args = $json['args'] ?? [];
+
+        return new self(
+            isset($json['id']) ? (string) $json['id'] : null,
+            isset($json['name']) ? (string) $json['name'] : null,
+            $args
+        );
     }
 }

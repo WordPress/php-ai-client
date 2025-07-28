@@ -132,4 +132,43 @@ class GenerativeAiOperation implements OperationInterface
             ],
         ];
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        $data = [
+            'id' => $this->id,
+            'state' => $this->state->value,
+        ];
+
+        if ($this->result !== null) {
+            $data['result'] = $this->result->jsonSerialize();
+        }
+
+        return $data;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): GenerativeAiOperation
+    {
+        $state = OperationStateEnum::from((string) $json['state']);
+        $result = null;
+        if (isset($json['result'])) {
+            /** @var array<string, mixed> $resultData */
+            $resultData = $json['result'];
+            $result = GenerativeAiResult::fromJson($resultData);
+        }
+
+        return new self((string) $json['id'], $state, $result);
+    }
 }

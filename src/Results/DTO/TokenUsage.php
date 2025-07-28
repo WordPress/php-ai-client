@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Results\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
 
 /**
  * Represents token usage statistics for an AI operation.
@@ -14,7 +15,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
  *
  * @since n.e.x.t
  */
-class TokenUsage implements WithJsonSchemaInterface
+class TokenUsage implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var int Number of tokens in the prompt.
@@ -108,5 +109,35 @@ class TokenUsage implements WithJsonSchemaInterface
             ],
             'required' => ['promptTokens', 'completionTokens', 'totalTokens'],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'promptTokens' => $this->promptTokens,
+            'completionTokens' => $this->completionTokens,
+            'totalTokens' => $this->totalTokens,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): TokenUsage
+    {
+        return new self(
+            (int) $json['promptTokens'],
+            (int) $json['completionTokens'],
+            (int) $json['totalTokens']
+        );
     }
 }

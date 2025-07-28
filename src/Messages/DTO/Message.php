@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Messages\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
@@ -15,7 +16,7 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  *
  * @since n.e.x.t
  */
-class Message implements WithJsonSchemaInterface
+class Message implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var MessageRoleEnum The role of the message sender.
@@ -89,5 +90,39 @@ class Message implements WithJsonSchemaInterface
             ],
             'required' => ['role', 'parts'],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'role' => $this->role->value,
+            'parts' => array_map(function (MessagePart $part) {
+                return $part->jsonSerialize();
+            }, $this->parts),
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): Message
+    {
+        $role = MessageRoleEnum::from((string) $json['role']);
+        /** @var array<array<string, mixed>> $partsData */
+        $partsData = $json['parts'];
+        $parts = array_map(function (array $partData) {
+            return MessagePart::fromJson($partData);
+        }, $partsData);
+
+        return new self($role, $parts);
     }
 }

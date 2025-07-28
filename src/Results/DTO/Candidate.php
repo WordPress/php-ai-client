@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Results\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
@@ -16,7 +17,7 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *
  * @since n.e.x.t
  */
-class Candidate implements WithJsonSchemaInterface
+class Candidate implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var Message The generated message.
@@ -114,5 +115,38 @@ class Candidate implements WithJsonSchemaInterface
             ],
             'required' => ['message', 'finishReason', 'tokenCount'],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'message' => $this->message->jsonSerialize(),
+            'finishReason' => $this->finishReason->value,
+            'tokenCount' => $this->tokenCount,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): Candidate
+    {
+        /** @var array<string, mixed> $messageData */
+        $messageData = $json['message'];
+
+        return new self(
+            Message::fromJson($messageData),
+            FinishReasonEnum::from((string) $json['finishReason']),
+            (int) $json['tokenCount']
+        );
     }
 }

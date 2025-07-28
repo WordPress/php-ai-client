@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
 
 /**
  * Represents a function declaration for AI models.
@@ -14,7 +15,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
  *
  * @since n.e.x.t
  */
-class FunctionDeclaration implements WithJsonSchemaInterface
+class FunctionDeclaration implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var string The name of the function.
@@ -108,5 +109,40 @@ class FunctionDeclaration implements WithJsonSchemaInterface
             ],
             'required' => ['name', 'description'],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        $data = [
+            'name' => $this->name,
+            'description' => $this->description,
+        ];
+
+        if ($this->parameters !== null) {
+            $data['parameters'] = $this->parameters;
+        }
+
+        return $data;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): FunctionDeclaration
+    {
+        return new self(
+            (string) $json['name'],
+            (string) $json['description'],
+            $json['parameters'] ?? null
+        );
     }
 }

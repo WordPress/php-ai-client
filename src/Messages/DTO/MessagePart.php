@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Messages\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -18,7 +19,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  *
  * @since n.e.x.t
  */
-class MessagePart implements WithJsonSchemaInterface
+class MessagePart implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var MessagePartTypeEnum The type of this message part.
@@ -201,5 +202,57 @@ class MessagePart implements WithJsonSchemaInterface
                 ],
             ],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        $data = ['type' => $this->type->value];
+
+        if ($this->type->isText() && $this->text !== null) {
+            $data['text'] = $this->text;
+        } elseif ($this->type->isFile() && $this->file !== null) {
+            $data['file'] = $this->file->jsonSerialize();
+        } elseif ($this->type->isFunctionCall() && $this->functionCall !== null) {
+            $data['functionCall'] = $this->functionCall->jsonSerialize();
+        } elseif ($this->type->isFunctionResponse() && $this->functionResponse !== null) {
+            $data['functionResponse'] = $this->functionResponse->jsonSerialize();
+        }
+
+        return $data;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromJson(array $json): MessagePart
+    {
+        $type = MessagePartTypeEnum::from((string) $json['type']);
+
+        if ($type->isText()) {
+            return new self((string) $json['text']);
+        } elseif ($type->isFile()) {
+            /** @var array<string, mixed> $fileData */
+            $fileData = $json['file'];
+            return new self(File::fromJson($fileData));
+        } elseif ($type->isFunctionCall()) {
+            /** @var array<string, mixed> $functionCallData */
+            $functionCallData = $json['functionCall'];
+            return new self(FunctionCall::fromJson($functionCallData));
+        } elseif ($type->isFunctionResponse()) {
+            /** @var array<string, mixed> $functionResponseData */
+            $functionResponseData = $json['functionResponse'];
+            return new self(FunctionResponse::fromJson($functionResponseData));
+        }
+
+        throw new \InvalidArgumentException(sprintf('Unknown message part type: %s', $json['type']));
     }
 }
