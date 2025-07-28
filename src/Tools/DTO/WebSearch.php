@@ -119,12 +119,9 @@ final class WebSearch extends AbstractDataValueObject
      */
     public static function fromArray(array $array): WebSearch
     {
-        $allowedDomains = $array['allowedDomains'] ?? [];
-        $disallowedDomains = $array['disallowedDomains'] ?? [];
-
         return new self(
-            $allowedDomains,
-            $disallowedDomains
+            $array['allowedDomains'] ?? [],
+            $array['disallowedDomains'] ?? []
         );
     }
 }
