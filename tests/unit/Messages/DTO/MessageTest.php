@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -226,5 +227,96 @@ class MessageTest extends TestCase
         
         $this->assertTrue($message->getRole()->isModel());
         $this->assertNotNull($message->getParts()[0]->getFunctionResponse());
+    }
+
+    /**
+     * Tests JSON serialization.
+     *
+     * @return void
+     */
+    public function testJsonSerialize(): void
+    {
+        $role = MessageRoleEnum::user();
+        $parts = [
+            new MessagePart('Hello, world!'),
+            new MessagePart('How are you?')
+        ];
+        $message = new Message($role, $parts);
+        $json = $message->jsonSerialize();
+        
+        $this->assertIsArray($json);
+        $this->assertEquals($role->value, $json['role']);
+        $this->assertIsArray($json['parts']);
+        $this->assertCount(2, $json['parts']);
+        $this->assertEquals('Hello, world!', $json['parts'][0]['text']);
+        $this->assertEquals('How are you?', $json['parts'][1]['text']);
+    }
+
+    /**
+     * Tests fromJson method.
+     *
+     * @return void
+     */
+    public function testFromJson(): void
+    {
+        $json = [
+            'role' => MessageRoleEnum::system()->value,
+            'parts' => [
+                ['type' => MessagePartTypeEnum::text()->value, 'text' => 'You are a helpful assistant.']
+            ]
+        ];
+        
+        $message = Message::fromJson($json);
+        
+        $this->assertInstanceOf(Message::class, $message);
+        $this->assertEquals(MessageRoleEnum::system(), $message->getRole());
+        $this->assertCount(1, $message->getParts());
+        $this->assertEquals('You are a helpful assistant.', $message->getParts()[0]->getText());
+    }
+
+    /**
+     * Tests round-trip JSON serialization.
+     *
+     * @return void
+     */
+    public function testJsonRoundTrip(): void
+    {
+        $original = new Message(
+            MessageRoleEnum::model(),
+            [
+                new MessagePart('Here is the result:'),
+                new MessagePart(new File('https://example.com/result.png', 'image/png'))
+            ]
+        );
+        
+        $json = $original->jsonSerialize();
+        $restored = Message::fromJson($json);
+        
+        $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
+        $this->assertCount(count($original->getParts()), $restored->getParts());
+        $this->assertEquals($original->getParts()[0]->getText(), $restored->getParts()[0]->getText());
+        $this->assertEquals(
+            $original->getParts()[1]->getFile()->getUrl(),
+            $restored->getParts()[1]->getFile()->getUrl()
+        );
+    }
+
+    /**
+     * Tests Message implements WithJsonSerialization.
+     *
+     * @return void
+     */
+    public function testImplementsWithJsonSerialization(): void
+    {
+        $message = new Message(MessageRoleEnum::user(), [new MessagePart('test')]);
+        
+        $this->assertInstanceOf(
+            \WordPress\AiClient\Common\Contracts\WithJsonSerialization::class,
+            $message
+        );
+        $this->assertInstanceOf(
+            \JsonSerializable::class,
+            $message
+        );
     }
 }

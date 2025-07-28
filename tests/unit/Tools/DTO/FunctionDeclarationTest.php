@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
 /**
@@ -12,6 +13,7 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
  */
 class FunctionDeclarationTest extends TestCase
 {
+    use JsonSerializationTestTrait;
     /**
      * Tests creating FunctionDeclaration with all properties.
      *
@@ -184,5 +186,141 @@ class FunctionDeclarationTest extends TestCase
         );
         
         $this->assertEquals($parameters, $declaration->getParameters());
+    }
+
+    /**
+     * Tests JSON serialization with parameters.
+     *
+     * @return void
+     */
+    public function testJsonSerializeWithParameters(): void
+    {
+        $declaration = new FunctionDeclaration(
+            'searchWeb',
+            'Searches the web for information',
+            ['type' => 'object', 'properties' => ['query' => ['type' => 'string']]]
+        );
+        
+        $json = $this->assertJsonSerializeReturnsArray($declaration);
+        
+        $this->assertJsonHasKeys($json, ['name', 'description', 'parameters']);
+        $this->assertEquals('searchWeb', $json['name']);
+        $this->assertEquals('Searches the web for information', $json['description']);
+        $this->assertEquals(['type' => 'object', 'properties' => ['query' => ['type' => 'string']]], $json['parameters']);
+    }
+
+    /**
+     * Tests JSON serialization without parameters.
+     *
+     * @return void
+     */
+    public function testJsonSerializeWithoutParameters(): void
+    {
+        $declaration = new FunctionDeclaration(
+            'getTimestamp',
+            'Returns the current Unix timestamp'
+        );
+        
+        $json = $this->assertJsonSerializeReturnsArray($declaration);
+        
+        $this->assertJsonHasKeys($json, ['name', 'description']);
+        $this->assertArrayNotHasKey('parameters', $json);
+        $this->assertEquals('getTimestamp', $json['name']);
+        $this->assertEquals('Returns the current Unix timestamp', $json['description']);
+    }
+
+    /**
+     * Tests fromJson method with parameters.
+     *
+     * @return void
+     */
+    public function testFromJsonWithParameters(): void
+    {
+        $json = [
+            'name' => 'calculateArea',
+            'description' => 'Calculates the area of a rectangle',
+            'parameters' => [
+                'type' => 'object',
+                'properties' => [
+                    'width' => ['type' => 'number'],
+                    'height' => ['type' => 'number']
+                ],
+                'required' => ['width', 'height']
+            ]
+        ];
+        
+        $declaration = FunctionDeclaration::fromJson($json);
+        
+        $this->assertInstanceOf(FunctionDeclaration::class, $declaration);
+        $this->assertEquals('calculateArea', $declaration->getName());
+        $this->assertEquals('Calculates the area of a rectangle', $declaration->getDescription());
+        $this->assertEquals($json['parameters'], $declaration->getParameters());
+    }
+
+    /**
+     * Tests fromJson method without parameters.
+     *
+     * @return void
+     */
+    public function testFromJsonWithoutParameters(): void
+    {
+        $json = [
+            'name' => 'ping',
+            'description' => 'Simple ping function'
+        ];
+        
+        $declaration = FunctionDeclaration::fromJson($json);
+        
+        $this->assertInstanceOf(FunctionDeclaration::class, $declaration);
+        $this->assertEquals('ping', $declaration->getName());
+        $this->assertEquals('Simple ping function', $declaration->getDescription());
+        $this->assertNull($declaration->getParameters());
+    }
+
+    /**
+     * Tests round-trip JSON serialization.
+     *
+     * @return void
+     */
+    public function testJsonRoundTrip(): void
+    {
+        $this->assertJsonRoundTrip(
+            new FunctionDeclaration(
+                'complexFunction',
+                'A complex function with nested parameters',
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'user' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'name' => ['type' => 'string'],
+                                'age' => ['type' => 'integer', 'minimum' => 0]
+                            ]
+                        ],
+                        'options' => [
+                            'type' => 'array',
+                            'items' => ['type' => 'string']
+                        ]
+                    ]
+                ]
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getName(), $restored->getName());
+                $this->assertEquals($original->getDescription(), $restored->getDescription());
+                $this->assertEquals($original->getParameters(), $restored->getParameters());
+            }
+        );
+    }
+
+    /**
+     * Tests FunctionDeclaration implements WithJsonSerialization.
+     *
+     * @return void
+     */
+    public function testImplementsWithJsonSerialization(): void
+    {
+        $declaration = new FunctionDeclaration('test', 'test function');
+        $this->assertImplementsJsonSerialization($declaration);
     }
 }

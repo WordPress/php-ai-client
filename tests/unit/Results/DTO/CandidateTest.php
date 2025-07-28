@@ -10,9 +10,11 @@ use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
+use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 
 /**
@@ -20,6 +22,7 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
  */
 class CandidateTest extends TestCase
 {
+    use JsonSerializationTestTrait;
     /**
      * Tests creating candidate with basic properties.
      *
@@ -328,5 +331,110 @@ class CandidateTest extends TestCase
         );
         
         $this->assertTrue($candidate->getFinishReason()->isError());
+    }
+
+    /**
+     * Tests JSON serialization.
+     *
+     * @return void
+     */
+    public function testJsonSerialize(): void
+    {
+        $message = new ModelMessage([
+            new MessagePart('This is the AI response.'),
+            new MessagePart('It contains multiple parts.')
+        ]);
+        
+        $candidate = new Candidate(
+            $message,
+            FinishReasonEnum::stop(),
+            45
+        );
+        
+        $json = $this->assertJsonSerializeReturnsArray($candidate);
+        
+        $this->assertJsonHasKeys($json, ['message', 'finishReason', 'tokenCount']);
+        $this->assertIsArray($json['message']);
+        $this->assertEquals(FinishReasonEnum::stop()->value, $json['finishReason']);
+        $this->assertEquals(45, $json['tokenCount']);
+    }
+
+    /**
+     * Tests fromJson method.
+     *
+     * @return void
+     */
+    public function testFromJson(): void
+    {
+        $json = [
+            'message' => [
+                'role' => MessageRoleEnum::model()->value,
+                'parts' => [
+                    ['type' => MessagePartTypeEnum::text()->value, 'text' => 'Response text 1'],
+                    ['type' => MessagePartTypeEnum::text()->value, 'text' => 'Response text 2']
+                ]
+            ],
+            'finishReason' => FinishReasonEnum::stop()->value,
+            'tokenCount' => 75
+        ];
+        
+        $candidate = Candidate::fromJson($json);
+        
+        $this->assertInstanceOf(Candidate::class, $candidate);
+        $this->assertEquals(FinishReasonEnum::stop(), $candidate->getFinishReason());
+        $this->assertEquals(75, $candidate->getTokenCount());
+        $this->assertCount(2, $candidate->getMessage()->getParts());
+        $this->assertEquals('Response text 1', $candidate->getMessage()->getParts()[0]->getText());
+        $this->assertEquals('Response text 2', $candidate->getMessage()->getParts()[1]->getText());
+    }
+
+    /**
+     * Tests round-trip JSON serialization.
+     *
+     * @return void
+     */
+    public function testJsonRoundTrip(): void
+    {
+        $this->assertJsonRoundTrip(
+            new Candidate(
+                new ModelMessage([
+                    new MessagePart('Generated response'),
+                    new MessagePart(new FunctionCall('call_123', 'search', ['q' => 'test']))
+                ]),
+                FinishReasonEnum::toolCalls(),
+                120
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getFinishReason()->value, $restored->getFinishReason()->value);
+                $this->assertEquals($original->getTokenCount(), $restored->getTokenCount());
+                $this->assertCount(
+                    count($original->getMessage()->getParts()),
+                    $restored->getMessage()->getParts()
+                );
+                $this->assertEquals(
+                    $original->getMessage()->getParts()[0]->getText(),
+                    $restored->getMessage()->getParts()[0]->getText()
+                );
+                $this->assertEquals(
+                    $original->getMessage()->getParts()[1]->getFunctionCall()->getId(),
+                    $restored->getMessage()->getParts()[1]->getFunctionCall()->getId()
+                );
+            }
+        );
+    }
+
+    /**
+     * Tests Candidate implements WithJsonSerialization.
+     *
+     * @return void
+     */
+    public function testImplementsWithJsonSerialization(): void
+    {
+        $candidate = new Candidate(
+            new ModelMessage([new MessagePart('test')]),
+            FinishReasonEnum::stop(),
+            10
+        );
+        $this->assertImplementsJsonSerialization($candidate);
     }
 }

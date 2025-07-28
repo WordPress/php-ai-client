@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
@@ -12,6 +13,8 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  */
 class FunctionResponseTest extends TestCase
 {
+    use JsonSerializationTestTrait;
+
     /**
      * Tests creating FunctionResponse with all properties.
      *
@@ -179,5 +182,70 @@ class FunctionResponseTest extends TestCase
         
         $this->assertEquals($largeData, $response->getResponse());
         $this->assertCount(1000, $response->getResponse());
+    }
+
+    /**
+     * Tests JSON serialization.
+     *
+     * @return void
+     */
+    public function testJsonSerialize(): void
+    {
+        $response = new FunctionResponse('func_123', 'calculate', ['result' => 42]);
+        $json = $this->assertJsonSerializeReturnsArray($response);
+        
+        $this->assertJsonHasKeys($json, ['id', 'name', 'response']);
+        $this->assertEquals('func_123', $json['id']);
+        $this->assertEquals('calculate', $json['name']);
+        $this->assertEquals(['result' => 42], $json['response']);
+    }
+
+    /**
+     * Tests fromJson method.
+     *
+     * @return void
+     */
+    public function testFromJson(): void
+    {
+        $json = [
+            'id' => 'func_456',
+            'name' => 'search',
+            'response' => ['found' => true, 'count' => 5]
+        ];
+        
+        $response = FunctionResponse::fromJson($json);
+        
+        $this->assertInstanceOf(FunctionResponse::class, $response);
+        $this->assertEquals('func_456', $response->getId());
+        $this->assertEquals('search', $response->getName());
+        $this->assertEquals(['found' => true, 'count' => 5], $response->getResponse());
+    }
+
+    /**
+     * Tests round-trip JSON serialization.
+     *
+     * @return void
+     */
+    public function testJsonRoundTrip(): void
+    {
+        $this->assertJsonRoundTrip(
+            new FunctionResponse('id_789', 'process', ['status' => 'complete']),
+            function ($original, $restored) {
+                $this->assertEquals($original->getId(), $restored->getId());
+                $this->assertEquals($original->getName(), $restored->getName());
+                $this->assertEquals($original->getResponse(), $restored->getResponse());
+            }
+        );
+    }
+
+    /**
+     * Tests FunctionResponse implements WithJsonSerialization.
+     *
+     * @return void
+     */
+    public function testImplementsWithJsonSerialization(): void
+    {
+        $response = new FunctionResponse('id', 'name', 'result');
+        $this->assertImplementsJsonSerialization($response);
     }
 }

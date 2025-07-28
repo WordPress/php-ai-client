@@ -209,6 +209,82 @@ class TokenUsageTest extends TestCase
     }
 
     /**
+     * Tests JSON serialization.
+     *
+     * @return void
+     */
+    public function testJsonSerialize(): void
+    {
+        $tokenUsage = new TokenUsage(100, 50, 150);
+        $json = $tokenUsage->jsonSerialize();
+        
+        $this->assertIsArray($json);
+        $this->assertArrayHasKey('promptTokens', $json);
+        $this->assertArrayHasKey('completionTokens', $json);
+        $this->assertArrayHasKey('totalTokens', $json);
+        
+        $this->assertEquals(100, $json['promptTokens']);
+        $this->assertEquals(50, $json['completionTokens']);
+        $this->assertEquals(150, $json['totalTokens']);
+    }
+
+    /**
+     * Tests fromJson method.
+     *
+     * @return void
+     */
+    public function testFromJson(): void
+    {
+        $json = [
+            'promptTokens' => 100,
+            'completionTokens' => 50,
+            'totalTokens' => 150,
+        ];
+        
+        $tokenUsage = TokenUsage::fromJson($json);
+        
+        $this->assertInstanceOf(TokenUsage::class, $tokenUsage);
+        $this->assertEquals(100, $tokenUsage->getPromptTokens());
+        $this->assertEquals(50, $tokenUsage->getCompletionTokens());
+        $this->assertEquals(150, $tokenUsage->getTotalTokens());
+    }
+
+    /**
+     * Tests round-trip JSON serialization.
+     *
+     * @return void
+     */
+    public function testJsonRoundTrip(): void
+    {
+        $original = new TokenUsage(123, 456, 579);
+        $json = $original->jsonSerialize();
+        $restored = TokenUsage::fromJson($json);
+        
+        $this->assertEquals($original->getPromptTokens(), $restored->getPromptTokens());
+        $this->assertEquals($original->getCompletionTokens(), $restored->getCompletionTokens());
+        $this->assertEquals($original->getTotalTokens(), $restored->getTotalTokens());
+    }
+
+    /**
+     * Tests TokenUsage implements WithJsonSerialization.
+     *
+     * @return void
+     */
+    public function testImplementsWithJsonSerialization(): void
+    {
+        $tokenUsage = new TokenUsage(10, 20, 30);
+        
+        $this->assertInstanceOf(
+            \WordPress\AiClient\Common\Contracts\WithJsonSerialization::class,
+            $tokenUsage
+        );
+        $this->assertInstanceOf(
+            \JsonSerializable::class,
+            $tokenUsage
+        );
+    }
+
+    /**
      * Tests TokenUsage with streaming response simulation.
      *
      * @return void

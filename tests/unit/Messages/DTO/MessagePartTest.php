@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Messages\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -229,5 +230,136 @@ class MessagePartTest extends TestCase
         $part = new MessagePart($unicodeText);
         
         $this->assertEquals($unicodeText, $part->getText());
+    }
+
+    /**
+     * Tests JSON serialization with text content.
+     *
+     * @return void
+     */
+    public function testJsonSerializeWithText(): void
+    {
+        $part = new MessagePart('Hello, world!');
+        $json = $part->jsonSerialize();
+        
+        $this->assertIsArray($json);
+        $this->assertArrayHasKey('type', $json);
+        $this->assertArrayHasKey('text', $json);
+        $this->assertEquals(MessagePartTypeEnum::text()->value, $json['type']);
+        $this->assertEquals('Hello, world!', $json['text']);
+        
+        // Ensure other fields are not present
+        $this->assertArrayNotHasKey('file', $json);
+        $this->assertArrayNotHasKey('functionCall', $json);
+        $this->assertArrayNotHasKey('functionResponse', $json);
+    }
+
+    /**
+     * Tests JSON serialization with file content.
+     *
+     * @return void
+     */
+    public function testJsonSerializeWithFile(): void
+    {
+        $file = new File('https://example.com/image.jpg', 'image/jpeg');
+        $part = new MessagePart($file);
+        $json = $part->jsonSerialize();
+        
+        $this->assertIsArray($json);
+        $this->assertArrayHasKey('type', $json);
+        $this->assertArrayHasKey('file', $json);
+        $this->assertEquals(MessagePartTypeEnum::file()->value, $json['type']);
+        $this->assertIsArray($json['file']);
+    }
+
+    /**
+     * Tests fromJson with text content.
+     *
+     * @return void
+     */
+    public function testFromJsonWithText(): void
+    {
+        $json = [
+            'type' => MessagePartTypeEnum::text()->value,
+            'text' => 'Test message'
+        ];
+        
+        $part = MessagePart::fromJson($json);
+        
+        $this->assertEquals(MessagePartTypeEnum::text(), $part->getType());
+        $this->assertEquals('Test message', $part->getText());
+    }
+
+    /**
+     * Tests fromJson with file content.
+     *
+     * @return void
+     */
+    public function testFromJsonWithFile(): void
+    {
+        $json = [
+            'type' => MessagePartTypeEnum::file()->value,
+            'file' => [
+                'fileType' => FileTypeEnum::remote()->value,
+                'mimeType' => 'image/jpeg',
+                'url' => 'https://example.com/image.jpg'
+            ]
+        ];
+        
+        $part = MessagePart::fromJson($json);
+        
+        $this->assertEquals(MessagePartTypeEnum::file(), $part->getType());
+        $this->assertInstanceOf(File::class, $part->getFile());
+        $this->assertEquals('https://example.com/image.jpg', $part->getFile()->getUrl());
+    }
+
+    /**
+     * Tests round-trip JSON serialization with different content types.
+     *
+     * @return void
+     */
+    public function testJsonRoundTrip(): void
+    {
+        // Test with text
+        $textPart = new MessagePart('Test text');
+        $textJson = $textPart->jsonSerialize();
+        $restoredText = MessagePart::fromJson($textJson);
+        $this->assertEquals($textPart->getText(), $restoredText->getText());
+        
+        // Test with file
+        $file = new File('https://example.com/doc.pdf', 'application/pdf');
+        $filePart = new MessagePart($file);
+        $fileJson = $filePart->jsonSerialize();
+        $restoredFile = MessagePart::fromJson($fileJson);
+        $this->assertEquals($file->getUrl(), $restoredFile->getFile()->getUrl());
+        $this->assertEquals($file->getMimeType(), $restoredFile->getFile()->getMimeType());
+        
+        // Test with function call
+        $functionCall = new FunctionCall('id_123', 'getData', ['key' => 'value']);
+        $funcPart = new MessagePart($functionCall);
+        $funcJson = $funcPart->jsonSerialize();
+        $restoredFunc = MessagePart::fromJson($funcJson);
+        $this->assertEquals($functionCall->getId(), $restoredFunc->getFunctionCall()->getId());
+        $this->assertEquals($functionCall->getName(), $restoredFunc->getFunctionCall()->getName());
+        $this->assertEquals($functionCall->getArgs(), $restoredFunc->getFunctionCall()->getArgs());
+    }
+
+    /**
+     * Tests MessagePart implements WithJsonSerialization.
+     *
+     * @return void
+     */
+    public function testImplementsWithJsonSerialization(): void
+    {
+        $part = new MessagePart('test');
+        
+        $this->assertInstanceOf(
+            \WordPress\AiClient\Common\Contracts\WithJsonSerialization::class,
+            $part
+        );
+        $this->assertInstanceOf(
+            \JsonSerializable::class,
+            $part
+        );
     }
 }

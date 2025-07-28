@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
+use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\Tool;
 use WordPress\AiClient\Tools\DTO\WebSearch;
@@ -15,6 +16,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  */
 class ToolTest extends TestCase
 {
+    use JsonSerializationTestTrait;
     /**
      * Tests creating tool with function declarations.
      *
@@ -294,5 +296,164 @@ class ToolTest extends TestCase
         $this->assertNull($tool1->getWebSearch());
         $this->assertNull($tool2->getFunctionDeclarations());
         $this->assertNotNull($tool2->getWebSearch());
+    }
+
+    /**
+     * Tests JSON serialization with function declarations.
+     *
+     * @return void
+     */
+    public function testJsonSerializeWithFunctionDeclarations(): void
+    {
+        $functions = [
+            new FunctionDeclaration('func1', 'First function', ['param1' => ['type' => 'string']]),
+            new FunctionDeclaration('func2', 'Second function')
+        ];
+        
+        $tool = new Tool($functions);
+        $json = $this->assertJsonSerializeReturnsArray($tool);
+        
+        $this->assertJsonHasKeys($json, ['type', 'functionDeclarations']);
+        $this->assertEquals(ToolTypeEnum::functionDeclarations()->value, $json['type']);
+        $this->assertIsArray($json['functionDeclarations']);
+        $this->assertCount(2, $json['functionDeclarations']);
+        $this->assertEquals('func1', $json['functionDeclarations'][0]['name']);
+        $this->assertEquals('func2', $json['functionDeclarations'][1]['name']);
+    }
+
+    /**
+     * Tests JSON serialization with web search.
+     *
+     * @return void
+     */
+    public function testJsonSerializeWithWebSearch(): void
+    {
+        $webSearch = new WebSearch(
+            ['allowed1.com', 'allowed2.com'],
+            ['blocked1.com', 'blocked2.com']
+        );
+        
+        $tool = new Tool($webSearch);
+        $json = $this->assertJsonSerializeReturnsArray($tool);
+        
+        $this->assertJsonHasKeys($json, ['type', 'webSearch']);
+        $this->assertEquals(ToolTypeEnum::webSearch()->value, $json['type']);
+        $this->assertIsArray($json['webSearch']);
+        $this->assertArrayHasKey('allowedDomains', $json['webSearch']);
+        $this->assertArrayHasKey('blockedDomains', $json['webSearch']);
+    }
+
+    /**
+     * Tests fromJson method with function declarations.
+     *
+     * @return void
+     */
+    public function testFromJsonWithFunctionDeclarations(): void
+    {
+        $json = [
+            'type' => ToolTypeEnum::functionDeclarations()->value,
+            'functionDeclarations' => [
+                [
+                    'name' => 'testFunc',
+                    'description' => 'Test function',
+                    'parameters' => ['type' => 'object']
+                ]
+            ]
+        ];
+        
+        $tool = Tool::fromJson($json);
+        
+        $this->assertInstanceOf(Tool::class, $tool);
+        $this->assertEquals(ToolTypeEnum::functionDeclarations(), $tool->getType());
+        $this->assertCount(1, $tool->getFunctionDeclarations());
+        $this->assertEquals('testFunc', $tool->getFunctionDeclarations()[0]->getName());
+        $this->assertNull($tool->getWebSearch());
+    }
+
+    /**
+     * Tests fromJson method with web search.
+     *
+     * @return void
+     */
+    public function testFromJsonWithWebSearch(): void
+    {
+        $json = [
+            'type' => ToolTypeEnum::webSearch()->value,
+            'webSearch' => [
+                'allowedDomains' => ['example.com'],
+                'blockedDomains' => ['spam.com']
+            ]
+        ];
+        
+        $tool = Tool::fromJson($json);
+        
+        $this->assertInstanceOf(Tool::class, $tool);
+        $this->assertEquals(ToolTypeEnum::webSearch(), $tool->getType());
+        $this->assertNotNull($tool->getWebSearch());
+        $this->assertEquals(['example.com'], $tool->getWebSearch()->getAllowedDomains());
+        $this->assertEquals(['spam.com'], $tool->getWebSearch()->getBlockedDomains());
+        $this->assertNull($tool->getFunctionDeclarations());
+    }
+
+    /**
+     * Tests round-trip JSON serialization with function declarations.
+     *
+     * @return void
+     */
+    public function testJsonRoundTripWithFunctionDeclarations(): void
+    {
+        $this->assertJsonRoundTrip(
+            new Tool([
+                new FunctionDeclaration('calculate', 'Performs calculations', ['expr' => ['type' => 'string']]),
+                new FunctionDeclaration('validate', 'Validates input', ['data' => ['type' => 'object']])
+            ]),
+            function ($original, $restored) {
+                $this->assertEquals($original->getType()->value, $restored->getType()->value);
+                $this->assertCount(
+                    count($original->getFunctionDeclarations()),
+                    $restored->getFunctionDeclarations()
+                );
+                foreach ($original->getFunctionDeclarations() as $i => $origFunc) {
+                    $restoredFunc = $restored->getFunctionDeclarations()[$i];
+                    $this->assertEquals($origFunc->getName(), $restoredFunc->getName());
+                    $this->assertEquals($origFunc->getDescription(), $restoredFunc->getDescription());
+                    $this->assertEquals($origFunc->getParameters(), $restoredFunc->getParameters());
+                }
+            }
+        );
+    }
+
+    /**
+     * Tests round-trip JSON serialization with web search.
+     *
+     * @return void
+     */
+    public function testJsonRoundTripWithWebSearch(): void
+    {
+        $this->assertJsonRoundTrip(
+            new Tool(new WebSearch(['docs.example.com'], ['ads.example.com'])),
+            function ($original, $restored) {
+                $this->assertEquals($original->getType()->value, $restored->getType()->value);
+                $this->assertEquals(
+                    $original->getWebSearch()->getAllowedDomains(),
+                    $restored->getWebSearch()->getAllowedDomains()
+                );
+                $this->assertEquals(
+                    $original->getWebSearch()->getBlockedDomains(),
+                    $restored->getWebSearch()->getBlockedDomains()
+                );
+            }
+        );
+    }
+
+    /**
+     * Tests Tool implements WithJsonSerialization.
+     *
+     * @return void
+     */
+    public function testImplementsWithJsonSerialization(): void
+    {
+        $tool = new Tool([]);
+        $this->assertImplementsJsonSerialization($tool);
     }
 }

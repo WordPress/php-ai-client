@@ -161,4 +161,125 @@ class FunctionCallTest extends TestCase
         
         $this->assertEquals($args, $functionCall->getArgs());
     }
+
+    /**
+     * Tests JSON serialization with all fields.
+     *
+     * @return void
+     */
+    public function testJsonSerializeAllFields(): void
+    {
+        $functionCall = new FunctionCall('func_123', 'calculate', ['x' => 10, 'y' => 20]);
+        $json = $functionCall->jsonSerialize();
+        
+        $this->assertIsArray($json);
+        $this->assertEquals('func_123', $json['id']);
+        $this->assertEquals('calculate', $json['name']);
+        $this->assertEquals(['x' => 10, 'y' => 20], $json['args']);
+    }
+
+    /**
+     * Tests JSON serialization with only ID.
+     *
+     * @return void
+     */
+    public function testJsonSerializeOnlyId(): void
+    {
+        $functionCall = new FunctionCall('func_456', null);
+        $json = $functionCall->jsonSerialize();
+        
+        $this->assertIsArray($json);
+        $this->assertEquals('func_456', $json['id']);
+        $this->assertArrayNotHasKey('name', $json);
+        $this->assertArrayNotHasKey('args', $json);
+    }
+
+    /**
+     * Tests JSON serialization with only name.
+     *
+     * @return void
+     */
+    public function testJsonSerializeOnlyName(): void
+    {
+        $functionCall = new FunctionCall(null, 'search');
+        $json = $functionCall->jsonSerialize();
+        
+        $this->assertIsArray($json);
+        $this->assertEquals('search', $json['name']);
+        $this->assertArrayNotHasKey('id', $json);
+        $this->assertArrayNotHasKey('args', $json);
+    }
+
+    /**
+     * Tests fromJson with all fields.
+     *
+     * @return void
+     */
+    public function testFromJsonAllFields(): void
+    {
+        $json = [
+            'id' => 'func_789',
+            'name' => 'process',
+            'args' => ['input' => 'data', 'format' => 'json']
+        ];
+        
+        $functionCall = FunctionCall::fromJson($json);
+        
+        $this->assertInstanceOf(FunctionCall::class, $functionCall);
+        $this->assertEquals('func_789', $functionCall->getId());
+        $this->assertEquals('process', $functionCall->getName());
+        $this->assertEquals(['input' => 'data', 'format' => 'json'], $functionCall->getArgs());
+    }
+
+    /**
+     * Tests fromJson with minimal fields.
+     *
+     * @return void
+     */
+    public function testFromJsonMinimalFields(): void
+    {
+        $json = ['name' => 'minimal'];
+        
+        $functionCall = FunctionCall::fromJson($json);
+        
+        $this->assertInstanceOf(FunctionCall::class, $functionCall);
+        $this->assertNull($functionCall->getId());
+        $this->assertEquals('minimal', $functionCall->getName());
+        $this->assertEquals([], $functionCall->getArgs());
+    }
+
+    /**
+     * Tests round-trip JSON serialization.
+     *
+     * @return void
+     */
+    public function testJsonRoundTrip(): void
+    {
+        $original = new FunctionCall('id_123', 'execute', ['param' => 'value', 'count' => 5]);
+        $json = $original->jsonSerialize();
+        $restored = FunctionCall::fromJson($json);
+        
+        $this->assertEquals($original->getId(), $restored->getId());
+        $this->assertEquals($original->getName(), $restored->getName());
+        $this->assertEquals($original->getArgs(), $restored->getArgs());
+    }
+
+    /**
+     * Tests FunctionCall implements WithJsonSerialization.
+     *
+     * @return void
+     */
+    public function testImplementsWithJsonSerialization(): void
+    {
+        $functionCall = new FunctionCall('id', 'name');
+        
+        $this->assertInstanceOf(
+            \WordPress\AiClient\Common\Contracts\WithJsonSerialization::class,
+            $functionCall
+        );
+        $this->assertInstanceOf(
+            \JsonSerializable::class,
+            $functionCall
+        );
+    }
 }

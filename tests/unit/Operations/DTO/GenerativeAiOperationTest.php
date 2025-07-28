@@ -15,12 +15,14 @@ use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
 
 /**
  * @covers \WordPress\AiClient\Operations\DTO\GenerativeAiOperation
  */
 class GenerativeAiOperationTest extends TestCase
 {
+    use JsonSerializationTestTrait;
     /**
      * Tests creating operation in starting state.
      *
@@ -287,5 +289,192 @@ class GenerativeAiOperationTest extends TestCase
         );
         
         $this->assertEquals('', $operation->getId());
+    }
+
+    /**
+     * Tests JSON serialization for operation in starting state.
+     *
+     * @return void
+     */
+    public function testJsonSerializeStartingState(): void
+    {
+        $operation = new GenerativeAiOperation(
+            'op_start_123',
+            OperationStateEnum::starting()
+        );
+        
+        $json = $this->assertJsonSerializeReturnsArray($operation);
+        
+        $this->assertJsonHasKeys($json, ['id', 'state']);
+        $this->assertJsonNotHasKeys($json, ['result']);
+        $this->assertEquals('op_start_123', $json['id']);
+        $this->assertEquals(OperationStateEnum::starting()->value, $json['state']);
+    }
+
+    /**
+     * Tests JSON serialization for operation in succeeded state.
+     *
+     * @return void
+     */
+    public function testJsonSerializeSucceededState(): void
+    {
+        $modelMessage = new ModelMessage([
+            new MessagePart('Success response')
+        ]);
+        $candidate = new Candidate(
+            $modelMessage,
+            FinishReasonEnum::stop(),
+            50
+        );
+        $tokenUsage = new TokenUsage(15, 50, 65);
+        $result = new GenerativeAiResult(
+            'result_success',
+            [$candidate],
+            $tokenUsage
+        );
+        
+        $operation = new GenerativeAiOperation(
+            'op_success_456',
+            OperationStateEnum::succeeded(),
+            $result
+        );
+        
+        $json = $this->assertJsonSerializeReturnsArray($operation);
+        
+        $this->assertJsonHasKeys($json, ['id', 'state', 'result']);
+        $this->assertEquals('op_success_456', $json['id']);
+        $this->assertEquals(OperationStateEnum::succeeded()->value, $json['state']);
+        $this->assertIsArray($json['result']);
+        $this->assertEquals('result_success', $json['result']['id']);
+    }
+
+    /**
+     * Tests fromJson method for starting state.
+     *
+     * @return void
+     */
+    public function testFromJsonStartingState(): void
+    {
+        $json = [
+            'id' => 'op_from_json_start',
+            'state' => OperationStateEnum::starting()->value
+        ];
+        
+        $operation = GenerativeAiOperation::fromJson($json);
+        
+        $this->assertInstanceOf(GenerativeAiOperation::class, $operation);
+        $this->assertEquals('op_from_json_start', $operation->getId());
+        $this->assertEquals(OperationStateEnum::starting(), $operation->getState());
+        $this->assertNull($operation->getResult());
+    }
+
+    /**
+     * Tests fromJson method for succeeded state with result.
+     *
+     * @return void
+     */
+    public function testFromJsonSucceededState(): void
+    {
+        $json = [
+            'id' => 'op_from_json_success',
+            'state' => OperationStateEnum::succeeded()->value,
+            'result' => [
+                'id' => 'result_from_json',
+                'candidates' => [
+                    [
+                        'message' => [
+                            'role' => MessageRoleEnum::model()->value,
+                            'parts' => [['type' => 'text', 'text' => 'Response text']]
+                        ],
+                        'finishReason' => FinishReasonEnum::stop()->value,
+                        'tokenCount' => 30
+                    ]
+                ],
+                'tokenUsage' => [
+                    'inputTokens' => 10,
+                    'outputTokens' => 30,
+                    'totalTokens' => 40
+                ]
+            ]
+        ];
+        
+        $operation = GenerativeAiOperation::fromJson($json);
+        
+        $this->assertInstanceOf(GenerativeAiOperation::class, $operation);
+        $this->assertEquals('op_from_json_success', $operation->getId());
+        $this->assertEquals(OperationStateEnum::succeeded(), $operation->getState());
+        $this->assertNotNull($operation->getResult());
+        $this->assertEquals('result_from_json', $operation->getResult()->getId());
+    }
+
+    /**
+     * Tests round-trip JSON serialization for processing state.
+     *
+     * @return void
+     */
+    public function testJsonRoundTripProcessingState(): void
+    {
+        $this->assertJsonRoundTrip(
+            new GenerativeAiOperation(
+                'op_roundtrip_process',
+                OperationStateEnum::processing()
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getId(), $restored->getId());
+                $this->assertEquals($original->getState()->value, $restored->getState()->value);
+                $this->assertNull($restored->getResult());
+            }
+        );
+    }
+
+    /**
+     * Tests round-trip JSON serialization for succeeded state.
+     *
+     * @return void
+     */
+    public function testJsonRoundTripSucceededState(): void
+    {
+        $modelMessage = new ModelMessage([
+            new MessagePart('Roundtrip test response')
+        ]);
+        $candidate = new Candidate(
+            $modelMessage,
+            FinishReasonEnum::stop(),
+            25
+        );
+        $tokenUsage = new TokenUsage(5, 25, 30);
+        $result = new GenerativeAiResult(
+            'result_roundtrip',
+            [$candidate],
+            $tokenUsage
+        );
+        
+        $this->assertJsonRoundTrip(
+            new GenerativeAiOperation(
+                'op_roundtrip_success',
+                OperationStateEnum::succeeded(),
+                $result
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getId(), $restored->getId());
+                $this->assertEquals($original->getState()->value, $restored->getState()->value);
+                $this->assertNotNull($restored->getResult());
+                $this->assertEquals($original->getResult()->getId(), $restored->getResult()->getId());
+            }
+        );
+    }
+
+    /**
+     * Tests GenerativeAiOperation implements WithJsonSerialization.
+     *
+     * @return void
+     */
+    public function testImplementsWithJsonSerialization(): void
+    {
+        $operation = new GenerativeAiOperation(
+            'op_test',
+            OperationStateEnum::starting()
+        );
+        $this->assertImplementsJsonSerialization($operation);
     }
 }

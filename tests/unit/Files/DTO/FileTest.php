@@ -267,4 +267,131 @@ class FileTest extends TestCase
         
         new File('https://example.com/file.unknown');
     }
+
+    /**
+     * Tests JSON serialization for remote file.
+     *
+     * @return void
+     */
+    public function testJsonSerializeRemoteFile(): void
+    {
+        $file = new File('https://example.com/image.jpg', 'image/jpeg');
+        $json = $file->jsonSerialize();
+        
+        $this->assertIsArray($json);
+        $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value, $json['fileType']);
+        $this->assertEquals('image/jpeg', $json['mimeType']);
+        $this->assertEquals('https://example.com/image.jpg', $json['url']);
+        $this->assertArrayNotHasKey('base64Data', $json);
+    }
+
+    /**
+     * Tests JSON serialization for inline file.
+     *
+     * @return void
+     */
+    public function testJsonSerializeInlineFile(): void
+    {
+        $base64Data = 'SGVsbG8gV29ybGQ=';
+        $dataUri = 'data:text/plain;base64,' . $base64Data;
+        $file = new File($dataUri);
+        $json = $file->jsonSerialize();
+        
+        $this->assertIsArray($json);
+        $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::inline()->value, $json['fileType']);
+        $this->assertEquals('text/plain', $json['mimeType']);
+        $this->assertEquals($base64Data, $json['base64Data']);
+        $this->assertArrayNotHasKey('url', $json);
+    }
+
+    /**
+     * Tests fromJson for remote file.
+     *
+     * @return void
+     */
+    public function testFromJsonRemoteFile(): void
+    {
+        $json = [
+            'fileType' => \WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value,
+            'mimeType' => 'image/png',
+            'url' => 'https://example.com/test.png'
+        ];
+        
+        $file = File::fromJson($json);
+        
+        $this->assertInstanceOf(File::class, $file);
+        $this->assertTrue($file->getFileType()->isRemote());
+        $this->assertEquals('image/png', $file->getMimeType());
+        $this->assertEquals('https://example.com/test.png', $file->getUrl());
+        $this->assertNull($file->getBase64Data());
+    }
+
+    /**
+     * Tests fromJson for inline file.
+     *
+     * @return void
+     */
+    public function testFromJsonInlineFile(): void
+    {
+        $base64Data = 'SGVsbG8gV29ybGQ=';
+        $json = [
+            'fileType' => \WordPress\AiClient\Files\Enums\FileTypeEnum::inline()->value,
+            'mimeType' => 'text/plain',
+            'base64Data' => $base64Data
+        ];
+        
+        $file = File::fromJson($json);
+        
+        $this->assertInstanceOf(File::class, $file);
+        $this->assertTrue($file->getFileType()->isInline());
+        $this->assertEquals('text/plain', $file->getMimeType());
+        $this->assertEquals($base64Data, $file->getBase64Data());
+        $this->assertNull($file->getUrl());
+    }
+
+    /**
+     * Tests round-trip JSON serialization.
+     *
+     * @return void
+     */
+    public function testJsonRoundTrip(): void
+    {
+        // Test remote file
+        $remoteFile = new File('https://example.com/doc.pdf', 'application/pdf');
+        $remoteJson = $remoteFile->jsonSerialize();
+        $restoredRemote = File::fromJson($remoteJson);
+        
+        $this->assertEquals($remoteFile->getFileType()->value, $restoredRemote->getFileType()->value);
+        $this->assertEquals($remoteFile->getMimeType(), $restoredRemote->getMimeType());
+        $this->assertEquals($remoteFile->getUrl(), $restoredRemote->getUrl());
+        
+        // Test inline file
+        $dataUri = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        $inlineFile = new File($dataUri);
+        $inlineJson = $inlineFile->jsonSerialize();
+        $restoredInline = File::fromJson($inlineJson);
+        
+        $this->assertEquals($inlineFile->getFileType()->value, $restoredInline->getFileType()->value);
+        $this->assertEquals($inlineFile->getMimeType(), $restoredInline->getMimeType());
+        $this->assertEquals($inlineFile->getBase64Data(), $restoredInline->getBase64Data());
+    }
+
+    /**
+     * Tests File implements WithJsonSerialization.
+     *
+     * @return void
+     */
+    public function testImplementsWithJsonSerialization(): void
+    {
+        $file = new File('https://example.com/test.jpg');
+        
+        $this->assertInstanceOf(
+            \WordPress\AiClient\Common\Contracts\WithJsonSerialization::class,
+            $file
+        );
+        $this->assertInstanceOf(
+            \JsonSerializable::class,
+            $file
+        );
+    }
 }
