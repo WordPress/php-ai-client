@@ -18,7 +18,7 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *
  * @phpstan-import-type MessageArrayShape from Message
  *
- * @phpstan-type CandidateArrayShape array{message: MessageArrayShape, finishReason: string, tokenCount: int|string}
+ * @phpstan-type CandidateArrayShape array{message: MessageArrayShape, finishReason: string, tokenCount: int}
  *
  * @extends AbstractDataValueObject<CandidateArrayShape>
  */
@@ -150,7 +150,7 @@ final class Candidate extends AbstractDataValueObject
         return new self(
             Message::fromArray($messageData),
             FinishReasonEnum::from($array['finishReason']),
-            (int) $array['tokenCount']
+            $array['tokenCount']
         );
     }
 }
