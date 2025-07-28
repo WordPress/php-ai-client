@@ -7,7 +7,6 @@ namespace WordPress\AiClient\Results\DTO;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
-use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
 
 /**
@@ -403,9 +402,7 @@ final class GenerativeAiResult extends AbstractDataValueObject implements Result
     {
         return [
             'id' => $this->id,
-            'candidates' => array_map(function (Candidate $candidate) {
-                return $candidate->toArray();
-            }, $this->candidates),
+            'candidates' => array_map(fn(Candidate $candidate) => $candidate->toArray(), $this->candidates),
             'tokenUsage' => $this->tokenUsage->toArray(),
             'providerMetadata' => $this->providerMetadata,
         ];
@@ -419,9 +416,7 @@ final class GenerativeAiResult extends AbstractDataValueObject implements Result
     public static function fromArray(array $array): GenerativeAiResult
     {
         $candidatesData = $array['candidates'];
-        $candidates = array_map(function (array $candidateData) {
-            return Candidate::fromArray($candidateData);
-        }, $candidatesData);
+        $candidates = array_map(fn(array $candidateData) => Candidate::fromArray($candidateData), $candidatesData);
 
         $tokenUsageData = $array['tokenUsage'];
         $providerMetadata = $array['providerMetadata'] ?? [];
