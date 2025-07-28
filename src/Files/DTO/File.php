@@ -428,11 +428,7 @@ final class File extends AbstractDataValueObject
             if (!isset($array['mimeType']) || !isset($array['base64Data'])) {
                 throw new \InvalidArgumentException('Inline file requires mimeType and base64Data.');
             }
-            // Create data URI from base64 data and mime type
-            $mimeType = $array['mimeType'];
-            $base64Data = $array['base64Data'];
-            $dataUri = sprintf('data:%s;base64,%s', $mimeType, $base64Data);
-            return new self($dataUri);
+            return new self($array['base64Data'], $array['mimeType']);
         }
     }
 }
