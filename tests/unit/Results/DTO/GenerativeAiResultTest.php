@@ -655,8 +655,8 @@ class GenerativeAiResultTest extends TestCase
                 ]
             ],
             'tokenUsage' => [
-                'inputTokens' => 8,
-                'outputTokens' => 20,
+                'promptTokens' => 8,
+                'completionTokens' => 20,
                 'totalTokens' => 28
             ],
             'providerMetadata' => ['provider' => 'test']
@@ -667,8 +667,8 @@ class GenerativeAiResultTest extends TestCase
         $this->assertInstanceOf(GenerativeAiResult::class, $result);
         $this->assertEquals('result_from_json', $result->getId());
         $this->assertCount(1, $result->getCandidates());
-        $this->assertEquals(8, $result->getTokenUsage()->getInputTokens());
-        $this->assertEquals(20, $result->getTokenUsage()->getOutputTokens());
+        $this->assertEquals(8, $result->getTokenUsage()->getPromptTokens());
+        $this->assertEquals(20, $result->getTokenUsage()->getCompletionTokens());
         $this->assertEquals(28, $result->getTokenUsage()->getTotalTokens());
         $this->assertEquals(['provider' => 'test'], $result->getProviderMetadata());
     }

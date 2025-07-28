@@ -157,6 +157,8 @@ class FunctionCall implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
+     *
+     * @param array{id?: string, name?: string, args?: mixed} $json The JSON data.
      */
     public static function fromJson(array $json): FunctionCall
     {

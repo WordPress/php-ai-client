@@ -131,6 +131,12 @@ class TokenUsage implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
+     *
+     * @param array{
+     *     promptTokens: int|string,
+     *     completionTokens: int|string,
+     *     totalTokens: int|string
+     * } $json The JSON data.
      */
     public static function fromJson(array $json): TokenUsage
     {

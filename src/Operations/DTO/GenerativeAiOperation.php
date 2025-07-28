@@ -158,13 +158,15 @@ class GenerativeAiOperation implements OperationInterface
      * {@inheritDoc}
      *
      * @since n.e.x.t
+     *
+     * @param array{id: string, state: string, result?: array<string, mixed>} $json The JSON data.
      */
     public static function fromJson(array $json): GenerativeAiOperation
     {
         $state = OperationStateEnum::from((string) $json['state']);
         $result = null;
         if (isset($json['result'])) {
-            /** @var array<string, mixed> $resultData */
+            /** @var array{id: string, candidates: array<array<string, mixed>>, tokenUsage: array<string, mixed>, providerMetadata?: array<string, mixed>} $resultData */
             $resultData = $json['result'];
             $result = GenerativeAiResult::fromJson($resultData);
         }

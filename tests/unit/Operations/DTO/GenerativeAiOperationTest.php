@@ -391,8 +391,8 @@ class GenerativeAiOperationTest extends TestCase
                     ]
                 ],
                 'tokenUsage' => [
-                    'inputTokens' => 10,
-                    'outputTokens' => 30,
+                    'promptTokens' => 10,
+                    'completionTokens' => 30,
                     'totalTokens' => 40
                 ]
             ]

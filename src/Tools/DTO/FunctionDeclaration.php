@@ -136,6 +136,8 @@ class FunctionDeclaration implements WithJsonSchemaInterface, WithJsonSerializat
      * {@inheritDoc}
      *
      * @since n.e.x.t
+     *
+     * @param array{name: string, description: string, parameters?: mixed} $json The JSON data.
      */
     public static function fromJson(array $json): FunctionDeclaration
     {

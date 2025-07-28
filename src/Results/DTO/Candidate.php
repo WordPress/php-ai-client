@@ -137,10 +137,12 @@ class Candidate implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
+     *
+     * @param array{message: array<string, mixed>, finishReason: string, tokenCount: int|string} $json The JSON data.
      */
     public static function fromJson(array $json): Candidate
     {
-        /** @var array<string, mixed> $messageData */
+        /** @var array{role: string, parts: array<array<string, mixed>>} $messageData */
         $messageData = $json['message'];
 
         return new self(

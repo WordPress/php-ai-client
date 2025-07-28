@@ -232,27 +232,47 @@ class MessagePart implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
+     *
+     * @param array{
+     *     type: string,
+     *     text?: string,
+     *     file?: array<string, mixed>,
+     *     functionCall?: array<string, mixed>,
+     *     functionResponse?: array<string, mixed>
+     * } $json The JSON data.
      */
     public static function fromJson(array $json): MessagePart
     {
         $type = MessagePartTypeEnum::from((string) $json['type']);
 
         if ($type->isText()) {
+            if (!isset($json['text'])) {
+                throw new \InvalidArgumentException('Text message part requires text field.');
+            }
             return new self((string) $json['text']);
         } elseif ($type->isFile()) {
-            /** @var array<string, mixed> $fileData */
+            if (!isset($json['file'])) {
+                throw new \InvalidArgumentException('File message part requires file field.');
+            }
+            /** @var array{fileType: string, url?: string, mimeType?: string, base64Data?: string} $fileData */
             $fileData = $json['file'];
             return new self(File::fromJson($fileData));
         } elseif ($type->isFunctionCall()) {
-            /** @var array<string, mixed> $functionCallData */
+            if (!isset($json['functionCall'])) {
+                throw new \InvalidArgumentException('Function call message part requires functionCall field.');
+            }
+            /** @var array{id?: string, name?: string, args?: mixed} $functionCallData */
             $functionCallData = $json['functionCall'];
             return new self(FunctionCall::fromJson($functionCallData));
         } elseif ($type->isFunctionResponse()) {
-            /** @var array<string, mixed> $functionResponseData */
+            if (!isset($json['functionResponse'])) {
+                throw new \InvalidArgumentException('Function response message part requires functionResponse field.');
+            }
+            /** @var array{id: string, name: string, response: mixed} $functionResponseData */
             $functionResponseData = $json['functionResponse'];
             return new self(FunctionResponse::fromJson($functionResponseData));
         }
 
-        throw new \InvalidArgumentException(sprintf('Unknown message part type: %s', $json['type']));
+        throw new \InvalidArgumentException(sprintf('Unknown message part type: %s', (string) $json['type']));
     }
 }

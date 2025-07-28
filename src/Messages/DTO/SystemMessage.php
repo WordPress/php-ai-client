@@ -35,7 +35,7 @@ class SystemMessage extends Message
      */
     public static function fromJson(array $json): SystemMessage
     {
-        /** @var array<array<string, mixed>> $partsData */
+        /** @var array<array{type: string, text?: string, file?: array<string, mixed>, functionCall?: array<string, mixed>, functionResponse?: array<string, mixed>}> $partsData */
         $partsData = $json['parts'];
         $parts = array_map(function (array $partData) {
             return MessagePart::fromJson($partData);

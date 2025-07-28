@@ -160,24 +160,36 @@ class Tool implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
+     *
+     * @param array{
+     *     type: string,
+     *     functionDeclarations?: array<array<string, mixed>>,
+     *     webSearch?: array<string, mixed>
+     * } $json The JSON data.
      */
     public static function fromJson(array $json): Tool
     {
         $type = ToolTypeEnum::from((string) $json['type']);
 
         if ($type->isFunctionDeclarations()) {
-            /** @var array<array<string, mixed>> $declarationsData */
+            if (!isset($json['functionDeclarations'])) {
+                throw new \InvalidArgumentException('Function declarations tool requires functionDeclarations field.');
+            }
+            /** @var array<array{name: string, description: string, parameters?: mixed}> $declarationsData */
             $declarationsData = $json['functionDeclarations'];
             $declarations = array_map(function (array $declarationData) {
                 return FunctionDeclaration::fromJson($declarationData);
             }, $declarationsData);
             return new self($declarations);
         } elseif ($type->isWebSearch()) {
+            if (!isset($json['webSearch'])) {
+                throw new \InvalidArgumentException('Web search tool requires webSearch field.');
+            }
             /** @var array<string, mixed> $webSearchData */
             $webSearchData = $json['webSearch'];
             return new self(WebSearch::fromJson($webSearchData));
         }
 
-        throw new \InvalidArgumentException(sprintf('Unknown tool type: %s', $json['type']));
+        throw new \InvalidArgumentException(sprintf('Unknown tool type: %s', (string) $json['type']));
     }
 }

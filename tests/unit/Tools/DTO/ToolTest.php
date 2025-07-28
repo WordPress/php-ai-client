@@ -340,7 +340,7 @@ class ToolTest extends TestCase
         $this->assertEquals(ToolTypeEnum::webSearch()->value, $json['type']);
         $this->assertIsArray($json['webSearch']);
         $this->assertArrayHasKey('allowedDomains', $json['webSearch']);
-        $this->assertArrayHasKey('blockedDomains', $json['webSearch']);
+        $this->assertArrayHasKey('disallowedDomains', $json['webSearch']);
     }
 
     /**
@@ -381,7 +381,7 @@ class ToolTest extends TestCase
             'type' => ToolTypeEnum::webSearch()->value,
             'webSearch' => [
                 'allowedDomains' => ['example.com'],
-                'blockedDomains' => ['spam.com']
+                'disallowedDomains' => ['spam.com']
             ]
         ];
         
@@ -391,7 +391,7 @@ class ToolTest extends TestCase
         $this->assertEquals(ToolTypeEnum::webSearch(), $tool->getType());
         $this->assertNotNull($tool->getWebSearch());
         $this->assertEquals(['example.com'], $tool->getWebSearch()->getAllowedDomains());
-        $this->assertEquals(['spam.com'], $tool->getWebSearch()->getBlockedDomains());
+        $this->assertEquals(['spam.com'], $tool->getWebSearch()->getDisallowedDomains());
         $this->assertNull($tool->getFunctionDeclarations());
     }
 
@@ -439,8 +439,8 @@ class ToolTest extends TestCase
                     $restored->getWebSearch()->getAllowedDomains()
                 );
                 $this->assertEquals(
-                    $original->getWebSearch()->getBlockedDomains(),
-                    $restored->getWebSearch()->getBlockedDomains()
+                    $original->getWebSearch()->getDisallowedDomains(),
+                    $restored->getWebSearch()->getDisallowedDomains()
                 );
             }
         );

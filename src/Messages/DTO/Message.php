@@ -113,11 +113,13 @@ class Message implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
+     *
+     * @param array{role: string, parts: array<array<string, mixed>>} $json The JSON data.
      */
     public static function fromJson(array $json): Message
     {
         $role = MessageRoleEnum::from((string) $json['role']);
-        /** @var array<array<string, mixed>> $partsData */
+        /** @var array<array{type: string, text?: string, file?: array<string, mixed>, functionCall?: array<string, mixed>, functionResponse?: array<string, mixed>}> $partsData */
         $partsData = $json['parts'];
         $parts = array_map(function (array $partData) {
             return MessagePart::fromJson($partData);

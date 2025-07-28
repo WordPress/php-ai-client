@@ -402,16 +402,23 @@ class GenerativeAiResult implements ResultInterface
      * {@inheritDoc}
      *
      * @since n.e.x.t
+     *
+     * @param array{
+     *     id: string,
+     *     candidates: array<array<string, mixed>>,
+     *     tokenUsage: array<string, mixed>,
+     *     providerMetadata?: array<string, mixed>
+     * } $json The JSON data.
      */
     public static function fromJson(array $json): GenerativeAiResult
     {
-        /** @var array<array<string, mixed>> $candidatesData */
+        /** @var array<array{message: array<string, mixed>, finishReason: string, tokenCount: int|string}> $candidatesData */
         $candidatesData = $json['candidates'];
         $candidates = array_map(function (array $candidateData) {
             return Candidate::fromJson($candidateData);
         }, $candidatesData);
 
-        /** @var array<string, mixed> $tokenUsageData */
+        /** @var array{promptTokens: int|string, completionTokens: int|string, totalTokens: int|string} $tokenUsageData */
         $tokenUsageData = $json['tokenUsage'];
         /** @var array<string, mixed> $providerMetadata */
         $providerMetadata = $json['providerMetadata'] ?? [];
