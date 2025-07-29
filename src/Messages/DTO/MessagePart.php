@@ -239,7 +239,10 @@ final class MessagePart extends AbstractDataValueObject
         } elseif ($this->functionResponse !== null) {
             $data['functionResponse'] = $this->functionResponse->toArray();
         } else {
-            throw new RuntimeException('MessagePart requires one of: text, file, functionCall, or functionResponse. This should not be a possible condition.');
+            throw new RuntimeException(
+                'MessagePart requires one of: text, file, functionCall, or functionResponse. '
+                . 'This should not be a possible condition.'
+            );
         }
 
         return $data;
