@@ -175,6 +175,12 @@ class GenerativeAiOperation extends AbstractDataValueObject implements Operation
         static::validateFromArrayData($array, [self::KEY_ID, self::KEY_STATE]);
 
         $state = OperationStateEnum::from($array[self::KEY_STATE]);
+
+        if ($state->isSucceeded()) {
+            // If the operation has succeeded, it must have a result
+            static::validateFromArrayData($array, [self::KEY_RESULT]);
+        }
+
         $result = null;
         if (isset($array[self::KEY_RESULT])) {
             $result = GenerativeAiResult::fromArray($array[self::KEY_RESULT]);
