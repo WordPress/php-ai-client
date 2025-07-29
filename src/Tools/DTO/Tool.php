@@ -176,8 +176,6 @@ class Tool extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
-        static::validateFromArrayData($array, [self::KEY_TYPE]);
-
         // Check which properties are set to determine how to construct the Tool
         if (isset($array[self::KEY_FUNCTION_DECLARATIONS])) {
             $declarations = array_map(function (array $declarationData) {
