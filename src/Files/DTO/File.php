@@ -29,6 +29,10 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  */
 final class File extends AbstractDataValueObject
 {
+    public const KEY_FILE_TYPE = 'fileType';
+    public const KEY_MIME_TYPE = 'mimeType';
+    public const KEY_URL = 'url';
+    public const KEY_BASE64_DATA = 'base64Data';
     /**
      * @var MimeType The MIME type of the file.
      */
@@ -346,44 +350,44 @@ final class File extends AbstractDataValueObject
             'oneOf' => [
                 [
                     'properties' => [
-                        'fileType' => [
+                        self::KEY_FILE_TYPE => [
                             'type' => 'string',
                             'const' => FileTypeEnum::REMOTE,
                             'description' => 'The file type.',
                         ],
-                        'mimeType' => [
+                        self::KEY_MIME_TYPE => [
                             'type' => 'string',
                             'description' => 'The MIME type of the file.',
                             'pattern' => '^[a-zA-Z0-9][a-zA-Z0-9!#$&\\-\\^_+.]*\\/[a-zA-Z0-9]'
                                 . '[a-zA-Z0-9!#$&\\-\\^_+.]*$',
                         ],
-                        'url' => [
+                        self::KEY_URL => [
                             'type' => 'string',
                             'format' => 'uri',
                             'description' => 'The URL to the remote file.',
                         ],
                     ],
-                    'required' => ['fileType', 'mimeType', 'url'],
+                    'required' => [self::KEY_FILE_TYPE, self::KEY_MIME_TYPE, self::KEY_URL],
                 ],
                 [
                     'properties' => [
-                        'fileType' => [
+                        self::KEY_FILE_TYPE => [
                             'type' => 'string',
                             'const' => FileTypeEnum::INLINE,
                             'description' => 'The file type.',
                         ],
-                        'mimeType' => [
+                        self::KEY_MIME_TYPE => [
                             'type' => 'string',
                             'description' => 'The MIME type of the file.',
                             'pattern' => '^[a-zA-Z0-9][a-zA-Z0-9!#$&\\-\\^_+.]*\\/[a-zA-Z0-9]'
                                 . '[a-zA-Z0-9!#$&\\-\\^_+.]*$',
                         ],
-                        'base64Data' => [
+                        self::KEY_BASE64_DATA => [
                             'type' => 'string',
                             'description' => 'The base64-encoded file data.',
                         ],
                     ],
-                    'required' => ['fileType', 'mimeType', 'base64Data'],
+                    'required' => [self::KEY_FILE_TYPE, self::KEY_MIME_TYPE, self::KEY_BASE64_DATA],
                 ],
             ],
         ];
@@ -399,14 +403,14 @@ final class File extends AbstractDataValueObject
     public function toArray(): array
     {
         $data = [
-            'fileType' => $this->fileType->value,
-            'mimeType' => $this->getMimeType(),
+            self::KEY_FILE_TYPE => $this->fileType->value,
+            self::KEY_MIME_TYPE => $this->getMimeType(),
         ];
 
         if ($this->url !== null) {
-            $data['url'] = $this->url;
+            $data[self::KEY_URL] = $this->url;
         } elseif (!$this->fileType->isRemote() && $this->base64Data !== null) {
-            $data['base64Data'] = $this->base64Data;
+            $data[self::KEY_BASE64_DATA] = $this->base64Data;
         } else {
             throw new RuntimeException(
                 'File requires either url or base64Data. This should not be a possible condition.'
@@ -423,15 +427,15 @@ final class File extends AbstractDataValueObject
      */
     public static function fromArray(array $array): File
     {
-        static::validateFromArrayData($array, ['fileType']);
+        static::validateFromArrayData($array, [self::KEY_FILE_TYPE]);
 
         // Check which properties are set to determine how to construct the File
-        $mimeType = $array['mimeType'] ?? null;
+        $mimeType = $array[self::KEY_MIME_TYPE] ?? null;
 
-        if (isset($array['url'])) {
-            return new self($array['url'], $mimeType);
-        } elseif (isset($array['base64Data'])) {
-            return new self($array['base64Data'], $mimeType);
+        if (isset($array[self::KEY_URL])) {
+            return new self($array[self::KEY_URL], $mimeType);
+        } elseif (isset($array[self::KEY_BASE64_DATA])) {
+            return new self($array[self::KEY_BASE64_DATA], $mimeType);
         } else {
             throw new InvalidArgumentException('File requires either url or base64Data.');
         }

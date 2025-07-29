@@ -27,6 +27,8 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  */
 class Message extends AbstractDataValueObject
 {
+    public const KEY_ROLE = 'role';
+    public const KEY_PARTS = 'parts';
     /**
      * @var MessageRoleEnum The role of the message sender.
      */
@@ -85,19 +87,19 @@ class Message extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'role' => [
+                self::KEY_ROLE => [
                     'type' => 'string',
                     'enum' => MessageRoleEnum::getValues(),
                     'description' => 'The role of the message sender.',
                 ],
-                'parts' => [
+                self::KEY_PARTS => [
                     'type' => 'array',
                     'items' => MessagePart::getJsonSchema(),
                     'minItems' => 1,
                     'description' => 'The parts that make up this message.',
                 ],
             ],
-            'required' => ['role', 'parts'],
+            'required' => [self::KEY_ROLE, self::KEY_PARTS],
         ];
     }
 
@@ -111,8 +113,8 @@ class Message extends AbstractDataValueObject
     public function toArray(): array
     {
         return [
-            'role' => $this->role->value,
-            'parts' => array_map(function (MessagePart $part) {
+            self::KEY_ROLE => $this->role->value,
+            self::KEY_PARTS => array_map(function (MessagePart $part) {
                 return $part->toArray();
             }, $this->parts),
         ];
@@ -127,10 +129,10 @@ class Message extends AbstractDataValueObject
      */
     final public static function fromArray(array $array): Message
     {
-        static::validateFromArrayData($array, ['role', 'parts']);
+        static::validateFromArrayData($array, [self::KEY_ROLE, self::KEY_PARTS]);
 
-        $role = MessageRoleEnum::from($array['role']);
-        $partsData = $array['parts'];
+        $role = MessageRoleEnum::from($array[self::KEY_ROLE]);
+        $partsData = $array[self::KEY_PARTS];
         $parts = array_map(function (array $partData) {
             return MessagePart::fromArray($partData);
         }, $partsData);

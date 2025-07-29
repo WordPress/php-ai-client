@@ -225,18 +225,18 @@ class FileTest extends TestCase
         // Check remote file schema
         $remoteSchema = $schema['oneOf'][0];
         $this->assertArrayHasKey('properties', $remoteSchema);
-        $this->assertArrayHasKey('fileType', $remoteSchema['properties']);
-        $this->assertArrayHasKey('mimeType', $remoteSchema['properties']);
-        $this->assertArrayHasKey('url', $remoteSchema['properties']);
-        $this->assertEquals(['fileType', 'mimeType', 'url'], $remoteSchema['required']);
+        $this->assertArrayHasKey(File::KEY_FILE_TYPE, $remoteSchema['properties']);
+        $this->assertArrayHasKey(File::KEY_MIME_TYPE, $remoteSchema['properties']);
+        $this->assertArrayHasKey(File::KEY_URL, $remoteSchema['properties']);
+        $this->assertEquals([File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_URL], $remoteSchema['required']);
         
         // Check inline file schema
         $inlineSchema = $schema['oneOf'][1];
         $this->assertArrayHasKey('properties', $inlineSchema);
-        $this->assertArrayHasKey('fileType', $inlineSchema['properties']);
-        $this->assertArrayHasKey('mimeType', $inlineSchema['properties']);
-        $this->assertArrayHasKey('base64Data', $inlineSchema['properties']);
-        $this->assertEquals(['fileType', 'mimeType', 'base64Data'], $inlineSchema['required']);
+        $this->assertArrayHasKey(File::KEY_FILE_TYPE, $inlineSchema['properties']);
+        $this->assertArrayHasKey(File::KEY_MIME_TYPE, $inlineSchema['properties']);
+        $this->assertArrayHasKey(File::KEY_BASE64_DATA, $inlineSchema['properties']);
+        $this->assertEquals([File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_BASE64_DATA], $inlineSchema['required']);
     }
 
     /**
@@ -279,10 +279,10 @@ class FileTest extends TestCase
         $json = $file->toArray();
         
         $this->assertIsArray($json);
-        $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value, $json['fileType']);
-        $this->assertEquals('image/jpeg', $json['mimeType']);
-        $this->assertEquals('https://example.com/image.jpg', $json['url']);
-        $this->assertArrayNotHasKey('base64Data', $json);
+        $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value, $json[File::KEY_FILE_TYPE]);
+        $this->assertEquals('image/jpeg', $json[File::KEY_MIME_TYPE]);
+        $this->assertEquals('https://example.com/image.jpg', $json[File::KEY_URL]);
+        $this->assertArrayNotHasKey(File::KEY_BASE64_DATA, $json);
     }
 
     /**
@@ -298,10 +298,10 @@ class FileTest extends TestCase
         $json = $file->toArray();
         
         $this->assertIsArray($json);
-        $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::inline()->value, $json['fileType']);
-        $this->assertEquals('text/plain', $json['mimeType']);
-        $this->assertEquals($base64Data, $json['base64Data']);
-        $this->assertArrayNotHasKey('url', $json);
+        $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::inline()->value, $json[File::KEY_FILE_TYPE]);
+        $this->assertEquals('text/plain', $json[File::KEY_MIME_TYPE]);
+        $this->assertEquals($base64Data, $json[File::KEY_BASE64_DATA]);
+        $this->assertArrayNotHasKey(File::KEY_URL, $json);
     }
 
     /**
@@ -312,9 +312,9 @@ class FileTest extends TestCase
     public function testFromArrayRemoteFile(): void
     {
         $json = [
-            'fileType' => \WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value,
-            'mimeType' => 'image/png',
-            'url' => 'https://example.com/test.png'
+            File::KEY_FILE_TYPE => \WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value,
+            File::KEY_MIME_TYPE => 'image/png',
+            File::KEY_URL => 'https://example.com/test.png'
         ];
         
         $file = File::fromArray($json);
@@ -335,9 +335,9 @@ class FileTest extends TestCase
     {
         $base64Data = 'SGVsbG8gV29ybGQ=';
         $json = [
-            'fileType' => \WordPress\AiClient\Files\Enums\FileTypeEnum::inline()->value,
-            'mimeType' => 'text/plain',
-            'base64Data' => $base64Data
+            File::KEY_FILE_TYPE => \WordPress\AiClient\Files\Enums\FileTypeEnum::inline()->value,
+            File::KEY_MIME_TYPE => 'text/plain',
+            File::KEY_BASE64_DATA => $base64Data
         ];
         
         $file = File::fromArray($json);

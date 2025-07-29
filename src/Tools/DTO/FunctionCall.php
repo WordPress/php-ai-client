@@ -20,6 +20,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  */
 final class FunctionCall extends AbstractDataValueObject
 {
+    public const KEY_ID = 'id';
+    public const KEY_NAME = 'name';
+    public const KEY_ARGS = 'args';
     /**
      * @var string|null Unique identifier for this function call.
      */
@@ -102,15 +105,15 @@ final class FunctionCall extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'id' => [
+                self::KEY_ID => [
                     'type' => 'string',
                     'description' => 'Unique identifier for this function call.',
                 ],
-                'name' => [
+                self::KEY_NAME => [
                     'type' => 'string',
                     'description' => 'The name of the function to call.',
                 ],
-                'args' => [
+                self::KEY_ARGS => [
                     'type' => 'object',
                     'description' => 'The arguments to pass to the function.',
                     'additionalProperties' => true,
@@ -118,13 +121,13 @@ final class FunctionCall extends AbstractDataValueObject
             ],
             'oneOf' => [
                 [
-                    'required' => ['id'],
+                    'required' => [self::KEY_ID],
                 ],
                 [
-                    'required' => ['name'],
+                    'required' => [self::KEY_NAME],
                 ],
                 [
-                    'required' => ['id', 'name'],
+                    'required' => [self::KEY_ID, self::KEY_NAME],
                 ],
             ],
         ];
@@ -142,15 +145,15 @@ final class FunctionCall extends AbstractDataValueObject
         $data = [];
 
         if ($this->id !== null) {
-            $data['id'] = $this->id;
+            $data[self::KEY_ID] = $this->id;
         }
 
         if ($this->name !== null) {
-            $data['name'] = $this->name;
+            $data[self::KEY_NAME] = $this->name;
         }
 
         if (!empty($this->args)) {
-            $data['args'] = $this->args;
+            $data[self::KEY_ARGS] = $this->args;
         }
 
         return $data;
@@ -164,9 +167,9 @@ final class FunctionCall extends AbstractDataValueObject
     public static function fromArray(array $array): FunctionCall
     {
         return new self(
-            $array['id'] ?? null,
-            $array['name'] ?? null,
-            $array['args'] ?? []
+            $array[self::KEY_ID] ?? null,
+            $array[self::KEY_NAME] ?? null,
+            $array[self::KEY_ARGS] ?? []
         );
     }
 }

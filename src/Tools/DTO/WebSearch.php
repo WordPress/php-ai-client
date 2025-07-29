@@ -20,6 +20,8 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  */
 final class WebSearch extends AbstractDataValueObject
 {
+    public const KEY_ALLOWED_DOMAINS = 'allowedDomains';
+    public const KEY_DISALLOWED_DOMAINS = 'disallowedDomains';
     /**
      * @var string[] List of domains that are allowed for web search.
      */
@@ -78,14 +80,14 @@ final class WebSearch extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'allowedDomains' => [
+                self::KEY_ALLOWED_DOMAINS => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'string',
                     ],
                     'description' => 'List of domains that are allowed for web search.',
                 ],
-                'disallowedDomains' => [
+                self::KEY_DISALLOWED_DOMAINS => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'string',
@@ -107,8 +109,8 @@ final class WebSearch extends AbstractDataValueObject
     public function toArray(): array
     {
         return [
-            'allowedDomains' => $this->allowedDomains,
-            'disallowedDomains' => $this->disallowedDomains,
+            self::KEY_ALLOWED_DOMAINS => $this->allowedDomains,
+            self::KEY_DISALLOWED_DOMAINS => $this->disallowedDomains,
         ];
     }
 
@@ -120,8 +122,8 @@ final class WebSearch extends AbstractDataValueObject
     public static function fromArray(array $array): WebSearch
     {
         return new self(
-            $array['allowedDomains'] ?? [],
-            $array['disallowedDomains'] ?? []
+            $array[self::KEY_ALLOWED_DOMAINS] ?? [],
+            $array[self::KEY_DISALLOWED_DOMAINS] ?? []
         );
     }
 }

@@ -530,30 +530,30 @@ class GenerativeAiResultTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('id', $schema['properties']);
-        $this->assertArrayHasKey('candidates', $schema['properties']);
-        $this->assertArrayHasKey('tokenUsage', $schema['properties']);
-        $this->assertArrayHasKey('providerMetadata', $schema['properties']);
+        $this->assertArrayHasKey(GenerativeAiResult::KEY_ID, $schema['properties']);
+        $this->assertArrayHasKey(GenerativeAiResult::KEY_CANDIDATES, $schema['properties']);
+        $this->assertArrayHasKey(GenerativeAiResult::KEY_TOKEN_USAGE, $schema['properties']);
+        $this->assertArrayHasKey(GenerativeAiResult::KEY_PROVIDER_METADATA, $schema['properties']);
         
         // Check id property
-        $this->assertEquals('string', $schema['properties']['id']['type']);
+        $this->assertEquals('string', $schema['properties'][GenerativeAiResult::KEY_ID]['type']);
         
         // Check candidates property
-        $candidatesSchema = $schema['properties']['candidates'];
+        $candidatesSchema = $schema['properties'][GenerativeAiResult::KEY_CANDIDATES];
         $this->assertEquals('array', $candidatesSchema['type']);
         $this->assertEquals(1, $candidatesSchema['minItems']);
         
         // Check providerMetadata property
-        $metadataSchema = $schema['properties']['providerMetadata'];
+        $metadataSchema = $schema['properties'][GenerativeAiResult::KEY_PROVIDER_METADATA];
         $this->assertEquals('object', $metadataSchema['type']);
         $this->assertTrue($metadataSchema['additionalProperties']);
         
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertContains('id', $schema['required']);
-        $this->assertContains('candidates', $schema['required']);
-        $this->assertContains('tokenUsage', $schema['required']);
-        $this->assertNotContains('providerMetadata', $schema['required']);
+        $this->assertContains(GenerativeAiResult::KEY_ID, $schema['required']);
+        $this->assertContains(GenerativeAiResult::KEY_CANDIDATES, $schema['required']);
+        $this->assertContains(GenerativeAiResult::KEY_TOKEN_USAGE, $schema['required']);
+        $this->assertNotContains(GenerativeAiResult::KEY_PROVIDER_METADATA, $schema['required']);
     }
 
     /**
@@ -624,12 +624,12 @@ class GenerativeAiResultTest extends TestCase
         
         $json = $this->assertToArrayReturnsArray($result);
         
-        $this->assertArrayHasKeys($json, ['id', 'candidates', 'tokenUsage', 'providerMetadata']);
-        $this->assertEquals('result_json_123', $json['id']);
-        $this->assertIsArray($json['candidates']);
-        $this->assertCount(1, $json['candidates']);
-        $this->assertIsArray($json['tokenUsage']);
-        $this->assertEquals($metadata, $json['providerMetadata']);
+        $this->assertArrayHasKeys($json, [GenerativeAiResult::KEY_ID, GenerativeAiResult::KEY_CANDIDATES, GenerativeAiResult::KEY_TOKEN_USAGE, GenerativeAiResult::KEY_PROVIDER_METADATA]);
+        $this->assertEquals('result_json_123', $json[GenerativeAiResult::KEY_ID]);
+        $this->assertIsArray($json[GenerativeAiResult::KEY_CANDIDATES]);
+        $this->assertCount(1, $json[GenerativeAiResult::KEY_CANDIDATES]);
+        $this->assertIsArray($json[GenerativeAiResult::KEY_TOKEN_USAGE]);
+        $this->assertEquals($metadata, $json[GenerativeAiResult::KEY_PROVIDER_METADATA]);
     }
 
     /**
@@ -640,26 +640,26 @@ class GenerativeAiResultTest extends TestCase
     public function testFromArray(): void
     {
         $json = [
-            'id' => 'result_from_json',
-            'candidates' => [
+            GenerativeAiResult::KEY_ID => 'result_from_json',
+            GenerativeAiResult::KEY_CANDIDATES => [
                 [
-                    'message' => [
-                        'role' => MessageRoleEnum::model()->value,
-                        'parts' => [
-                            ['type' => MessagePartTypeEnum::text()->value, 'text' => 'First part'],
-                            ['type' => MessagePartTypeEnum::text()->value, 'text' => 'Second part']
+                    Candidate::KEY_MESSAGE => [
+                        Message::KEY_ROLE => MessageRoleEnum::model()->value,
+                        Message::KEY_PARTS => [
+                            [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'First part'],
+                            [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Second part']
                         ]
                     ],
-                    'finishReason' => FinishReasonEnum::stop()->value,
-                    'tokenCount' => 20
+                    Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
+                    Candidate::KEY_TOKEN_COUNT => 20
                 ]
             ],
-            'tokenUsage' => [
-                'promptTokens' => 8,
-                'completionTokens' => 20,
-                'totalTokens' => 28
+            GenerativeAiResult::KEY_TOKEN_USAGE => [
+                TokenUsage::KEY_PROMPT_TOKENS => 8,
+                TokenUsage::KEY_COMPLETION_TOKENS => 20,
+                TokenUsage::KEY_TOTAL_TOKENS => 28
             ],
-            'providerMetadata' => ['provider' => 'test']
+            GenerativeAiResult::KEY_PROVIDER_METADATA => ['provider' => 'test']
         ];
         
         $result = GenerativeAiResult::fromArray($json);
@@ -737,8 +737,8 @@ class GenerativeAiResultTest extends TestCase
         
         $json = $this->assertToArrayReturnsArray($result);
         
-        $this->assertArrayHasKeys($json, ['id', 'candidates', 'tokenUsage', 'providerMetadata']);
-        $this->assertEquals([], $json['providerMetadata']);
+        $this->assertArrayHasKeys($json, [GenerativeAiResult::KEY_ID, GenerativeAiResult::KEY_CANDIDATES, GenerativeAiResult::KEY_TOKEN_USAGE, GenerativeAiResult::KEY_PROVIDER_METADATA]);
+        $this->assertEquals([], $json[GenerativeAiResult::KEY_PROVIDER_METADATA]);
     }
 
     /**

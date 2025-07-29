@@ -100,20 +100,20 @@ class FunctionResponseTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('id', $schema['properties']);
-        $this->assertArrayHasKey('name', $schema['properties']);
-        $this->assertArrayHasKey('response', $schema['properties']);
+        $this->assertArrayHasKey(FunctionResponse::KEY_ID, $schema['properties']);
+        $this->assertArrayHasKey(FunctionResponse::KEY_NAME, $schema['properties']);
+        $this->assertArrayHasKey(FunctionResponse::KEY_RESPONSE, $schema['properties']);
         
         // Check id property
-        $this->assertEquals('string', $schema['properties']['id']['type']);
-        $this->assertArrayHasKey('description', $schema['properties']['id']);
+        $this->assertEquals('string', $schema['properties'][FunctionResponse::KEY_ID]['type']);
+        $this->assertArrayHasKey('description', $schema['properties'][FunctionResponse::KEY_ID]);
         
         // Check name property
-        $this->assertEquals('string', $schema['properties']['name']['type']);
-        $this->assertArrayHasKey('description', $schema['properties']['name']);
+        $this->assertEquals('string', $schema['properties'][FunctionResponse::KEY_NAME]['type']);
+        $this->assertArrayHasKey('description', $schema['properties'][FunctionResponse::KEY_NAME]);
         
         // Check response property allows multiple types
-        $responseTypes = $schema['properties']['response']['type'];
+        $responseTypes = $schema['properties'][FunctionResponse::KEY_RESPONSE]['type'];
         $this->assertIsArray($responseTypes);
         $this->assertContains('string', $responseTypes);
         $this->assertContains('number', $responseTypes);
@@ -124,7 +124,7 @@ class FunctionResponseTest extends TestCase
         
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['id', 'name', 'response'], $schema['required']);
+        $this->assertEquals([FunctionResponse::KEY_ID, FunctionResponse::KEY_NAME, FunctionResponse::KEY_RESPONSE], $schema['required']);
     }
 
     /**
@@ -194,10 +194,10 @@ class FunctionResponseTest extends TestCase
         $response = new FunctionResponse('func_123', 'calculate', ['result' => 42]);
         $json = $this->assertToArrayReturnsArray($response);
         
-        $this->assertArrayHasKeys($json, ['id', 'name', 'response']);
-        $this->assertEquals('func_123', $json['id']);
-        $this->assertEquals('calculate', $json['name']);
-        $this->assertEquals(['result' => 42], $json['response']);
+        $this->assertArrayHasKeys($json, [FunctionResponse::KEY_ID, FunctionResponse::KEY_NAME, FunctionResponse::KEY_RESPONSE]);
+        $this->assertEquals('func_123', $json[FunctionResponse::KEY_ID]);
+        $this->assertEquals('calculate', $json[FunctionResponse::KEY_NAME]);
+        $this->assertEquals(['result' => 42], $json[FunctionResponse::KEY_RESPONSE]);
     }
 
     /**
@@ -208,9 +208,9 @@ class FunctionResponseTest extends TestCase
     public function testFromArray(): void
     {
         $json = [
-            'id' => 'func_456',
-            'name' => 'search',
-            'response' => ['found' => true, 'count' => 5]
+            FunctionResponse::KEY_ID => 'func_456',
+            FunctionResponse::KEY_NAME => 'search',
+            FunctionResponse::KEY_RESPONSE => ['found' => true, 'count' => 5]
         ];
         
         $response = FunctionResponse::fromArray($json);

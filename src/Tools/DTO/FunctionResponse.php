@@ -20,6 +20,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  */
 final class FunctionResponse extends AbstractDataValueObject
 {
+    public const KEY_ID = 'id';
+    public const KEY_NAME = 'name';
+    public const KEY_RESPONSE = 'response';
     /**
      * @var string The ID of the function call this is responding to.
      */
@@ -97,20 +100,20 @@ final class FunctionResponse extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'id' => [
+                self::KEY_ID => [
                     'type' => 'string',
                     'description' => 'The ID of the function call this is responding to.',
                 ],
-                'name' => [
+                self::KEY_NAME => [
                     'type' => 'string',
                     'description' => 'The name of the function that was called.',
                 ],
-                'response' => [
+                self::KEY_RESPONSE => [
                     'type' => ['string', 'number', 'boolean', 'object', 'array', 'null'],
                     'description' => 'The response data from the function.',
                 ],
             ],
-            'required' => ['id', 'name', 'response'],
+            'required' => [self::KEY_ID, self::KEY_NAME, self::KEY_RESPONSE],
         ];
     }
 
@@ -124,9 +127,9 @@ final class FunctionResponse extends AbstractDataValueObject
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'response' => $this->response,
+            self::KEY_ID => $this->id,
+            self::KEY_NAME => $this->name,
+            self::KEY_RESPONSE => $this->response,
         ];
     }
 
@@ -137,12 +140,12 @@ final class FunctionResponse extends AbstractDataValueObject
      */
     public static function fromArray(array $array): FunctionResponse
     {
-        static::validateFromArrayData($array, ['id', 'name', 'response']);
+        static::validateFromArrayData($array, [self::KEY_ID, self::KEY_NAME, self::KEY_RESPONSE]);
 
         return new self(
-            $array['id'],
-            $array['name'],
-            $array['response']
+            $array[self::KEY_ID],
+            $array[self::KEY_NAME],
+            $array[self::KEY_RESPONSE]
         );
     }
 }

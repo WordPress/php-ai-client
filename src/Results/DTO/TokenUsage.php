@@ -24,6 +24,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  */
 final class TokenUsage extends AbstractDataValueObject
 {
+    public const KEY_PROMPT_TOKENS = 'promptTokens';
+    public const KEY_COMPLETION_TOKENS = 'completionTokens';
+    public const KEY_TOTAL_TOKENS = 'totalTokens';
     /**
      * @var int Number of tokens in the prompt.
      */
@@ -101,20 +104,20 @@ final class TokenUsage extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'promptTokens' => [
+                self::KEY_PROMPT_TOKENS => [
                     'type' => 'integer',
                     'description' => 'Number of tokens in the prompt.',
                 ],
-                'completionTokens' => [
+                self::KEY_COMPLETION_TOKENS => [
                     'type' => 'integer',
                     'description' => 'Number of tokens in the completion.',
                 ],
-                'totalTokens' => [
+                self::KEY_TOTAL_TOKENS => [
                     'type' => 'integer',
                     'description' => 'Total number of tokens used.',
                 ],
             ],
-            'required' => ['promptTokens', 'completionTokens', 'totalTokens'],
+            'required' => [self::KEY_PROMPT_TOKENS, self::KEY_COMPLETION_TOKENS, self::KEY_TOTAL_TOKENS],
         ];
     }
 
@@ -128,9 +131,9 @@ final class TokenUsage extends AbstractDataValueObject
     public function toArray(): array
     {
         return [
-            'promptTokens' => $this->promptTokens,
-            'completionTokens' => $this->completionTokens,
-            'totalTokens' => $this->totalTokens,
+            self::KEY_PROMPT_TOKENS => $this->promptTokens,
+            self::KEY_COMPLETION_TOKENS => $this->completionTokens,
+            self::KEY_TOTAL_TOKENS => $this->totalTokens,
         ];
     }
 
@@ -141,12 +144,16 @@ final class TokenUsage extends AbstractDataValueObject
      */
     public static function fromArray(array $array): TokenUsage
     {
-        static::validateFromArrayData($array, ['promptTokens', 'completionTokens', 'totalTokens']);
+        static::validateFromArrayData($array, [
+            self::KEY_PROMPT_TOKENS,
+            self::KEY_COMPLETION_TOKENS,
+            self::KEY_TOTAL_TOKENS
+        ]);
 
         return new self(
-            $array['promptTokens'],
-            $array['completionTokens'],
-            $array['totalTokens']
+            $array[self::KEY_PROMPT_TOKENS],
+            $array[self::KEY_COMPLETION_TOKENS],
+            $array[self::KEY_TOTAL_TOKENS]
         );
     }
 }

@@ -26,6 +26,9 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  */
 final class GenerativeAiOperation extends AbstractDataValueObject implements OperationInterface
 {
+    public const KEY_ID = 'id';
+    public const KEY_STATE = 'state';
+    public const KEY_RESULT = 'result';
     /**
      * @var string Unique identifier for this operation.
      */
@@ -102,28 +105,28 @@ final class GenerativeAiOperation extends AbstractDataValueObject implements Ope
                 [
                     'type' => 'object',
                     'properties' => [
-                        'id' => [
+                        self::KEY_ID => [
                             'type' => 'string',
                             'description' => 'Unique identifier for this operation.',
                         ],
-                        'state' => [
+                        self::KEY_STATE => [
                             'type' => 'string',
                             'const' => OperationStateEnum::succeeded()->value,
                         ],
-                        'result' => GenerativeAiResult::getJsonSchema(),
+                        self::KEY_RESULT => GenerativeAiResult::getJsonSchema(),
                     ],
-                    'required' => ['id', 'state', 'result'],
+                    'required' => [self::KEY_ID, self::KEY_STATE, self::KEY_RESULT],
                     'additionalProperties' => false,
                 ],
                 // All other states - no result
                 [
                     'type' => 'object',
                     'properties' => [
-                        'id' => [
+                        self::KEY_ID => [
                             'type' => 'string',
                             'description' => 'Unique identifier for this operation.',
                         ],
-                        'state' => [
+                        self::KEY_STATE => [
                             'type' => 'string',
                             'enum' => [
                                 OperationStateEnum::starting()->value,
@@ -134,7 +137,7 @@ final class GenerativeAiOperation extends AbstractDataValueObject implements Ope
                             'description' => 'The current state of the operation.',
                         ],
                     ],
-                    'required' => ['id', 'state'],
+                    'required' => [self::KEY_ID, self::KEY_STATE],
                     'additionalProperties' => false,
                 ],
             ],
@@ -151,12 +154,12 @@ final class GenerativeAiOperation extends AbstractDataValueObject implements Ope
     public function toArray(): array
     {
         $data = [
-            'id' => $this->id,
-            'state' => $this->state->value,
+            self::KEY_ID => $this->id,
+            self::KEY_STATE => $this->state->value,
         ];
 
         if ($this->result !== null) {
-            $data['result'] = $this->result->toArray();
+            $data[self::KEY_RESULT] = $this->result->toArray();
         }
 
         return $data;
@@ -169,14 +172,14 @@ final class GenerativeAiOperation extends AbstractDataValueObject implements Ope
      */
     public static function fromArray(array $array): GenerativeAiOperation
     {
-        static::validateFromArrayData($array, ['id', 'state']);
+        static::validateFromArrayData($array, [self::KEY_ID, self::KEY_STATE]);
 
-        $state = OperationStateEnum::from($array['state']);
+        $state = OperationStateEnum::from($array[self::KEY_STATE]);
         $result = null;
-        if (isset($array['result'])) {
-            $result = GenerativeAiResult::fromArray($array['result']);
+        if (isset($array[self::KEY_RESULT])) {
+            $result = GenerativeAiResult::fromArray($array[self::KEY_RESULT]);
         }
 
-        return new self($array['id'], $state, $result);
+        return new self($array[self::KEY_ID], $state, $result);
     }
 }

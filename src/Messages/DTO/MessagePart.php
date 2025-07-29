@@ -36,6 +36,11 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  */
 final class MessagePart extends AbstractDataValueObject
 {
+    public const KEY_TYPE = 'type';
+    public const KEY_TEXT = 'text';
+    public const KEY_FILE = 'file';
+    public const KEY_FUNCTION_CALL = 'functionCall';
+    public const KEY_FUNCTION_RESPONSE = 'functionResponse';
     /**
      * @var MessagePartTypeEnum The type of this message part.
      */
@@ -167,52 +172,52 @@ final class MessagePart extends AbstractDataValueObject
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::text()->value,
                         ],
-                        'text' => [
+                        self::KEY_TEXT => [
                             'type' => 'string',
                             'description' => 'Text content.',
                         ],
                     ],
-                    'required' => ['type', 'text'],
+                    'required' => [self::KEY_TYPE, self::KEY_TEXT],
                     'additionalProperties' => false,
                 ],
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::file()->value,
                         ],
-                        'file' => File::getJsonSchema(),
+                        self::KEY_FILE => File::getJsonSchema(),
                     ],
-                    'required' => ['type', 'file'],
+                    'required' => [self::KEY_TYPE, self::KEY_FILE],
                     'additionalProperties' => false,
                 ],
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::functionCall()->value,
                         ],
-                        'functionCall' => FunctionCall::getJsonSchema(),
+                        self::KEY_FUNCTION_CALL => FunctionCall::getJsonSchema(),
                     ],
-                    'required' => ['type', 'functionCall'],
+                    'required' => [self::KEY_TYPE, self::KEY_FUNCTION_CALL],
                     'additionalProperties' => false,
                 ],
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::functionResponse()->value,
                         ],
-                        'functionResponse' => FunctionResponse::getJsonSchema(),
+                        self::KEY_FUNCTION_RESPONSE => FunctionResponse::getJsonSchema(),
                     ],
-                    'required' => ['type', 'functionResponse'],
+                    'required' => [self::KEY_TYPE, self::KEY_FUNCTION_RESPONSE],
                     'additionalProperties' => false,
                 ],
             ],
@@ -228,16 +233,16 @@ final class MessagePart extends AbstractDataValueObject
      */
     public function toArray(): array
     {
-        $data = ['type' => $this->type->value];
+        $data = [self::KEY_TYPE => $this->type->value];
 
         if ($this->text !== null) {
-            $data['text'] = $this->text;
+            $data[self::KEY_TEXT] = $this->text;
         } elseif ($this->file !== null) {
-            $data['file'] = $this->file->toArray();
+            $data[self::KEY_FILE] = $this->file->toArray();
         } elseif ($this->functionCall !== null) {
-            $data['functionCall'] = $this->functionCall->toArray();
+            $data[self::KEY_FUNCTION_CALL] = $this->functionCall->toArray();
         } elseif ($this->functionResponse !== null) {
-            $data['functionResponse'] = $this->functionResponse->toArray();
+            $data[self::KEY_FUNCTION_RESPONSE] = $this->functionResponse->toArray();
         } else {
             throw new RuntimeException(
                 'MessagePart requires one of: text, file, functionCall, or functionResponse. '
@@ -255,17 +260,17 @@ final class MessagePart extends AbstractDataValueObject
      */
     public static function fromArray(array $array): MessagePart
     {
-        static::validateFromArrayData($array, ['type']);
+        static::validateFromArrayData($array, [self::KEY_TYPE]);
 
         // Check which properties are set to determine how to construct the MessagePart
-        if (isset($array['text'])) {
-            return new self($array['text']);
-        } elseif (isset($array['file'])) {
-            return new self(File::fromArray($array['file']));
-        } elseif (isset($array['functionCall'])) {
-            return new self(FunctionCall::fromArray($array['functionCall']));
-        } elseif (isset($array['functionResponse'])) {
-            return new self(FunctionResponse::fromArray($array['functionResponse']));
+        if (isset($array[self::KEY_TEXT])) {
+            return new self($array[self::KEY_TEXT]);
+        } elseif (isset($array[self::KEY_FILE])) {
+            return new self(File::fromArray($array[self::KEY_FILE]));
+        } elseif (isset($array[self::KEY_FUNCTION_CALL])) {
+            return new self(FunctionCall::fromArray($array[self::KEY_FUNCTION_CALL]));
+        } elseif (isset($array[self::KEY_FUNCTION_RESPONSE])) {
+            return new self(FunctionResponse::fromArray($array[self::KEY_FUNCTION_RESPONSE]));
         } else {
             throw new InvalidArgumentException(
                 'MessagePart requires one of: text, file, functionCall, or functionResponse.'

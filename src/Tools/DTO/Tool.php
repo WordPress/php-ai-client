@@ -29,6 +29,9 @@ use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
  */
 final class Tool extends AbstractDataValueObject
 {
+    public const KEY_TYPE = 'type';
+    public const KEY_FUNCTION_DECLARATIONS = 'functionDeclarations';
+    public const KEY_WEB_SEARCH = 'webSearch';
     /**
      * @var ToolTypeEnum The type of tool.
      */
@@ -115,30 +118,30 @@ final class Tool extends AbstractDataValueObject
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => ToolTypeEnum::functionDeclarations()->value,
                             'description' => 'The type of tool.',
                         ],
-                        'functionDeclarations' => [
+                        self::KEY_FUNCTION_DECLARATIONS => [
                             'type' => 'array',
                             'items' => FunctionDeclaration::getJsonSchema(),
                             'description' => 'Function declarations.',
                         ],
                     ],
-                    'required' => ['type', 'functionDeclarations'],
+                    'required' => [self::KEY_TYPE, self::KEY_FUNCTION_DECLARATIONS],
                 ],
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => ToolTypeEnum::webSearch()->value,
                             'description' => 'The type of tool.',
                         ],
-                        'webSearch' => WebSearch::getJsonSchema(),
+                        self::KEY_WEB_SEARCH => WebSearch::getJsonSchema(),
                     ],
-                    'required' => ['type', 'webSearch'],
+                    'required' => [self::KEY_TYPE, self::KEY_WEB_SEARCH],
                 ],
             ],
         ];
@@ -153,14 +156,14 @@ final class Tool extends AbstractDataValueObject
      */
     public function toArray(): array
     {
-        $data = ['type' => $this->type->value];
+        $data = [self::KEY_TYPE => $this->type->value];
 
         if ($this->type->isFunctionDeclarations() && $this->functionDeclarations !== null) {
-            $data['functionDeclarations'] = array_map(function (FunctionDeclaration $declaration) {
+            $data[self::KEY_FUNCTION_DECLARATIONS] = array_map(function (FunctionDeclaration $declaration) {
                 return $declaration->toArray();
             }, $this->functionDeclarations);
         } elseif ($this->type->isWebSearch() && $this->webSearch !== null) {
-            $data['webSearch'] = $this->webSearch->toArray();
+            $data[self::KEY_WEB_SEARCH] = $this->webSearch->toArray();
         }
 
         return $data;
@@ -173,16 +176,16 @@ final class Tool extends AbstractDataValueObject
      */
     public static function fromArray(array $array): Tool
     {
-        static::validateFromArrayData($array, ['type']);
+        static::validateFromArrayData($array, [self::KEY_TYPE]);
 
         // Check which properties are set to determine how to construct the Tool
-        if (isset($array['functionDeclarations'])) {
+        if (isset($array[self::KEY_FUNCTION_DECLARATIONS])) {
             $declarations = array_map(function (array $declarationData) {
                 return FunctionDeclaration::fromArray($declarationData);
-            }, $array['functionDeclarations']);
+            }, $array[self::KEY_FUNCTION_DECLARATIONS]);
             return new self($declarations);
-        } elseif (isset($array['webSearch'])) {
-            return new self(WebSearch::fromArray($array['webSearch']));
+        } elseif (isset($array[self::KEY_WEB_SEARCH])) {
+            return new self(WebSearch::fromArray($array[self::KEY_WEB_SEARCH]));
         } else {
             throw new InvalidArgumentException(
                 'Tool requires either functionDeclarations or webSearch.'

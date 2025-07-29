@@ -230,12 +230,12 @@ class CandidateTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('message', $schema['properties']);
-        $this->assertArrayHasKey('finishReason', $schema['properties']);
-        $this->assertArrayHasKey('tokenCount', $schema['properties']);
+        $this->assertArrayHasKey(Candidate::KEY_MESSAGE, $schema['properties']);
+        $this->assertArrayHasKey(Candidate::KEY_FINISH_REASON, $schema['properties']);
+        $this->assertArrayHasKey(Candidate::KEY_TOKEN_COUNT, $schema['properties']);
         
         // Check finishReason property
-        $finishReasonSchema = $schema['properties']['finishReason'];
+        $finishReasonSchema = $schema['properties'][Candidate::KEY_FINISH_REASON];
         $this->assertEquals('string', $finishReasonSchema['type']);
         $this->assertArrayHasKey('enum', $finishReasonSchema);
         $this->assertContains('stop', $finishReasonSchema['enum']);
@@ -245,12 +245,12 @@ class CandidateTest extends TestCase
         $this->assertContains('error', $finishReasonSchema['enum']);
         
         // Check tokenCount property
-        $tokenCountSchema = $schema['properties']['tokenCount'];
+        $tokenCountSchema = $schema['properties'][Candidate::KEY_TOKEN_COUNT];
         $this->assertEquals('integer', $tokenCountSchema['type']);
         
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['message', 'finishReason', 'tokenCount'], $schema['required']);
+        $this->assertEquals([Candidate::KEY_MESSAGE, Candidate::KEY_FINISH_REASON, Candidate::KEY_TOKEN_COUNT], $schema['required']);
     }
 
     /**
@@ -353,10 +353,10 @@ class CandidateTest extends TestCase
         
         $json = $this->assertToArrayReturnsArray($candidate);
         
-        $this->assertArrayHasKeys($json, ['message', 'finishReason', 'tokenCount']);
-        $this->assertIsArray($json['message']);
-        $this->assertEquals(FinishReasonEnum::stop()->value, $json['finishReason']);
-        $this->assertEquals(45, $json['tokenCount']);
+        $this->assertArrayHasKeys($json, [Candidate::KEY_MESSAGE, Candidate::KEY_FINISH_REASON, Candidate::KEY_TOKEN_COUNT]);
+        $this->assertIsArray($json[Candidate::KEY_MESSAGE]);
+        $this->assertEquals(FinishReasonEnum::stop()->value, $json[Candidate::KEY_FINISH_REASON]);
+        $this->assertEquals(45, $json[Candidate::KEY_TOKEN_COUNT]);
     }
 
     /**
@@ -367,15 +367,15 @@ class CandidateTest extends TestCase
     public function testFromArray(): void
     {
         $json = [
-            'message' => [
-                'role' => MessageRoleEnum::model()->value,
-                'parts' => [
-                    ['type' => MessagePartTypeEnum::text()->value, 'text' => 'Response text 1'],
-                    ['type' => MessagePartTypeEnum::text()->value, 'text' => 'Response text 2']
+            Candidate::KEY_MESSAGE => [
+                Message::KEY_ROLE => MessageRoleEnum::model()->value,
+                Message::KEY_PARTS => [
+                    [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Response text 1'],
+                    [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Response text 2']
                 ]
             ],
-            'finishReason' => FinishReasonEnum::stop()->value,
-            'tokenCount' => 75
+            Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
+            Candidate::KEY_TOKEN_COUNT => 75
         ];
         
         $candidate = Candidate::fromArray($json);

@@ -21,6 +21,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  */
 final class FunctionDeclaration extends AbstractDataValueObject
 {
+    public const KEY_NAME = 'name';
+    public const KEY_DESCRIPTION = 'description';
+    public const KEY_PARAMETERS = 'parameters';
     /**
      * @var string The name of the function.
      */
@@ -98,20 +101,20 @@ final class FunctionDeclaration extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'name' => [
+                self::KEY_NAME => [
                     'type' => 'string',
                     'description' => 'The name of the function.',
                 ],
-                'description' => [
+                self::KEY_DESCRIPTION => [
                     'type' => 'string',
                     'description' => 'A description of what the function does.',
                 ],
-                'parameters' => [
+                self::KEY_PARAMETERS => [
                     'type' => ['string', 'number', 'boolean', 'object', 'array', 'null'],
                     'description' => 'The JSON schema for the function parameters.',
                 ],
             ],
-            'required' => ['name', 'description'],
+            'required' => [self::KEY_NAME, self::KEY_DESCRIPTION],
         ];
     }
 
@@ -125,12 +128,12 @@ final class FunctionDeclaration extends AbstractDataValueObject
     public function toArray(): array
     {
         $data = [
-            'name' => $this->name,
-            'description' => $this->description,
+            self::KEY_NAME => $this->name,
+            self::KEY_DESCRIPTION => $this->description,
         ];
 
         if ($this->parameters !== null) {
-            $data['parameters'] = $this->parameters;
+            $data[self::KEY_PARAMETERS] = $this->parameters;
         }
 
         return $data;
@@ -143,12 +146,12 @@ final class FunctionDeclaration extends AbstractDataValueObject
      */
     public static function fromArray(array $array): FunctionDeclaration
     {
-        static::validateFromArrayData($array, ['name', 'description']);
+        static::validateFromArrayData($array, [self::KEY_NAME, self::KEY_DESCRIPTION]);
 
         return new self(
-            $array['name'],
-            $array['description'],
-            $array['parameters'] ?? null
+            $array[self::KEY_NAME],
+            $array[self::KEY_DESCRIPTION],
+            $array[self::KEY_PARAMETERS] ?? null
         );
     }
 }

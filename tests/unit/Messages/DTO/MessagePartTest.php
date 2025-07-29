@@ -150,30 +150,30 @@ class MessagePartTest extends TestCase
         // Check text variant
         $textSchema = $schema['oneOf'][0];
         $this->assertEquals('object', $textSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::text()->value, $textSchema['properties']['type']['const']);
-        $this->assertArrayHasKey('text', $textSchema['properties']);
-        $this->assertEquals(['type', 'text'], $textSchema['required']);
+        $this->assertEquals(MessagePartTypeEnum::text()->value, $textSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertArrayHasKey(MessagePart::KEY_TEXT, $textSchema['properties']);
+        $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_TEXT], $textSchema['required']);
         
         // Check file variant
         $fileSchema = $schema['oneOf'][1];
         $this->assertEquals('object', $fileSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::file()->value, $fileSchema['properties']['type']['const']);
-        $this->assertArrayHasKey('file', $fileSchema['properties']);
-        $this->assertEquals(['type', 'file'], $fileSchema['required']);
+        $this->assertEquals(MessagePartTypeEnum::file()->value, $fileSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertArrayHasKey(MessagePart::KEY_FILE, $fileSchema['properties']);
+        $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_FILE], $fileSchema['required']);
         
         // Check function_call variant
         $functionCallSchema = $schema['oneOf'][2];
         $this->assertEquals('object', $functionCallSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::functionCall()->value, $functionCallSchema['properties']['type']['const']);
-        $this->assertArrayHasKey('functionCall', $functionCallSchema['properties']);
-        $this->assertEquals(['type', 'functionCall'], $functionCallSchema['required']);
+        $this->assertEquals(MessagePartTypeEnum::functionCall()->value, $functionCallSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertArrayHasKey(MessagePart::KEY_FUNCTION_CALL, $functionCallSchema['properties']);
+        $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_FUNCTION_CALL], $functionCallSchema['required']);
         
         // Check function_response variant
         $functionResponseSchema = $schema['oneOf'][3];
         $this->assertEquals('object', $functionResponseSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::functionResponse()->value, $functionResponseSchema['properties']['type']['const']);
-        $this->assertArrayHasKey('functionResponse', $functionResponseSchema['properties']);
-        $this->assertEquals(['type', 'functionResponse'], $functionResponseSchema['required']);
+        $this->assertEquals(MessagePartTypeEnum::functionResponse()->value, $functionResponseSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertArrayHasKey(MessagePart::KEY_FUNCTION_RESPONSE, $functionResponseSchema['properties']);
+        $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_FUNCTION_RESPONSE], $functionResponseSchema['required']);
     }
 
     /**
@@ -243,15 +243,15 @@ class MessagePartTest extends TestCase
         $json = $part->toArray();
         
         $this->assertIsArray($json);
-        $this->assertArrayHasKey('type', $json);
-        $this->assertArrayHasKey('text', $json);
-        $this->assertEquals(MessagePartTypeEnum::text()->value, $json['type']);
-        $this->assertEquals('Hello, world!', $json['text']);
+        $this->assertArrayHasKey(MessagePart::KEY_TYPE, $json);
+        $this->assertArrayHasKey(MessagePart::KEY_TEXT, $json);
+        $this->assertEquals(MessagePartTypeEnum::text()->value, $json[MessagePart::KEY_TYPE]);
+        $this->assertEquals('Hello, world!', $json[MessagePart::KEY_TEXT]);
         
         // Ensure other fields are not present
-        $this->assertArrayNotHasKey('file', $json);
-        $this->assertArrayNotHasKey('functionCall', $json);
-        $this->assertArrayNotHasKey('functionResponse', $json);
+        $this->assertArrayNotHasKey(MessagePart::KEY_FILE, $json);
+        $this->assertArrayNotHasKey(MessagePart::KEY_FUNCTION_CALL, $json);
+        $this->assertArrayNotHasKey(MessagePart::KEY_FUNCTION_RESPONSE, $json);
     }
 
     /**
@@ -266,10 +266,10 @@ class MessagePartTest extends TestCase
         $json = $part->toArray();
         
         $this->assertIsArray($json);
-        $this->assertArrayHasKey('type', $json);
-        $this->assertArrayHasKey('file', $json);
-        $this->assertEquals(MessagePartTypeEnum::file()->value, $json['type']);
-        $this->assertIsArray($json['file']);
+        $this->assertArrayHasKey(MessagePart::KEY_TYPE, $json);
+        $this->assertArrayHasKey(MessagePart::KEY_FILE, $json);
+        $this->assertEquals(MessagePartTypeEnum::file()->value, $json[MessagePart::KEY_TYPE]);
+        $this->assertIsArray($json[MessagePart::KEY_FILE]);
     }
 
     /**
@@ -280,8 +280,8 @@ class MessagePartTest extends TestCase
     public function testFromArrayWithText(): void
     {
         $json = [
-            'type' => MessagePartTypeEnum::text()->value,
-            'text' => 'Test message'
+            MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+            MessagePart::KEY_TEXT => 'Test message'
         ];
         
         $part = MessagePart::fromArray($json);
@@ -298,11 +298,11 @@ class MessagePartTest extends TestCase
     public function testFromArrayWithFile(): void
     {
         $json = [
-            'type' => MessagePartTypeEnum::file()->value,
-            'file' => [
-                'fileType' => FileTypeEnum::remote()->value,
-                'mimeType' => 'image/jpeg',
-                'url' => 'https://example.com/image.jpg'
+            MessagePart::KEY_TYPE => MessagePartTypeEnum::file()->value,
+            MessagePart::KEY_FILE => [
+                File::KEY_FILE_TYPE => FileTypeEnum::remote()->value,
+                File::KEY_MIME_TYPE => 'image/jpeg',
+                File::KEY_URL => 'https://example.com/image.jpg'
             ]
         ];
         

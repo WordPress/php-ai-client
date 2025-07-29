@@ -128,18 +128,18 @@ class WebSearchTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('allowedDomains', $schema['properties']);
-        $this->assertArrayHasKey('disallowedDomains', $schema['properties']);
+        $this->assertArrayHasKey(WebSearch::KEY_ALLOWED_DOMAINS, $schema['properties']);
+        $this->assertArrayHasKey(WebSearch::KEY_DISALLOWED_DOMAINS, $schema['properties']);
         
         // Check allowedDomains property
-        $allowedSchema = $schema['properties']['allowedDomains'];
+        $allowedSchema = $schema['properties'][WebSearch::KEY_ALLOWED_DOMAINS];
         $this->assertEquals('array', $allowedSchema['type']);
         $this->assertArrayHasKey('items', $allowedSchema);
         $this->assertEquals('string', $allowedSchema['items']['type']);
         $this->assertArrayHasKey('description', $allowedSchema);
         
         // Check disallowedDomains property
-        $disallowedSchema = $schema['properties']['disallowedDomains'];
+        $disallowedSchema = $schema['properties'][WebSearch::KEY_DISALLOWED_DOMAINS];
         $this->assertEquals('array', $disallowedSchema['type']);
         $this->assertArrayHasKey('items', $disallowedSchema);
         $this->assertEquals('string', $disallowedSchema['items']['type']);
@@ -308,9 +308,9 @@ class WebSearchTest extends TestCase
         
         $json = $this->assertToArrayReturnsArray($webSearch);
         
-        $this->assertArrayHasKeys($json, ['allowedDomains', 'disallowedDomains']);
-        $this->assertEquals(['example.com', 'docs.example.com'], $json['allowedDomains']);
-        $this->assertEquals(['spam.com', 'malware.com'], $json['disallowedDomains']);
+        $this->assertArrayHasKeys($json, [WebSearch::KEY_ALLOWED_DOMAINS, WebSearch::KEY_DISALLOWED_DOMAINS]);
+        $this->assertEquals(['example.com', 'docs.example.com'], $json[WebSearch::KEY_ALLOWED_DOMAINS]);
+        $this->assertEquals(['spam.com', 'malware.com'], $json[WebSearch::KEY_DISALLOWED_DOMAINS]);
     }
 
     /**
@@ -324,9 +324,9 @@ class WebSearchTest extends TestCase
         
         $json = $this->assertToArrayReturnsArray($webSearch);
         
-        $this->assertArrayHasKeys($json, ['allowedDomains', 'disallowedDomains']);
-        $this->assertEquals([], $json['allowedDomains']);
-        $this->assertEquals([], $json['disallowedDomains']);
+        $this->assertArrayHasKeys($json, [WebSearch::KEY_ALLOWED_DOMAINS, WebSearch::KEY_DISALLOWED_DOMAINS]);
+        $this->assertEquals([], $json[WebSearch::KEY_ALLOWED_DOMAINS]);
+        $this->assertEquals([], $json[WebSearch::KEY_DISALLOWED_DOMAINS]);
     }
 
     /**
@@ -340,9 +340,9 @@ class WebSearchTest extends TestCase
         
         $json = $this->assertToArrayReturnsArray($webSearch);
         
-        $this->assertArrayHasKeys($json, ['allowedDomains', 'disallowedDomains']);
-        $this->assertEquals(['trusted1.com', 'trusted2.com'], $json['allowedDomains']);
-        $this->assertEquals([], $json['disallowedDomains']);
+        $this->assertArrayHasKeys($json, [WebSearch::KEY_ALLOWED_DOMAINS, WebSearch::KEY_DISALLOWED_DOMAINS]);
+        $this->assertEquals(['trusted1.com', 'trusted2.com'], $json[WebSearch::KEY_ALLOWED_DOMAINS]);
+        $this->assertEquals([], $json[WebSearch::KEY_DISALLOWED_DOMAINS]);
     }
 
     /**
@@ -353,8 +353,8 @@ class WebSearchTest extends TestCase
     public function testFromArrayWithBothDomainLists(): void
     {
         $json = [
-            'allowedDomains' => ['api.example.com', 'docs.example.com'],
-            'disallowedDomains' => ['ads.example.com', 'tracking.example.com']
+            WebSearch::KEY_ALLOWED_DOMAINS => ['api.example.com', 'docs.example.com'],
+            WebSearch::KEY_DISALLOWED_DOMAINS => ['ads.example.com', 'tracking.example.com']
         ];
         
         $webSearch = WebSearch::fromArray($json);
@@ -372,8 +372,8 @@ class WebSearchTest extends TestCase
     public function testFromArrayWithEmptyArrays(): void
     {
         $json = [
-            'allowedDomains' => [],
-            'disallowedDomains' => []
+            WebSearch::KEY_ALLOWED_DOMAINS => [],
+            WebSearch::KEY_DISALLOWED_DOMAINS => []
         ];
         
         $webSearch = WebSearch::fromArray($json);

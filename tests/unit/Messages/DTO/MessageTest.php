@@ -141,11 +141,11 @@ class MessageTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('role', $schema['properties']);
-        $this->assertArrayHasKey('parts', $schema['properties']);
+        $this->assertArrayHasKey(Message::KEY_ROLE, $schema['properties']);
+        $this->assertArrayHasKey(Message::KEY_PARTS, $schema['properties']);
         
         // Check role property
-        $roleSchema = $schema['properties']['role'];
+        $roleSchema = $schema['properties'][Message::KEY_ROLE];
         $this->assertEquals('string', $roleSchema['type']);
         $this->assertArrayHasKey('enum', $roleSchema);
         $this->assertContains('system', $roleSchema['enum']);
@@ -153,14 +153,14 @@ class MessageTest extends TestCase
         $this->assertContains('model', $roleSchema['enum']);
         
         // Check parts property
-        $partsSchema = $schema['properties']['parts'];
+        $partsSchema = $schema['properties'][Message::KEY_PARTS];
         $this->assertEquals('array', $partsSchema['type']);
         $this->assertArrayHasKey('items', $partsSchema);
         $this->assertIsArray($partsSchema['items']);
         
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['role', 'parts'], $schema['required']);
+        $this->assertEquals([Message::KEY_ROLE, Message::KEY_PARTS], $schema['required']);
     }
 
     /**
@@ -245,11 +245,11 @@ class MessageTest extends TestCase
         $json = $message->toArray();
         
         $this->assertIsArray($json);
-        $this->assertEquals($role->value, $json['role']);
-        $this->assertIsArray($json['parts']);
-        $this->assertCount(2, $json['parts']);
-        $this->assertEquals('Hello, world!', $json['parts'][0]['text']);
-        $this->assertEquals('How are you?', $json['parts'][1]['text']);
+        $this->assertEquals($role->value, $json[Message::KEY_ROLE]);
+        $this->assertIsArray($json[Message::KEY_PARTS]);
+        $this->assertCount(2, $json[Message::KEY_PARTS]);
+        $this->assertEquals('Hello, world!', $json[Message::KEY_PARTS][0][MessagePart::KEY_TEXT]);
+        $this->assertEquals('How are you?', $json[Message::KEY_PARTS][1][MessagePart::KEY_TEXT]);
     }
 
     /**
@@ -260,9 +260,9 @@ class MessageTest extends TestCase
     public function testFromArray(): void
     {
         $json = [
-            'role' => MessageRoleEnum::system()->value,
-            'parts' => [
-                ['type' => MessagePartTypeEnum::text()->value, 'text' => 'You are a helpful assistant.']
+            Message::KEY_ROLE => MessageRoleEnum::system()->value,
+            Message::KEY_PARTS => [
+                [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'You are a helpful assistant.']
             ]
         ];
         

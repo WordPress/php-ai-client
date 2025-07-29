@@ -105,34 +105,34 @@ class FunctionCallTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('id', $schema['properties']);
-        $this->assertArrayHasKey('name', $schema['properties']);
-        $this->assertArrayHasKey('args', $schema['properties']);
+        $this->assertArrayHasKey(FunctionCall::KEY_ID, $schema['properties']);
+        $this->assertArrayHasKey(FunctionCall::KEY_NAME, $schema['properties']);
+        $this->assertArrayHasKey(FunctionCall::KEY_ARGS, $schema['properties']);
         
         // Check id property
-        $this->assertEquals('string', $schema['properties']['id']['type']);
-        $this->assertArrayHasKey('description', $schema['properties']['id']);
+        $this->assertEquals('string', $schema['properties'][FunctionCall::KEY_ID]['type']);
+        $this->assertArrayHasKey('description', $schema['properties'][FunctionCall::KEY_ID]);
         
         // Check name property
-        $this->assertEquals('string', $schema['properties']['name']['type']);
-        $this->assertArrayHasKey('description', $schema['properties']['name']);
+        $this->assertEquals('string', $schema['properties'][FunctionCall::KEY_NAME]['type']);
+        $this->assertArrayHasKey('description', $schema['properties'][FunctionCall::KEY_NAME]);
         
         // Check args property
-        $this->assertEquals('object', $schema['properties']['args']['type']);
-        $this->assertTrue($schema['properties']['args']['additionalProperties']);
+        $this->assertEquals('object', $schema['properties'][FunctionCall::KEY_ARGS]['type']);
+        $this->assertTrue($schema['properties'][FunctionCall::KEY_ARGS]['additionalProperties']);
         
         // Check oneOf for required fields
         $this->assertArrayHasKey('oneOf', $schema);
         $this->assertCount(3, $schema['oneOf']);
         
         // First option: only id required
-        $this->assertEquals(['id'], $schema['oneOf'][0]['required']);
+        $this->assertEquals([FunctionCall::KEY_ID], $schema['oneOf'][0]['required']);
         
         // Second option: only name required
-        $this->assertEquals(['name'], $schema['oneOf'][1]['required']);
+        $this->assertEquals([FunctionCall::KEY_NAME], $schema['oneOf'][1]['required']);
         
         // Third option: both id and name required
-        $this->assertEquals(['id', 'name'], $schema['oneOf'][2]['required']);
+        $this->assertEquals([FunctionCall::KEY_ID, FunctionCall::KEY_NAME], $schema['oneOf'][2]['required']);
     }
 
     /**
@@ -173,9 +173,9 @@ class FunctionCallTest extends TestCase
         $json = $functionCall->toArray();
         
         $this->assertIsArray($json);
-        $this->assertEquals('func_123', $json['id']);
-        $this->assertEquals('calculate', $json['name']);
-        $this->assertEquals(['x' => 10, 'y' => 20], $json['args']);
+        $this->assertEquals('func_123', $json[FunctionCall::KEY_ID]);
+        $this->assertEquals('calculate', $json[FunctionCall::KEY_NAME]);
+        $this->assertEquals(['x' => 10, 'y' => 20], $json[FunctionCall::KEY_ARGS]);
     }
 
     /**
@@ -189,9 +189,9 @@ class FunctionCallTest extends TestCase
         $json = $functionCall->toArray();
         
         $this->assertIsArray($json);
-        $this->assertEquals('func_456', $json['id']);
-        $this->assertArrayNotHasKey('name', $json);
-        $this->assertArrayNotHasKey('args', $json);
+        $this->assertEquals('func_456', $json[FunctionCall::KEY_ID]);
+        $this->assertArrayNotHasKey(FunctionCall::KEY_NAME, $json);
+        $this->assertArrayNotHasKey(FunctionCall::KEY_ARGS, $json);
     }
 
     /**
@@ -205,9 +205,9 @@ class FunctionCallTest extends TestCase
         $json = $functionCall->toArray();
         
         $this->assertIsArray($json);
-        $this->assertEquals('search', $json['name']);
-        $this->assertArrayNotHasKey('id', $json);
-        $this->assertArrayNotHasKey('args', $json);
+        $this->assertEquals('search', $json[FunctionCall::KEY_NAME]);
+        $this->assertArrayNotHasKey(FunctionCall::KEY_ID, $json);
+        $this->assertArrayNotHasKey(FunctionCall::KEY_ARGS, $json);
     }
 
     /**
@@ -218,9 +218,9 @@ class FunctionCallTest extends TestCase
     public function testFromArrayAllFields(): void
     {
         $json = [
-            'id' => 'func_789',
-            'name' => 'process',
-            'args' => ['input' => 'data', 'format' => 'json']
+            FunctionCall::KEY_ID => 'func_789',
+            FunctionCall::KEY_NAME => 'process',
+            FunctionCall::KEY_ARGS => ['input' => 'data', 'format' => 'json']
         ];
         
         $functionCall = FunctionCall::fromArray($json);
@@ -238,7 +238,7 @@ class FunctionCallTest extends TestCase
      */
     public function testFromArrayMinimalFields(): void
     {
-        $json = ['name' => 'minimal'];
+        $json = [FunctionCall::KEY_NAME => 'minimal'];
         
         $functionCall = FunctionCall::fromArray($json);
         

@@ -107,23 +107,23 @@ class TokenUsageTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('promptTokens', $schema['properties']);
-        $this->assertArrayHasKey('completionTokens', $schema['properties']);
-        $this->assertArrayHasKey('totalTokens', $schema['properties']);
+        $this->assertArrayHasKey(TokenUsage::KEY_PROMPT_TOKENS, $schema['properties']);
+        $this->assertArrayHasKey(TokenUsage::KEY_COMPLETION_TOKENS, $schema['properties']);
+        $this->assertArrayHasKey(TokenUsage::KEY_TOTAL_TOKENS, $schema['properties']);
         
         // Check each property type
-        $this->assertEquals('integer', $schema['properties']['promptTokens']['type']);
-        $this->assertEquals('integer', $schema['properties']['completionTokens']['type']);
-        $this->assertEquals('integer', $schema['properties']['totalTokens']['type']);
+        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_PROMPT_TOKENS]['type']);
+        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_COMPLETION_TOKENS]['type']);
+        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_TOTAL_TOKENS]['type']);
         
         // Check descriptions
-        $this->assertArrayHasKey('description', $schema['properties']['promptTokens']);
-        $this->assertArrayHasKey('description', $schema['properties']['completionTokens']);
-        $this->assertArrayHasKey('description', $schema['properties']['totalTokens']);
+        $this->assertArrayHasKey('description', $schema['properties'][TokenUsage::KEY_PROMPT_TOKENS]);
+        $this->assertArrayHasKey('description', $schema['properties'][TokenUsage::KEY_COMPLETION_TOKENS]);
+        $this->assertArrayHasKey('description', $schema['properties'][TokenUsage::KEY_TOTAL_TOKENS]);
         
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['promptTokens', 'completionTokens', 'totalTokens'], $schema['required']);
+        $this->assertEquals([TokenUsage::KEY_PROMPT_TOKENS, TokenUsage::KEY_COMPLETION_TOKENS, TokenUsage::KEY_TOTAL_TOKENS], $schema['required']);
     }
 
     /**
@@ -219,13 +219,13 @@ class TokenUsageTest extends TestCase
         $json = $tokenUsage->toArray();
         
         $this->assertIsArray($json);
-        $this->assertArrayHasKey('promptTokens', $json);
-        $this->assertArrayHasKey('completionTokens', $json);
-        $this->assertArrayHasKey('totalTokens', $json);
+        $this->assertArrayHasKey(TokenUsage::KEY_PROMPT_TOKENS, $json);
+        $this->assertArrayHasKey(TokenUsage::KEY_COMPLETION_TOKENS, $json);
+        $this->assertArrayHasKey(TokenUsage::KEY_TOTAL_TOKENS, $json);
         
-        $this->assertEquals(100, $json['promptTokens']);
-        $this->assertEquals(50, $json['completionTokens']);
-        $this->assertEquals(150, $json['totalTokens']);
+        $this->assertEquals(100, $json[TokenUsage::KEY_PROMPT_TOKENS]);
+        $this->assertEquals(50, $json[TokenUsage::KEY_COMPLETION_TOKENS]);
+        $this->assertEquals(150, $json[TokenUsage::KEY_TOTAL_TOKENS]);
     }
 
     /**
@@ -236,9 +236,9 @@ class TokenUsageTest extends TestCase
     public function testFromArray(): void
     {
         $json = [
-            'promptTokens' => 100,
-            'completionTokens' => 50,
-            'totalTokens' => 150,
+            TokenUsage::KEY_PROMPT_TOKENS => 100,
+            TokenUsage::KEY_COMPLETION_TOKENS => 50,
+            TokenUsage::KEY_TOTAL_TOKENS => 150,
         ];
         
         $tokenUsage = TokenUsage::fromArray($json);

@@ -143,21 +143,21 @@ class ToolTest extends TestCase
         $functionSchema = $schema['oneOf'][0];
         $this->assertEquals('object', $functionSchema['type']);
         $this->assertArrayHasKey('properties', $functionSchema);
-        $this->assertArrayHasKey('type', $functionSchema['properties']);
-        $this->assertArrayHasKey('functionDeclarations', $functionSchema['properties']);
+        $this->assertArrayHasKey(Tool::KEY_TYPE, $functionSchema['properties']);
+        $this->assertArrayHasKey(Tool::KEY_FUNCTION_DECLARATIONS, $functionSchema['properties']);
         
         // Type property
-        $typeProperty = $functionSchema['properties']['type'];
+        $typeProperty = $functionSchema['properties'][Tool::KEY_TYPE];
         $this->assertEquals('string', $typeProperty['type']);
         $this->assertEquals(ToolTypeEnum::functionDeclarations()->value, $typeProperty['const']);
         
         // Function declarations property
-        $functionsProperty = $functionSchema['properties']['functionDeclarations'];
+        $functionsProperty = $functionSchema['properties'][Tool::KEY_FUNCTION_DECLARATIONS];
         $this->assertEquals('array', $functionsProperty['type']);
         $this->assertArrayHasKey('items', $functionsProperty);
         
         // Required fields
-        $this->assertEquals(['type', 'functionDeclarations'], $functionSchema['required']);
+        $this->assertEquals([Tool::KEY_TYPE, Tool::KEY_FUNCTION_DECLARATIONS], $functionSchema['required']);
     }
 
     /**
@@ -173,19 +173,19 @@ class ToolTest extends TestCase
         $webSearchSchema = $schema['oneOf'][1];
         $this->assertEquals('object', $webSearchSchema['type']);
         $this->assertArrayHasKey('properties', $webSearchSchema);
-        $this->assertArrayHasKey('type', $webSearchSchema['properties']);
-        $this->assertArrayHasKey('webSearch', $webSearchSchema['properties']);
+        $this->assertArrayHasKey(Tool::KEY_TYPE, $webSearchSchema['properties']);
+        $this->assertArrayHasKey(Tool::KEY_WEB_SEARCH, $webSearchSchema['properties']);
         
         // Type property
-        $typeProperty = $webSearchSchema['properties']['type'];
+        $typeProperty = $webSearchSchema['properties'][Tool::KEY_TYPE];
         $this->assertEquals('string', $typeProperty['type']);
         $this->assertEquals(ToolTypeEnum::webSearch()->value, $typeProperty['const']);
         
         // Web search property
-        $this->assertArrayHasKey('webSearch', $webSearchSchema['properties']);
+        $this->assertArrayHasKey(Tool::KEY_WEB_SEARCH, $webSearchSchema['properties']);
         
         // Required fields
-        $this->assertEquals(['type', 'webSearch'], $webSearchSchema['required']);
+        $this->assertEquals([Tool::KEY_TYPE, Tool::KEY_WEB_SEARCH], $webSearchSchema['required']);
     }
 
     /**
@@ -313,12 +313,12 @@ class ToolTest extends TestCase
         $tool = new Tool($functions);
         $json = $this->assertToArrayReturnsArray($tool);
         
-        $this->assertArrayHasKeys($json, ['type', 'functionDeclarations']);
-        $this->assertEquals(ToolTypeEnum::functionDeclarations()->value, $json['type']);
-        $this->assertIsArray($json['functionDeclarations']);
-        $this->assertCount(2, $json['functionDeclarations']);
-        $this->assertEquals('func1', $json['functionDeclarations'][0]['name']);
-        $this->assertEquals('func2', $json['functionDeclarations'][1]['name']);
+        $this->assertArrayHasKeys($json, [Tool::KEY_TYPE, Tool::KEY_FUNCTION_DECLARATIONS]);
+        $this->assertEquals(ToolTypeEnum::functionDeclarations()->value, $json[Tool::KEY_TYPE]);
+        $this->assertIsArray($json[Tool::KEY_FUNCTION_DECLARATIONS]);
+        $this->assertCount(2, $json[Tool::KEY_FUNCTION_DECLARATIONS]);
+        $this->assertEquals('func1', $json[Tool::KEY_FUNCTION_DECLARATIONS][0][FunctionDeclaration::KEY_NAME]);
+        $this->assertEquals('func2', $json[Tool::KEY_FUNCTION_DECLARATIONS][1][FunctionDeclaration::KEY_NAME]);
     }
 
     /**
@@ -336,11 +336,11 @@ class ToolTest extends TestCase
         $tool = new Tool($webSearch);
         $json = $this->assertToArrayReturnsArray($tool);
         
-        $this->assertArrayHasKeys($json, ['type', 'webSearch']);
-        $this->assertEquals(ToolTypeEnum::webSearch()->value, $json['type']);
-        $this->assertIsArray($json['webSearch']);
-        $this->assertArrayHasKey('allowedDomains', $json['webSearch']);
-        $this->assertArrayHasKey('disallowedDomains', $json['webSearch']);
+        $this->assertArrayHasKeys($json, [Tool::KEY_TYPE, Tool::KEY_WEB_SEARCH]);
+        $this->assertEquals(ToolTypeEnum::webSearch()->value, $json[Tool::KEY_TYPE]);
+        $this->assertIsArray($json[Tool::KEY_WEB_SEARCH]);
+        $this->assertArrayHasKey(WebSearch::KEY_ALLOWED_DOMAINS, $json[Tool::KEY_WEB_SEARCH]);
+        $this->assertArrayHasKey(WebSearch::KEY_DISALLOWED_DOMAINS, $json[Tool::KEY_WEB_SEARCH]);
     }
 
     /**
@@ -351,12 +351,12 @@ class ToolTest extends TestCase
     public function testFromArrayWithFunctionDeclarations(): void
     {
         $json = [
-            'type' => ToolTypeEnum::functionDeclarations()->value,
-            'functionDeclarations' => [
+            Tool::KEY_TYPE => ToolTypeEnum::functionDeclarations()->value,
+            Tool::KEY_FUNCTION_DECLARATIONS => [
                 [
-                    'name' => 'testFunc',
-                    'description' => 'Test function',
-                    'parameters' => ['type' => 'object']
+                    FunctionDeclaration::KEY_NAME => 'testFunc',
+                    FunctionDeclaration::KEY_DESCRIPTION => 'Test function',
+                    FunctionDeclaration::KEY_PARAMETERS => ['type' => 'object']
                 ]
             ]
         ];
@@ -378,10 +378,10 @@ class ToolTest extends TestCase
     public function testFromArrayWithWebSearch(): void
     {
         $json = [
-            'type' => ToolTypeEnum::webSearch()->value,
-            'webSearch' => [
-                'allowedDomains' => ['example.com'],
-                'disallowedDomains' => ['spam.com']
+            Tool::KEY_TYPE => ToolTypeEnum::webSearch()->value,
+            Tool::KEY_WEB_SEARCH => [
+                WebSearch::KEY_ALLOWED_DOMAINS => ['example.com'],
+                WebSearch::KEY_DISALLOWED_DOMAINS => ['spam.com']
             ]
         ];
         
