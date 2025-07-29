@@ -415,6 +415,8 @@ final class GenerativeAiResult extends AbstractDataValueObject implements Result
      */
     public static function fromArray(array $array): GenerativeAiResult
     {
+        static::validateFromArrayData($array, ['id', 'candidates', 'tokenUsage']);
+
         $candidates = array_map(fn(array $candidateData) => Candidate::fromArray($candidateData), $array['candidates']);
 
         return new self(

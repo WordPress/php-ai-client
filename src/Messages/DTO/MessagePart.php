@@ -67,7 +67,7 @@ final class MessagePart extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param mixed $content The content of this message part.
-     * @throws \InvalidArgumentException If an unsupported content type is provided.
+     * @throws InvalidArgumentException If an unsupported content type is provided.
      */
     public function __construct($content)
     {
@@ -85,7 +85,7 @@ final class MessagePart extends AbstractDataValueObject
             $this->functionResponse = $content;
         } else {
             $type = is_object($content) ? get_class($content) : gettype($content);
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf(
                     'Unsupported content type %s. Expected string, File, '
                     . 'FunctionCall, or FunctionResponse.',
@@ -239,10 +239,7 @@ final class MessagePart extends AbstractDataValueObject
         } elseif ($this->functionResponse !== null) {
             $data['functionResponse'] = $this->functionResponse->toArray();
         } else {
-            throw new RuntimeException(
-                'MessagePart requires one of: text, file, functionCall, or functionResponse. '
-                . 'This should not be a possible condition.'
-            );
+            throw new RuntimeException('MessagePart requires one of: text, file, functionCall, or functionResponse. This should not be a possible condition.');
         }
 
         return $data;
@@ -255,32 +252,21 @@ final class MessagePart extends AbstractDataValueObject
      */
     public static function fromArray(array $array): MessagePart
     {
-        $type = MessagePartTypeEnum::from($array['type']);
+        static::validateFromArrayData($array, ['type']);
 
-        if ($type->isText()) {
-            if (!isset($array['text'])) {
-                throw new \InvalidArgumentException('Text message part requires text field.');
-            }
+        // Check which properties are set to determine how to construct the MessagePart
+        if (isset($array['text'])) {
             return new self($array['text']);
-        } elseif ($type->isFile()) {
-            if (!isset($array['file'])) {
-                throw new \InvalidArgumentException('File message part requires file field.');
-            }
-            $fileData = $array['file'];
-            return new self(File::fromArray($fileData));
-        } elseif ($type->isFunctionCall()) {
-            if (!isset($array['functionCall'])) {
-                throw new \InvalidArgumentException('Function call message part requires functionCall field.');
-            }
-            $functionCallData = $array['functionCall'];
-            return new self(FunctionCall::fromArray($functionCallData));
+        } elseif (isset($array['file'])) {
+            return new self(File::fromArray($array['file']));
+        } elseif (isset($array['functionCall'])) {
+            return new self(FunctionCall::fromArray($array['functionCall']));
+        } elseif (isset($array['functionResponse'])) {
+            return new self(FunctionResponse::fromArray($array['functionResponse']));
         } else {
-            // Function response is the only remaining option
-            if (!isset($array['functionResponse'])) {
-                throw new \InvalidArgumentException('Function response message part requires functionResponse field.');
-            }
-            $functionResponseData = $array['functionResponse'];
-            return new self(FunctionResponse::fromArray($functionResponseData));
+            throw new InvalidArgumentException(
+                'MessagePart requires one of: text, file, functionCall, or functionResponse.'
+            );
         }
     }
 }

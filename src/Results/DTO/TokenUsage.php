@@ -141,6 +141,8 @@ final class TokenUsage extends AbstractDataValueObject
      */
     public static function fromArray(array $array): TokenUsage
     {
+        static::validateFromArrayData($array, ['promptTokens', 'completionTokens', 'totalTokens']);
+
         return new self(
             $array['promptTokens'],
             $array['completionTokens'],

@@ -137,6 +137,8 @@ final class FunctionResponse extends AbstractDataValueObject
      */
     public static function fromArray(array $array): FunctionResponse
     {
+        static::validateFromArrayData($array, ['id', 'name', 'response']);
+
         return new self(
             $array['id'],
             $array['name'],

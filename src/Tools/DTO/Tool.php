@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
 
@@ -172,24 +173,20 @@ final class Tool extends AbstractDataValueObject
      */
     public static function fromArray(array $array): Tool
     {
-        $type = ToolTypeEnum::from($array['type']);
+        static::validateFromArrayData($array, ['type']);
 
-        if ($type->isFunctionDeclarations()) {
-            if (!isset($array['functionDeclarations'])) {
-                throw new \InvalidArgumentException('Function declarations tool requires functionDeclarations field.');
-            }
-            $declarationsData = $array['functionDeclarations'];
+        // Check which properties are set to determine how to construct the Tool
+        if (isset($array['functionDeclarations'])) {
             $declarations = array_map(function (array $declarationData) {
                 return FunctionDeclaration::fromArray($declarationData);
-            }, $declarationsData);
+            }, $array['functionDeclarations']);
             return new self($declarations);
+        } elseif (isset($array['webSearch'])) {
+            return new self(WebSearch::fromArray($array['webSearch']));
         } else {
-            // Web search is the only remaining option
-            if (!isset($array['webSearch'])) {
-                throw new \InvalidArgumentException('Web search tool requires webSearch field.');
-            }
-            $webSearchData = $array['webSearch'];
-            return new self(WebSearch::fromArray($webSearchData));
+            throw new InvalidArgumentException(
+                'Tool requires either functionDeclarations or webSearch.'
+            );
         }
     }
 }

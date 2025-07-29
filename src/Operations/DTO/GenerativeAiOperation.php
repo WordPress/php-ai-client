@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Operations\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Operations\Contracts\OperationInterface;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
@@ -168,6 +169,8 @@ final class GenerativeAiOperation extends AbstractDataValueObject implements Ope
      */
     public static function fromArray(array $array): GenerativeAiOperation
     {
+        static::validateFromArrayData($array, ['id', 'state']);
+
         $state = OperationStateEnum::from($array['state']);
         $result = null;
         if (isset($array['result'])) {

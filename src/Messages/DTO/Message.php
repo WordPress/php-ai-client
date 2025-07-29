@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
@@ -126,6 +127,8 @@ class Message extends AbstractDataValueObject
      */
     final public static function fromArray(array $array): Message
     {
+        static::validateFromArrayData($array, ['role', 'parts']);
+
         $role = MessageRoleEnum::from($array['role']);
         $partsData = $array['parts'];
         $parts = array_map(function (array $partData) {

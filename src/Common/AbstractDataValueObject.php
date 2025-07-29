@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Common;
 
+use InvalidArgumentException;
 use JsonSerializable;
 use stdClass;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
@@ -31,6 +32,36 @@ abstract class AbstractDataValueObject implements
     WithJsonSchemaInterface,
     JsonSerializable
 {
+    /**
+     * Validates that required keys exist in the array data.
+     *
+     * @since n.e.x.t
+     *
+     * @param TArrayShape $data The array data to validate.
+     * @param string[] $requiredKeys The keys that must be present.
+     * @throws InvalidArgumentException If any required key is missing.
+     */
+    protected static function validateFromArrayData(array $data, array $requiredKeys): void
+    {
+        $missingKeys = [];
+
+        foreach ($requiredKeys as $key) {
+            if (!isset($data[$key])) {
+                $missingKeys[] = $key;
+            }
+        }
+
+        if (!empty($missingKeys)) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    '%s::fromArray() missing required keys: %s',
+                    static::class,
+                    implode(', ', $missingKeys)
+                )
+            );
+        }
+    }
+
     /**
      * Converts the object to a JSON-serializable format.
      *

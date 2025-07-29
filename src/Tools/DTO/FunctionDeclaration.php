@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
@@ -142,6 +143,8 @@ final class FunctionDeclaration extends AbstractDataValueObject
      */
     public static function fromArray(array $array): FunctionDeclaration
     {
+        static::validateFromArrayData($array, ['name', 'description']);
+
         return new self(
             $array['name'],
             $array['description'],
