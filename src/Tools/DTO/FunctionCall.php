@@ -126,9 +126,6 @@ class FunctionCall extends AbstractDataValueObject
                 [
                     'required' => [self::KEY_NAME],
                 ],
-                [
-                    'required' => [self::KEY_ID, self::KEY_NAME],
-                ],
             ],
         ];
     }
