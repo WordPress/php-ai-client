@@ -24,7 +24,7 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *
  * @extends AbstractDataValueObject<GenerativeAiOperationArrayShape>
  */
-final class GenerativeAiOperation extends AbstractDataValueObject implements OperationInterface
+class GenerativeAiOperation extends AbstractDataValueObject implements OperationInterface
 {
     public const KEY_ID = 'id';
     public const KEY_STATE = 'state';
@@ -170,7 +170,7 @@ final class GenerativeAiOperation extends AbstractDataValueObject implements Ope
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): GenerativeAiOperation
+    public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [self::KEY_ID, self::KEY_STATE]);
 

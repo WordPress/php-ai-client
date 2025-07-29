@@ -28,7 +28,7 @@ interface WithArrayTransformationInterface
      * @since 1.0.0
      *
      * @param TArrayShape $array The array data.
-     * @return static The created instance.
+     * @return self<TArrayShape> The created instance.
      */
-    public static function fromArray(array $array);
+    public static function fromArray(array $array): self;
 }

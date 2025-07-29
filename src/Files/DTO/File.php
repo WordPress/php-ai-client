@@ -27,7 +27,7 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  *
  * @extends AbstractDataValueObject<FileArrayShape>
  */
-final class File extends AbstractDataValueObject
+class File extends AbstractDataValueObject
 {
     public const KEY_FILE_TYPE = 'fileType';
     public const KEY_MIME_TYPE = 'mimeType';
@@ -425,7 +425,7 @@ final class File extends AbstractDataValueObject
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): File
+    public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [self::KEY_FILE_TYPE]);
 

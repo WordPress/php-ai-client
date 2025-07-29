@@ -38,7 +38,7 @@ class AbstractDataValueObjectTest extends TestCase
                 ];
             }
 
-            public static function fromArray(array $array)
+            public static function fromArray(array $array): self
             {
                 return new static();
             }
@@ -119,7 +119,7 @@ class AbstractDataValueObjectTest extends TestCase
                 ];
             }
 
-            public static function fromArray(array $array)
+            public static function fromArray(array $array): self
             {
                 return new static();
             }
@@ -180,7 +180,7 @@ class AbstractDataValueObjectTest extends TestCase
                 ];
             }
 
-            public static function fromArray(array $array)
+            public static function fromArray(array $array): self
             {
                 return new static();
             }
@@ -261,7 +261,7 @@ class AbstractDataValueObjectTest extends TestCase
                 ];
             }
 
-            public static function fromArray(array $array)
+            public static function fromArray(array $array): self
             {
                 return new static();
             }
@@ -335,7 +335,7 @@ class AbstractDataValueObjectTest extends TestCase
                 ];
             }
 
-            public static function fromArray(array $array)
+            public static function fromArray(array $array): self
             {
                 return new static();
             }
@@ -412,7 +412,7 @@ class AbstractDataValueObjectTest extends TestCase
                 ];
             }
 
-            public static function fromArray(array $array)
+            public static function fromArray(array $array): self
             {
                 return new static();
             }
@@ -476,7 +476,7 @@ class AbstractDataValueObjectTest extends TestCase
                 ];
             }
 
-            public static function fromArray(array $array)
+            public static function fromArray(array $array): self
             {
                 return new static();
             }
@@ -527,7 +527,7 @@ class AbstractDataValueObjectTest extends TestCase
                 return ['test' => 'value'];
             }
 
-            public static function fromArray(array $array)
+            public static function fromArray(array $array): self
             {
                 return new static();
             }

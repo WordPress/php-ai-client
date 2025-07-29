@@ -19,7 +19,7 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @extends AbstractDataValueObject<FunctionDeclarationArrayShape>
  */
-final class FunctionDeclaration extends AbstractDataValueObject
+class FunctionDeclaration extends AbstractDataValueObject
 {
     public const KEY_NAME = 'name';
     public const KEY_DESCRIPTION = 'description';
@@ -144,7 +144,7 @@ final class FunctionDeclaration extends AbstractDataValueObject
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): FunctionDeclaration
+    public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [self::KEY_NAME, self::KEY_DESCRIPTION]);
 

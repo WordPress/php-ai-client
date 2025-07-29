@@ -29,7 +29,7 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  *
  * @extends AbstractDataValueObject<GenerativeAiResultArrayShape>
  */
-final class GenerativeAiResult extends AbstractDataValueObject implements ResultInterface
+class GenerativeAiResult extends AbstractDataValueObject implements ResultInterface
 {
     public const KEY_ID = 'id';
     public const KEY_CANDIDATES = 'candidates';
@@ -417,7 +417,7 @@ final class GenerativeAiResult extends AbstractDataValueObject implements Result
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): GenerativeAiResult
+    public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [self::KEY_ID, self::KEY_CANDIDATES, self::KEY_TOKEN_USAGE]);
 

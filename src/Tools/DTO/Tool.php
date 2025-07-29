@@ -27,7 +27,7 @@ use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
  *
  * @extends AbstractDataValueObject<ToolArrayShape>
  */
-final class Tool extends AbstractDataValueObject
+class Tool extends AbstractDataValueObject
 {
     public const KEY_TYPE = 'type';
     public const KEY_FUNCTION_DECLARATIONS = 'functionDeclarations';
@@ -174,7 +174,7 @@ final class Tool extends AbstractDataValueObject
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): Tool
+    public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [self::KEY_TYPE]);
 

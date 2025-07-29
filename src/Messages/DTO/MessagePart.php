@@ -34,7 +34,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  *
  * @extends AbstractDataValueObject<MessagePartArrayShape>
  */
-final class MessagePart extends AbstractDataValueObject
+class MessagePart extends AbstractDataValueObject
 {
     public const KEY_TYPE = 'type';
     public const KEY_TEXT = 'text';
@@ -258,7 +258,7 @@ final class MessagePart extends AbstractDataValueObject
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): MessagePart
+    public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [self::KEY_TYPE]);
 

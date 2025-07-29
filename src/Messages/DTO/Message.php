@@ -125,9 +125,9 @@ class Message extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return Message The specific message class based on the role.
+     * @return self The specific message class based on the role.
      */
-    final public static function fromArray(array $array): Message
+    final public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [self::KEY_ROLE, self::KEY_PARTS]);
 

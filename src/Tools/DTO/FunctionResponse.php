@@ -18,7 +18,7 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @extends AbstractDataValueObject<FunctionResponseArrayShape>
  */
-final class FunctionResponse extends AbstractDataValueObject
+class FunctionResponse extends AbstractDataValueObject
 {
     public const KEY_ID = 'id';
     public const KEY_NAME = 'name';
@@ -138,7 +138,7 @@ final class FunctionResponse extends AbstractDataValueObject
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): FunctionResponse
+    public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [self::KEY_ID, self::KEY_NAME, self::KEY_RESPONSE]);
 

@@ -15,7 +15,7 @@ use WordPress\AiClient\Common\Traits\HasJsonSerialization;
  *
  * @since n.e.x.t
  */
-final class SystemMessage extends Message
+class SystemMessage extends Message
 {
     /**
      * Constructor.

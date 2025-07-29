@@ -22,7 +22,7 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @extends AbstractDataValueObject<TokenUsageArrayShape>
  */
-final class TokenUsage extends AbstractDataValueObject
+class TokenUsage extends AbstractDataValueObject
 {
     public const KEY_PROMPT_TOKENS = 'promptTokens';
     public const KEY_COMPLETION_TOKENS = 'completionTokens';
@@ -142,7 +142,7 @@ final class TokenUsage extends AbstractDataValueObject
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): TokenUsage
+    public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [
             self::KEY_PROMPT_TOKENS,

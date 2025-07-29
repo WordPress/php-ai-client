@@ -18,7 +18,7 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @extends AbstractDataValueObject<WebSearchArrayShape>
  */
-final class WebSearch extends AbstractDataValueObject
+class WebSearch extends AbstractDataValueObject
 {
     public const KEY_ALLOWED_DOMAINS = 'allowedDomains';
     public const KEY_DISALLOWED_DOMAINS = 'disallowedDomains';
@@ -119,7 +119,7 @@ final class WebSearch extends AbstractDataValueObject
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): WebSearch
+    public static function fromArray(array $array): self
     {
         return new self(
             $array[self::KEY_ALLOWED_DOMAINS] ?? [],

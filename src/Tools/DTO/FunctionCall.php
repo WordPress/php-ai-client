@@ -18,7 +18,7 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @extends AbstractDataValueObject<FunctionCallArrayShape>
  */
-final class FunctionCall extends AbstractDataValueObject
+class FunctionCall extends AbstractDataValueObject
 {
     public const KEY_ID = 'id';
     public const KEY_NAME = 'name';
@@ -164,7 +164,7 @@ final class FunctionCall extends AbstractDataValueObject
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): FunctionCall
+    public static function fromArray(array $array): self
     {
         return new self(
             $array[self::KEY_ID] ?? null,

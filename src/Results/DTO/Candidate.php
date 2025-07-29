@@ -22,7 +22,7 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *
  * @extends AbstractDataValueObject<CandidateArrayShape>
  */
-final class Candidate extends AbstractDataValueObject
+class Candidate extends AbstractDataValueObject
 {
     public const KEY_MESSAGE = 'message';
     public const KEY_FINISH_REASON = 'finishReason';
@@ -146,7 +146,7 @@ final class Candidate extends AbstractDataValueObject
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): Candidate
+    public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [self::KEY_MESSAGE, self::KEY_FINISH_REASON, self::KEY_TOKEN_COUNT]);
 
