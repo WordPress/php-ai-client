@@ -403,7 +403,7 @@ final class File extends AbstractDataValueObject
 
         if ($this->fileType->isRemote() && $this->url !== null) {
             $data['url'] = $this->url;
-        } elseif (!$this->fileType->isRemote() && $this->base64Data !== null) {
+        } elseif ($this->base64Data !== null) {
             $data['base64Data'] = $this->base64Data;
         }
 
