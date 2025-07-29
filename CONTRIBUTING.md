@@ -65,6 +65,20 @@ class AuthHandler
 
 All code must be backward compatible with PHP 7.4, which is the minimum required PHP version for this project.
 
+## Branch naming conventions
+
+There are a few protected branch naming conventions:
+
+* `trunk`: The main development branch.
+* `release/*`: A branch for a specific release, useful e.g. for applying a hotfix.
+* `feature/*`: A branch for a larger feature that takes multiple iterative PRs towards completion.
+
+These special branches are protected and are configured more strictly in regards to GitHub workflow configuration.
+
+Branches that you use for implementing a pull request or experimenting can use any naming convention you prefer, _except_ the above. Additionally, please do not use branch names that would easily cause confusion, such as other common main branch names like `main` or `develop`.
+
+Ideally, the branch name is in some form or shape descriptive of what it is for.
+
 ## Guidelines
 
 - As with all WordPress projects, we want to ensure a welcoming environment for everyone. With that in mind, all contributors are expected to follow our [Code of Conduct](https://make.wordpress.org/handbook/community-code-of-conduct/).
