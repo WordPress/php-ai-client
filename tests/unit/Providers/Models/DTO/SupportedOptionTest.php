@@ -151,22 +151,22 @@ class SupportedOptionTest extends TestCase
 
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('name', $schema['properties']);
-        $this->assertArrayHasKey('supportedValues', $schema['properties']);
+        $this->assertArrayHasKey(SupportedOption::KEY_NAME, $schema['properties']);
+        $this->assertArrayHasKey(SupportedOption::KEY_SUPPORTED_VALUES, $schema['properties']);
 
         // Check name property
-        $this->assertEquals('string', $schema['properties']['name']['type']);
-        $this->assertEquals('The option name.', $schema['properties']['name']['description']);
+        $this->assertEquals('string', $schema['properties'][SupportedOption::KEY_NAME]['type']);
+        $this->assertEquals('The option name.', $schema['properties'][SupportedOption::KEY_NAME]['description']);
 
         // Check supportedValues property
-        $this->assertEquals('array', $schema['properties']['supportedValues']['type']);
-        $this->assertArrayHasKey('items', $schema['properties']['supportedValues']);
-        $this->assertArrayHasKey('oneOf', $schema['properties']['supportedValues']['items']);
+        $this->assertEquals('array', $schema['properties'][SupportedOption::KEY_SUPPORTED_VALUES]['type']);
+        $this->assertArrayHasKey('items', $schema['properties'][SupportedOption::KEY_SUPPORTED_VALUES]);
+        $this->assertArrayHasKey('oneOf', $schema['properties'][SupportedOption::KEY_SUPPORTED_VALUES]['items']);
 
         // Verify all allowed types in items
         $types = array_map(function ($item) {
             return $item['type'];
-        }, $schema['properties']['supportedValues']['items']['oneOf']);
+        }, $schema['properties'][SupportedOption::KEY_SUPPORTED_VALUES]['items']['oneOf']);
         $this->assertContains('string', $types);
         $this->assertContains('number', $types);
         $this->assertContains('boolean', $types);
@@ -176,7 +176,7 @@ class SupportedOptionTest extends TestCase
 
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['name', 'supportedValues'], $schema['required']);
+        $this->assertEquals([SupportedOption::KEY_NAME, SupportedOption::KEY_SUPPORTED_VALUES], $schema['required']);
     }
 
     /**
@@ -190,8 +190,8 @@ class SupportedOptionTest extends TestCase
         $array = $option->toArray();
 
         $this->assertIsArray($array);
-        $this->assertEquals('style', $array['name']);
-        $this->assertEquals(['realistic', 'artistic', 'cartoon', 'abstract'], $array['supportedValues']);
+        $this->assertEquals('style', $array[SupportedOption::KEY_NAME]);
+        $this->assertEquals(['realistic', 'artistic', 'cartoon', 'abstract'], $array[SupportedOption::KEY_SUPPORTED_VALUES]);
         $this->assertCount(2, $array);
     }
 
@@ -203,8 +203,8 @@ class SupportedOptionTest extends TestCase
     public function testFromArray(): void
     {
         $data = [
-            'name' => 'voice',
-            'supportedValues' => ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
+            SupportedOption::KEY_NAME => 'voice',
+            SupportedOption::KEY_SUPPORTED_VALUES => ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
         ];
 
         $option = SupportedOption::fromArray($data);
@@ -267,8 +267,8 @@ class SupportedOptionTest extends TestCase
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);
-        $this->assertEquals('quality', $decoded['name']);
-        $this->assertEquals(['low', 'medium', 'high', 'ultra'], $decoded['supportedValues']);
+        $this->assertEquals('quality', $decoded[SupportedOption::KEY_NAME]);
+        $this->assertEquals(['low', 'medium', 'high', 'ultra'], $decoded[SupportedOption::KEY_SUPPORTED_VALUES]);
     }
 
     /**
@@ -312,7 +312,7 @@ class SupportedOptionTest extends TestCase
 
         $this->assertEquals('option-with_special.chars:test', $option->getName());
         $array = $option->toArray();
-        $this->assertEquals('option-with_special.chars:test', $array['name']);
+        $this->assertEquals('option-with_special.chars:test', $array[SupportedOption::KEY_NAME]);
     }
 
     /**
@@ -348,7 +348,7 @@ class SupportedOptionTest extends TestCase
         $array = $option->toArray();
 
         // Ensure supportedValues array has numeric keys starting from 0
-        $this->assertEquals([0, 1, 2], array_keys($array['supportedValues']));
+        $this->assertEquals([0, 1, 2], array_keys($array[SupportedOption::KEY_SUPPORTED_VALUES]));
     }
 
     /**

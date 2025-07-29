@@ -26,6 +26,9 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  */
 final class ModelRequirements extends AbstractDataValueObject
 {
+    public const KEY_REQUIRED_CAPABILITIES = 'requiredCapabilities';
+    public const KEY_REQUIRED_OPTIONS = 'requiredOptions';
+
     /**
      * @var CapabilityEnum[] The required capabilities.
      */
@@ -84,7 +87,7 @@ final class ModelRequirements extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'requiredCapabilities' => [
+                self::KEY_REQUIRED_CAPABILITIES => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'string',
@@ -92,13 +95,13 @@ final class ModelRequirements extends AbstractDataValueObject
                     ],
                     'description' => 'The required capabilities.',
                 ],
-                'requiredOptions' => [
+                self::KEY_REQUIRED_OPTIONS => [
                     'type' => 'array',
                     'items' => RequiredOption::getJsonSchema(),
                     'description' => 'The required options.',
                 ],
             ],
-            'required' => ['requiredCapabilities', 'requiredOptions'],
+            'required' => [self::KEY_REQUIRED_CAPABILITIES, self::KEY_REQUIRED_OPTIONS],
         ];
     }
 
@@ -112,11 +115,11 @@ final class ModelRequirements extends AbstractDataValueObject
     public function toArray(): array
     {
         return [
-            'requiredCapabilities' => array_values(array_map(
+            self::KEY_REQUIRED_CAPABILITIES => array_values(array_map(
                 static fn(CapabilityEnum $capability): string => $capability->value,
                 $this->requiredCapabilities
             )),
-            'requiredOptions' => array_values(array_map(
+            self::KEY_REQUIRED_OPTIONS => array_values(array_map(
                 static fn(RequiredOption $option): array => $option->toArray(),
                 $this->requiredOptions
             )),
@@ -133,11 +136,11 @@ final class ModelRequirements extends AbstractDataValueObject
         return new self(
             array_map(
                 static fn(string $capability): CapabilityEnum => CapabilityEnum::from($capability),
-                $array['requiredCapabilities']
+                $array[self::KEY_REQUIRED_CAPABILITIES]
             ),
             array_map(
                 static fn(array $optionData): RequiredOption => RequiredOption::fromArray($optionData),
-                $array['requiredOptions']
+                $array[self::KEY_REQUIRED_OPTIONS]
             )
         );
     }

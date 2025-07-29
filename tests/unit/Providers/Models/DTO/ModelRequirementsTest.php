@@ -66,25 +66,25 @@ class ModelRequirementsTest extends TestCase
 
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('requiredCapabilities', $schema['properties']);
-        $this->assertArrayHasKey('requiredOptions', $schema['properties']);
+        $this->assertArrayHasKey(ModelRequirements::KEY_REQUIRED_CAPABILITIES, $schema['properties']);
+        $this->assertArrayHasKey(ModelRequirements::KEY_REQUIRED_OPTIONS, $schema['properties']);
 
         // Check property types
-        $this->assertEquals('array', $schema['properties']['requiredCapabilities']['type']);
-        $this->assertEquals('array', $schema['properties']['requiredOptions']['type']);
+        $this->assertEquals('array', $schema['properties'][ModelRequirements::KEY_REQUIRED_CAPABILITIES]['type']);
+        $this->assertEquals('array', $schema['properties'][ModelRequirements::KEY_REQUIRED_OPTIONS]['type']);
 
         // Check array items
-        $this->assertArrayHasKey('items', $schema['properties']['requiredCapabilities']);
-        $this->assertEquals('string', $schema['properties']['requiredCapabilities']['items']['type']);
-        $this->assertArrayHasKey('enum', $schema['properties']['requiredCapabilities']['items']);
-        $this->assertEquals(CapabilityEnum::getValues(), $schema['properties']['requiredCapabilities']['items']['enum']);
+        $this->assertArrayHasKey('items', $schema['properties'][ModelRequirements::KEY_REQUIRED_CAPABILITIES]);
+        $this->assertEquals('string', $schema['properties'][ModelRequirements::KEY_REQUIRED_CAPABILITIES]['items']['type']);
+        $this->assertArrayHasKey('enum', $schema['properties'][ModelRequirements::KEY_REQUIRED_CAPABILITIES]['items']);
+        $this->assertEquals(CapabilityEnum::getValues(), $schema['properties'][ModelRequirements::KEY_REQUIRED_CAPABILITIES]['items']['enum']);
 
-        $this->assertArrayHasKey('items', $schema['properties']['requiredOptions']);
-        $this->assertEquals(RequiredOption::getJsonSchema(), $schema['properties']['requiredOptions']['items']);
+        $this->assertArrayHasKey('items', $schema['properties'][ModelRequirements::KEY_REQUIRED_OPTIONS]);
+        $this->assertEquals(RequiredOption::getJsonSchema(), $schema['properties'][ModelRequirements::KEY_REQUIRED_OPTIONS]['items']);
 
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['requiredCapabilities', 'requiredOptions'], $schema['required']);
+        $this->assertEquals([ModelRequirements::KEY_REQUIRED_CAPABILITIES, ModelRequirements::KEY_REQUIRED_OPTIONS], $schema['required']);
     }
 
     /**
@@ -105,12 +105,12 @@ class ModelRequirementsTest extends TestCase
         $array = $requirements->toArray();
 
         $this->assertIsArray($array);
-        $this->assertEquals(['image_generation', 'text_generation'], $array['requiredCapabilities']);
-        $this->assertCount(2, $array['requiredOptions']);
-        $this->assertEquals('resolution', $array['requiredOptions'][0]['name']);
-        $this->assertEquals('1024x1024', $array['requiredOptions'][0]['value']);
-        $this->assertEquals('style', $array['requiredOptions'][1]['name']);
-        $this->assertEquals('realistic', $array['requiredOptions'][1]['value']);
+        $this->assertEquals(['image_generation', 'text_generation'], $array[ModelRequirements::KEY_REQUIRED_CAPABILITIES]);
+        $this->assertCount(2, $array[ModelRequirements::KEY_REQUIRED_OPTIONS]);
+        $this->assertEquals('resolution', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_NAME]);
+        $this->assertEquals('1024x1024', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_VALUE]);
+        $this->assertEquals('style', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][1][RequiredOption::KEY_NAME]);
+        $this->assertEquals('realistic', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][1][RequiredOption::KEY_VALUE]);
     }
 
     /**
@@ -121,15 +121,15 @@ class ModelRequirementsTest extends TestCase
     public function testFromArray(): void
     {
         $data = [
-            'requiredCapabilities' => ['text_generation', 'chat_history', 'embedding_generation'],
-            'requiredOptions' => [
+            ModelRequirements::KEY_REQUIRED_CAPABILITIES => ['text_generation', 'chat_history', 'embedding_generation'],
+            ModelRequirements::KEY_REQUIRED_OPTIONS => [
                 [
-                    'name' => 'response_format',
-                    'value' => ['type' => 'json_object']
+                    RequiredOption::KEY_NAME => 'response_format',
+                    RequiredOption::KEY_VALUE => ['type' => 'json_object']
                 ],
                 [
-                    'name' => 'temperature',
-                    'value' => 0.5
+                    RequiredOption::KEY_NAME => 'temperature',
+                    RequiredOption::KEY_VALUE => 0.5
                 ]
             ]
         ];
@@ -208,10 +208,10 @@ class ModelRequirementsTest extends TestCase
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);
-        $this->assertEquals(['embedding_generation'], $decoded['requiredCapabilities']);
-        $this->assertCount(1, $decoded['requiredOptions']);
-        $this->assertEquals('dimensions', $decoded['requiredOptions'][0]['name']);
-        $this->assertEquals(1536, $decoded['requiredOptions'][0]['value']);
+        $this->assertEquals(['embedding_generation'], $decoded[ModelRequirements::KEY_REQUIRED_CAPABILITIES]);
+        $this->assertCount(1, $decoded[ModelRequirements::KEY_REQUIRED_OPTIONS]);
+        $this->assertEquals('dimensions', $decoded[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_NAME]);
+        $this->assertEquals(1536, $decoded[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_VALUE]);
     }
 
     /**
@@ -236,13 +236,13 @@ class ModelRequirementsTest extends TestCase
         $requirements = new ModelRequirements($allCapabilities, []);
         $array = $requirements->toArray();
 
-        $this->assertCount(count($allCapabilities), $array['requiredCapabilities']);
+        $this->assertCount(count($allCapabilities), $array[ModelRequirements::KEY_REQUIRED_CAPABILITIES]);
 
         // Verify all capabilities are preserved with correct values
         $expectedValues = array_map(function ($cap) {
             return $cap->value;
         }, $allCapabilities);
-        $this->assertEquals($expectedValues, $array['requiredCapabilities']);
+        $this->assertEquals($expectedValues, $array[ModelRequirements::KEY_REQUIRED_CAPABILITIES]);
     }
 
     /**

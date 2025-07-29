@@ -25,6 +25,10 @@ use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
  */
 final class ProviderMetadata extends AbstractDataValueObject
 {
+    public const KEY_ID = 'id';
+    public const KEY_NAME = 'name';
+    public const KEY_TYPE = 'type';
+
     /**
      * @var string The provider's unique identifier.
      */
@@ -102,21 +106,21 @@ final class ProviderMetadata extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'id' => [
+                self::KEY_ID => [
                     'type' => 'string',
                     'description' => 'The provider\'s unique identifier.',
                 ],
-                'name' => [
+                self::KEY_NAME => [
                     'type' => 'string',
                     'description' => 'The provider\'s display name.',
                 ],
-                'type' => [
+                self::KEY_TYPE => [
                     'type' => 'string',
                     'enum' => ProviderTypeEnum::getValues(),
                     'description' => 'The provider type (cloud, server, or client).',
                 ],
             ],
-            'required' => ['id', 'name', 'type'],
+            'required' => [self::KEY_ID, self::KEY_NAME, self::KEY_TYPE],
         ];
     }
 
@@ -130,9 +134,9 @@ final class ProviderMetadata extends AbstractDataValueObject
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'type' => $this->type->value,
+            self::KEY_ID => $this->id,
+            self::KEY_NAME => $this->name,
+            self::KEY_TYPE => $this->type->value,
         ];
     }
 
@@ -143,12 +147,12 @@ final class ProviderMetadata extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
-        static::validateFromArrayData($array, ['id', 'name', 'type']);
+        static::validateFromArrayData($array, [self::KEY_ID, self::KEY_NAME, self::KEY_TYPE]);
 
         return new self(
-            $array['id'],
-            $array['name'],
-            ProviderTypeEnum::from($array['type'])
+            $array[self::KEY_ID],
+            $array[self::KEY_NAME],
+            ProviderTypeEnum::from($array[self::KEY_TYPE])
         );
     }
 }

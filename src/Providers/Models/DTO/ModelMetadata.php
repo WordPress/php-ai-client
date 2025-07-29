@@ -28,6 +28,11 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  */
 final class ModelMetadata extends AbstractDataValueObject
 {
+    public const KEY_ID = 'id';
+    public const KEY_NAME = 'name';
+    public const KEY_SUPPORTED_CAPABILITIES = 'supportedCapabilities';
+    public const KEY_SUPPORTED_OPTIONS = 'supportedOptions';
+
     /**
      * @var string The model's unique identifier.
      */
@@ -124,15 +129,15 @@ final class ModelMetadata extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'id' => [
+                self::KEY_ID => [
                     'type' => 'string',
                     'description' => 'The model\'s unique identifier.',
                 ],
-                'name' => [
+                self::KEY_NAME => [
                     'type' => 'string',
                     'description' => 'The model\'s display name.',
                 ],
-                'supportedCapabilities' => [
+                self::KEY_SUPPORTED_CAPABILITIES => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'string',
@@ -140,13 +145,13 @@ final class ModelMetadata extends AbstractDataValueObject
                     ],
                     'description' => 'The model\'s supported capabilities.',
                 ],
-                'supportedOptions' => [
+                self::KEY_SUPPORTED_OPTIONS => [
                     'type' => 'array',
                     'items' => SupportedOption::getJsonSchema(),
                     'description' => 'The model\'s supported configuration options.',
                 ],
             ],
-            'required' => ['id', 'name', 'supportedCapabilities', 'supportedOptions'],
+            'required' => [self::KEY_ID, self::KEY_NAME, self::KEY_SUPPORTED_CAPABILITIES, self::KEY_SUPPORTED_OPTIONS],
         ];
     }
 
@@ -160,13 +165,13 @@ final class ModelMetadata extends AbstractDataValueObject
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'supportedCapabilities' => array_values(array_map(
+            self::KEY_ID => $this->id,
+            self::KEY_NAME => $this->name,
+            self::KEY_SUPPORTED_CAPABILITIES => array_values(array_map(
                 static fn(CapabilityEnum $capability): string => $capability->value,
                 $this->supportedCapabilities
             )),
-            'supportedOptions' => array_values(array_map(
+            self::KEY_SUPPORTED_OPTIONS => array_values(array_map(
                 static fn(SupportedOption $option): array => $option->toArray(),
                 $this->supportedOptions
             )),
@@ -181,15 +186,15 @@ final class ModelMetadata extends AbstractDataValueObject
     public static function fromArray(array $array): self
     {
         return new self(
-            $array['id'],
-            $array['name'],
+            $array[self::KEY_ID],
+            $array[self::KEY_NAME],
             array_map(
                 static fn(string $capability): CapabilityEnum => CapabilityEnum::from($capability),
-                $array['supportedCapabilities']
+                $array[self::KEY_SUPPORTED_CAPABILITIES]
             ),
             array_map(
                 static fn(array $optionData): SupportedOption => SupportedOption::fromArray($optionData),
-                $array['supportedOptions']
+                $array[self::KEY_SUPPORTED_OPTIONS]
             )
         );
     }

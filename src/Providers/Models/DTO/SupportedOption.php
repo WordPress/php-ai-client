@@ -23,6 +23,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  */
 final class SupportedOption extends AbstractDataValueObject
 {
+    public const KEY_NAME = 'name';
+    public const KEY_SUPPORTED_VALUES = 'supportedValues';
+
     /**
      * @var string The option name.
      */
@@ -94,11 +97,11 @@ final class SupportedOption extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'name' => [
+                self::KEY_NAME => [
                     'type' => 'string',
                     'description' => 'The option name.',
                 ],
-                'supportedValues' => [
+                self::KEY_SUPPORTED_VALUES => [
                     'type' => 'array',
                     'items' => [
                         'oneOf' => [
@@ -113,7 +116,7 @@ final class SupportedOption extends AbstractDataValueObject
                     'description' => 'The supported values for this option.',
                 ],
             ],
-            'required' => ['name', 'supportedValues'],
+            'required' => [self::KEY_NAME, self::KEY_SUPPORTED_VALUES],
         ];
     }
 
@@ -127,8 +130,8 @@ final class SupportedOption extends AbstractDataValueObject
     public function toArray(): array
     {
         return [
-            'name' => $this->name,
-            'supportedValues' => array_values($this->supportedValues),
+            self::KEY_NAME => $this->name,
+            self::KEY_SUPPORTED_VALUES => array_values($this->supportedValues),
         ];
     }
 
@@ -140,8 +143,8 @@ final class SupportedOption extends AbstractDataValueObject
     public static function fromArray(array $array): self
     {
         return new self(
-            $array['name'],
-            $array['supportedValues']
+            $array[self::KEY_NAME],
+            $array[self::KEY_SUPPORTED_VALUES]
         );
     }
 }

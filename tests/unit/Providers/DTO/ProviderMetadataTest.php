@@ -73,22 +73,22 @@ class ProviderMetadataTest extends TestCase
 
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('id', $schema['properties']);
-        $this->assertArrayHasKey('name', $schema['properties']);
-        $this->assertArrayHasKey('type', $schema['properties']);
+        $this->assertArrayHasKey(ProviderMetadata::KEY_ID, $schema['properties']);
+        $this->assertArrayHasKey(ProviderMetadata::KEY_NAME, $schema['properties']);
+        $this->assertArrayHasKey(ProviderMetadata::KEY_TYPE, $schema['properties']);
 
         // Check property types
-        $this->assertEquals('string', $schema['properties']['id']['type']);
-        $this->assertEquals('string', $schema['properties']['name']['type']);
-        $this->assertEquals('string', $schema['properties']['type']['type']);
+        $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_ID]['type']);
+        $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_NAME]['type']);
+        $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_TYPE]['type']);
 
         // Check enum values for type
-        $this->assertArrayHasKey('enum', $schema['properties']['type']);
-        $this->assertEquals(ProviderTypeEnum::getValues(), $schema['properties']['type']['enum']);
+        $this->assertArrayHasKey('enum', $schema['properties'][ProviderMetadata::KEY_TYPE]);
+        $this->assertEquals(ProviderTypeEnum::getValues(), $schema['properties'][ProviderMetadata::KEY_TYPE]['enum']);
 
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['id', 'name', 'type'], $schema['required']);
+        $this->assertEquals([ProviderMetadata::KEY_ID, ProviderMetadata::KEY_NAME, ProviderMetadata::KEY_TYPE], $schema['required']);
     }
 
     /**
@@ -102,9 +102,9 @@ class ProviderMetadataTest extends TestCase
         $array = $metadata->toArray();
 
         $this->assertIsArray($array);
-        $this->assertEquals('anthropic', $array['id']);
-        $this->assertEquals('Anthropic', $array['name']);
-        $this->assertEquals('cloud', $array['type']);
+        $this->assertEquals('anthropic', $array[ProviderMetadata::KEY_ID]);
+        $this->assertEquals('Anthropic', $array[ProviderMetadata::KEY_NAME]);
+        $this->assertEquals('cloud', $array[ProviderMetadata::KEY_TYPE]);
         $this->assertCount(3, $array);
     }
 
@@ -116,9 +116,9 @@ class ProviderMetadataTest extends TestCase
     public function testFromArray(): void
     {
         $data = [
-            'id' => 'custom-provider',
-            'name' => 'Custom Provider',
-            'type' => 'server'
+            ProviderMetadata::KEY_ID => 'custom-provider',
+            ProviderMetadata::KEY_NAME => 'Custom Provider',
+            ProviderMetadata::KEY_TYPE => 'server'
         ];
 
         $metadata = ProviderMetadata::fromArray($data);
@@ -158,9 +158,9 @@ class ProviderMetadataTest extends TestCase
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);
-        $this->assertEquals('json-provider', $decoded['id']);
-        $this->assertEquals('JSON Provider', $decoded['name']);
-        $this->assertEquals('cloud', $decoded['type']);
+        $this->assertEquals('json-provider', $decoded[ProviderMetadata::KEY_ID]);
+        $this->assertEquals('JSON Provider', $decoded[ProviderMetadata::KEY_NAME]);
+        $this->assertEquals('cloud', $decoded[ProviderMetadata::KEY_TYPE]);
     }
 
     /**
@@ -177,7 +177,7 @@ class ProviderMetadataTest extends TestCase
         );
 
         $array = $metadata->toArray();
-        $this->assertEquals('Provider with "quotes" & special <chars>', $array['name']);
+        $this->assertEquals('Provider with "quotes" & special <chars>', $array[ProviderMetadata::KEY_NAME]);
 
         $restored = ProviderMetadata::fromArray($array);
         $this->assertEquals($metadata->getName(), $restored->getName());
@@ -196,8 +196,8 @@ class ProviderMetadataTest extends TestCase
         $this->assertEquals('', $metadata->getName());
 
         $array = $metadata->toArray();
-        $this->assertEquals('', $array['id']);
-        $this->assertEquals('', $array['name']);
+        $this->assertEquals('', $array[ProviderMetadata::KEY_ID]);
+        $this->assertEquals('', $array[ProviderMetadata::KEY_NAME]);
     }
 
     /**

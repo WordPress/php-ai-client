@@ -23,6 +23,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  */
 final class RequiredOption extends AbstractDataValueObject
 {
+    public const KEY_NAME = 'name';
+    public const KEY_VALUE = 'value';
+
     /**
      * @var string The option name.
      */
@@ -81,11 +84,11 @@ final class RequiredOption extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'name' => [
+                self::KEY_NAME => [
                     'type' => 'string',
                     'description' => 'The option name.',
                 ],
-                'value' => [
+                self::KEY_VALUE => [
                     'oneOf' => [
                         ['type' => 'string'],
                         ['type' => 'number'],
@@ -97,7 +100,7 @@ final class RequiredOption extends AbstractDataValueObject
                     'description' => 'The required value.',
                 ],
             ],
-            'required' => ['name', 'value'],
+            'required' => [self::KEY_NAME, self::KEY_VALUE],
         ];
     }
 
@@ -111,8 +114,8 @@ final class RequiredOption extends AbstractDataValueObject
     public function toArray(): array
     {
         return [
-            'name' => $this->name,
-            'value' => $this->value,
+            self::KEY_NAME => $this->name,
+            self::KEY_VALUE => $this->value,
         ];
     }
 
@@ -124,8 +127,8 @@ final class RequiredOption extends AbstractDataValueObject
     public static function fromArray(array $array): self
     {
         return new self(
-            $array['name'],
-            $array['value']
+            $array[self::KEY_NAME],
+            $array[self::KEY_VALUE]
         );
     }
 }

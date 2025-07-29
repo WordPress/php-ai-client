@@ -144,9 +144,9 @@ class ModelConfigTest extends TestCase
 
         // Check all properties exist
         $expectedProperties = [
-            'outputModalities', 'systemInstruction', 'candidateCount', 'maxTokens',
-            'temperature', 'topP', 'topK', 'stopSequences', 'presencePenalty',
-            'frequencyPenalty', 'logprobs', 'topLogprobs', 'tools', 'customOptions'
+            ModelConfig::KEY_OUTPUT_MODALITIES, ModelConfig::KEY_SYSTEM_INSTRUCTION, ModelConfig::KEY_CANDIDATE_COUNT, ModelConfig::KEY_MAX_TOKENS,
+            ModelConfig::KEY_TEMPERATURE, ModelConfig::KEY_TOP_P, ModelConfig::KEY_TOP_K, ModelConfig::KEY_STOP_SEQUENCES, ModelConfig::KEY_PRESENCE_PENALTY,
+            ModelConfig::KEY_FREQUENCY_PENALTY, ModelConfig::KEY_LOGPROBS, ModelConfig::KEY_TOP_LOGPROBS, ModelConfig::KEY_TOOLS, ModelConfig::KEY_CUSTOM_OPTIONS
         ];
 
         foreach ($expectedProperties as $property) {
@@ -154,19 +154,19 @@ class ModelConfigTest extends TestCase
         }
 
         // Check specific property schemas
-        $this->assertEquals('array', $schema['properties']['outputModalities']['type']);
-        $this->assertEquals('string', $schema['properties']['systemInstruction']['type']);
-        $this->assertEquals('integer', $schema['properties']['candidateCount']['type']);
-        $this->assertEquals('number', $schema['properties']['temperature']['type']);
-        $this->assertEquals('boolean', $schema['properties']['logprobs']['type']);
-        $this->assertEquals('object', $schema['properties']['customOptions']['type']);
+        $this->assertEquals('array', $schema['properties'][ModelConfig::KEY_OUTPUT_MODALITIES]['type']);
+        $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_SYSTEM_INSTRUCTION]['type']);
+        $this->assertEquals('integer', $schema['properties'][ModelConfig::KEY_CANDIDATE_COUNT]['type']);
+        $this->assertEquals('number', $schema['properties'][ModelConfig::KEY_TEMPERATURE]['type']);
+        $this->assertEquals('boolean', $schema['properties'][ModelConfig::KEY_LOGPROBS]['type']);
+        $this->assertEquals('object', $schema['properties'][ModelConfig::KEY_CUSTOM_OPTIONS]['type']);
 
         // Check constraints
-        $this->assertEquals(1, $schema['properties']['candidateCount']['minimum']);
-        $this->assertEquals(0.0, $schema['properties']['temperature']['minimum']);
-        $this->assertEquals(2.0, $schema['properties']['temperature']['maximum']);
-        $this->assertEquals(0.0, $schema['properties']['topP']['minimum']);
-        $this->assertEquals(1.0, $schema['properties']['topP']['maximum']);
+        $this->assertEquals(1, $schema['properties'][ModelConfig::KEY_CANDIDATE_COUNT]['minimum']);
+        $this->assertEquals(0.0, $schema['properties'][ModelConfig::KEY_TEMPERATURE]['minimum']);
+        $this->assertEquals(2.0, $schema['properties'][ModelConfig::KEY_TEMPERATURE]['maximum']);
+        $this->assertEquals(0.0, $schema['properties'][ModelConfig::KEY_TOP_P]['minimum']);
+        $this->assertEquals(1.0, $schema['properties'][ModelConfig::KEY_TOP_P]['maximum']);
     }
 
     /**
@@ -197,20 +197,20 @@ class ModelConfigTest extends TestCase
         $array = $config->toArray();
 
         $this->assertIsArray($array);
-        $this->assertEquals(['text', 'audio'], $array['outputModalities']);
-        $this->assertEquals('Test instruction', $array['systemInstruction']);
-        $this->assertEquals(2, $array['candidateCount']);
-        $this->assertEquals(500, $array['maxTokens']);
-        $this->assertEquals(1.2, $array['temperature']);
-        $this->assertEquals(0.8, $array['topP']);
-        $this->assertEquals(30, $array['topK']);
-        $this->assertEquals(['STOP', 'END'], $array['stopSequences']);
-        $this->assertEquals(0.6, $array['presencePenalty']);
-        $this->assertEquals(0.4, $array['frequencyPenalty']);
-        $this->assertTrue($array['logprobs']);
-        $this->assertEquals(10, $array['topLogprobs']);
-        $this->assertCount(1, $array['tools']);
-        $this->assertEquals(['key' => 'value'], $array['customOptions']);
+        $this->assertEquals(['text', 'audio'], $array[ModelConfig::KEY_OUTPUT_MODALITIES]);
+        $this->assertEquals('Test instruction', $array[ModelConfig::KEY_SYSTEM_INSTRUCTION]);
+        $this->assertEquals(2, $array[ModelConfig::KEY_CANDIDATE_COUNT]);
+        $this->assertEquals(500, $array[ModelConfig::KEY_MAX_TOKENS]);
+        $this->assertEquals(1.2, $array[ModelConfig::KEY_TEMPERATURE]);
+        $this->assertEquals(0.8, $array[ModelConfig::KEY_TOP_P]);
+        $this->assertEquals(30, $array[ModelConfig::KEY_TOP_K]);
+        $this->assertEquals(['STOP', 'END'], $array[ModelConfig::KEY_STOP_SEQUENCES]);
+        $this->assertEquals(0.6, $array[ModelConfig::KEY_PRESENCE_PENALTY]);
+        $this->assertEquals(0.4, $array[ModelConfig::KEY_FREQUENCY_PENALTY]);
+        $this->assertTrue($array[ModelConfig::KEY_LOGPROBS]);
+        $this->assertEquals(10, $array[ModelConfig::KEY_TOP_LOGPROBS]);
+        $this->assertCount(1, $array[ModelConfig::KEY_TOOLS]);
+        $this->assertEquals(['key' => 'value'], $array[ModelConfig::KEY_CUSTOM_OPTIONS]);
     }
 
     /**
@@ -225,8 +225,8 @@ class ModelConfigTest extends TestCase
 
         $this->assertIsArray($array);
         $this->assertCount(1, $array);
-        $this->assertArrayHasKey('customOptions', $array);
-        $this->assertEquals([], $array['customOptions']);
+        $this->assertArrayHasKey(ModelConfig::KEY_CUSTOM_OPTIONS, $array);
+        $this->assertEquals([], $array[ModelConfig::KEY_CUSTOM_OPTIONS]);
     }
 
     /**
@@ -244,11 +244,11 @@ class ModelConfigTest extends TestCase
 
         $this->assertIsArray($array);
         $this->assertCount(3, $array);
-        $this->assertEquals(0.5, $array['temperature']);
-        $this->assertEquals(100, $array['maxTokens']);
-        $this->assertEquals([], $array['customOptions']);
-        $this->assertArrayNotHasKey('systemInstruction', $array);
-        $this->assertArrayNotHasKey('topP', $array);
+        $this->assertEquals(0.5, $array[ModelConfig::KEY_TEMPERATURE]);
+        $this->assertEquals(100, $array[ModelConfig::KEY_MAX_TOKENS]);
+        $this->assertEquals([], $array[ModelConfig::KEY_CUSTOM_OPTIONS]);
+        $this->assertArrayNotHasKey(ModelConfig::KEY_SYSTEM_INSTRUCTION, $array);
+        $this->assertArrayNotHasKey(ModelConfig::KEY_TOP_P, $array);
     }
 
     /**
@@ -259,19 +259,19 @@ class ModelConfigTest extends TestCase
     public function testFromArrayAllProperties(): void
     {
         $data = [
-            'outputModalities' => ['text', 'image'],
-            'systemInstruction' => 'Be helpful',
-            'candidateCount' => 3,
-            'maxTokens' => 2000,
-            'temperature' => 0.9,
-            'topP' => 0.95,
-            'topK' => 50,
-            'stopSequences' => ['###', 'DONE'],
-            'presencePenalty' => 0.2,
-            'frequencyPenalty' => 0.1,
-            'logprobs' => false,
-            'topLogprobs' => 3,
-            'tools' => [
+            ModelConfig::KEY_OUTPUT_MODALITIES => ['text', 'image'],
+            ModelConfig::KEY_SYSTEM_INSTRUCTION => 'Be helpful',
+            ModelConfig::KEY_CANDIDATE_COUNT => 3,
+            ModelConfig::KEY_MAX_TOKENS => 2000,
+            ModelConfig::KEY_TEMPERATURE => 0.9,
+            ModelConfig::KEY_TOP_P => 0.95,
+            ModelConfig::KEY_TOP_K => 50,
+            ModelConfig::KEY_STOP_SEQUENCES => ['###', 'DONE'],
+            ModelConfig::KEY_PRESENCE_PENALTY => 0.2,
+            ModelConfig::KEY_FREQUENCY_PENALTY => 0.1,
+            ModelConfig::KEY_LOGPROBS => false,
+            ModelConfig::KEY_TOP_LOGPROBS => 3,
+            ModelConfig::KEY_TOOLS => [
                 [
                     'type' => 'function_declarations',
                     'functionDeclarations' => [
@@ -283,7 +283,7 @@ class ModelConfigTest extends TestCase
                     ]
                 ]
             ],
-            'customOptions' => ['custom' => true]
+            ModelConfig::KEY_CUSTOM_OPTIONS => ['custom' => true]
         ];
 
         $config = ModelConfig::fromArray($data);

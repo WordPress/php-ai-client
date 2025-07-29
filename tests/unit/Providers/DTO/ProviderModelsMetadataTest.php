@@ -96,20 +96,20 @@ class ProviderModelsMetadataTest extends TestCase
 
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('provider', $schema['properties']);
-        $this->assertArrayHasKey('models', $schema['properties']);
+        $this->assertArrayHasKey(ProviderModelsMetadata::KEY_PROVIDER, $schema['properties']);
+        $this->assertArrayHasKey(ProviderModelsMetadata::KEY_MODELS, $schema['properties']);
 
         // Check provider property
-        $this->assertEquals(ProviderMetadata::getJsonSchema(), $schema['properties']['provider']);
+        $this->assertEquals(ProviderMetadata::getJsonSchema(), $schema['properties'][ProviderModelsMetadata::KEY_PROVIDER]);
 
         // Check models property
-        $this->assertEquals('array', $schema['properties']['models']['type']);
-        $this->assertArrayHasKey('items', $schema['properties']['models']);
-        $this->assertEquals(ModelMetadata::getJsonSchema(), $schema['properties']['models']['items']);
+        $this->assertEquals('array', $schema['properties'][ProviderModelsMetadata::KEY_MODELS]['type']);
+        $this->assertArrayHasKey('items', $schema['properties'][ProviderModelsMetadata::KEY_MODELS]);
+        $this->assertEquals(ModelMetadata::getJsonSchema(), $schema['properties'][ProviderModelsMetadata::KEY_MODELS]['items']);
 
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['provider', 'models'], $schema['required']);
+        $this->assertEquals([ProviderModelsMetadata::KEY_PROVIDER, ProviderModelsMetadata::KEY_MODELS], $schema['required']);
     }
 
     /**
@@ -129,20 +129,20 @@ class ProviderModelsMetadataTest extends TestCase
         $array = $metadata->toArray();
 
         $this->assertIsArray($array);
-        $this->assertArrayHasKey('provider', $array);
-        $this->assertArrayHasKey('models', $array);
+        $this->assertArrayHasKey(ProviderModelsMetadata::KEY_PROVIDER, $array);
+        $this->assertArrayHasKey(ProviderModelsMetadata::KEY_MODELS, $array);
 
         // Check provider data
-        $this->assertEquals('openai', $array['provider']['id']);
-        $this->assertEquals('OpenAI', $array['provider']['name']);
-        $this->assertEquals('cloud', $array['provider']['type']);
+        $this->assertEquals('openai', $array[ProviderModelsMetadata::KEY_PROVIDER][ProviderMetadata::KEY_ID]);
+        $this->assertEquals('OpenAI', $array[ProviderModelsMetadata::KEY_PROVIDER][ProviderMetadata::KEY_NAME]);
+        $this->assertEquals('cloud', $array[ProviderModelsMetadata::KEY_PROVIDER][ProviderMetadata::KEY_TYPE]);
 
         // Check models data
-        $this->assertCount(2, $array['models']);
-        $this->assertEquals('model-1', $array['models'][0]['id']);
-        $this->assertEquals('Model 1', $array['models'][0]['name']);
-        $this->assertEquals('model-2', $array['models'][1]['id']);
-        $this->assertEquals('Model 2', $array['models'][1]['name']);
+        $this->assertCount(2, $array[ProviderModelsMetadata::KEY_MODELS]);
+        $this->assertEquals('model-1', $array[ProviderModelsMetadata::KEY_MODELS][0][ModelMetadata::KEY_ID]);
+        $this->assertEquals('Model 1', $array[ProviderModelsMetadata::KEY_MODELS][0][ModelMetadata::KEY_NAME]);
+        $this->assertEquals('model-2', $array[ProviderModelsMetadata::KEY_MODELS][1][ModelMetadata::KEY_ID]);
+        $this->assertEquals('Model 2', $array[ProviderModelsMetadata::KEY_MODELS][1][ModelMetadata::KEY_NAME]);
     }
 
     /**
@@ -153,26 +153,26 @@ class ProviderModelsMetadataTest extends TestCase
     public function testFromArray(): void
     {
         $data = [
-            'provider' => [
-                'id' => 'anthropic',
-                'name' => 'Anthropic',
-                'type' => 'cloud'
+            ProviderModelsMetadata::KEY_PROVIDER => [
+                ProviderMetadata::KEY_ID => 'anthropic',
+                ProviderMetadata::KEY_NAME => 'Anthropic',
+                ProviderMetadata::KEY_TYPE => 'cloud'
             ],
-            'models' => [
+            ProviderModelsMetadata::KEY_MODELS => [
                 [
-                    'id' => 'claude-2',
-                    'name' => 'Claude 2',
-                    'supportedCapabilities' => ['text_generation'],
-                    'supportedOptions' => []
+                    ModelMetadata::KEY_ID => 'claude-2',
+                    ModelMetadata::KEY_NAME => 'Claude 2',
+                    ModelMetadata::KEY_SUPPORTED_CAPABILITIES => ['text_generation'],
+                    ModelMetadata::KEY_SUPPORTED_OPTIONS => []
                 ],
                 [
-                    'id' => 'claude-instant',
-                    'name' => 'Claude Instant',
-                    'supportedCapabilities' => ['text_generation', 'chat_history'],
-                    'supportedOptions' => [
+                    ModelMetadata::KEY_ID => 'claude-instant',
+                    ModelMetadata::KEY_NAME => 'Claude Instant',
+                    ModelMetadata::KEY_SUPPORTED_CAPABILITIES => ['text_generation', 'chat_history'],
+                    ModelMetadata::KEY_SUPPORTED_OPTIONS => [
                         [
-                            'name' => 'max_tokens',
-                            'supportedValues' => [100, 1000, 10000]
+                            SupportedOption::KEY_NAME => 'max_tokens',
+                            SupportedOption::KEY_SUPPORTED_VALUES => [100, 1000, 10000]
                         ]
                     ]
                 ]
@@ -258,10 +258,10 @@ class ProviderModelsMetadataTest extends TestCase
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);
-        $this->assertArrayHasKey('provider', $decoded);
-        $this->assertArrayHasKey('models', $decoded);
-        $this->assertCount(1, $decoded['models']);
-        $this->assertEquals('json-model', $decoded['models'][0]['id']);
+        $this->assertArrayHasKey(ProviderModelsMetadata::KEY_PROVIDER, $decoded);
+        $this->assertArrayHasKey(ProviderModelsMetadata::KEY_MODELS, $decoded);
+        $this->assertCount(1, $decoded[ProviderModelsMetadata::KEY_MODELS]);
+        $this->assertEquals('json-model', $decoded[ProviderModelsMetadata::KEY_MODELS][0][ModelMetadata::KEY_ID]);
     }
 
     /**
@@ -303,17 +303,17 @@ class ProviderModelsMetadataTest extends TestCase
         $metadata = new ProviderModelsMetadata($provider, $models);
         $array = $metadata->toArray();
 
-        $this->assertCount(3, $array['models']);
+        $this->assertCount(3, $array[ProviderModelsMetadata::KEY_MODELS]);
 
         // Verify each model's capabilities are preserved
-        $this->assertCount(1, $array['models'][0]['supportedCapabilities']);
-        $this->assertCount(3, $array['models'][1]['supportedCapabilities']);
-        $this->assertCount(1, $array['models'][2]['supportedCapabilities']);
+        $this->assertCount(1, $array[ProviderModelsMetadata::KEY_MODELS][0][ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);
+        $this->assertCount(3, $array[ProviderModelsMetadata::KEY_MODELS][1][ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);
+        $this->assertCount(1, $array[ProviderModelsMetadata::KEY_MODELS][2][ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);
 
         // Verify supported options
-        $this->assertCount(0, $array['models'][0]['supportedOptions']);
-        $this->assertCount(2, $array['models'][1]['supportedOptions']);
-        $this->assertCount(1, $array['models'][2]['supportedOptions']);
+        $this->assertCount(0, $array[ProviderModelsMetadata::KEY_MODELS][0][ModelMetadata::KEY_SUPPORTED_OPTIONS]);
+        $this->assertCount(2, $array[ProviderModelsMetadata::KEY_MODELS][1][ModelMetadata::KEY_SUPPORTED_OPTIONS]);
+        $this->assertCount(1, $array[ProviderModelsMetadata::KEY_MODELS][2][ModelMetadata::KEY_SUPPORTED_OPTIONS]);
     }
 
     /**
@@ -334,9 +334,9 @@ class ProviderModelsMetadataTest extends TestCase
         $array = $metadata->toArray();
 
         // Ensure models array has numeric keys starting from 0
-        $this->assertArrayHasKey(0, $array['models']);
-        $this->assertArrayHasKey(1, $array['models']);
-        $this->assertEquals(['models' => array_keys($array['models'])], ['models' => [0, 1]]);
+        $this->assertArrayHasKey(0, $array[ProviderModelsMetadata::KEY_MODELS]);
+        $this->assertArrayHasKey(1, $array[ProviderModelsMetadata::KEY_MODELS]);
+        $this->assertEquals(['models' => array_keys($array[ProviderModelsMetadata::KEY_MODELS])], ['models' => [0, 1]]);
     }
 
     /**

@@ -142,22 +142,22 @@ class RequiredOptionTest extends TestCase
 
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('name', $schema['properties']);
-        $this->assertArrayHasKey('value', $schema['properties']);
+        $this->assertArrayHasKey(RequiredOption::KEY_NAME, $schema['properties']);
+        $this->assertArrayHasKey(RequiredOption::KEY_VALUE, $schema['properties']);
 
         // Check name property
-        $this->assertEquals('string', $schema['properties']['name']['type']);
-        $this->assertEquals('The option name.', $schema['properties']['name']['description']);
+        $this->assertEquals('string', $schema['properties'][RequiredOption::KEY_NAME]['type']);
+        $this->assertEquals('The option name.', $schema['properties'][RequiredOption::KEY_NAME]['description']);
 
         // Check value property with oneOf
-        $this->assertArrayHasKey('oneOf', $schema['properties']['value']);
-        $this->assertIsArray($schema['properties']['value']['oneOf']);
-        $this->assertCount(6, $schema['properties']['value']['oneOf']);
+        $this->assertArrayHasKey('oneOf', $schema['properties'][RequiredOption::KEY_VALUE]);
+        $this->assertIsArray($schema['properties'][RequiredOption::KEY_VALUE]['oneOf']);
+        $this->assertCount(6, $schema['properties'][RequiredOption::KEY_VALUE]['oneOf']);
 
         // Verify all allowed types
         $types = array_map(function ($item) {
             return $item['type'];
-        }, $schema['properties']['value']['oneOf']);
+        }, $schema['properties'][RequiredOption::KEY_VALUE]['oneOf']);
         $this->assertContains('string', $types);
         $this->assertContains('number', $types);
         $this->assertContains('boolean', $types);
@@ -167,7 +167,7 @@ class RequiredOptionTest extends TestCase
 
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['name', 'value'], $schema['required']);
+        $this->assertEquals([RequiredOption::KEY_NAME, RequiredOption::KEY_VALUE], $schema['required']);
     }
 
     /**
@@ -179,30 +179,30 @@ class RequiredOptionTest extends TestCase
     {
         // String value
         $stringOption = new RequiredOption('string_opt', 'value');
-        $this->assertEquals(['name' => 'string_opt', 'value' => 'value'], $stringOption->toArray());
+        $this->assertEquals([RequiredOption::KEY_NAME => 'string_opt', RequiredOption::KEY_VALUE => 'value'], $stringOption->toArray());
 
         // Number values
         $intOption = new RequiredOption('int_opt', 42);
-        $this->assertEquals(['name' => 'int_opt', 'value' => 42], $intOption->toArray());
+        $this->assertEquals([RequiredOption::KEY_NAME => 'int_opt', RequiredOption::KEY_VALUE => 42], $intOption->toArray());
 
         $floatOption = new RequiredOption('float_opt', 3.14);
-        $this->assertEquals(['name' => 'float_opt', 'value' => 3.14], $floatOption->toArray());
+        $this->assertEquals([RequiredOption::KEY_NAME => 'float_opt', RequiredOption::KEY_VALUE => 3.14], $floatOption->toArray());
 
         // Boolean value
         $boolOption = new RequiredOption('bool_opt', true);
-        $this->assertEquals(['name' => 'bool_opt', 'value' => true], $boolOption->toArray());
+        $this->assertEquals([RequiredOption::KEY_NAME => 'bool_opt', RequiredOption::KEY_VALUE => true], $boolOption->toArray());
 
         // Null value
         $nullOption = new RequiredOption('null_opt', null);
-        $this->assertEquals(['name' => 'null_opt', 'value' => null], $nullOption->toArray());
+        $this->assertEquals([RequiredOption::KEY_NAME => 'null_opt', RequiredOption::KEY_VALUE => null], $nullOption->toArray());
 
         // Array value
         $arrayOption = new RequiredOption('array_opt', [1, 2, 3]);
-        $this->assertEquals(['name' => 'array_opt', 'value' => [1, 2, 3]], $arrayOption->toArray());
+        $this->assertEquals([RequiredOption::KEY_NAME => 'array_opt', RequiredOption::KEY_VALUE => [1, 2, 3]], $arrayOption->toArray());
 
         // Object value
         $objectOption = new RequiredOption('object_opt', ['key' => 'value']);
-        $this->assertEquals(['name' => 'object_opt', 'value' => ['key' => 'value']], $objectOption->toArray());
+        $this->assertEquals([RequiredOption::KEY_NAME => 'object_opt', RequiredOption::KEY_VALUE => ['key' => 'value']], $objectOption->toArray());
     }
 
     /**
@@ -213,37 +213,37 @@ class RequiredOptionTest extends TestCase
     public function testFromArrayWithDifferentValueTypes(): void
     {
         // String value
-        $stringOption = RequiredOption::fromArray(['name' => 'str', 'value' => 'test']);
+        $stringOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'str', RequiredOption::KEY_VALUE => 'test']);
         $this->assertEquals('str', $stringOption->getName());
         $this->assertEquals('test', $stringOption->getValue());
 
         // Integer value
-        $intOption = RequiredOption::fromArray(['name' => 'num', 'value' => 100]);
+        $intOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'num', RequiredOption::KEY_VALUE => 100]);
         $this->assertEquals('num', $intOption->getName());
         $this->assertEquals(100, $intOption->getValue());
 
         // Float value
-        $floatOption = RequiredOption::fromArray(['name' => 'float', 'value' => 1.5]);
+        $floatOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'float', RequiredOption::KEY_VALUE => 1.5]);
         $this->assertEquals('float', $floatOption->getName());
         $this->assertEquals(1.5, $floatOption->getValue());
 
         // Boolean value
-        $boolOption = RequiredOption::fromArray(['name' => 'bool', 'value' => false]);
+        $boolOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'bool', RequiredOption::KEY_VALUE => false]);
         $this->assertEquals('bool', $boolOption->getName());
         $this->assertFalse($boolOption->getValue());
 
         // Null value
-        $nullOption = RequiredOption::fromArray(['name' => 'nullable', 'value' => null]);
+        $nullOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'nullable', RequiredOption::KEY_VALUE => null]);
         $this->assertEquals('nullable', $nullOption->getName());
         $this->assertNull($nullOption->getValue());
 
         // Array value
-        $arrayOption = RequiredOption::fromArray(['name' => 'arr', 'value' => ['a', 'b', 'c']]);
+        $arrayOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'arr', RequiredOption::KEY_VALUE => ['a', 'b', 'c']]);
         $this->assertEquals('arr', $arrayOption->getName());
         $this->assertEquals(['a', 'b', 'c'], $arrayOption->getValue());
 
         // Object value
-        $objectOption = RequiredOption::fromArray(['name' => 'obj', 'value' => ['nested' => ['deep' => true]]]);
+        $objectOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'obj', RequiredOption::KEY_VALUE => ['nested' => ['deep' => true]]]);
         $this->assertEquals('obj', $objectOption->getName());
         $this->assertEquals(['nested' => ['deep' => true]], $objectOption->getValue());
     }
@@ -288,8 +288,8 @@ class RequiredOptionTest extends TestCase
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);
-        $this->assertEquals('json_test', $decoded['name']);
-        $this->assertEquals(['enabled' => true, 'count' => 5], $decoded['value']);
+        $this->assertEquals('json_test', $decoded[RequiredOption::KEY_NAME]);
+        $this->assertEquals(['enabled' => true, 'count' => 5], $decoded[RequiredOption::KEY_VALUE]);
     }
 
     /**

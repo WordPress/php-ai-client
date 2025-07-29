@@ -40,6 +40,21 @@ use WordPress\AiClient\Tools\DTO\Tool;
  */
 final class ModelConfig extends AbstractDataValueObject
 {
+    public const KEY_OUTPUT_MODALITIES = 'outputModalities';
+    public const KEY_SYSTEM_INSTRUCTION = 'systemInstruction';
+    public const KEY_CANDIDATE_COUNT = 'candidateCount';
+    public const KEY_MAX_TOKENS = 'maxTokens';
+    public const KEY_TEMPERATURE = 'temperature';
+    public const KEY_TOP_P = 'topP';
+    public const KEY_TOP_K = 'topK';
+    public const KEY_STOP_SEQUENCES = 'stopSequences';
+    public const KEY_PRESENCE_PENALTY = 'presencePenalty';
+    public const KEY_FREQUENCY_PENALTY = 'frequencyPenalty';
+    public const KEY_LOGPROBS = 'logprobs';
+    public const KEY_TOP_LOGPROBS = 'topLogprobs';
+    public const KEY_TOOLS = 'tools';
+    public const KEY_CUSTOM_OPTIONS = 'customOptions';
+
     /**
      * @var ModalityEnum[]|null Output modalities for the model.
      */
@@ -456,7 +471,7 @@ final class ModelConfig extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'outputModalities' => [
+                self::KEY_OUTPUT_MODALITIES => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'string',
@@ -464,67 +479,67 @@ final class ModelConfig extends AbstractDataValueObject
                     ],
                     'description' => 'Output modalities for the model.',
                 ],
-                'systemInstruction' => [
+                self::KEY_SYSTEM_INSTRUCTION => [
                     'type' => 'string',
                     'description' => 'System instruction for the model.',
                 ],
-                'candidateCount' => [
+                self::KEY_CANDIDATE_COUNT => [
                     'type' => 'integer',
                     'minimum' => 1,
                     'description' => 'Number of response candidates to generate.',
                 ],
-                'maxTokens' => [
+                self::KEY_MAX_TOKENS => [
                     'type' => 'integer',
                     'minimum' => 1,
                     'description' => 'Maximum number of tokens to generate.',
                 ],
-                'temperature' => [
+                self::KEY_TEMPERATURE => [
                     'type' => 'number',
                     'minimum' => 0.0,
                     'maximum' => 2.0,
                     'description' => 'Temperature for randomness.',
                 ],
-                'topP' => [
+                self::KEY_TOP_P => [
                     'type' => 'number',
                     'minimum' => 0.0,
                     'maximum' => 1.0,
                     'description' => 'Top-p nucleus sampling parameter.',
                 ],
-                'topK' => [
+                self::KEY_TOP_K => [
                     'type' => 'integer',
                     'minimum' => 1,
                     'description' => 'Top-k sampling parameter.',
                 ],
-                'stopSequences' => [
+                self::KEY_STOP_SEQUENCES => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'string',
                     ],
                     'description' => 'Stop sequences.',
                 ],
-                'presencePenalty' => [
+                self::KEY_PRESENCE_PENALTY => [
                     'type' => 'number',
                     'description' => 'Presence penalty for reducing repetition.',
                 ],
-                'frequencyPenalty' => [
+                self::KEY_FREQUENCY_PENALTY => [
                     'type' => 'number',
                     'description' => 'Frequency penalty for reducing repetition.',
                 ],
-                'logprobs' => [
+                self::KEY_LOGPROBS => [
                     'type' => 'boolean',
                     'description' => 'Whether to return log probabilities.',
                 ],
-                'topLogprobs' => [
+                self::KEY_TOP_LOGPROBS => [
                     'type' => 'integer',
                     'minimum' => 1,
                     'description' => 'Number of top log probabilities to return.',
                 ],
-                'tools' => [
+                self::KEY_TOOLS => [
                     'type' => 'array',
                     'items' => Tool::getJsonSchema(),
                     'description' => 'Tools available to the model.',
                 ],
-                'customOptions' => [
+                self::KEY_CUSTOM_OPTIONS => [
                     'type' => 'object',
                     'additionalProperties' => true,
                     'description' => 'Custom provider-specific options.',
@@ -546,62 +561,65 @@ final class ModelConfig extends AbstractDataValueObject
         $data = [];
 
         if ($this->outputModalities !== null) {
-            $data['outputModalities'] = array_values(array_map(static function (ModalityEnum $modality): string {
-                return $modality->value;
-            }, $this->outputModalities));
+            $data[self::KEY_OUTPUT_MODALITIES] = array_values(array_map(
+                static function (ModalityEnum $modality): string {
+                    return $modality->value;
+                },
+                $this->outputModalities
+            ));
         }
 
         if ($this->systemInstruction !== null) {
-            $data['systemInstruction'] = $this->systemInstruction;
+            $data[self::KEY_SYSTEM_INSTRUCTION] = $this->systemInstruction;
         }
 
         if ($this->candidateCount !== null) {
-            $data['candidateCount'] = $this->candidateCount;
+            $data[self::KEY_CANDIDATE_COUNT] = $this->candidateCount;
         }
 
         if ($this->maxTokens !== null) {
-            $data['maxTokens'] = $this->maxTokens;
+            $data[self::KEY_MAX_TOKENS] = $this->maxTokens;
         }
 
         if ($this->temperature !== null) {
-            $data['temperature'] = $this->temperature;
+            $data[self::KEY_TEMPERATURE] = $this->temperature;
         }
 
         if ($this->topP !== null) {
-            $data['topP'] = $this->topP;
+            $data[self::KEY_TOP_P] = $this->topP;
         }
 
         if ($this->topK !== null) {
-            $data['topK'] = $this->topK;
+            $data[self::KEY_TOP_K] = $this->topK;
         }
 
         if ($this->stopSequences !== null) {
-            $data['stopSequences'] = array_values($this->stopSequences);
+            $data[self::KEY_STOP_SEQUENCES] = array_values($this->stopSequences);
         }
 
         if ($this->presencePenalty !== null) {
-            $data['presencePenalty'] = $this->presencePenalty;
+            $data[self::KEY_PRESENCE_PENALTY] = $this->presencePenalty;
         }
 
         if ($this->frequencyPenalty !== null) {
-            $data['frequencyPenalty'] = $this->frequencyPenalty;
+            $data[self::KEY_FREQUENCY_PENALTY] = $this->frequencyPenalty;
         }
 
         if ($this->logprobs !== null) {
-            $data['logprobs'] = $this->logprobs;
+            $data[self::KEY_LOGPROBS] = $this->logprobs;
         }
 
         if ($this->topLogprobs !== null) {
-            $data['topLogprobs'] = $this->topLogprobs;
+            $data[self::KEY_TOP_LOGPROBS] = $this->topLogprobs;
         }
 
         if ($this->tools !== null) {
-            $data['tools'] = array_values(array_map(static function (Tool $tool): array {
+            $data[self::KEY_TOOLS] = array_values(array_map(static function (Tool $tool): array {
                 return $tool->toArray();
             }, $this->tools));
         }
 
-        $data['customOptions'] = $this->customOptions;
+        $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
 
         return $data;
     }
@@ -615,65 +633,65 @@ final class ModelConfig extends AbstractDataValueObject
     {
         $config = new self();
 
-        if (isset($array['outputModalities'])) {
+        if (isset($array[self::KEY_OUTPUT_MODALITIES])) {
             $config->setOutputModalities(array_map(
                 static fn(string $modality): ModalityEnum => ModalityEnum::from($modality),
-                $array['outputModalities']
+                $array[self::KEY_OUTPUT_MODALITIES]
             ));
         }
 
-        if (isset($array['systemInstruction'])) {
-            $config->setSystemInstruction($array['systemInstruction']);
+        if (isset($array[self::KEY_SYSTEM_INSTRUCTION])) {
+            $config->setSystemInstruction($array[self::KEY_SYSTEM_INSTRUCTION]);
         }
 
-        if (isset($array['candidateCount'])) {
-            $config->setCandidateCount($array['candidateCount']);
+        if (isset($array[self::KEY_CANDIDATE_COUNT])) {
+            $config->setCandidateCount($array[self::KEY_CANDIDATE_COUNT]);
         }
 
-        if (isset($array['maxTokens'])) {
-            $config->setMaxTokens($array['maxTokens']);
+        if (isset($array[self::KEY_MAX_TOKENS])) {
+            $config->setMaxTokens($array[self::KEY_MAX_TOKENS]);
         }
 
-        if (isset($array['temperature'])) {
-            $config->setTemperature($array['temperature']);
+        if (isset($array[self::KEY_TEMPERATURE])) {
+            $config->setTemperature($array[self::KEY_TEMPERATURE]);
         }
 
-        if (isset($array['topP'])) {
-            $config->setTopP($array['topP']);
+        if (isset($array[self::KEY_TOP_P])) {
+            $config->setTopP($array[self::KEY_TOP_P]);
         }
 
-        if (isset($array['topK'])) {
-            $config->setTopK($array['topK']);
+        if (isset($array[self::KEY_TOP_K])) {
+            $config->setTopK($array[self::KEY_TOP_K]);
         }
 
-        if (isset($array['stopSequences'])) {
-            $config->setStopSequences(array_values($array['stopSequences']));
+        if (isset($array[self::KEY_STOP_SEQUENCES])) {
+            $config->setStopSequences(array_values($array[self::KEY_STOP_SEQUENCES]));
         }
 
-        if (isset($array['presencePenalty'])) {
-            $config->setPresencePenalty($array['presencePenalty']);
+        if (isset($array[self::KEY_PRESENCE_PENALTY])) {
+            $config->setPresencePenalty($array[self::KEY_PRESENCE_PENALTY]);
         }
 
-        if (isset($array['frequencyPenalty'])) {
-            $config->setFrequencyPenalty($array['frequencyPenalty']);
+        if (isset($array[self::KEY_FREQUENCY_PENALTY])) {
+            $config->setFrequencyPenalty($array[self::KEY_FREQUENCY_PENALTY]);
         }
 
-        if (isset($array['logprobs'])) {
-            $config->setLogprobs($array['logprobs']);
+        if (isset($array[self::KEY_LOGPROBS])) {
+            $config->setLogprobs($array[self::KEY_LOGPROBS]);
         }
 
-        if (isset($array['topLogprobs'])) {
-            $config->setTopLogprobs($array['topLogprobs']);
+        if (isset($array[self::KEY_TOP_LOGPROBS])) {
+            $config->setTopLogprobs($array[self::KEY_TOP_LOGPROBS]);
         }
 
-        if (isset($array['tools'])) {
+        if (isset($array[self::KEY_TOOLS])) {
             $config->setTools(array_map(static function (array $toolData): Tool {
                 return Tool::fromArray($toolData);
-            }, $array['tools']));
+            }, $array[self::KEY_TOOLS]));
         }
 
-        if (isset($array['customOptions'])) {
-            $config->setCustomOptions($array['customOptions']);
+        if (isset($array[self::KEY_CUSTOM_OPTIONS])) {
+            $config->setCustomOptions($array[self::KEY_CUSTOM_OPTIONS]);
         }
 
         return $config;

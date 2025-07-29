@@ -27,6 +27,9 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  */
 final class ProviderModelsMetadata extends AbstractDataValueObject
 {
+    public const KEY_PROVIDER = 'provider';
+    public const KEY_MODELS = 'models';
+
     /**
      * @var ProviderMetadata The provider metadata.
      */
@@ -85,14 +88,14 @@ final class ProviderModelsMetadata extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'provider' => ProviderMetadata::getJsonSchema(),
-                'models' => [
+                self::KEY_PROVIDER => ProviderMetadata::getJsonSchema(),
+                self::KEY_MODELS => [
                     'type' => 'array',
                     'items' => ModelMetadata::getJsonSchema(),
                     'description' => 'The available models for this provider.',
                 ],
             ],
-            'required' => ['provider', 'models'],
+            'required' => [self::KEY_PROVIDER, self::KEY_MODELS],
         ];
     }
 
@@ -106,8 +109,8 @@ final class ProviderModelsMetadata extends AbstractDataValueObject
     public function toArray(): array
     {
         return [
-            'provider' => $this->provider->toArray(),
-            'models' => array_values(
+            self::KEY_PROVIDER => $this->provider->toArray(),
+            self::KEY_MODELS => array_values(
                 array_map(static fn(ModelMetadata $model): array => $model->toArray(), $this->models)
             ),
         ];
@@ -121,10 +124,10 @@ final class ProviderModelsMetadata extends AbstractDataValueObject
     public static function fromArray(array $array): self
     {
         return new self(
-            ProviderMetadata::fromArray($array['provider']),
+            ProviderMetadata::fromArray($array[self::KEY_PROVIDER]),
             array_map(
                 static fn(array $modelData): ModelMetadata => ModelMetadata::fromArray($modelData),
-                $array['models']
+                $array[self::KEY_MODELS]
             )
         );
     }
