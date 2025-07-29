@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Files\DTO;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
@@ -115,7 +116,7 @@ class FileTest extends TestCase
      */
     public function testPlainBase64WithoutMimeTypeThrowsException(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('MIME type is required when providing plain base64 data without data URI format.');
         
         new File('SGVsbG8gV29ybGQ=');
@@ -151,7 +152,7 @@ class FileTest extends TestCase
      */
     public function testInvalidFileFormatThrowsException(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid file provided. Expected URL, base64 data, or valid local file path.');
         
         new File('not-a-valid-file-or-url', 'text/plain');
@@ -164,7 +165,7 @@ class FileTest extends TestCase
      */
     public function testNonExistentLocalFileThrowsException(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid file provided. Expected URL, base64 data, or valid local file path.');
         
         new File('/path/to/non/existent/file.txt', 'text/plain');
@@ -182,7 +183,7 @@ class FileTest extends TestCase
         mkdir($tempDir);
         
         try {
-            $this->expectException(\InvalidArgumentException::class);
+            $this->expectException(InvalidArgumentException::class);
             $this->expectExceptionMessage('Invalid file provided. Expected URL, base64 data, or valid local file path.');
             
             new File($tempDir, 'text/plain');
@@ -249,7 +250,7 @@ class FileTest extends TestCase
         $base64Data = 'SGVsbG8gV29ybGQ=';
         $dataUri = 'data:;base64,' . $base64Data;
         
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unable to determine MIME type. Please provide it explicitly.');
         
         new File($dataUri);
@@ -262,7 +263,7 @@ class FileTest extends TestCase
      */
     public function testUrlWithUnknownExtension(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unable to determine MIME type. Please provide it explicitly.');
         
         new File('https://example.com/file.unknown');

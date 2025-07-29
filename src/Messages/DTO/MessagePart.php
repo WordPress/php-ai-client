@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
@@ -65,7 +66,7 @@ final class MessagePart extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param mixed $content The content of this message part.
-     * @throws \InvalidArgumentException If an unsupported content type is provided.
+     * @throws InvalidArgumentException If an unsupported content type is provided.
      */
     public function __construct($content)
     {
@@ -83,7 +84,7 @@ final class MessagePart extends AbstractDataValueObject
             $this->functionResponse = $content;
         } else {
             $type = is_object($content) ? get_class($content) : gettype($content);
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf(
                     'Unsupported content type %s. Expected string, File, '
                     . 'FunctionCall, or FunctionResponse.',
@@ -252,25 +253,25 @@ final class MessagePart extends AbstractDataValueObject
 
         if ($type->isText()) {
             if (!isset($array['text'])) {
-                throw new \InvalidArgumentException('Text message part requires text field.');
+                throw new InvalidArgumentException('Text message part requires text field.');
             }
             return new self($array['text']);
         } elseif ($type->isFile()) {
             if (!isset($array['file'])) {
-                throw new \InvalidArgumentException('File message part requires file field.');
+                throw new InvalidArgumentException('File message part requires file field.');
             }
             $fileData = $array['file'];
             return new self(File::fromArray($fileData));
         } elseif ($type->isFunctionCall()) {
             if (!isset($array['functionCall'])) {
-                throw new \InvalidArgumentException('Function call message part requires functionCall field.');
+                throw new InvalidArgumentException('Function call message part requires functionCall field.');
             }
             $functionCallData = $array['functionCall'];
             return new self(FunctionCall::fromArray($functionCallData));
         } else {
             // Function response is the only remaining option
             if (!isset($array['functionResponse'])) {
-                throw new \InvalidArgumentException('Function response message part requires functionResponse field.');
+                throw new InvalidArgumentException('Function response message part requires functionResponse field.');
             }
             $functionResponseData = $array['functionResponse'];
             return new self(FunctionResponse::fromArray($functionResponseData));

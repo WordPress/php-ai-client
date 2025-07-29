@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Results\DTO;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -184,7 +185,7 @@ class CandidateTest extends TestCase
             new MessagePart('This is a user message.')
         ]);
         
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Message must be a model message.');
         
         new Candidate(
@@ -206,7 +207,7 @@ class CandidateTest extends TestCase
             [new MessagePart('User message')]
         );
         
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Message must be a model message.');
         
         new Candidate(

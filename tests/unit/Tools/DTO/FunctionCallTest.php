@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 
@@ -85,7 +86,7 @@ class FunctionCallTest extends TestCase
      */
     public function testCreateWithoutIdOrNameThrowsException(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('At least one of id or name must be provided.');
         
         new FunctionCall(null, null, []);

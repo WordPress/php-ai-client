@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Common;
 use BadMethodCallException;
 use InvalidArgumentException;
 use ReflectionClass;
+use RuntimeException;
 
 /**
  * Abstract base class for enum-like behavior in PHP 7.4.
@@ -250,7 +251,7 @@ abstract class AbstractEnum
      * @since n.e.x.t
      *
      * @return array<string, string> Map of constant names to values.
-     * @throws \RuntimeException If invalid constant found.
+     * @throws RuntimeException If invalid constant found.
      */
     final protected static function getConstants(): array
     {
@@ -265,7 +266,7 @@ abstract class AbstractEnum
             foreach ($constants as $name => $value) {
                 // Check if constant name follows uppercase snake_case pattern
                 if (!preg_match('/^[A-Z][A-Z0-9_]*$/', $name)) {
-                    throw new \RuntimeException(
+                    throw new RuntimeException(
                         sprintf(
                             'Invalid enum constant name "%s" in %s. Constants must be UPPER_SNAKE_CASE.',
                             $name,
@@ -276,7 +277,7 @@ abstract class AbstractEnum
 
                 // Check if value is valid type
                 if (!is_string($value)) {
-                    throw new \RuntimeException(
+                    throw new RuntimeException(
                         sprintf(
                             'Invalid enum value type for constant %s::%s. ' .
                             'Only string values are allowed, %s given.',

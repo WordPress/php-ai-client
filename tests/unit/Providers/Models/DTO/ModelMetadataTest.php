@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
+use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
@@ -386,7 +387,7 @@ class ModelMetadataTest extends TestCase
             $metadata
         );
         $this->assertInstanceOf(
-            \JsonSerializable::class,
+            JsonSerializable::class,
             $metadata
         );
     }

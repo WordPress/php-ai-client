@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Files\ValueObjects;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Files\ValueObjects\MimeType;
 
@@ -50,7 +51,7 @@ class MimeTypeTest extends TestCase
      */
     public function testInvalidMimeTypeThrowsException(string $input): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid MIME type: ' . $input);
         
         new MimeType($input);
@@ -146,7 +147,7 @@ class MimeTypeTest extends TestCase
      */
     public function testUnknownExtensionThrowsException(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown file extension: xyz');
         
         MimeType::fromExtension('xyz');
@@ -255,7 +256,7 @@ class MimeTypeTest extends TestCase
         $this->assertFalse($mimeType1->equals('text/html'));
         
         // Test with invalid types
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid MIME type comparison: integer');
         $mimeType1->equals(123);
     }

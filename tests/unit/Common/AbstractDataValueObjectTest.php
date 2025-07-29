@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Common;
 
+use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use WordPress\AiClient\Common\AbstractDataValueObject;
@@ -546,7 +547,7 @@ class AbstractDataValueObjectTest extends TestCase
         // Verify interface implementations
         $this->assertInstanceOf(\WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class, $testObject);
         $this->assertInstanceOf(\WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class, $testObject);
-        $this->assertInstanceOf(\JsonSerializable::class, $testObject);
+        $this->assertInstanceOf(JsonSerializable::class, $testObject);
 
         // Verify methods exist and work
         $this->assertIsArray($testObject->toArray());

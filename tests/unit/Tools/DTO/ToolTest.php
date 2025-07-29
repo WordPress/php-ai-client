@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
@@ -104,7 +106,7 @@ class ToolTest extends TestCase
      */
     public function testCreateWithInvalidContentThrowsException(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
             'Tool content must be an array of FunctionDeclaration instances or a WebSearch instance'
         );
@@ -119,12 +121,12 @@ class ToolTest extends TestCase
      */
     public function testCreateWithInvalidObjectThrowsException(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
             'Tool content must be an array of FunctionDeclaration instances or a WebSearch instance'
         );
         
-        new Tool(new \stdClass());
+        new Tool(new stdClass());
     }
 
     /**

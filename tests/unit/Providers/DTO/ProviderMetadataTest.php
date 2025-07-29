@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Providers\DTO;
 
+use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
@@ -217,7 +218,7 @@ class ProviderMetadataTest extends TestCase
             $metadata
         );
         $this->assertInstanceOf(
-            \JsonSerializable::class,
+            JsonSerializable::class,
             $metadata
         );
     }

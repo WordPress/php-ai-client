@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
 
@@ -49,7 +50,7 @@ final class Tool extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param FunctionDeclaration[]|WebSearch $content The tool content.
-     * @throws \InvalidArgumentException If content type is not supported.
+     * @throws InvalidArgumentException If content type is not supported.
      */
     public function __construct($content)
     {
@@ -60,7 +61,7 @@ final class Tool extends AbstractDataValueObject
             $this->type = ToolTypeEnum::webSearch();
             $this->webSearch = $content;
         } else {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Tool content must be an array of FunctionDeclaration instances or a WebSearch instance'
             );
         }
@@ -176,7 +177,7 @@ final class Tool extends AbstractDataValueObject
 
         if ($type->isFunctionDeclarations()) {
             if (!isset($array['functionDeclarations'])) {
-                throw new \InvalidArgumentException('Function declarations tool requires functionDeclarations field.');
+                throw new InvalidArgumentException('Function declarations tool requires functionDeclarations field.');
             }
             $declarationsData = $array['functionDeclarations'];
             $declarations = array_map(function (array $declarationData) {
@@ -186,7 +187,7 @@ final class Tool extends AbstractDataValueObject
         } else {
             // Web search is the only remaining option
             if (!isset($array['webSearch'])) {
-                throw new \InvalidArgumentException('Web search tool requires webSearch field.');
+                throw new InvalidArgumentException('Web search tool requires webSearch field.');
             }
             $webSearchData = $array['webSearch'];
             return new self(WebSearch::fromArray($webSearchData));

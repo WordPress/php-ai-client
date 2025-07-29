@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
@@ -43,12 +44,12 @@ final class FunctionCall extends AbstractDataValueObject
      * @param string|null $id Unique identifier for this function call.
      * @param string|null $name The name of the function to call.
      * @param array<string, mixed> $args The arguments to pass to the function.
-     * @throws \InvalidArgumentException If neither id nor name is provided.
+     * @throws InvalidArgumentException If neither id nor name is provided.
      */
     public function __construct(?string $id = null, ?string $name = null, array $args = [])
     {
         if ($id === null && $name === null) {
-            throw new \InvalidArgumentException('At least one of id or name must be provided.');
+            throw new InvalidArgumentException('At least one of id or name must be provided.');
         }
 
         $this->id = $id;

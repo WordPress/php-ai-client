@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
+use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 
@@ -403,7 +404,7 @@ class SupportedOptionTest extends TestCase
             $option
         );
         $this->assertInstanceOf(
-            \JsonSerializable::class,
+            JsonSerializable::class,
             $option
         );
     }

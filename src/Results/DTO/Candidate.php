@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
@@ -51,7 +52,7 @@ final class Candidate extends AbstractDataValueObject
     public function __construct(Message $message, FinishReasonEnum $finishReason, int $tokenCount)
     {
         if (!$message->getRole()->isModel()) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Message must be a model message.'
             );
         }

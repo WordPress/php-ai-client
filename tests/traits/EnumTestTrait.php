@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\traits;
 
+use BadMethodCallException;
 use WordPress\AiClient\Common\AbstractEnum;
 
 /**
@@ -130,7 +131,7 @@ trait EnumTestTrait
         $firstValue = reset($expectedValues);
         $enum = $enumClass::from($firstValue);
 
-        $this->expectException(\BadMethodCallException::class);
+        $this->expectException(BadMethodCallException::class);
         $enum->value = 'modified';
     }
 }

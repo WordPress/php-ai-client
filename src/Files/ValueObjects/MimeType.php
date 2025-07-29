@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Files\ValueObjects;
 
+use InvalidArgumentException;
+
 /**
  * Value object representing a MIME type.
  *
@@ -115,12 +117,12 @@ final class MimeType
      * @since n.e.x.t
      *
      * @param string $value The MIME type value.
-     * @throws \InvalidArgumentException If the MIME type is invalid.
+     * @throws InvalidArgumentException If the MIME type is invalid.
      */
     public function __construct(string $value)
     {
         if (!self::isValid($value)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf('Invalid MIME type: %s', $value)
             );
         }
@@ -135,14 +137,14 @@ final class MimeType
      *
      * @param string $extension The file extension (without the dot).
      * @return self The MimeType instance.
-     * @throws \InvalidArgumentException If the extension is not recognized.
+     * @throws InvalidArgumentException If the extension is not recognized.
      */
     public static function fromExtension(string $extension): self
     {
         $extension = strtolower($extension);
 
         if (!isset(self::$extensionMap[$extension])) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf('Unknown file extension: %s', $extension)
             );
         }
@@ -245,7 +247,7 @@ final class MimeType
             return $this->value === strtolower($other);
         }
 
-        throw new \InvalidArgumentException(
+        throw new InvalidArgumentException(
             sprintf('Invalid MIME type comparison: %s', gettype($other))
         );
     }

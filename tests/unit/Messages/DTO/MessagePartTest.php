@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Messages\DTO;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -108,7 +110,7 @@ class MessagePartTest extends TestCase
      */
     public function testUnsupportedContentThrowsException($content, string $expectedType): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(sprintf(
             'Unsupported content type %s. Expected string, File, FunctionCall, or FunctionResponse.',
             $expectedType
@@ -130,7 +132,7 @@ class MessagePartTest extends TestCase
             'boolean' => [true, 'boolean'],
             'array' => [['key' => 'value'], 'array'],
             'null' => [null, 'NULL'],
-            'stdClass' => [new \stdClass(), 'stdClass'],
+            'stdClass' => [new stdClass(), 'stdClass'],
         ];
     }
 

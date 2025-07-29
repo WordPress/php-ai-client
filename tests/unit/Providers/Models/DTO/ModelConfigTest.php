@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
+use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
@@ -472,7 +473,7 @@ class ModelConfigTest extends TestCase
             $config
         );
         $this->assertInstanceOf(
-            \JsonSerializable::class,
+            JsonSerializable::class,
             $config
         );
     }
