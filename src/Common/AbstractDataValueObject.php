@@ -46,7 +46,7 @@ abstract class AbstractDataValueObject implements
         $missingKeys = [];
 
         foreach ($requiredKeys as $key) {
-            if (!isset($data[$key])) {
+            if (!array_key_exists($key, $data)) {
                 $missingKeys[] = $key;
             }
         }
