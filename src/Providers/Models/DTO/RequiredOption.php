@@ -21,7 +21,7 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @extends AbstractDataValueObject<RequiredOptionArrayShape>
  */
-final class RequiredOption extends AbstractDataValueObject
+class RequiredOption extends AbstractDataValueObject
 {
     public const KEY_NAME = 'name';
     public const KEY_VALUE = 'value';

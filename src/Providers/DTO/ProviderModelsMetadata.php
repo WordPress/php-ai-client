@@ -25,7 +25,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  *
  * @extends AbstractDataValueObject<ProviderModelsMetadataArrayShape>
  */
-final class ProviderModelsMetadata extends AbstractDataValueObject
+class ProviderModelsMetadata extends AbstractDataValueObject
 {
     public const KEY_PROVIDER = 'provider';
     public const KEY_MODELS = 'models';

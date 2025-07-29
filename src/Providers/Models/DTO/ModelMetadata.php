@@ -26,7 +26,7 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  *
  * @extends AbstractDataValueObject<ModelMetadataArrayShape>
  */
-final class ModelMetadata extends AbstractDataValueObject
+class ModelMetadata extends AbstractDataValueObject
 {
     public const KEY_ID = 'id';
     public const KEY_NAME = 'name';

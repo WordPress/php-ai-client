@@ -24,7 +24,7 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  *
  * @extends AbstractDataValueObject<ModelRequirementsArrayShape>
  */
-final class ModelRequirements extends AbstractDataValueObject
+class ModelRequirements extends AbstractDataValueObject
 {
     public const KEY_REQUIRED_CAPABILITIES = 'requiredCapabilities';
     public const KEY_REQUIRED_OPTIONS = 'requiredOptions';

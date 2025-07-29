@@ -23,7 +23,7 @@ use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
  *
  * @extends AbstractDataValueObject<ProviderMetadataArrayShape>
  */
-final class ProviderMetadata extends AbstractDataValueObject
+class ProviderMetadata extends AbstractDataValueObject
 {
     public const KEY_ID = 'id';
     public const KEY_NAME = 'name';

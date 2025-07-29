@@ -38,7 +38,7 @@ use WordPress\AiClient\Tools\DTO\Tool;
  *
  * @extends AbstractDataValueObject<ModelConfigArrayShape>
  */
-final class ModelConfig extends AbstractDataValueObject
+class ModelConfig extends AbstractDataValueObject
 {
     public const KEY_OUTPUT_MODALITIES = 'outputModalities';
     public const KEY_SYSTEM_INSTRUCTION = 'systemInstruction';

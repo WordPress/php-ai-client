@@ -21,7 +21,7 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @extends AbstractDataValueObject<SupportedOptionArrayShape>
  */
-final class SupportedOption extends AbstractDataValueObject
+class SupportedOption extends AbstractDataValueObject
 {
     public const KEY_NAME = 'name';
     public const KEY_SUPPORTED_VALUES = 'supportedValues';
