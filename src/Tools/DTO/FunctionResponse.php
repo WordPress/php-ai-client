@@ -113,7 +113,14 @@ class FunctionResponse extends AbstractDataValueObject
                     'description' => 'The response data from the function.',
                 ],
             ],
-            'required' => [self::KEY_ID, self::KEY_NAME, self::KEY_RESPONSE],
+            'oneOf' => [
+                [
+                    'required' => [self::KEY_RESPONSE, self::KEY_ID],
+                ],
+                [
+                    'required' => [self::KEY_RESPONSE, self::KEY_NAME],
+                ],
+            ],
         ];
     }
 
@@ -140,11 +147,16 @@ class FunctionResponse extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
-        static::validateFromArrayData($array, [self::KEY_ID, self::KEY_NAME, self::KEY_RESPONSE]);
+        static::validateFromArrayData($array, [self::KEY_RESPONSE]);
+
+        // Validate that at least one of id or name is provided
+        if (!array_key_exists(self::KEY_ID, $array) && !array_key_exists(self::KEY_NAME, $array)) {
+            throw new \InvalidArgumentException('At least one of id or name must be provided.');
+        }
 
         return new self(
-            $array[self::KEY_ID],
-            $array[self::KEY_NAME],
+            $array[self::KEY_ID] ?? null,
+            $array[self::KEY_NAME] ?? null,
             $array[self::KEY_RESPONSE]
         );
     }

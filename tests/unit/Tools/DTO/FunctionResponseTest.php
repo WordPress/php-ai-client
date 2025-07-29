@@ -122,9 +122,15 @@ class FunctionResponseTest extends TestCase
         $this->assertContains('array', $responseTypes);
         $this->assertContains('null', $responseTypes);
         
-        // Check required fields
-        $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals([FunctionResponse::KEY_ID, FunctionResponse::KEY_NAME, FunctionResponse::KEY_RESPONSE], $schema['required']);
+        // Check oneOf for required fields
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertCount(2, $schema['oneOf']);
+        
+        // First option: response and id required
+        $this->assertEquals([FunctionResponse::KEY_RESPONSE, FunctionResponse::KEY_ID], $schema['oneOf'][0]['required']);
+        
+        // Second option: response and name required
+        $this->assertEquals([FunctionResponse::KEY_RESPONSE, FunctionResponse::KEY_NAME], $schema['oneOf'][1]['required']);
     }
 
     /**

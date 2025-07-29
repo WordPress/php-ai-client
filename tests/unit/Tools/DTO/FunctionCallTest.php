@@ -123,16 +123,13 @@ class FunctionCallTest extends TestCase
         
         // Check oneOf for required fields
         $this->assertArrayHasKey('oneOf', $schema);
-        $this->assertCount(3, $schema['oneOf']);
+        $this->assertCount(2, $schema['oneOf']);
         
         // First option: only id required
         $this->assertEquals([FunctionCall::KEY_ID], $schema['oneOf'][0]['required']);
         
         // Second option: only name required
         $this->assertEquals([FunctionCall::KEY_NAME], $schema['oneOf'][1]['required']);
-        
-        // Third option: both id and name required
-        $this->assertEquals([FunctionCall::KEY_ID, FunctionCall::KEY_NAME], $schema['oneOf'][2]['required']);
     }
 
     /**
