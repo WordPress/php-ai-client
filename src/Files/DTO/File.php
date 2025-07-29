@@ -419,18 +419,15 @@ final class File extends AbstractDataValueObject
      */
     public static function fromArray(array $array): File
     {
-        $fileType = FileTypeEnum::from($array['fileType']);
+        // Check which properties are set to determine how to construct the File
+        $mimeType = $array['mimeType'] ?? null;
 
-        if ($fileType->isRemote()) {
-            if (!isset($array['url']) || !isset($array['mimeType'])) {
-                throw new InvalidArgumentException('Remote file requires url and mimeType.');
-            }
-            return new self($array['url'], $array['mimeType']);
+        if (isset($array['url'])) {
+            return new self($array['url'], $mimeType);
+        } elseif (isset($array['base64Data'])) {
+            return new self($array['base64Data'], $mimeType);
         } else {
-            if (!isset($array['mimeType']) || !isset($array['base64Data'])) {
-                throw new InvalidArgumentException('Inline file requires mimeType and base64Data.');
-            }
-            return new self($array['base64Data'], $array['mimeType']);
+            throw new InvalidArgumentException('File requires either url or base64Data.');
         }
     }
 }

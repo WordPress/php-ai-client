@@ -249,32 +249,19 @@ final class MessagePart extends AbstractDataValueObject
      */
     public static function fromArray(array $array): MessagePart
     {
-        $type = MessagePartTypeEnum::from($array['type']);
-
-        if ($type->isText()) {
-            if (!isset($array['text'])) {
-                throw new InvalidArgumentException('Text message part requires text field.');
-            }
+        // Check which properties are set to determine how to construct the MessagePart
+        if (isset($array['text'])) {
             return new self($array['text']);
-        } elseif ($type->isFile()) {
-            if (!isset($array['file'])) {
-                throw new InvalidArgumentException('File message part requires file field.');
-            }
-            $fileData = $array['file'];
-            return new self(File::fromArray($fileData));
-        } elseif ($type->isFunctionCall()) {
-            if (!isset($array['functionCall'])) {
-                throw new InvalidArgumentException('Function call message part requires functionCall field.');
-            }
-            $functionCallData = $array['functionCall'];
-            return new self(FunctionCall::fromArray($functionCallData));
+        } elseif (isset($array['file'])) {
+            return new self(File::fromArray($array['file']));
+        } elseif (isset($array['functionCall'])) {
+            return new self(FunctionCall::fromArray($array['functionCall']));
+        } elseif (isset($array['functionResponse'])) {
+            return new self(FunctionResponse::fromArray($array['functionResponse']));
         } else {
-            // Function response is the only remaining option
-            if (!isset($array['functionResponse'])) {
-                throw new InvalidArgumentException('Function response message part requires functionResponse field.');
-            }
-            $functionResponseData = $array['functionResponse'];
-            return new self(FunctionResponse::fromArray($functionResponseData));
+            throw new InvalidArgumentException(
+                'MessagePart requires one of: text, file, functionCall, or functionResponse.'
+            );
         }
     }
 }
