@@ -143,6 +143,8 @@ final class ProviderMetadata extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
+        static::validateFromArrayData($array, ['id', 'name', 'type']);
+
         return new self(
             $array['id'],
             $array['name'],
