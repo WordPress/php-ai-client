@@ -21,7 +21,7 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  * @phpstan-type FileArrayShape array{
  *     fileType: string,
  *     url?: string,
- *     mimeType?: string,
+ *     mimeType: string,
  *     base64Data?: string
  * }
  *
