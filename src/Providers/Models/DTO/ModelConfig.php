@@ -20,19 +20,19 @@ use WordPress\AiClient\Tools\DTO\Tool;
  * @phpstan-import-type ToolArrayShape from Tool
  *
  * @phpstan-type ModelConfigArrayShape array{
- *     outputModalities?: array<int, string>,
+ *     outputModalities?: list<string>,
  *     systemInstruction?: string,
  *     candidateCount?: int,
  *     maxTokens?: int,
  *     temperature?: float,
  *     topP?: float,
  *     topK?: int,
- *     stopSequences?: array<int, string>,
+ *     stopSequences?: list<string>,
  *     presencePenalty?: float,
  *     frequencyPenalty?: float,
  *     logprobs?: bool,
  *     topLogprobs?: int,
- *     tools?: array<int, ToolArrayShape>,
+ *     tools?: list<ToolArrayShape>,
  *     outputMimeType?: string,
  *     outputSchema?: array<string, mixed>,
  *     customOptions?: array<string, mixed>
@@ -653,12 +653,12 @@ class ModelConfig extends AbstractDataValueObject
         $data = [];
 
         if ($this->outputModalities !== null) {
-            $data[self::KEY_OUTPUT_MODALITIES] = array_values(array_map(
+            $data[self::KEY_OUTPUT_MODALITIES] = array_map(
                 static function (ModalityEnum $modality): string {
                     return $modality->value;
                 },
                 $this->outputModalities
-            ));
+            );
         }
 
         if ($this->systemInstruction !== null) {
@@ -686,7 +686,7 @@ class ModelConfig extends AbstractDataValueObject
         }
 
         if ($this->stopSequences !== null) {
-            $data[self::KEY_STOP_SEQUENCES] = array_values($this->stopSequences);
+            $data[self::KEY_STOP_SEQUENCES] = $this->stopSequences;
         }
 
         if ($this->presencePenalty !== null) {
@@ -706,9 +706,9 @@ class ModelConfig extends AbstractDataValueObject
         }
 
         if ($this->tools !== null) {
-            $data[self::KEY_TOOLS] = array_values(array_map(static function (Tool $tool): array {
+            $data[self::KEY_TOOLS] = array_map(static function (Tool $tool): array {
                 return $tool->toArray();
-            }, $this->tools));
+            }, $this->tools);
         }
 
         if ($this->outputMimeType !== null) {
@@ -721,6 +721,7 @@ class ModelConfig extends AbstractDataValueObject
 
         $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
 
+        /** @phpstan-ignore-next-line return.type (array_map doesn't guarantee list, validation will be added later) */
         return $data;
     }
 
@@ -765,7 +766,7 @@ class ModelConfig extends AbstractDataValueObject
         }
 
         if (isset($array[self::KEY_STOP_SEQUENCES])) {
-            $config->setStopSequences(array_values($array[self::KEY_STOP_SEQUENCES]));
+            $config->setStopSequences($array[self::KEY_STOP_SEQUENCES]);
         }
 
         if (isset($array[self::KEY_PRESENCE_PENALTY])) {

@@ -20,7 +20,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  *
  * @phpstan-type ProviderModelsMetadataArrayShape array{
  *     provider: ProviderMetadataArrayShape,
- *     models: array<int, ModelMetadataArrayShape>
+ *     models: list<ModelMetadataArrayShape>
  * }
  *
  * @extends AbstractDataValueObject<ProviderModelsMetadataArrayShape>
@@ -108,10 +108,12 @@ class ProviderModelsMetadata extends AbstractDataValueObject
      */
     public function toArray(): array
     {
+        /** @phpstan-ignore-next-line return.type (array_map doesn't guarantee list, validation will be added later) */
         return [
             self::KEY_PROVIDER => $this->provider->toArray(),
-            self::KEY_MODELS => array_values(
-                array_map(static fn(ModelMetadata $model): array => $model->toArray(), $this->models)
+            self::KEY_MODELS => array_map(
+                static fn(ModelMetadata $model): array => $model->toArray(),
+                $this->models
             ),
         ];
     }

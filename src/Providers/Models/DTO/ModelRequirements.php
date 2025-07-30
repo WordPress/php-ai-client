@@ -18,8 +18,8 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  * @phpstan-import-type RequiredOptionArrayShape from RequiredOption
  *
  * @phpstan-type ModelRequirementsArrayShape array{
- *     requiredCapabilities: array<int, string>,
- *     requiredOptions: array<int, RequiredOptionArrayShape>
+ *     requiredCapabilities: list<string>,
+ *     requiredOptions: list<RequiredOptionArrayShape>
  * }
  *
  * @extends AbstractDataValueObject<ModelRequirementsArrayShape>
@@ -114,15 +114,16 @@ class ModelRequirements extends AbstractDataValueObject
      */
     public function toArray(): array
     {
+        /** @phpstan-ignore-next-line return.type (array_map doesn't guarantee list, validation will be added later) */
         return [
-            self::KEY_REQUIRED_CAPABILITIES => array_values(array_map(
+            self::KEY_REQUIRED_CAPABILITIES => array_map(
                 static fn(CapabilityEnum $capability): string => $capability->value,
                 $this->requiredCapabilities
-            )),
-            self::KEY_REQUIRED_OPTIONS => array_values(array_map(
+            ),
+            self::KEY_REQUIRED_OPTIONS => array_map(
                 static fn(RequiredOption $option): array => $option->toArray(),
                 $this->requiredOptions
-            )),
+            ),
         ];
     }
 

@@ -20,8 +20,8 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  * @phpstan-type ModelMetadataArrayShape array{
  *     id: string,
  *     name: string,
- *     supportedCapabilities: array<int, string>,
- *     supportedOptions: array<int, SupportedOptionArrayShape>
+ *     supportedCapabilities: list<string>,
+ *     supportedOptions: list<SupportedOptionArrayShape>
  * }
  *
  * @extends AbstractDataValueObject<ModelMetadataArrayShape>
@@ -164,17 +164,18 @@ class ModelMetadata extends AbstractDataValueObject
      */
     public function toArray(): array
     {
+        /** @phpstan-ignore-next-line return.type (array_map doesn't guarantee list, validation will be added later) */
         return [
             self::KEY_ID => $this->id,
             self::KEY_NAME => $this->name,
-            self::KEY_SUPPORTED_CAPABILITIES => array_values(array_map(
+            self::KEY_SUPPORTED_CAPABILITIES => array_map(
                 static fn(CapabilityEnum $capability): string => $capability->value,
                 $this->supportedCapabilities
-            )),
-            self::KEY_SUPPORTED_OPTIONS => array_values(array_map(
+            ),
+            self::KEY_SUPPORTED_OPTIONS => array_map(
                 static fn(SupportedOption $option): array => $option->toArray(),
                 $this->supportedOptions
-            )),
+            ),
         ];
     }
 

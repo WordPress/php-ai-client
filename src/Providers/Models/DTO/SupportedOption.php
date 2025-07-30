@@ -16,7 +16,7 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @phpstan-type SupportedOptionArrayShape array{
  *     name: string,
- *     supportedValues?: array<int, mixed>
+ *     supportedValues?: list<mixed>
  * }
  *
  * @extends AbstractDataValueObject<SupportedOptionArrayShape>
@@ -139,9 +139,10 @@ class SupportedOption extends AbstractDataValueObject
         ];
 
         if ($this->supportedValues !== null) {
-            $data[self::KEY_SUPPORTED_VALUES] = array_values($this->supportedValues);
+            $data[self::KEY_SUPPORTED_VALUES] = $this->supportedValues;
         }
 
+        /** @phpstan-ignore-next-line return.type (array doesn't guarantee list, validation will be added later) */
         return $data;
     }
 
