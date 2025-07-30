@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
  * Represents a response to a function call.
@@ -13,9 +13,16 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
  * requested by the AI model through a FunctionCall.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type FunctionResponseArrayShape array{id: string, name: string, response: mixed}
+ *
+ * @extends AbstractDataValueObject<FunctionResponseArrayShape>
  */
-class FunctionResponse implements WithJsonSchemaInterface
+class FunctionResponse extends AbstractDataValueObject
 {
+    public const KEY_ID = 'id';
+    public const KEY_NAME = 'name';
+    public const KEY_RESPONSE = 'response';
     /**
      * @var string The ID of the function call this is responding to.
      */
@@ -93,20 +100,64 @@ class FunctionResponse implements WithJsonSchemaInterface
         return [
             'type' => 'object',
             'properties' => [
-                'id' => [
+                self::KEY_ID => [
                     'type' => 'string',
                     'description' => 'The ID of the function call this is responding to.',
                 ],
-                'name' => [
+                self::KEY_NAME => [
                     'type' => 'string',
                     'description' => 'The name of the function that was called.',
                 ],
-                'response' => [
+                self::KEY_RESPONSE => [
                     'type' => ['string', 'number', 'boolean', 'object', 'array', 'null'],
                     'description' => 'The response data from the function.',
                 ],
             ],
-            'required' => ['id', 'name', 'response'],
+            'oneOf' => [
+                [
+                    'required' => [self::KEY_RESPONSE, self::KEY_ID],
+                ],
+                [
+                    'required' => [self::KEY_RESPONSE, self::KEY_NAME],
+                ],
+            ],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return FunctionResponseArrayShape
+     */
+    public function toArray(): array
+    {
+        return [
+            self::KEY_ID => $this->id,
+            self::KEY_NAME => $this->name,
+            self::KEY_RESPONSE => $this->response,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromArray(array $array): self
+    {
+        static::validateFromArrayData($array, [self::KEY_RESPONSE]);
+
+        // Validate that at least one of id or name is provided
+        if (!array_key_exists(self::KEY_ID, $array) && !array_key_exists(self::KEY_NAME, $array)) {
+            throw new \InvalidArgumentException('At least one of id or name must be provided.');
+        }
+
+        return new self(
+            $array[self::KEY_ID] ?? null,
+            $array[self::KEY_NAME] ?? null,
+            $array[self::KEY_RESPONSE]
+        );
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\Contracts;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 
 /**
@@ -15,7 +14,7 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
  *
  * @since n.e.x.t
  */
-interface ResultInterface extends WithJsonSchemaInterface
+interface ResultInterface
 {
     /**
      * Gets the result ID.

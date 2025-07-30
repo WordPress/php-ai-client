@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\Tool;
 use WordPress\AiClient\Tools\DTO\WebSearch;
@@ -15,6 +16,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  */
 class ToolTest extends TestCase
 {
+    use ArrayTransformationTestTrait;
     /**
      * Tests creating tool with function declarations.
      *
@@ -141,21 +143,21 @@ class ToolTest extends TestCase
         $functionSchema = $schema['oneOf'][0];
         $this->assertEquals('object', $functionSchema['type']);
         $this->assertArrayHasKey('properties', $functionSchema);
-        $this->assertArrayHasKey('type', $functionSchema['properties']);
-        $this->assertArrayHasKey('functionDeclarations', $functionSchema['properties']);
+        $this->assertArrayHasKey(Tool::KEY_TYPE, $functionSchema['properties']);
+        $this->assertArrayHasKey(Tool::KEY_FUNCTION_DECLARATIONS, $functionSchema['properties']);
         
         // Type property
-        $typeProperty = $functionSchema['properties']['type'];
+        $typeProperty = $functionSchema['properties'][Tool::KEY_TYPE];
         $this->assertEquals('string', $typeProperty['type']);
         $this->assertEquals(ToolTypeEnum::functionDeclarations()->value, $typeProperty['const']);
         
         // Function declarations property
-        $functionsProperty = $functionSchema['properties']['functionDeclarations'];
+        $functionsProperty = $functionSchema['properties'][Tool::KEY_FUNCTION_DECLARATIONS];
         $this->assertEquals('array', $functionsProperty['type']);
         $this->assertArrayHasKey('items', $functionsProperty);
         
         // Required fields
-        $this->assertEquals(['type', 'functionDeclarations'], $functionSchema['required']);
+        $this->assertEquals([Tool::KEY_TYPE, Tool::KEY_FUNCTION_DECLARATIONS], $functionSchema['required']);
     }
 
     /**
@@ -171,19 +173,19 @@ class ToolTest extends TestCase
         $webSearchSchema = $schema['oneOf'][1];
         $this->assertEquals('object', $webSearchSchema['type']);
         $this->assertArrayHasKey('properties', $webSearchSchema);
-        $this->assertArrayHasKey('type', $webSearchSchema['properties']);
-        $this->assertArrayHasKey('webSearch', $webSearchSchema['properties']);
+        $this->assertArrayHasKey(Tool::KEY_TYPE, $webSearchSchema['properties']);
+        $this->assertArrayHasKey(Tool::KEY_WEB_SEARCH, $webSearchSchema['properties']);
         
         // Type property
-        $typeProperty = $webSearchSchema['properties']['type'];
+        $typeProperty = $webSearchSchema['properties'][Tool::KEY_TYPE];
         $this->assertEquals('string', $typeProperty['type']);
         $this->assertEquals(ToolTypeEnum::webSearch()->value, $typeProperty['const']);
         
         // Web search property
-        $this->assertArrayHasKey('webSearch', $webSearchSchema['properties']);
+        $this->assertArrayHasKey(Tool::KEY_WEB_SEARCH, $webSearchSchema['properties']);
         
         // Required fields
-        $this->assertEquals(['type', 'webSearch'], $webSearchSchema['required']);
+        $this->assertEquals([Tool::KEY_TYPE, Tool::KEY_WEB_SEARCH], $webSearchSchema['required']);
     }
 
     /**
@@ -294,5 +296,164 @@ class ToolTest extends TestCase
         $this->assertNull($tool1->getWebSearch());
         $this->assertNull($tool2->getFunctionDeclarations());
         $this->assertNotNull($tool2->getWebSearch());
+    }
+
+    /**
+     * Tests array transformation with function declarations.
+     *
+     * @return void
+     */
+    public function testToArrayWithFunctionDeclarations(): void
+    {
+        $functions = [
+            new FunctionDeclaration('func1', 'First function', ['param1' => ['type' => 'string']]),
+            new FunctionDeclaration('func2', 'Second function')
+        ];
+        
+        $tool = new Tool($functions);
+        $json = $this->assertToArrayReturnsArray($tool);
+        
+        $this->assertArrayHasKeys($json, [Tool::KEY_TYPE, Tool::KEY_FUNCTION_DECLARATIONS]);
+        $this->assertEquals(ToolTypeEnum::functionDeclarations()->value, $json[Tool::KEY_TYPE]);
+        $this->assertIsArray($json[Tool::KEY_FUNCTION_DECLARATIONS]);
+        $this->assertCount(2, $json[Tool::KEY_FUNCTION_DECLARATIONS]);
+        $this->assertEquals('func1', $json[Tool::KEY_FUNCTION_DECLARATIONS][0][FunctionDeclaration::KEY_NAME]);
+        $this->assertEquals('func2', $json[Tool::KEY_FUNCTION_DECLARATIONS][1][FunctionDeclaration::KEY_NAME]);
+    }
+
+    /**
+     * Tests array transformation with web search.
+     *
+     * @return void
+     */
+    public function testToArrayWithWebSearch(): void
+    {
+        $webSearch = new WebSearch(
+            ['allowed1.com', 'allowed2.com'],
+            ['blocked1.com', 'blocked2.com']
+        );
+        
+        $tool = new Tool($webSearch);
+        $json = $this->assertToArrayReturnsArray($tool);
+        
+        $this->assertArrayHasKeys($json, [Tool::KEY_TYPE, Tool::KEY_WEB_SEARCH]);
+        $this->assertEquals(ToolTypeEnum::webSearch()->value, $json[Tool::KEY_TYPE]);
+        $this->assertIsArray($json[Tool::KEY_WEB_SEARCH]);
+        $this->assertArrayHasKey(WebSearch::KEY_ALLOWED_DOMAINS, $json[Tool::KEY_WEB_SEARCH]);
+        $this->assertArrayHasKey(WebSearch::KEY_DISALLOWED_DOMAINS, $json[Tool::KEY_WEB_SEARCH]);
+    }
+
+    /**
+     * Tests fromJson method with function declarations.
+     *
+     * @return void
+     */
+    public function testFromArrayWithFunctionDeclarations(): void
+    {
+        $json = [
+            Tool::KEY_TYPE => ToolTypeEnum::functionDeclarations()->value,
+            Tool::KEY_FUNCTION_DECLARATIONS => [
+                [
+                    FunctionDeclaration::KEY_NAME => 'testFunc',
+                    FunctionDeclaration::KEY_DESCRIPTION => 'Test function',
+                    FunctionDeclaration::KEY_PARAMETERS => ['type' => 'object']
+                ]
+            ]
+        ];
+        
+        $tool = Tool::fromArray($json);
+        
+        $this->assertInstanceOf(Tool::class, $tool);
+        $this->assertEquals(ToolTypeEnum::functionDeclarations(), $tool->getType());
+        $this->assertCount(1, $tool->getFunctionDeclarations());
+        $this->assertEquals('testFunc', $tool->getFunctionDeclarations()[0]->getName());
+        $this->assertNull($tool->getWebSearch());
+    }
+
+    /**
+     * Tests fromJson method with web search.
+     *
+     * @return void
+     */
+    public function testFromArrayWithWebSearch(): void
+    {
+        $json = [
+            Tool::KEY_TYPE => ToolTypeEnum::webSearch()->value,
+            Tool::KEY_WEB_SEARCH => [
+                WebSearch::KEY_ALLOWED_DOMAINS => ['example.com'],
+                WebSearch::KEY_DISALLOWED_DOMAINS => ['spam.com']
+            ]
+        ];
+        
+        $tool = Tool::fromArray($json);
+        
+        $this->assertInstanceOf(Tool::class, $tool);
+        $this->assertEquals(ToolTypeEnum::webSearch(), $tool->getType());
+        $this->assertNotNull($tool->getWebSearch());
+        $this->assertEquals(['example.com'], $tool->getWebSearch()->getAllowedDomains());
+        $this->assertEquals(['spam.com'], $tool->getWebSearch()->getDisallowedDomains());
+        $this->assertNull($tool->getFunctionDeclarations());
+    }
+
+    /**
+     * Tests round-trip array transformation with function declarations.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripWithFunctionDeclarations(): void
+    {
+        $this->assertArrayRoundTrip(
+            new Tool([
+                new FunctionDeclaration('calculate', 'Performs calculations', ['expr' => ['type' => 'string']]),
+                new FunctionDeclaration('validate', 'Validates input', ['data' => ['type' => 'object']])
+            ]),
+            function ($original, $restored) {
+                $this->assertEquals($original->getType()->value, $restored->getType()->value);
+                $this->assertCount(
+                    count($original->getFunctionDeclarations()),
+                    $restored->getFunctionDeclarations()
+                );
+                foreach ($original->getFunctionDeclarations() as $i => $origFunc) {
+                    $restoredFunc = $restored->getFunctionDeclarations()[$i];
+                    $this->assertEquals($origFunc->getName(), $restoredFunc->getName());
+                    $this->assertEquals($origFunc->getDescription(), $restoredFunc->getDescription());
+                    $this->assertEquals($origFunc->getParameters(), $restoredFunc->getParameters());
+                }
+            }
+        );
+    }
+
+    /**
+     * Tests round-trip array transformation with web search.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripWithWebSearch(): void
+    {
+        $this->assertArrayRoundTrip(
+            new Tool(new WebSearch(['docs.example.com'], ['ads.example.com'])),
+            function ($original, $restored) {
+                $this->assertEquals($original->getType()->value, $restored->getType()->value);
+                $this->assertEquals(
+                    $original->getWebSearch()->getAllowedDomains(),
+                    $restored->getWebSearch()->getAllowedDomains()
+                );
+                $this->assertEquals(
+                    $original->getWebSearch()->getDisallowedDomains(),
+                    $restored->getWebSearch()->getDisallowedDomains()
+                );
+            }
+        );
+    }
+
+    /**
+     * Tests Tool implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $tool = new Tool([]);
+        $this->assertImplementsArrayTransformation($tool);
     }
 }

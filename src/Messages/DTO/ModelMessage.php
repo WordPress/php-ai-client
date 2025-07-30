@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Messages\DTO;
 
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Common\Traits\HasJsonSerialization;
 
 /**
  * Represents a message from the AI model.

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
  * Represents a function call request from an AI model.
@@ -13,9 +13,16 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
  * wants to invoke, including the function name and its arguments.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type FunctionCallArrayShape array{id?: string, name?: string, args?: array<string, mixed>}
+ *
+ * @extends AbstractDataValueObject<FunctionCallArrayShape>
  */
-class FunctionCall implements WithJsonSchemaInterface
+class FunctionCall extends AbstractDataValueObject
 {
+    public const KEY_ID = 'id';
+    public const KEY_NAME = 'name';
+    public const KEY_ARGS = 'args';
     /**
      * @var string|null Unique identifier for this function call.
      */
@@ -98,15 +105,15 @@ class FunctionCall implements WithJsonSchemaInterface
         return [
             'type' => 'object',
             'properties' => [
-                'id' => [
+                self::KEY_ID => [
                     'type' => 'string',
                     'description' => 'Unique identifier for this function call.',
                 ],
-                'name' => [
+                self::KEY_NAME => [
                     'type' => 'string',
                     'description' => 'The name of the function to call.',
                 ],
-                'args' => [
+                self::KEY_ARGS => [
                     'type' => 'object',
                     'description' => 'The arguments to pass to the function.',
                     'additionalProperties' => true,
@@ -114,15 +121,52 @@ class FunctionCall implements WithJsonSchemaInterface
             ],
             'oneOf' => [
                 [
-                    'required' => ['id'],
+                    'required' => [self::KEY_ID],
                 ],
                 [
-                    'required' => ['name'],
-                ],
-                [
-                    'required' => ['id', 'name'],
+                    'required' => [self::KEY_NAME],
                 ],
             ],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return FunctionCallArrayShape
+     */
+    public function toArray(): array
+    {
+        $data = [];
+
+        if ($this->id !== null) {
+            $data[self::KEY_ID] = $this->id;
+        }
+
+        if ($this->name !== null) {
+            $data[self::KEY_NAME] = $this->name;
+        }
+
+        if (!empty($this->args)) {
+            $data[self::KEY_ARGS] = $this->args;
+        }
+
+        return $data;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromArray(array $array): self
+    {
+        return new self(
+            $array[self::KEY_ID] ?? null,
+            $array[self::KEY_NAME] ?? null,
+            $array[self::KEY_ARGS] ?? []
+        );
     }
 }

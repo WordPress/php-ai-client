@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
-use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
 
 /**
@@ -16,9 +16,25 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  * and metadata from the AI provider.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type CandidateArrayShape from Candidate
+ * @phpstan-import-type TokenUsageArrayShape from TokenUsage
+ *
+ * @phpstan-type GenerativeAiResultArrayShape array{
+ *     id: string,
+ *     candidates: array<CandidateArrayShape>,
+ *     tokenUsage: TokenUsageArrayShape,
+ *     providerMetadata?: array<string, mixed>
+ * }
+ *
+ * @extends AbstractDataValueObject<GenerativeAiResultArrayShape>
  */
-class GenerativeAiResult implements ResultInterface
+class GenerativeAiResult extends AbstractDataValueObject implements ResultInterface
 {
+    public const KEY_ID = 'id';
+    public const KEY_CANDIDATES = 'candidates';
+    public const KEY_TOKEN_USAGE = 'tokenUsage';
+    public const KEY_PROVIDER_METADATA = 'providerMetadata';
     /**
      * @var string Unique identifier for this result.
      */
@@ -358,24 +374,63 @@ class GenerativeAiResult implements ResultInterface
         return [
             'type' => 'object',
             'properties' => [
-                'id' => [
+                self::KEY_ID => [
                     'type' => 'string',
                     'description' => 'Unique identifier for this result.',
                 ],
-                'candidates' => [
+                self::KEY_CANDIDATES => [
                     'type' => 'array',
                     'items' => Candidate::getJsonSchema(),
                     'minItems' => 1,
                     'description' => 'The generated candidates.',
                 ],
-                'tokenUsage' => TokenUsage::getJsonSchema(),
-                'providerMetadata' => [
+                self::KEY_TOKEN_USAGE => TokenUsage::getJsonSchema(),
+                self::KEY_PROVIDER_METADATA => [
                     'type' => 'object',
                     'additionalProperties' => true,
                     'description' => 'Provider-specific metadata.',
                 ],
             ],
-            'required' => ['id', 'candidates', 'tokenUsage'],
+            'required' => [self::KEY_ID, self::KEY_CANDIDATES, self::KEY_TOKEN_USAGE],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return GenerativeAiResultArrayShape
+     */
+    public function toArray(): array
+    {
+        return [
+            self::KEY_ID => $this->id,
+            self::KEY_CANDIDATES => array_map(fn(Candidate $candidate) => $candidate->toArray(), $this->candidates),
+            self::KEY_TOKEN_USAGE => $this->tokenUsage->toArray(),
+            self::KEY_PROVIDER_METADATA => $this->providerMetadata,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromArray(array $array): self
+    {
+        static::validateFromArrayData($array, [self::KEY_ID, self::KEY_CANDIDATES, self::KEY_TOKEN_USAGE]);
+
+        $candidates = array_map(
+            fn(array $candidateData) => Candidate::fromArray($candidateData),
+            $array[self::KEY_CANDIDATES]
+        );
+
+        return new self(
+            $array[self::KEY_ID],
+            $candidates,
+            TokenUsage::fromArray($array[self::KEY_TOKEN_USAGE]),
+            $array[self::KEY_PROVIDER_METADATA] ?? []
+        );
     }
 }

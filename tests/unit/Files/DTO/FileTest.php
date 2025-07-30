@@ -225,18 +225,18 @@ class FileTest extends TestCase
         // Check remote file schema
         $remoteSchema = $schema['oneOf'][0];
         $this->assertArrayHasKey('properties', $remoteSchema);
-        $this->assertArrayHasKey('fileType', $remoteSchema['properties']);
-        $this->assertArrayHasKey('mimeType', $remoteSchema['properties']);
-        $this->assertArrayHasKey('url', $remoteSchema['properties']);
-        $this->assertEquals(['fileType', 'mimeType', 'url'], $remoteSchema['required']);
+        $this->assertArrayHasKey(File::KEY_FILE_TYPE, $remoteSchema['properties']);
+        $this->assertArrayHasKey(File::KEY_MIME_TYPE, $remoteSchema['properties']);
+        $this->assertArrayHasKey(File::KEY_URL, $remoteSchema['properties']);
+        $this->assertEquals([File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_URL], $remoteSchema['required']);
         
         // Check inline file schema
         $inlineSchema = $schema['oneOf'][1];
         $this->assertArrayHasKey('properties', $inlineSchema);
-        $this->assertArrayHasKey('fileType', $inlineSchema['properties']);
-        $this->assertArrayHasKey('mimeType', $inlineSchema['properties']);
-        $this->assertArrayHasKey('base64Data', $inlineSchema['properties']);
-        $this->assertEquals(['fileType', 'mimeType', 'base64Data'], $inlineSchema['required']);
+        $this->assertArrayHasKey(File::KEY_FILE_TYPE, $inlineSchema['properties']);
+        $this->assertArrayHasKey(File::KEY_MIME_TYPE, $inlineSchema['properties']);
+        $this->assertArrayHasKey(File::KEY_BASE64_DATA, $inlineSchema['properties']);
+        $this->assertEquals([File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_BASE64_DATA], $inlineSchema['required']);
     }
 
     /**
@@ -266,5 +266,129 @@ class FileTest extends TestCase
         $this->expectExceptionMessage('Unable to determine MIME type. Please provide it explicitly.');
         
         new File('https://example.com/file.unknown');
+    }
+
+    /**
+     * Tests array transformation for remote file.
+     *
+     * @return void
+     */
+    public function testToArrayRemoteFile(): void
+    {
+        $file = new File('https://example.com/image.jpg', 'image/jpeg');
+        $json = $file->toArray();
+        
+        $this->assertIsArray($json);
+        $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value, $json[File::KEY_FILE_TYPE]);
+        $this->assertEquals('image/jpeg', $json[File::KEY_MIME_TYPE]);
+        $this->assertEquals('https://example.com/image.jpg', $json[File::KEY_URL]);
+        $this->assertArrayNotHasKey(File::KEY_BASE64_DATA, $json);
+    }
+
+    /**
+     * Tests array transformation for inline file.
+     *
+     * @return void
+     */
+    public function testToArrayInlineFile(): void
+    {
+        $base64Data = 'SGVsbG8gV29ybGQ=';
+        $dataUri = 'data:text/plain;base64,' . $base64Data;
+        $file = new File($dataUri);
+        $json = $file->toArray();
+        
+        $this->assertIsArray($json);
+        $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::inline()->value, $json[File::KEY_FILE_TYPE]);
+        $this->assertEquals('text/plain', $json[File::KEY_MIME_TYPE]);
+        $this->assertEquals($base64Data, $json[File::KEY_BASE64_DATA]);
+        $this->assertArrayNotHasKey(File::KEY_URL, $json);
+    }
+
+    /**
+     * Tests fromJson for remote file.
+     *
+     * @return void
+     */
+    public function testFromArrayRemoteFile(): void
+    {
+        $json = [
+            File::KEY_FILE_TYPE => \WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value,
+            File::KEY_MIME_TYPE => 'image/png',
+            File::KEY_URL => 'https://example.com/test.png'
+        ];
+        
+        $file = File::fromArray($json);
+        
+        $this->assertInstanceOf(File::class, $file);
+        $this->assertTrue($file->getFileType()->isRemote());
+        $this->assertEquals('image/png', $file->getMimeType());
+        $this->assertEquals('https://example.com/test.png', $file->getUrl());
+        $this->assertNull($file->getBase64Data());
+    }
+
+    /**
+     * Tests fromJson for inline file.
+     *
+     * @return void
+     */
+    public function testFromArrayInlineFile(): void
+    {
+        $base64Data = 'SGVsbG8gV29ybGQ=';
+        $json = [
+            File::KEY_FILE_TYPE => \WordPress\AiClient\Files\Enums\FileTypeEnum::inline()->value,
+            File::KEY_MIME_TYPE => 'text/plain',
+            File::KEY_BASE64_DATA => $base64Data
+        ];
+        
+        $file = File::fromArray($json);
+        
+        $this->assertInstanceOf(File::class, $file);
+        $this->assertTrue($file->getFileType()->isInline());
+        $this->assertEquals('text/plain', $file->getMimeType());
+        $this->assertEquals($base64Data, $file->getBase64Data());
+        $this->assertNull($file->getUrl());
+    }
+
+    /**
+     * Tests round-trip array transformation.
+     *
+     * @return void
+     */
+    public function testArrayRoundTrip(): void
+    {
+        // Test remote file
+        $remoteFile = new File('https://example.com/doc.pdf', 'application/pdf');
+        $remoteJson = $remoteFile->toArray();
+        $restoredRemote = File::fromArray($remoteJson);
+        
+        $this->assertEquals($remoteFile->getFileType()->value, $restoredRemote->getFileType()->value);
+        $this->assertEquals($remoteFile->getMimeType(), $restoredRemote->getMimeType());
+        $this->assertEquals($remoteFile->getUrl(), $restoredRemote->getUrl());
+        
+        // Test inline file
+        $dataUri = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        $inlineFile = new File($dataUri);
+        $inlineJson = $inlineFile->toArray();
+        $restoredInline = File::fromArray($inlineJson);
+        
+        $this->assertEquals($inlineFile->getFileType()->value, $restoredInline->getFileType()->value);
+        $this->assertEquals($inlineFile->getMimeType(), $restoredInline->getMimeType());
+        $this->assertEquals($inlineFile->getBase64Data(), $restoredInline->getBase64Data());
+    }
+
+    /**
+     * Tests File implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $file = new File('https://example.com/test.jpg');
+        
+        $this->assertInstanceOf(
+            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            $file
+        );
+        
     }
 }

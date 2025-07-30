@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use InvalidArgumentException;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
 
 /**
@@ -14,9 +15,23 @@ use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
  * such as calling functions or performing web searches.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type FunctionDeclarationArrayShape from FunctionDeclaration
+ * @phpstan-import-type WebSearchArrayShape from WebSearch
+ *
+ * @phpstan-type ToolArrayShape array{
+ *     type: string,
+ *     functionDeclarations?: array<FunctionDeclarationArrayShape>,
+ *     webSearch?: WebSearchArrayShape
+ * }
+ *
+ * @extends AbstractDataValueObject<ToolArrayShape>
  */
-class Tool implements WithJsonSchemaInterface
+class Tool extends AbstractDataValueObject
 {
+    public const KEY_TYPE = 'type';
+    public const KEY_FUNCTION_DECLARATIONS = 'functionDeclarations';
+    public const KEY_WEB_SEARCH = 'webSearch';
     /**
      * @var ToolTypeEnum The type of tool.
      */
@@ -54,7 +69,6 @@ class Tool implements WithJsonSchemaInterface
             );
         }
     }
-
 
     /**
      * Gets the tool type.
@@ -104,32 +118,76 @@ class Tool implements WithJsonSchemaInterface
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => ToolTypeEnum::functionDeclarations()->value,
                             'description' => 'The type of tool.',
                         ],
-                        'functionDeclarations' => [
+                        self::KEY_FUNCTION_DECLARATIONS => [
                             'type' => 'array',
                             'items' => FunctionDeclaration::getJsonSchema(),
                             'description' => 'Function declarations.',
                         ],
                     ],
-                    'required' => ['type', 'functionDeclarations'],
+                    'required' => [self::KEY_TYPE, self::KEY_FUNCTION_DECLARATIONS],
                 ],
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => ToolTypeEnum::webSearch()->value,
                             'description' => 'The type of tool.',
                         ],
-                        'webSearch' => WebSearch::getJsonSchema(),
+                        self::KEY_WEB_SEARCH => WebSearch::getJsonSchema(),
                     ],
-                    'required' => ['type', 'webSearch'],
+                    'required' => [self::KEY_TYPE, self::KEY_WEB_SEARCH],
                 ],
             ],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return ToolArrayShape
+     */
+    public function toArray(): array
+    {
+        $data = [self::KEY_TYPE => $this->type->value];
+
+        if ($this->type->isFunctionDeclarations() && $this->functionDeclarations !== null) {
+            $data[self::KEY_FUNCTION_DECLARATIONS] = array_map(function (FunctionDeclaration $declaration) {
+                return $declaration->toArray();
+            }, $this->functionDeclarations);
+        } elseif ($this->type->isWebSearch() && $this->webSearch !== null) {
+            $data[self::KEY_WEB_SEARCH] = $this->webSearch->toArray();
+        }
+
+        return $data;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromArray(array $array): self
+    {
+        // Check which properties are set to determine how to construct the Tool
+        if (isset($array[self::KEY_FUNCTION_DECLARATIONS])) {
+            $declarations = array_map(function (array $declarationData) {
+                return FunctionDeclaration::fromArray($declarationData);
+            }, $array[self::KEY_FUNCTION_DECLARATIONS]);
+            return new self($declarations);
+        } elseif (isset($array[self::KEY_WEB_SEARCH])) {
+            return new self(WebSearch::fromArray($array[self::KEY_WEB_SEARCH]));
+        } else {
+            throw new InvalidArgumentException(
+                'Tool requires either functionDeclarations or webSearch.'
+            );
+        }
     }
 }

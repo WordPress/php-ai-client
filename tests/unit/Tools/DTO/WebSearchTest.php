@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
 /**
@@ -12,6 +13,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  */
 class WebSearchTest extends TestCase
 {
+    use ArrayTransformationTestTrait;
     /**
      * Tests creating WebSearch with both allowed and disallowed domains.
      *
@@ -126,18 +128,18 @@ class WebSearchTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('allowedDomains', $schema['properties']);
-        $this->assertArrayHasKey('disallowedDomains', $schema['properties']);
+        $this->assertArrayHasKey(WebSearch::KEY_ALLOWED_DOMAINS, $schema['properties']);
+        $this->assertArrayHasKey(WebSearch::KEY_DISALLOWED_DOMAINS, $schema['properties']);
         
         // Check allowedDomains property
-        $allowedSchema = $schema['properties']['allowedDomains'];
+        $allowedSchema = $schema['properties'][WebSearch::KEY_ALLOWED_DOMAINS];
         $this->assertEquals('array', $allowedSchema['type']);
         $this->assertArrayHasKey('items', $allowedSchema);
         $this->assertEquals('string', $allowedSchema['items']['type']);
         $this->assertArrayHasKey('description', $allowedSchema);
         
         // Check disallowedDomains property
-        $disallowedSchema = $schema['properties']['disallowedDomains'];
+        $disallowedSchema = $schema['properties'][WebSearch::KEY_DISALLOWED_DOMAINS];
         $this->assertEquals('array', $disallowedSchema['type']);
         $this->assertArrayHasKey('items', $disallowedSchema);
         $this->assertEquals('string', $disallowedSchema['items']['type']);
@@ -290,5 +292,159 @@ class WebSearchTest extends TestCase
         $this->assertCount(6, $webSearch->getDisallowedDomains());
         $this->assertContains('stackoverflow.com', $webSearch->getAllowedDomains());
         $this->assertContains('youtube.com', $webSearch->getDisallowedDomains());
+    }
+
+    /**
+     * Tests array transformation with both domain lists.
+     *
+     * @return void
+     */
+    public function testToArrayWithBothDomainLists(): void
+    {
+        $webSearch = new WebSearch(
+            ['example.com', 'docs.example.com'],
+            ['spam.com', 'malware.com']
+        );
+        
+        $json = $this->assertToArrayReturnsArray($webSearch);
+        
+        $this->assertArrayHasKeys($json, [WebSearch::KEY_ALLOWED_DOMAINS, WebSearch::KEY_DISALLOWED_DOMAINS]);
+        $this->assertEquals(['example.com', 'docs.example.com'], $json[WebSearch::KEY_ALLOWED_DOMAINS]);
+        $this->assertEquals(['spam.com', 'malware.com'], $json[WebSearch::KEY_DISALLOWED_DOMAINS]);
+    }
+
+    /**
+     * Tests array transformation with empty domain lists.
+     *
+     * @return void
+     */
+    public function testToArrayWithEmptyDomainLists(): void
+    {
+        $webSearch = new WebSearch();
+        
+        $json = $this->assertToArrayReturnsArray($webSearch);
+        
+        $this->assertArrayHasKeys($json, [WebSearch::KEY_ALLOWED_DOMAINS, WebSearch::KEY_DISALLOWED_DOMAINS]);
+        $this->assertEquals([], $json[WebSearch::KEY_ALLOWED_DOMAINS]);
+        $this->assertEquals([], $json[WebSearch::KEY_DISALLOWED_DOMAINS]);
+    }
+
+    /**
+     * Tests array transformation with only allowed domains.
+     *
+     * @return void
+     */
+    public function testToArrayWithOnlyAllowedDomains(): void
+    {
+        $webSearch = new WebSearch(['trusted1.com', 'trusted2.com']);
+        
+        $json = $this->assertToArrayReturnsArray($webSearch);
+        
+        $this->assertArrayHasKeys($json, [WebSearch::KEY_ALLOWED_DOMAINS, WebSearch::KEY_DISALLOWED_DOMAINS]);
+        $this->assertEquals(['trusted1.com', 'trusted2.com'], $json[WebSearch::KEY_ALLOWED_DOMAINS]);
+        $this->assertEquals([], $json[WebSearch::KEY_DISALLOWED_DOMAINS]);
+    }
+
+    /**
+     * Tests fromJson method with both domain lists.
+     *
+     * @return void
+     */
+    public function testFromArrayWithBothDomainLists(): void
+    {
+        $json = [
+            WebSearch::KEY_ALLOWED_DOMAINS => ['api.example.com', 'docs.example.com'],
+            WebSearch::KEY_DISALLOWED_DOMAINS => ['ads.example.com', 'tracking.example.com']
+        ];
+        
+        $webSearch = WebSearch::fromArray($json);
+        
+        $this->assertInstanceOf(WebSearch::class, $webSearch);
+        $this->assertEquals(['api.example.com', 'docs.example.com'], $webSearch->getAllowedDomains());
+        $this->assertEquals(['ads.example.com', 'tracking.example.com'], $webSearch->getDisallowedDomains());
+    }
+
+    /**
+     * Tests fromJson method with empty arrays.
+     *
+     * @return void
+     */
+    public function testFromArrayWithEmptyArrays(): void
+    {
+        $json = [
+            WebSearch::KEY_ALLOWED_DOMAINS => [],
+            WebSearch::KEY_DISALLOWED_DOMAINS => []
+        ];
+        
+        $webSearch = WebSearch::fromArray($json);
+        
+        $this->assertInstanceOf(WebSearch::class, $webSearch);
+        $this->assertEquals([], $webSearch->getAllowedDomains());
+        $this->assertEquals([], $webSearch->getDisallowedDomains());
+    }
+
+    /**
+     * Tests fromJson method with missing fields uses defaults.
+     *
+     * @return void
+     */
+    public function testFromArrayWithMissingFieldsUsesDefaults(): void
+    {
+        $json = [];
+        
+        $webSearch = WebSearch::fromArray($json);
+        
+        $this->assertInstanceOf(WebSearch::class, $webSearch);
+        $this->assertEquals([], $webSearch->getAllowedDomains());
+        $this->assertEquals([], $webSearch->getDisallowedDomains());
+    }
+
+    /**
+     * Tests round-trip array transformation.
+     *
+     * @return void
+     */
+    public function testArrayRoundTrip(): void
+    {
+        $this->assertArrayRoundTrip(
+            new WebSearch(
+                ['wikipedia.org', 'arxiv.org', 'pubmed.gov'],
+                ['facebook.com', 'twitter.com', 'instagram.com']
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getAllowedDomains(), $restored->getAllowedDomains());
+                $this->assertEquals($original->getDisallowedDomains(), $restored->getDisallowedDomains());
+            }
+        );
+    }
+
+    /**
+     * Tests round-trip with special characters in domains.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripWithSpecialCharacters(): void
+    {
+        $this->assertArrayRoundTrip(
+            new WebSearch(
+                ['example-with-dash.com', 'sub.domain.example.com', '192.168.1.1'],
+                ['bad_underscore.com', 'another-dash.org']
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getAllowedDomains(), $restored->getAllowedDomains());
+                $this->assertEquals($original->getDisallowedDomains(), $restored->getDisallowedDomains());
+            }
+        );
+    }
+
+    /**
+     * Tests WebSearch implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $webSearch = new WebSearch();
+        $this->assertImplementsArrayTransformation($webSearch);
     }
 }

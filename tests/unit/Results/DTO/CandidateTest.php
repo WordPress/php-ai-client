@@ -10,9 +10,11 @@ use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
+use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 
 /**
@@ -20,6 +22,7 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
  */
 class CandidateTest extends TestCase
 {
+    use ArrayTransformationTestTrait;
     /**
      * Tests creating candidate with basic properties.
      *
@@ -227,12 +230,12 @@ class CandidateTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('message', $schema['properties']);
-        $this->assertArrayHasKey('finishReason', $schema['properties']);
-        $this->assertArrayHasKey('tokenCount', $schema['properties']);
+        $this->assertArrayHasKey(Candidate::KEY_MESSAGE, $schema['properties']);
+        $this->assertArrayHasKey(Candidate::KEY_FINISH_REASON, $schema['properties']);
+        $this->assertArrayHasKey(Candidate::KEY_TOKEN_COUNT, $schema['properties']);
         
         // Check finishReason property
-        $finishReasonSchema = $schema['properties']['finishReason'];
+        $finishReasonSchema = $schema['properties'][Candidate::KEY_FINISH_REASON];
         $this->assertEquals('string', $finishReasonSchema['type']);
         $this->assertArrayHasKey('enum', $finishReasonSchema);
         $this->assertContains('stop', $finishReasonSchema['enum']);
@@ -242,12 +245,12 @@ class CandidateTest extends TestCase
         $this->assertContains('error', $finishReasonSchema['enum']);
         
         // Check tokenCount property
-        $tokenCountSchema = $schema['properties']['tokenCount'];
+        $tokenCountSchema = $schema['properties'][Candidate::KEY_TOKEN_COUNT];
         $this->assertEquals('integer', $tokenCountSchema['type']);
         
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['message', 'finishReason', 'tokenCount'], $schema['required']);
+        $this->assertEquals([Candidate::KEY_MESSAGE, Candidate::KEY_FINISH_REASON, Candidate::KEY_TOKEN_COUNT], $schema['required']);
     }
 
     /**
@@ -328,5 +331,110 @@ class CandidateTest extends TestCase
         );
         
         $this->assertTrue($candidate->getFinishReason()->isError());
+    }
+
+    /**
+     * Tests array transformation.
+     *
+     * @return void
+     */
+    public function testToArray(): void
+    {
+        $message = new ModelMessage([
+            new MessagePart('This is the AI response.'),
+            new MessagePart('It contains multiple parts.')
+        ]);
+        
+        $candidate = new Candidate(
+            $message,
+            FinishReasonEnum::stop(),
+            45
+        );
+        
+        $json = $this->assertToArrayReturnsArray($candidate);
+        
+        $this->assertArrayHasKeys($json, [Candidate::KEY_MESSAGE, Candidate::KEY_FINISH_REASON, Candidate::KEY_TOKEN_COUNT]);
+        $this->assertIsArray($json[Candidate::KEY_MESSAGE]);
+        $this->assertEquals(FinishReasonEnum::stop()->value, $json[Candidate::KEY_FINISH_REASON]);
+        $this->assertEquals(45, $json[Candidate::KEY_TOKEN_COUNT]);
+    }
+
+    /**
+     * Tests fromJson method.
+     *
+     * @return void
+     */
+    public function testFromArray(): void
+    {
+        $json = [
+            Candidate::KEY_MESSAGE => [
+                Message::KEY_ROLE => MessageRoleEnum::model()->value,
+                Message::KEY_PARTS => [
+                    [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Response text 1'],
+                    [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Response text 2']
+                ]
+            ],
+            Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
+            Candidate::KEY_TOKEN_COUNT => 75
+        ];
+        
+        $candidate = Candidate::fromArray($json);
+        
+        $this->assertInstanceOf(Candidate::class, $candidate);
+        $this->assertEquals(FinishReasonEnum::stop(), $candidate->getFinishReason());
+        $this->assertEquals(75, $candidate->getTokenCount());
+        $this->assertCount(2, $candidate->getMessage()->getParts());
+        $this->assertEquals('Response text 1', $candidate->getMessage()->getParts()[0]->getText());
+        $this->assertEquals('Response text 2', $candidate->getMessage()->getParts()[1]->getText());
+    }
+
+    /**
+     * Tests round-trip array transformation.
+     *
+     * @return void
+     */
+    public function testArrayRoundTrip(): void
+    {
+        $this->assertArrayRoundTrip(
+            new Candidate(
+                new ModelMessage([
+                    new MessagePart('Generated response'),
+                    new MessagePart(new FunctionCall('call_123', 'search', ['q' => 'test']))
+                ]),
+                FinishReasonEnum::toolCalls(),
+                120
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getFinishReason()->value, $restored->getFinishReason()->value);
+                $this->assertEquals($original->getTokenCount(), $restored->getTokenCount());
+                $this->assertCount(
+                    count($original->getMessage()->getParts()),
+                    $restored->getMessage()->getParts()
+                );
+                $this->assertEquals(
+                    $original->getMessage()->getParts()[0]->getText(),
+                    $restored->getMessage()->getParts()[0]->getText()
+                );
+                $this->assertEquals(
+                    $original->getMessage()->getParts()[1]->getFunctionCall()->getId(),
+                    $restored->getMessage()->getParts()[1]->getFunctionCall()->getId()
+                );
+            }
+        );
+    }
+
+    /**
+     * Tests Candidate implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $candidate = new Candidate(
+            new ModelMessage([new MessagePart('test')]),
+            FinishReasonEnum::stop(),
+            10
+        );
+        $this->assertImplementsArrayTransformation($candidate);
     }
 }

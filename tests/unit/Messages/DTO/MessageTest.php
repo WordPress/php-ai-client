@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -140,11 +141,11 @@ class MessageTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('role', $schema['properties']);
-        $this->assertArrayHasKey('parts', $schema['properties']);
+        $this->assertArrayHasKey(Message::KEY_ROLE, $schema['properties']);
+        $this->assertArrayHasKey(Message::KEY_PARTS, $schema['properties']);
         
         // Check role property
-        $roleSchema = $schema['properties']['role'];
+        $roleSchema = $schema['properties'][Message::KEY_ROLE];
         $this->assertEquals('string', $roleSchema['type']);
         $this->assertArrayHasKey('enum', $roleSchema);
         $this->assertContains('system', $roleSchema['enum']);
@@ -152,14 +153,14 @@ class MessageTest extends TestCase
         $this->assertContains('model', $roleSchema['enum']);
         
         // Check parts property
-        $partsSchema = $schema['properties']['parts'];
+        $partsSchema = $schema['properties'][Message::KEY_PARTS];
         $this->assertEquals('array', $partsSchema['type']);
         $this->assertArrayHasKey('items', $partsSchema);
         $this->assertIsArray($partsSchema['items']);
         
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['role', 'parts'], $schema['required']);
+        $this->assertEquals([Message::KEY_ROLE, Message::KEY_PARTS], $schema['required']);
     }
 
     /**
@@ -226,5 +227,93 @@ class MessageTest extends TestCase
         
         $this->assertTrue($message->getRole()->isModel());
         $this->assertNotNull($message->getParts()[0]->getFunctionResponse());
+    }
+
+    /**
+     * Tests array transformation.
+     *
+     * @return void
+     */
+    public function testToArray(): void
+    {
+        $role = MessageRoleEnum::user();
+        $parts = [
+            new MessagePart('Hello, world!'),
+            new MessagePart('How are you?')
+        ];
+        $message = new Message($role, $parts);
+        $json = $message->toArray();
+        
+        $this->assertIsArray($json);
+        $this->assertEquals($role->value, $json[Message::KEY_ROLE]);
+        $this->assertIsArray($json[Message::KEY_PARTS]);
+        $this->assertCount(2, $json[Message::KEY_PARTS]);
+        $this->assertEquals('Hello, world!', $json[Message::KEY_PARTS][0][MessagePart::KEY_TEXT]);
+        $this->assertEquals('How are you?', $json[Message::KEY_PARTS][1][MessagePart::KEY_TEXT]);
+    }
+
+    /**
+     * Tests fromJson method.
+     *
+     * @return void
+     */
+    public function testFromArray(): void
+    {
+        $json = [
+            Message::KEY_ROLE => MessageRoleEnum::system()->value,
+            Message::KEY_PARTS => [
+                [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'You are a helpful assistant.']
+            ]
+        ];
+        
+        $message = Message::fromArray($json);
+        
+        $this->assertInstanceOf(Message::class, $message);
+        $this->assertEquals(MessageRoleEnum::system(), $message->getRole());
+        $this->assertCount(1, $message->getParts());
+        $this->assertEquals('You are a helpful assistant.', $message->getParts()[0]->getText());
+    }
+
+    /**
+     * Tests round-trip array transformation.
+     *
+     * @return void
+     */
+    public function testArrayRoundTrip(): void
+    {
+        $original = new Message(
+            MessageRoleEnum::model(),
+            [
+                new MessagePart('Here is the result:'),
+                new MessagePart(new File('https://example.com/result.png', 'image/png'))
+            ]
+        );
+        
+        $json = $original->toArray();
+        $restored = Message::fromArray($json);
+        
+        $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
+        $this->assertCount(count($original->getParts()), $restored->getParts());
+        $this->assertEquals($original->getParts()[0]->getText(), $restored->getParts()[0]->getText());
+        $this->assertEquals(
+            $original->getParts()[1]->getFile()->getUrl(),
+            $restored->getParts()[1]->getFile()->getUrl()
+        );
+    }
+
+    /**
+     * Tests Message implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $message = new Message(MessageRoleEnum::user(), [new MessagePart('test')]);
+        
+        $this->assertInstanceOf(
+            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            $message
+        );
+        
     }
 }

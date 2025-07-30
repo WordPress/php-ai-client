@@ -11,16 +11,19 @@ use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 
 /**
  * @covers \WordPress\AiClient\Operations\DTO\GenerativeAiOperation
  */
 class GenerativeAiOperationTest extends TestCase
 {
+    use ArrayTransformationTestTrait;
     /**
      * Tests creating operation in starting state.
      *
@@ -232,18 +235,18 @@ class GenerativeAiOperationTest extends TestCase
         $succeededSchema = $schema['oneOf'][0];
         $this->assertEquals('object', $succeededSchema['type']);
         $this->assertArrayHasKey('properties', $succeededSchema);
-        $this->assertArrayHasKey('id', $succeededSchema['properties']);
-        $this->assertArrayHasKey('state', $succeededSchema['properties']);
-        $this->assertArrayHasKey('result', $succeededSchema['properties']);
+        $this->assertArrayHasKey(GenerativeAiOperation::KEY_ID, $succeededSchema['properties']);
+        $this->assertArrayHasKey(GenerativeAiOperation::KEY_STATE, $succeededSchema['properties']);
+        $this->assertArrayHasKey(GenerativeAiOperation::KEY_RESULT, $succeededSchema['properties']);
         
         // State should be const for succeeded
         $this->assertEquals(
             OperationStateEnum::succeeded()->value,
-            $succeededSchema['properties']['state']['const']
+            $succeededSchema['properties'][GenerativeAiOperation::KEY_STATE]['const']
         );
         
         // Required fields
-        $this->assertEquals(['id', 'state', 'result'], $succeededSchema['required']);
+        $this->assertEquals([GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE, GenerativeAiOperation::KEY_RESULT], $succeededSchema['required']);
     }
 
     /**
@@ -259,19 +262,19 @@ class GenerativeAiOperationTest extends TestCase
         $otherStatesSchema = $schema['oneOf'][1];
         $this->assertEquals('object', $otherStatesSchema['type']);
         $this->assertArrayHasKey('properties', $otherStatesSchema);
-        $this->assertArrayHasKey('id', $otherStatesSchema['properties']);
-        $this->assertArrayHasKey('state', $otherStatesSchema['properties']);
-        $this->assertArrayNotHasKey('result', $otherStatesSchema['properties']);
+        $this->assertArrayHasKey(GenerativeAiOperation::KEY_ID, $otherStatesSchema['properties']);
+        $this->assertArrayHasKey(GenerativeAiOperation::KEY_STATE, $otherStatesSchema['properties']);
+        $this->assertArrayNotHasKey(GenerativeAiOperation::KEY_RESULT, $otherStatesSchema['properties']);
         
         // State should be enum for other states
-        $stateEnum = $otherStatesSchema['properties']['state']['enum'];
+        $stateEnum = $otherStatesSchema['properties'][GenerativeAiOperation::KEY_STATE]['enum'];
         $this->assertContains(OperationStateEnum::starting()->value, $stateEnum);
         $this->assertContains(OperationStateEnum::processing()->value, $stateEnum);
         $this->assertContains(OperationStateEnum::failed()->value, $stateEnum);
         $this->assertContains(OperationStateEnum::canceled()->value, $stateEnum);
         
         // Required fields
-        $this->assertEquals(['id', 'state'], $otherStatesSchema['required']);
+        $this->assertEquals([GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE], $otherStatesSchema['required']);
     }
 
     /**
@@ -287,5 +290,192 @@ class GenerativeAiOperationTest extends TestCase
         );
         
         $this->assertEquals('', $operation->getId());
+    }
+
+    /**
+     * Tests array transformation for operation in starting state.
+     *
+     * @return void
+     */
+    public function testToArrayStartingState(): void
+    {
+        $operation = new GenerativeAiOperation(
+            'op_start_123',
+            OperationStateEnum::starting()
+        );
+        
+        $json = $this->assertToArrayReturnsArray($operation);
+        
+        $this->assertArrayHasKeys($json, [GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE]);
+        $this->assertArrayNotHasKeys($json, [GenerativeAiOperation::KEY_RESULT]);
+        $this->assertEquals('op_start_123', $json[GenerativeAiOperation::KEY_ID]);
+        $this->assertEquals(OperationStateEnum::starting()->value, $json[GenerativeAiOperation::KEY_STATE]);
+    }
+
+    /**
+     * Tests array transformation for operation in succeeded state.
+     *
+     * @return void
+     */
+    public function testToArraySucceededState(): void
+    {
+        $modelMessage = new ModelMessage([
+            new MessagePart('Success response')
+        ]);
+        $candidate = new Candidate(
+            $modelMessage,
+            FinishReasonEnum::stop(),
+            50
+        );
+        $tokenUsage = new TokenUsage(15, 50, 65);
+        $result = new GenerativeAiResult(
+            'result_success',
+            [$candidate],
+            $tokenUsage
+        );
+        
+        $operation = new GenerativeAiOperation(
+            'op_success_456',
+            OperationStateEnum::succeeded(),
+            $result
+        );
+        
+        $json = $this->assertToArrayReturnsArray($operation);
+        
+        $this->assertArrayHasKeys($json, [GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE, GenerativeAiOperation::KEY_RESULT]);
+        $this->assertEquals('op_success_456', $json[GenerativeAiOperation::KEY_ID]);
+        $this->assertEquals(OperationStateEnum::succeeded()->value, $json[GenerativeAiOperation::KEY_STATE]);
+        $this->assertIsArray($json[GenerativeAiOperation::KEY_RESULT]);
+        $this->assertEquals('result_success', $json[GenerativeAiOperation::KEY_RESULT][GenerativeAiResult::KEY_ID]);
+    }
+
+    /**
+     * Tests fromJson method for starting state.
+     *
+     * @return void
+     */
+    public function testFromArrayStartingState(): void
+    {
+        $json = [
+            GenerativeAiOperation::KEY_ID => 'op_from_json_start',
+            GenerativeAiOperation::KEY_STATE => OperationStateEnum::starting()->value
+        ];
+        
+        $operation = GenerativeAiOperation::fromArray($json);
+        
+        $this->assertInstanceOf(GenerativeAiOperation::class, $operation);
+        $this->assertEquals('op_from_json_start', $operation->getId());
+        $this->assertEquals(OperationStateEnum::starting(), $operation->getState());
+        $this->assertNull($operation->getResult());
+    }
+
+    /**
+     * Tests fromJson method for succeeded state with result.
+     *
+     * @return void
+     */
+    public function testFromArraySucceededState(): void
+    {
+        $json = [
+            GenerativeAiOperation::KEY_ID => 'op_from_json_success',
+            GenerativeAiOperation::KEY_STATE => OperationStateEnum::succeeded()->value,
+            GenerativeAiOperation::KEY_RESULT => [
+                GenerativeAiResult::KEY_ID => 'result_from_json',
+                GenerativeAiResult::KEY_CANDIDATES => [
+                    [
+                        Candidate::KEY_MESSAGE => [
+                            Message::KEY_ROLE => MessageRoleEnum::model()->value,
+                            Message::KEY_PARTS => [[MessagePart::KEY_TYPE => 'text', MessagePart::KEY_TEXT => 'Response text']]
+                        ],
+                        Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
+                        Candidate::KEY_TOKEN_COUNT => 30
+                    ]
+                ],
+                GenerativeAiResult::KEY_TOKEN_USAGE => [
+                    TokenUsage::KEY_PROMPT_TOKENS => 10,
+                    TokenUsage::KEY_COMPLETION_TOKENS => 30,
+                    TokenUsage::KEY_TOTAL_TOKENS => 40
+                ]
+            ]
+        ];
+        
+        $operation = GenerativeAiOperation::fromArray($json);
+        
+        $this->assertInstanceOf(GenerativeAiOperation::class, $operation);
+        $this->assertEquals('op_from_json_success', $operation->getId());
+        $this->assertEquals(OperationStateEnum::succeeded(), $operation->getState());
+        $this->assertNotNull($operation->getResult());
+        $this->assertEquals('result_from_json', $operation->getResult()->getId());
+    }
+
+    /**
+     * Tests round-trip array transformation for processing state.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripProcessingState(): void
+    {
+        $this->assertArrayRoundTrip(
+            new GenerativeAiOperation(
+                'op_roundtrip_process',
+                OperationStateEnum::processing()
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getId(), $restored->getId());
+                $this->assertEquals($original->getState()->value, $restored->getState()->value);
+                $this->assertNull($restored->getResult());
+            }
+        );
+    }
+
+    /**
+     * Tests round-trip array transformation for succeeded state.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripSucceededState(): void
+    {
+        $modelMessage = new ModelMessage([
+            new MessagePart('Roundtrip test response')
+        ]);
+        $candidate = new Candidate(
+            $modelMessage,
+            FinishReasonEnum::stop(),
+            25
+        );
+        $tokenUsage = new TokenUsage(5, 25, 30);
+        $result = new GenerativeAiResult(
+            'result_roundtrip',
+            [$candidate],
+            $tokenUsage
+        );
+        
+        $this->assertArrayRoundTrip(
+            new GenerativeAiOperation(
+                'op_roundtrip_success',
+                OperationStateEnum::succeeded(),
+                $result
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getId(), $restored->getId());
+                $this->assertEquals($original->getState()->value, $restored->getState()->value);
+                $this->assertNotNull($restored->getResult());
+                $this->assertEquals($original->getResult()->getId(), $restored->getResult()->getId());
+            }
+        );
+    }
+
+    /**
+     * Tests GenerativeAiOperation implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $operation = new GenerativeAiOperation(
+            'op_test',
+            OperationStateEnum::starting()
+        );
+        $this->assertImplementsArrayTransformation($operation);
     }
 }

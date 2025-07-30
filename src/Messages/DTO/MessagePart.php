@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use InvalidArgumentException;
+use RuntimeException;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -17,9 +19,28 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * function calls, etc. This DTO encapsulates one such part.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type FileArrayShape from File
+ * @phpstan-import-type FunctionCallArrayShape from FunctionCall
+ * @phpstan-import-type FunctionResponseArrayShape from FunctionResponse
+ *
+ * @phpstan-type MessagePartArrayShape array{
+ *     type: string,
+ *     text?: string,
+ *     file?: FileArrayShape,
+ *     functionCall?: FunctionCallArrayShape,
+ *     functionResponse?: FunctionResponseArrayShape
+ * }
+ *
+ * @extends AbstractDataValueObject<MessagePartArrayShape>
  */
-class MessagePart implements WithJsonSchemaInterface
+class MessagePart extends AbstractDataValueObject
 {
+    public const KEY_TYPE = 'type';
+    public const KEY_TEXT = 'text';
+    public const KEY_FILE = 'file';
+    public const KEY_FUNCTION_CALL = 'functionCall';
+    public const KEY_FUNCTION_RESPONSE = 'functionResponse';
     /**
      * @var MessagePartTypeEnum The type of this message part.
      */
@@ -51,7 +72,7 @@ class MessagePart implements WithJsonSchemaInterface
      * @since n.e.x.t
      *
      * @param mixed $content The content of this message part.
-     * @throws \InvalidArgumentException If an unsupported content type is provided.
+     * @throws InvalidArgumentException If an unsupported content type is provided.
      */
     public function __construct($content)
     {
@@ -69,7 +90,7 @@ class MessagePart implements WithJsonSchemaInterface
             $this->functionResponse = $content;
         } else {
             $type = is_object($content) ? get_class($content) : gettype($content);
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf(
                     'Unsupported content type %s. Expected string, File, '
                     . 'FunctionCall, or FunctionResponse.',
@@ -151,55 +172,107 @@ class MessagePart implements WithJsonSchemaInterface
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::text()->value,
                         ],
-                        'text' => [
+                        self::KEY_TEXT => [
                             'type' => 'string',
                             'description' => 'Text content.',
                         ],
                     ],
-                    'required' => ['type', 'text'],
+                    'required' => [self::KEY_TYPE, self::KEY_TEXT],
                     'additionalProperties' => false,
                 ],
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::file()->value,
                         ],
-                        'file' => File::getJsonSchema(),
+                        self::KEY_FILE => File::getJsonSchema(),
                     ],
-                    'required' => ['type', 'file'],
+                    'required' => [self::KEY_TYPE, self::KEY_FILE],
                     'additionalProperties' => false,
                 ],
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::functionCall()->value,
                         ],
-                        'functionCall' => FunctionCall::getJsonSchema(),
+                        self::KEY_FUNCTION_CALL => FunctionCall::getJsonSchema(),
                     ],
-                    'required' => ['type', 'functionCall'],
+                    'required' => [self::KEY_TYPE, self::KEY_FUNCTION_CALL],
                     'additionalProperties' => false,
                 ],
                 [
                     'type' => 'object',
                     'properties' => [
-                        'type' => [
+                        self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::functionResponse()->value,
                         ],
-                        'functionResponse' => FunctionResponse::getJsonSchema(),
+                        self::KEY_FUNCTION_RESPONSE => FunctionResponse::getJsonSchema(),
                     ],
-                    'required' => ['type', 'functionResponse'],
+                    'required' => [self::KEY_TYPE, self::KEY_FUNCTION_RESPONSE],
                     'additionalProperties' => false,
                 ],
             ],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return MessagePartArrayShape
+     */
+    public function toArray(): array
+    {
+        $data = [self::KEY_TYPE => $this->type->value];
+
+        if ($this->text !== null) {
+            $data[self::KEY_TEXT] = $this->text;
+        } elseif ($this->file !== null) {
+            $data[self::KEY_FILE] = $this->file->toArray();
+        } elseif ($this->functionCall !== null) {
+            $data[self::KEY_FUNCTION_CALL] = $this->functionCall->toArray();
+        } elseif ($this->functionResponse !== null) {
+            $data[self::KEY_FUNCTION_RESPONSE] = $this->functionResponse->toArray();
+        } else {
+            throw new RuntimeException(
+                'MessagePart requires one of: text, file, functionCall, or functionResponse. '
+                . 'This should not be a possible condition.'
+            );
+        }
+
+        return $data;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromArray(array $array): self
+    {
+        // Check which properties are set to determine how to construct the MessagePart
+        if (isset($array[self::KEY_TEXT])) {
+            return new self($array[self::KEY_TEXT]);
+        } elseif (isset($array[self::KEY_FILE])) {
+            return new self(File::fromArray($array[self::KEY_FILE]));
+        } elseif (isset($array[self::KEY_FUNCTION_CALL])) {
+            return new self(FunctionCall::fromArray($array[self::KEY_FUNCTION_CALL]));
+        } elseif (isset($array[self::KEY_FUNCTION_RESPONSE])) {
+            return new self(FunctionResponse::fromArray($array[self::KEY_FUNCTION_RESPONSE]));
+        } else {
+            throw new InvalidArgumentException(
+                'MessagePart requires one of: text, file, functionCall, or functionResponse.'
+            );
+        }
     }
 }

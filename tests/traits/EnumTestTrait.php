@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit;
+namespace WordPress\AiClient\Tests\traits;
 
 use WordPress\AiClient\Common\AbstractEnum;
 

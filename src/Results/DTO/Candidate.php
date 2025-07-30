@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
@@ -15,9 +15,18 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  * Each candidate contains a message and metadata about why generation stopped.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type MessageArrayShape from Message
+ *
+ * @phpstan-type CandidateArrayShape array{message: MessageArrayShape, finishReason: string, tokenCount: int}
+ *
+ * @extends AbstractDataValueObject<CandidateArrayShape>
  */
-class Candidate implements WithJsonSchemaInterface
+class Candidate extends AbstractDataValueObject
 {
+    public const KEY_MESSAGE = 'message';
+    public const KEY_FINISH_REASON = 'finishReason';
+    public const KEY_TOKEN_COUNT = 'tokenCount';
     /**
      * @var Message The generated message.
      */
@@ -101,18 +110,52 @@ class Candidate implements WithJsonSchemaInterface
         return [
             'type' => 'object',
             'properties' => [
-                'message' => Message::getJsonSchema(),
-                'finishReason' => [
+                self::KEY_MESSAGE => Message::getJsonSchema(),
+                self::KEY_FINISH_REASON => [
                     'type' => 'string',
                     'enum' => FinishReasonEnum::getValues(),
                     'description' => 'The reason generation stopped.',
                 ],
-                'tokenCount' => [
+                self::KEY_TOKEN_COUNT => [
                     'type' => 'integer',
                     'description' => 'The number of tokens in this candidate.',
                 ],
             ],
-            'required' => ['message', 'finishReason', 'tokenCount'],
+            'required' => [self::KEY_MESSAGE, self::KEY_FINISH_REASON, self::KEY_TOKEN_COUNT],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return CandidateArrayShape
+     */
+    public function toArray(): array
+    {
+        return [
+            self::KEY_MESSAGE => $this->message->toArray(),
+            self::KEY_FINISH_REASON => $this->finishReason->value,
+            self::KEY_TOKEN_COUNT => $this->tokenCount,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromArray(array $array): self
+    {
+        static::validateFromArrayData($array, [self::KEY_MESSAGE, self::KEY_FINISH_REASON, self::KEY_TOKEN_COUNT]);
+
+        $messageData = $array[self::KEY_MESSAGE];
+
+        return new self(
+            Message::fromArray($messageData),
+            FinishReasonEnum::from($array[self::KEY_FINISH_REASON]),
+            $array[self::KEY_TOKEN_COUNT]
+        );
     }
 }

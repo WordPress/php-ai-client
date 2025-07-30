@@ -6,7 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Providers\Models\Enums;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
-use WordPress\AiClient\Tests\unit\EnumTestTrait;
+use WordPress\AiClient\Tests\traits\EnumTestTrait;
 
 /**
  * @covers \WordPress\AiClient\Providers\Models\Enums\OptionEnum

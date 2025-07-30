@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use InvalidArgumentException;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
@@ -14,9 +15,20 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  * containing a role and one or more parts with different content types.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type MessagePartArrayShape from MessagePart
+ *
+ * @phpstan-type MessageArrayShape array{
+ *     role: string,
+ *     parts: array<MessagePartArrayShape>
+ * }
+ *
+ * @extends AbstractDataValueObject<MessageArrayShape>
  */
-class Message implements WithJsonSchemaInterface
+class Message extends AbstractDataValueObject
 {
+    public const KEY_ROLE = 'role';
+    public const KEY_PARTS = 'parts';
     /**
      * @var MessageRoleEnum The role of the message sender.
      */
@@ -75,19 +87,64 @@ class Message implements WithJsonSchemaInterface
         return [
             'type' => 'object',
             'properties' => [
-                'role' => [
+                self::KEY_ROLE => [
                     'type' => 'string',
                     'enum' => MessageRoleEnum::getValues(),
                     'description' => 'The role of the message sender.',
                 ],
-                'parts' => [
+                self::KEY_PARTS => [
                     'type' => 'array',
                     'items' => MessagePart::getJsonSchema(),
                     'minItems' => 1,
                     'description' => 'The parts that make up this message.',
                 ],
             ],
-            'required' => ['role', 'parts'],
+            'required' => [self::KEY_ROLE, self::KEY_PARTS],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return MessageArrayShape
+     */
+    public function toArray(): array
+    {
+        return [
+            self::KEY_ROLE => $this->role->value,
+            self::KEY_PARTS => array_map(function (MessagePart $part) {
+                return $part->toArray();
+            }, $this->parts),
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return self The specific message class based on the role.
+     */
+    final public static function fromArray(array $array): self
+    {
+        static::validateFromArrayData($array, [self::KEY_ROLE, self::KEY_PARTS]);
+
+        $role = MessageRoleEnum::from($array[self::KEY_ROLE]);
+        $partsData = $array[self::KEY_PARTS];
+        $parts = array_map(function (array $partData) {
+            return MessagePart::fromArray($partData);
+        }, $partsData);
+
+        // Determine which concrete class to instantiate based on role
+        if ($role->isUser()) {
+            return new UserMessage($parts);
+        } elseif ($role->isModel()) {
+            return new ModelMessage($parts);
+        } else {
+            // System is the only remaining option
+            return new SystemMessage($parts);
+        }
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
 /**
@@ -12,6 +13,7 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
  */
 class FunctionDeclarationTest extends TestCase
 {
+    use ArrayTransformationTestTrait;
     /**
      * Tests creating FunctionDeclaration with all properties.
      *
@@ -111,20 +113,20 @@ class FunctionDeclarationTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('name', $schema['properties']);
-        $this->assertArrayHasKey('description', $schema['properties']);
-        $this->assertArrayHasKey('parameters', $schema['properties']);
+        $this->assertArrayHasKey(FunctionDeclaration::KEY_NAME, $schema['properties']);
+        $this->assertArrayHasKey(FunctionDeclaration::KEY_DESCRIPTION, $schema['properties']);
+        $this->assertArrayHasKey(FunctionDeclaration::KEY_PARAMETERS, $schema['properties']);
         
         // Check name property
-        $this->assertEquals('string', $schema['properties']['name']['type']);
-        $this->assertArrayHasKey('description', $schema['properties']['name']);
+        $this->assertEquals('string', $schema['properties'][FunctionDeclaration::KEY_NAME]['type']);
+        $this->assertArrayHasKey('description', $schema['properties'][FunctionDeclaration::KEY_NAME]);
         
         // Check description property
-        $this->assertEquals('string', $schema['properties']['description']['type']);
-        $this->assertArrayHasKey('description', $schema['properties']['description']);
+        $this->assertEquals('string', $schema['properties'][FunctionDeclaration::KEY_DESCRIPTION]['type']);
+        $this->assertArrayHasKey('description', $schema['properties'][FunctionDeclaration::KEY_DESCRIPTION]);
         
         // Check parameters property allows multiple types
-        $paramTypes = $schema['properties']['parameters']['type'];
+        $paramTypes = $schema['properties'][FunctionDeclaration::KEY_PARAMETERS]['type'];
         $this->assertIsArray($paramTypes);
         $this->assertContains('string', $paramTypes);
         $this->assertContains('number', $paramTypes);
@@ -135,8 +137,8 @@ class FunctionDeclarationTest extends TestCase
         
         // Check required fields - parameters should NOT be required
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['name', 'description'], $schema['required']);
-        $this->assertNotContains('parameters', $schema['required']);
+        $this->assertEquals([FunctionDeclaration::KEY_NAME, FunctionDeclaration::KEY_DESCRIPTION], $schema['required']);
+        $this->assertNotContains(FunctionDeclaration::KEY_PARAMETERS, $schema['required']);
     }
 
     /**
@@ -184,5 +186,141 @@ class FunctionDeclarationTest extends TestCase
         );
         
         $this->assertEquals($parameters, $declaration->getParameters());
+    }
+
+    /**
+     * Tests array transformation with parameters.
+     *
+     * @return void
+     */
+    public function testToArrayWithParameters(): void
+    {
+        $declaration = new FunctionDeclaration(
+            'searchWeb',
+            'Searches the web for information',
+            ['type' => 'object', 'properties' => ['query' => ['type' => 'string']]]
+        );
+        
+        $json = $this->assertToArrayReturnsArray($declaration);
+        
+        $this->assertArrayHasKeys($json, [FunctionDeclaration::KEY_NAME, FunctionDeclaration::KEY_DESCRIPTION, FunctionDeclaration::KEY_PARAMETERS]);
+        $this->assertEquals('searchWeb', $json[FunctionDeclaration::KEY_NAME]);
+        $this->assertEquals('Searches the web for information', $json[FunctionDeclaration::KEY_DESCRIPTION]);
+        $this->assertEquals(['type' => 'object', 'properties' => ['query' => ['type' => 'string']]], $json[FunctionDeclaration::KEY_PARAMETERS]);
+    }
+
+    /**
+     * Tests array transformation without parameters.
+     *
+     * @return void
+     */
+    public function testToArrayWithoutParameters(): void
+    {
+        $declaration = new FunctionDeclaration(
+            'getTimestamp',
+            'Returns the current Unix timestamp'
+        );
+        
+        $json = $this->assertToArrayReturnsArray($declaration);
+        
+        $this->assertArrayHasKeys($json, [FunctionDeclaration::KEY_NAME, FunctionDeclaration::KEY_DESCRIPTION]);
+        $this->assertArrayNotHasKey(FunctionDeclaration::KEY_PARAMETERS, $json);
+        $this->assertEquals('getTimestamp', $json[FunctionDeclaration::KEY_NAME]);
+        $this->assertEquals('Returns the current Unix timestamp', $json[FunctionDeclaration::KEY_DESCRIPTION]);
+    }
+
+    /**
+     * Tests fromJson method with parameters.
+     *
+     * @return void
+     */
+    public function testFromArrayWithParameters(): void
+    {
+        $json = [
+            FunctionDeclaration::KEY_NAME => 'calculateArea',
+            FunctionDeclaration::KEY_DESCRIPTION => 'Calculates the area of a rectangle',
+            FunctionDeclaration::KEY_PARAMETERS => [
+                'type' => 'object',
+                'properties' => [
+                    'width' => ['type' => 'number'],
+                    'height' => ['type' => 'number']
+                ],
+                'required' => ['width', 'height']
+            ]
+        ];
+        
+        $declaration = FunctionDeclaration::fromArray($json);
+        
+        $this->assertInstanceOf(FunctionDeclaration::class, $declaration);
+        $this->assertEquals('calculateArea', $declaration->getName());
+        $this->assertEquals('Calculates the area of a rectangle', $declaration->getDescription());
+        $this->assertEquals($json[FunctionDeclaration::KEY_PARAMETERS], $declaration->getParameters());
+    }
+
+    /**
+     * Tests fromJson method without parameters.
+     *
+     * @return void
+     */
+    public function testFromArrayWithoutParameters(): void
+    {
+        $json = [
+            FunctionDeclaration::KEY_NAME => 'ping',
+            FunctionDeclaration::KEY_DESCRIPTION => 'Simple ping function'
+        ];
+        
+        $declaration = FunctionDeclaration::fromArray($json);
+        
+        $this->assertInstanceOf(FunctionDeclaration::class, $declaration);
+        $this->assertEquals('ping', $declaration->getName());
+        $this->assertEquals('Simple ping function', $declaration->getDescription());
+        $this->assertNull($declaration->getParameters());
+    }
+
+    /**
+     * Tests round-trip array transformation.
+     *
+     * @return void
+     */
+    public function testArrayRoundTrip(): void
+    {
+        $this->assertArrayRoundTrip(
+            new FunctionDeclaration(
+                'complexFunction',
+                'A complex function with nested parameters',
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'user' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'name' => ['type' => 'string'],
+                                'age' => ['type' => 'integer', 'minimum' => 0]
+                            ]
+                        ],
+                        'options' => [
+                            'type' => 'array',
+                            'items' => ['type' => 'string']
+                        ]
+                    ]
+                ]
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getName(), $restored->getName());
+                $this->assertEquals($original->getDescription(), $restored->getDescription());
+                $this->assertEquals($original->getParameters(), $restored->getParameters());
+            }
+        );
+    }
+
+    /**
+     * Tests FunctionDeclaration implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $declaration = new FunctionDeclaration('test', 'test function');
+        $this->assertImplementsArrayTransformation($declaration);
     }
 }

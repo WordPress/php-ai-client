@@ -5,15 +5,22 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Messages\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
+use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
+use WordPress\AiClient\Tools\DTO\FunctionCall;
+use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
  * @covers \WordPress\AiClient\Messages\DTO\ModelMessage
  */
 class ModelMessageTest extends TestCase
 {
+    use ArrayTransformationTestTrait;
+
     /**
      * Tests creating ModelMessage automatically sets MODEL role.
      *
@@ -83,9 +90,9 @@ class ModelMessageTest extends TestCase
      */
     public function testWithVariousContentTypes(): void
     {
-        $file = new \WordPress\AiClient\Files\DTO\File('https://example.com/image.jpg', 'image/jpeg');
-        $functionCall = new \WordPress\AiClient\Tools\DTO\FunctionCall('func_123', 'search', ['q' => 'test']);
-        $functionResponse = new \WordPress\AiClient\Tools\DTO\FunctionResponse('func_123', 'search', ['results' => []]);
+        $file = new File('https://example.com/image.jpg', 'image/jpeg');
+        $functionCall = new FunctionCall('func_123', 'search', ['q' => 'test']);
+        $functionResponse = new FunctionResponse('func_123', 'search', ['results' => []]);
         
         $parts = [
             new MessagePart('I found the following:'),
@@ -113,5 +120,92 @@ class ModelMessageTest extends TestCase
         $parentSchema = \WordPress\AiClient\Messages\DTO\Message::getJsonSchema();
         
         $this->assertEquals($parentSchema, $schema);
+    }
+
+    /**
+     * Tests array transformation.
+     *
+     * @return void
+     */
+    public function testToArray(): void
+    {
+        $message = new ModelMessage([
+            new MessagePart('I can help you with that.'),
+            new MessagePart('Here is the solution:')
+        ]);
+        
+        $json = $this->assertToArrayReturnsArray($message);
+        
+        $this->assertArrayHasKeys($json, ['role', 'parts']);
+        $this->assertEquals(MessageRoleEnum::model()->value, $json['role']);
+        $this->assertCount(2, $json['parts']);
+        $this->assertEquals('I can help you with that.', $json['parts'][0]['text']);
+        $this->assertEquals('Here is the solution:', $json['parts'][1]['text']);
+    }
+
+    /**
+     * Tests fromJson method.
+     *
+     * @return void
+     */
+    public function testFromArray(): void
+    {
+        $json = [
+            'role' => MessageRoleEnum::model()->value,
+            'parts' => [
+                ['type' => MessagePartTypeEnum::text()->value, 'text' => 'Model response 1'],
+                ['type' => MessagePartTypeEnum::text()->value, 'text' => 'Model response 2']
+            ]
+        ];
+        
+        $message = ModelMessage::fromArray($json);
+        
+        $this->assertInstanceOf(ModelMessage::class, $message);
+        $this->assertEquals(MessageRoleEnum::model(), $message->getRole());
+        $this->assertCount(2, $message->getParts());
+        $this->assertEquals('Model response 1', $message->getParts()[0]->getText());
+        $this->assertEquals('Model response 2', $message->getParts()[1]->getText());
+    }
+
+    /**
+     * Tests round-trip array transformation with function call.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripWithFunctionCall(): void
+    {
+        $this->assertArrayRoundTrip(
+            new ModelMessage([
+                new MessagePart('I\'ll search for that information.'),
+                new MessagePart(new FunctionCall('search_123', 'webSearch', ['query' => 'PHP 8 features']))
+            ]),
+            function ($original, $restored) {
+                $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
+                $this->assertCount(count($original->getParts()), $restored->getParts());
+                $this->assertEquals(
+                    $original->getParts()[0]->getText(), 
+                    $restored->getParts()[0]->getText()
+                );
+                $this->assertEquals(
+                    $original->getParts()[1]->getFunctionCall()->getId(),
+                    $restored->getParts()[1]->getFunctionCall()->getId()
+                );
+                $this->assertEquals(
+                    $original->getParts()[1]->getFunctionCall()->getName(),
+                    $restored->getParts()[1]->getFunctionCall()->getName()
+                );
+            }
+        );
+    }
+
+    /**
+     * Tests ModelMessage implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $message = new ModelMessage([new MessagePart('test')]);
+        $this->assertImplementsArrayTransformation($message);
     }
 }

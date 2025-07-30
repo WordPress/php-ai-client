@@ -107,23 +107,23 @@ class TokenUsageTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('promptTokens', $schema['properties']);
-        $this->assertArrayHasKey('completionTokens', $schema['properties']);
-        $this->assertArrayHasKey('totalTokens', $schema['properties']);
+        $this->assertArrayHasKey(TokenUsage::KEY_PROMPT_TOKENS, $schema['properties']);
+        $this->assertArrayHasKey(TokenUsage::KEY_COMPLETION_TOKENS, $schema['properties']);
+        $this->assertArrayHasKey(TokenUsage::KEY_TOTAL_TOKENS, $schema['properties']);
         
         // Check each property type
-        $this->assertEquals('integer', $schema['properties']['promptTokens']['type']);
-        $this->assertEquals('integer', $schema['properties']['completionTokens']['type']);
-        $this->assertEquals('integer', $schema['properties']['totalTokens']['type']);
+        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_PROMPT_TOKENS]['type']);
+        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_COMPLETION_TOKENS]['type']);
+        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_TOTAL_TOKENS]['type']);
         
         // Check descriptions
-        $this->assertArrayHasKey('description', $schema['properties']['promptTokens']);
-        $this->assertArrayHasKey('description', $schema['properties']['completionTokens']);
-        $this->assertArrayHasKey('description', $schema['properties']['totalTokens']);
+        $this->assertArrayHasKey('description', $schema['properties'][TokenUsage::KEY_PROMPT_TOKENS]);
+        $this->assertArrayHasKey('description', $schema['properties'][TokenUsage::KEY_COMPLETION_TOKENS]);
+        $this->assertArrayHasKey('description', $schema['properties'][TokenUsage::KEY_TOTAL_TOKENS]);
         
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['promptTokens', 'completionTokens', 'totalTokens'], $schema['required']);
+        $this->assertEquals([TokenUsage::KEY_PROMPT_TOKENS, TokenUsage::KEY_COMPLETION_TOKENS, TokenUsage::KEY_TOTAL_TOKENS], $schema['required']);
     }
 
     /**
@@ -206,6 +206,79 @@ class TokenUsageTest extends TestCase
         $this->assertEquals($usage1->getPromptTokens(), $usage3->getPromptTokens());
         $this->assertEquals($usage1->getCompletionTokens(), $usage3->getCompletionTokens());
         $this->assertEquals($usage1->getTotalTokens(), $usage3->getTotalTokens());
+    }
+
+    /**
+     * Tests array transformation.
+     *
+     * @return void
+     */
+    public function testToArray(): void
+    {
+        $tokenUsage = new TokenUsage(100, 50, 150);
+        $json = $tokenUsage->toArray();
+        
+        $this->assertIsArray($json);
+        $this->assertArrayHasKey(TokenUsage::KEY_PROMPT_TOKENS, $json);
+        $this->assertArrayHasKey(TokenUsage::KEY_COMPLETION_TOKENS, $json);
+        $this->assertArrayHasKey(TokenUsage::KEY_TOTAL_TOKENS, $json);
+        
+        $this->assertEquals(100, $json[TokenUsage::KEY_PROMPT_TOKENS]);
+        $this->assertEquals(50, $json[TokenUsage::KEY_COMPLETION_TOKENS]);
+        $this->assertEquals(150, $json[TokenUsage::KEY_TOTAL_TOKENS]);
+    }
+
+    /**
+     * Tests fromJson method.
+     *
+     * @return void
+     */
+    public function testFromArray(): void
+    {
+        $json = [
+            TokenUsage::KEY_PROMPT_TOKENS => 100,
+            TokenUsage::KEY_COMPLETION_TOKENS => 50,
+            TokenUsage::KEY_TOTAL_TOKENS => 150,
+        ];
+        
+        $tokenUsage = TokenUsage::fromArray($json);
+        
+        $this->assertInstanceOf(TokenUsage::class, $tokenUsage);
+        $this->assertEquals(100, $tokenUsage->getPromptTokens());
+        $this->assertEquals(50, $tokenUsage->getCompletionTokens());
+        $this->assertEquals(150, $tokenUsage->getTotalTokens());
+    }
+
+    /**
+     * Tests round-trip array transformation.
+     *
+     * @return void
+     */
+    public function testArrayRoundTrip(): void
+    {
+        $original = new TokenUsage(123, 456, 579);
+        $json = $original->toArray();
+        $restored = TokenUsage::fromArray($json);
+        
+        $this->assertEquals($original->getPromptTokens(), $restored->getPromptTokens());
+        $this->assertEquals($original->getCompletionTokens(), $restored->getCompletionTokens());
+        $this->assertEquals($original->getTotalTokens(), $restored->getTotalTokens());
+    }
+
+    /**
+     * Tests TokenUsage implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $tokenUsage = new TokenUsage(10, 20, 30);
+        
+        $this->assertInstanceOf(
+            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            $tokenUsage
+        );
+        
     }
 
     /**

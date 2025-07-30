@@ -7,13 +7,17 @@ namespace WordPress\AiClient\Tests\unit\Messages\DTO;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\SystemMessage;
+use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 
 /**
  * @covers \WordPress\AiClient\Messages\DTO\SystemMessage
  */
 class SystemMessageTest extends TestCase
 {
+    use ArrayTransformationTestTrait;
+
     /**
      * Tests creating SystemMessage automatically sets SYSTEM role.
      *
@@ -162,5 +166,88 @@ class SystemMessageTest extends TestCase
         $this->assertEquals('Second instruction', $retrievedParts[1]->getText());
         $this->assertEquals('Third instruction', $retrievedParts[2]->getText());
         $this->assertEquals('Fourth instruction', $retrievedParts[3]->getText());
+    }
+
+    /**
+     * Tests array transformation.
+     *
+     * @return void
+     */
+    public function testToArray(): void
+    {
+        $message = new SystemMessage([
+            new MessagePart('You are a helpful assistant.'),
+            new MessagePart('Always be respectful and accurate.')
+        ]);
+        
+        $json = $this->assertToArrayReturnsArray($message);
+        
+        $this->assertArrayHasKeys($json, ['role', 'parts']);
+        $this->assertEquals(MessageRoleEnum::system()->value, $json['role']);
+        $this->assertCount(2, $json['parts']);
+        $this->assertEquals('You are a helpful assistant.', $json['parts'][0]['text']);
+        $this->assertEquals('Always be respectful and accurate.', $json['parts'][1]['text']);
+    }
+
+    /**
+     * Tests fromJson method.
+     *
+     * @return void
+     */
+    public function testFromArray(): void
+    {
+        $json = [
+            'role' => MessageRoleEnum::system()->value,
+            'parts' => [
+                ['type' => MessagePartTypeEnum::text()->value, 'text' => 'System instruction 1'],
+                ['type' => MessagePartTypeEnum::text()->value, 'text' => 'System instruction 2']
+            ]
+        ];
+        
+        $message = SystemMessage::fromArray($json);
+        
+        $this->assertInstanceOf(SystemMessage::class, $message);
+        $this->assertEquals(MessageRoleEnum::system(), $message->getRole());
+        $this->assertCount(2, $message->getParts());
+        $this->assertEquals('System instruction 1', $message->getParts()[0]->getText());
+        $this->assertEquals('System instruction 2', $message->getParts()[1]->getText());
+    }
+
+    /**
+     * Tests round-trip array transformation.
+     *
+     * @return void
+     */
+    public function testArrayRoundTrip(): void
+    {
+        $this->assertArrayRoundTrip(
+            new SystemMessage([
+                new MessagePart('You are an expert in PHP.'),
+                new MessagePart('Follow best practices.')
+            ]),
+            function ($original, $restored) {
+                $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
+                $this->assertCount(count($original->getParts()), $restored->getParts());
+                $this->assertEquals(
+                    $original->getParts()[0]->getText(), 
+                    $restored->getParts()[0]->getText()
+                );
+                $this->assertEquals(
+                    $original->getParts()[1]->getText(),
+                    $restored->getParts()[1]->getText()
+                );
+            }
+        );
+    }
+
+    /**
+     * Tests SystemMessage implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $message = new SystemMessage([new MessagePart('test')]);
+        $this->assertImplementsArrayTransformation($message);
     }
 }

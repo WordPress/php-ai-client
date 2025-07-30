@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
  * Represents token usage statistics for an AI operation.
@@ -13,9 +13,20 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
  * which is important for monitoring usage and costs.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type TokenUsageArrayShape array{
+ *     promptTokens: int,
+ *     completionTokens: int,
+ *     totalTokens: int
+ * }
+ *
+ * @extends AbstractDataValueObject<TokenUsageArrayShape>
  */
-class TokenUsage implements WithJsonSchemaInterface
+class TokenUsage extends AbstractDataValueObject
 {
+    public const KEY_PROMPT_TOKENS = 'promptTokens';
+    public const KEY_COMPLETION_TOKENS = 'completionTokens';
+    public const KEY_TOTAL_TOKENS = 'totalTokens';
     /**
      * @var int Number of tokens in the prompt.
      */
@@ -93,20 +104,56 @@ class TokenUsage implements WithJsonSchemaInterface
         return [
             'type' => 'object',
             'properties' => [
-                'promptTokens' => [
+                self::KEY_PROMPT_TOKENS => [
                     'type' => 'integer',
                     'description' => 'Number of tokens in the prompt.',
                 ],
-                'completionTokens' => [
+                self::KEY_COMPLETION_TOKENS => [
                     'type' => 'integer',
                     'description' => 'Number of tokens in the completion.',
                 ],
-                'totalTokens' => [
+                self::KEY_TOTAL_TOKENS => [
                     'type' => 'integer',
                     'description' => 'Total number of tokens used.',
                 ],
             ],
-            'required' => ['promptTokens', 'completionTokens', 'totalTokens'],
+            'required' => [self::KEY_PROMPT_TOKENS, self::KEY_COMPLETION_TOKENS, self::KEY_TOTAL_TOKENS],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return TokenUsageArrayShape
+     */
+    public function toArray(): array
+    {
+        return [
+            self::KEY_PROMPT_TOKENS => $this->promptTokens,
+            self::KEY_COMPLETION_TOKENS => $this->completionTokens,
+            self::KEY_TOTAL_TOKENS => $this->totalTokens,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromArray(array $array): self
+    {
+        static::validateFromArrayData($array, [
+            self::KEY_PROMPT_TOKENS,
+            self::KEY_COMPLETION_TOKENS,
+            self::KEY_TOTAL_TOKENS
+        ]);
+
+        return new self(
+            $array[self::KEY_PROMPT_TOKENS],
+            $array[self::KEY_COMPLETION_TOKENS],
+            $array[self::KEY_TOTAL_TOKENS]
+        );
     }
 }

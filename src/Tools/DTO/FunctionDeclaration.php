@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use InvalidArgumentException;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
  * Represents a function declaration for AI models.
@@ -13,9 +14,16 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
  * including its name, description, and parameter schema.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type FunctionDeclarationArrayShape array{name: string, description: string, parameters?: mixed}
+ *
+ * @extends AbstractDataValueObject<FunctionDeclarationArrayShape>
  */
-class FunctionDeclaration implements WithJsonSchemaInterface
+class FunctionDeclaration extends AbstractDataValueObject
 {
+    public const KEY_NAME = 'name';
+    public const KEY_DESCRIPTION = 'description';
+    public const KEY_PARAMETERS = 'parameters';
     /**
      * @var string The name of the function.
      */
@@ -38,7 +46,7 @@ class FunctionDeclaration implements WithJsonSchemaInterface
      *
      * @param string $name The name of the function.
      * @param string $description A description of what the function does.
-     * @param mixed|null $parameters The JSON schema for the function parameters.
+     * @param mixed $parameters The JSON schema for the function parameters.
      */
     public function __construct(string $name, string $description, $parameters = null)
     {
@@ -93,20 +101,57 @@ class FunctionDeclaration implements WithJsonSchemaInterface
         return [
             'type' => 'object',
             'properties' => [
-                'name' => [
+                self::KEY_NAME => [
                     'type' => 'string',
                     'description' => 'The name of the function.',
                 ],
-                'description' => [
+                self::KEY_DESCRIPTION => [
                     'type' => 'string',
                     'description' => 'A description of what the function does.',
                 ],
-                'parameters' => [
+                self::KEY_PARAMETERS => [
                     'type' => ['string', 'number', 'boolean', 'object', 'array', 'null'],
                     'description' => 'The JSON schema for the function parameters.',
                 ],
             ],
-            'required' => ['name', 'description'],
+            'required' => [self::KEY_NAME, self::KEY_DESCRIPTION],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return FunctionDeclarationArrayShape
+     */
+    public function toArray(): array
+    {
+        $data = [
+            self::KEY_NAME => $this->name,
+            self::KEY_DESCRIPTION => $this->description,
+        ];
+
+        if ($this->parameters !== null) {
+            $data[self::KEY_PARAMETERS] = $this->parameters;
+        }
+
+        return $data;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromArray(array $array): self
+    {
+        static::validateFromArrayData($array, [self::KEY_NAME, self::KEY_DESCRIPTION]);
+
+        return new self(
+            $array[self::KEY_NAME],
+            $array[self::KEY_DESCRIPTION],
+            $array[self::KEY_PARAMETERS] ?? null
+        );
     }
 }

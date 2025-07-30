@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
@@ -12,6 +13,8 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  */
 class FunctionResponseTest extends TestCase
 {
+    use ArrayTransformationTestTrait;
+
     /**
      * Tests creating FunctionResponse with all properties.
      *
@@ -97,20 +100,20 @@ class FunctionResponseTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('id', $schema['properties']);
-        $this->assertArrayHasKey('name', $schema['properties']);
-        $this->assertArrayHasKey('response', $schema['properties']);
+        $this->assertArrayHasKey(FunctionResponse::KEY_ID, $schema['properties']);
+        $this->assertArrayHasKey(FunctionResponse::KEY_NAME, $schema['properties']);
+        $this->assertArrayHasKey(FunctionResponse::KEY_RESPONSE, $schema['properties']);
         
         // Check id property
-        $this->assertEquals('string', $schema['properties']['id']['type']);
-        $this->assertArrayHasKey('description', $schema['properties']['id']);
+        $this->assertEquals('string', $schema['properties'][FunctionResponse::KEY_ID]['type']);
+        $this->assertArrayHasKey('description', $schema['properties'][FunctionResponse::KEY_ID]);
         
         // Check name property
-        $this->assertEquals('string', $schema['properties']['name']['type']);
-        $this->assertArrayHasKey('description', $schema['properties']['name']);
+        $this->assertEquals('string', $schema['properties'][FunctionResponse::KEY_NAME]['type']);
+        $this->assertArrayHasKey('description', $schema['properties'][FunctionResponse::KEY_NAME]);
         
         // Check response property allows multiple types
-        $responseTypes = $schema['properties']['response']['type'];
+        $responseTypes = $schema['properties'][FunctionResponse::KEY_RESPONSE]['type'];
         $this->assertIsArray($responseTypes);
         $this->assertContains('string', $responseTypes);
         $this->assertContains('number', $responseTypes);
@@ -119,9 +122,15 @@ class FunctionResponseTest extends TestCase
         $this->assertContains('array', $responseTypes);
         $this->assertContains('null', $responseTypes);
         
-        // Check required fields
-        $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals(['id', 'name', 'response'], $schema['required']);
+        // Check oneOf for required fields
+        $this->assertArrayHasKey('oneOf', $schema);
+        $this->assertCount(2, $schema['oneOf']);
+        
+        // First option: response and id required
+        $this->assertEquals([FunctionResponse::KEY_RESPONSE, FunctionResponse::KEY_ID], $schema['oneOf'][0]['required']);
+        
+        // Second option: response and name required
+        $this->assertEquals([FunctionResponse::KEY_RESPONSE, FunctionResponse::KEY_NAME], $schema['oneOf'][1]['required']);
     }
 
     /**
@@ -179,5 +188,70 @@ class FunctionResponseTest extends TestCase
         
         $this->assertEquals($largeData, $response->getResponse());
         $this->assertCount(1000, $response->getResponse());
+    }
+
+    /**
+     * Tests array transformation.
+     *
+     * @return void
+     */
+    public function testToArray(): void
+    {
+        $response = new FunctionResponse('func_123', 'calculate', ['result' => 42]);
+        $json = $this->assertToArrayReturnsArray($response);
+        
+        $this->assertArrayHasKeys($json, [FunctionResponse::KEY_ID, FunctionResponse::KEY_NAME, FunctionResponse::KEY_RESPONSE]);
+        $this->assertEquals('func_123', $json[FunctionResponse::KEY_ID]);
+        $this->assertEquals('calculate', $json[FunctionResponse::KEY_NAME]);
+        $this->assertEquals(['result' => 42], $json[FunctionResponse::KEY_RESPONSE]);
+    }
+
+    /**
+     * Tests fromJson method.
+     *
+     * @return void
+     */
+    public function testFromArray(): void
+    {
+        $json = [
+            FunctionResponse::KEY_ID => 'func_456',
+            FunctionResponse::KEY_NAME => 'search',
+            FunctionResponse::KEY_RESPONSE => ['found' => true, 'count' => 5]
+        ];
+        
+        $response = FunctionResponse::fromArray($json);
+        
+        $this->assertInstanceOf(FunctionResponse::class, $response);
+        $this->assertEquals('func_456', $response->getId());
+        $this->assertEquals('search', $response->getName());
+        $this->assertEquals(['found' => true, 'count' => 5], $response->getResponse());
+    }
+
+    /**
+     * Tests round-trip array transformation.
+     *
+     * @return void
+     */
+    public function testArrayRoundTrip(): void
+    {
+        $this->assertArrayRoundTrip(
+            new FunctionResponse('id_789', 'process', ['status' => 'complete']),
+            function ($original, $restored) {
+                $this->assertEquals($original->getId(), $restored->getId());
+                $this->assertEquals($original->getName(), $restored->getName());
+                $this->assertEquals($original->getResponse(), $restored->getResponse());
+            }
+        );
+    }
+
+    /**
+     * Tests FunctionResponse implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $response = new FunctionResponse('id', 'name', 'result');
+        $this->assertImplementsArrayTransformation($response);
     }
 }

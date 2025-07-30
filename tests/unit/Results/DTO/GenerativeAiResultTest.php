@@ -6,18 +6,24 @@ namespace WordPress\AiClient\Tests\unit\Results\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
+use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
+use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
+use WordPress\AiClient\Tools\DTO\FunctionCall;
 
 /**
  * @covers \WordPress\AiClient\Results\DTO\GenerativeAiResult
  */
 class GenerativeAiResultTest extends TestCase
 {
+    use ArrayTransformationTestTrait;
     /**
      * Tests creating result with single candidate.
      *
@@ -525,30 +531,30 @@ class GenerativeAiResultTest extends TestCase
         
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
-        $this->assertArrayHasKey('id', $schema['properties']);
-        $this->assertArrayHasKey('candidates', $schema['properties']);
-        $this->assertArrayHasKey('tokenUsage', $schema['properties']);
-        $this->assertArrayHasKey('providerMetadata', $schema['properties']);
+        $this->assertArrayHasKey(GenerativeAiResult::KEY_ID, $schema['properties']);
+        $this->assertArrayHasKey(GenerativeAiResult::KEY_CANDIDATES, $schema['properties']);
+        $this->assertArrayHasKey(GenerativeAiResult::KEY_TOKEN_USAGE, $schema['properties']);
+        $this->assertArrayHasKey(GenerativeAiResult::KEY_PROVIDER_METADATA, $schema['properties']);
         
         // Check id property
-        $this->assertEquals('string', $schema['properties']['id']['type']);
+        $this->assertEquals('string', $schema['properties'][GenerativeAiResult::KEY_ID]['type']);
         
         // Check candidates property
-        $candidatesSchema = $schema['properties']['candidates'];
+        $candidatesSchema = $schema['properties'][GenerativeAiResult::KEY_CANDIDATES];
         $this->assertEquals('array', $candidatesSchema['type']);
         $this->assertEquals(1, $candidatesSchema['minItems']);
         
         // Check providerMetadata property
-        $metadataSchema = $schema['properties']['providerMetadata'];
+        $metadataSchema = $schema['properties'][GenerativeAiResult::KEY_PROVIDER_METADATA];
         $this->assertEquals('object', $metadataSchema['type']);
         $this->assertTrue($metadataSchema['additionalProperties']);
         
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertContains('id', $schema['required']);
-        $this->assertContains('candidates', $schema['required']);
-        $this->assertContains('tokenUsage', $schema['required']);
-        $this->assertNotContains('providerMetadata', $schema['required']);
+        $this->assertContains(GenerativeAiResult::KEY_ID, $schema['required']);
+        $this->assertContains(GenerativeAiResult::KEY_CANDIDATES, $schema['required']);
+        $this->assertContains(GenerativeAiResult::KEY_TOKEN_USAGE, $schema['required']);
+        $this->assertNotContains(GenerativeAiResult::KEY_PROVIDER_METADATA, $schema['required']);
     }
 
     /**
@@ -593,5 +599,161 @@ class GenerativeAiResultTest extends TestCase
         
         $this->assertFalse($result->hasMultipleCandidates());
         $this->assertEquals(1, $result->getCandidateCount());
+    }
+
+    /**
+     * Tests array transformation.
+     *
+     * @return void
+     */
+    public function testToArray(): void
+    {
+        $message = new ModelMessage([
+            new MessagePart('AI generated response'),
+            new MessagePart('with multiple parts')
+        ]);
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 15);
+        $tokenUsage = new TokenUsage(10, 15, 25);
+        $metadata = ['model' => 'test-model', 'version' => '1.0'];
+        
+        $result = new GenerativeAiResult(
+            'result_json_123',
+            [$candidate],
+            $tokenUsage,
+            $metadata
+        );
+        
+        $json = $this->assertToArrayReturnsArray($result);
+        
+        $this->assertArrayHasKeys($json, [GenerativeAiResult::KEY_ID, GenerativeAiResult::KEY_CANDIDATES, GenerativeAiResult::KEY_TOKEN_USAGE, GenerativeAiResult::KEY_PROVIDER_METADATA]);
+        $this->assertEquals('result_json_123', $json[GenerativeAiResult::KEY_ID]);
+        $this->assertIsArray($json[GenerativeAiResult::KEY_CANDIDATES]);
+        $this->assertCount(1, $json[GenerativeAiResult::KEY_CANDIDATES]);
+        $this->assertIsArray($json[GenerativeAiResult::KEY_TOKEN_USAGE]);
+        $this->assertEquals($metadata, $json[GenerativeAiResult::KEY_PROVIDER_METADATA]);
+    }
+
+    /**
+     * Tests fromJson method.
+     *
+     * @return void
+     */
+    public function testFromArray(): void
+    {
+        $json = [
+            GenerativeAiResult::KEY_ID => 'result_from_json',
+            GenerativeAiResult::KEY_CANDIDATES => [
+                [
+                    Candidate::KEY_MESSAGE => [
+                        Message::KEY_ROLE => MessageRoleEnum::model()->value,
+                        Message::KEY_PARTS => [
+                            [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'First part'],
+                            [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Second part']
+                        ]
+                    ],
+                    Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
+                    Candidate::KEY_TOKEN_COUNT => 20
+                ]
+            ],
+            GenerativeAiResult::KEY_TOKEN_USAGE => [
+                TokenUsage::KEY_PROMPT_TOKENS => 8,
+                TokenUsage::KEY_COMPLETION_TOKENS => 20,
+                TokenUsage::KEY_TOTAL_TOKENS => 28
+            ],
+            GenerativeAiResult::KEY_PROVIDER_METADATA => ['provider' => 'test']
+        ];
+        
+        $result = GenerativeAiResult::fromArray($json);
+        
+        $this->assertInstanceOf(GenerativeAiResult::class, $result);
+        $this->assertEquals('result_from_json', $result->getId());
+        $this->assertCount(1, $result->getCandidates());
+        $this->assertEquals(8, $result->getTokenUsage()->getPromptTokens());
+        $this->assertEquals(20, $result->getTokenUsage()->getCompletionTokens());
+        $this->assertEquals(28, $result->getTokenUsage()->getTotalTokens());
+        $this->assertEquals(['provider' => 'test'], $result->getProviderMetadata());
+    }
+
+    /**
+     * Tests round-trip array transformation with multiple candidates.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripWithMultipleCandidates(): void
+    {
+        $candidates = [];
+        for ($i = 1; $i <= 2; $i++) {
+            $message = new ModelMessage([
+                new MessagePart("Response $i"),
+                new MessagePart(new FunctionCall("call_$i", "func$i", ['arg' => $i]))
+            ]);
+            $candidates[] = new Candidate($message, FinishReasonEnum::toolCalls(), 25 * $i);
+        }
+        
+        $this->assertArrayRoundTrip(
+            new GenerativeAiResult(
+                'result_roundtrip',
+                $candidates,
+                new TokenUsage(30, 75, 105),
+                ['test_meta' => true]
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getId(), $restored->getId());
+                $this->assertCount(count($original->getCandidates()), $restored->getCandidates());
+                $this->assertEquals($original->getTokenUsage()->getTotalTokens(), 
+                    $restored->getTokenUsage()->getTotalTokens());
+                $this->assertEquals($original->getProviderMetadata(), $restored->getProviderMetadata());
+                
+                // Check first candidate details
+                $originalFirst = $original->getCandidates()[0];
+                $restoredFirst = $restored->getCandidates()[0];
+                $this->assertEquals(
+                    $originalFirst->getMessage()->getParts()[0]->getText(),
+                    $restoredFirst->getMessage()->getParts()[0]->getText()
+                );
+                $this->assertEquals(
+                    $originalFirst->getMessage()->getParts()[1]->getFunctionCall()->getId(),
+                    $restoredFirst->getMessage()->getParts()[1]->getFunctionCall()->getId()
+                );
+            }
+        );
+    }
+
+    /**
+     * Tests array transformation without provider metadata.
+     *
+     * @return void
+     */
+    public function testToArrayWithoutProviderMetadata(): void
+    {
+        $message = new ModelMessage([new MessagePart('Simple response')]);
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 5);
+        $tokenUsage = new TokenUsage(3, 5, 8);
+        
+        $result = new GenerativeAiResult(
+            'result_no_meta',
+            [$candidate],
+            $tokenUsage
+        );
+        
+        $json = $this->assertToArrayReturnsArray($result);
+        
+        $this->assertArrayHasKeys($json, [GenerativeAiResult::KEY_ID, GenerativeAiResult::KEY_CANDIDATES, GenerativeAiResult::KEY_TOKEN_USAGE, GenerativeAiResult::KEY_PROVIDER_METADATA]);
+        $this->assertEquals([], $json[GenerativeAiResult::KEY_PROVIDER_METADATA]);
+    }
+
+    /**
+     * Tests GenerativeAiResult implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $message = new ModelMessage([new MessagePart('test')]);
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 1);
+        $tokenUsage = new TokenUsage(1, 1, 2);
+        
+        $result = new GenerativeAiResult('test', [$candidate], $tokenUsage);
+        $this->assertImplementsArrayTransformation($result);
     }
 }

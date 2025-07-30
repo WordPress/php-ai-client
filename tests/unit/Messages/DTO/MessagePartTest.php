@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Messages\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -149,30 +150,30 @@ class MessagePartTest extends TestCase
         // Check text variant
         $textSchema = $schema['oneOf'][0];
         $this->assertEquals('object', $textSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::text()->value, $textSchema['properties']['type']['const']);
-        $this->assertArrayHasKey('text', $textSchema['properties']);
-        $this->assertEquals(['type', 'text'], $textSchema['required']);
+        $this->assertEquals(MessagePartTypeEnum::text()->value, $textSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertArrayHasKey(MessagePart::KEY_TEXT, $textSchema['properties']);
+        $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_TEXT], $textSchema['required']);
         
         // Check file variant
         $fileSchema = $schema['oneOf'][1];
         $this->assertEquals('object', $fileSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::file()->value, $fileSchema['properties']['type']['const']);
-        $this->assertArrayHasKey('file', $fileSchema['properties']);
-        $this->assertEquals(['type', 'file'], $fileSchema['required']);
+        $this->assertEquals(MessagePartTypeEnum::file()->value, $fileSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertArrayHasKey(MessagePart::KEY_FILE, $fileSchema['properties']);
+        $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_FILE], $fileSchema['required']);
         
         // Check function_call variant
         $functionCallSchema = $schema['oneOf'][2];
         $this->assertEquals('object', $functionCallSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::functionCall()->value, $functionCallSchema['properties']['type']['const']);
-        $this->assertArrayHasKey('functionCall', $functionCallSchema['properties']);
-        $this->assertEquals(['type', 'functionCall'], $functionCallSchema['required']);
+        $this->assertEquals(MessagePartTypeEnum::functionCall()->value, $functionCallSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertArrayHasKey(MessagePart::KEY_FUNCTION_CALL, $functionCallSchema['properties']);
+        $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_FUNCTION_CALL], $functionCallSchema['required']);
         
         // Check function_response variant
         $functionResponseSchema = $schema['oneOf'][3];
         $this->assertEquals('object', $functionResponseSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::functionResponse()->value, $functionResponseSchema['properties']['type']['const']);
-        $this->assertArrayHasKey('functionResponse', $functionResponseSchema['properties']);
-        $this->assertEquals(['type', 'functionResponse'], $functionResponseSchema['required']);
+        $this->assertEquals(MessagePartTypeEnum::functionResponse()->value, $functionResponseSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertArrayHasKey(MessagePart::KEY_FUNCTION_RESPONSE, $functionResponseSchema['properties']);
+        $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_FUNCTION_RESPONSE], $functionResponseSchema['required']);
     }
 
     /**
@@ -229,5 +230,133 @@ class MessagePartTest extends TestCase
         $part = new MessagePart($unicodeText);
         
         $this->assertEquals($unicodeText, $part->getText());
+    }
+
+    /**
+     * Tests array transformation with text content.
+     *
+     * @return void
+     */
+    public function testToArrayWithText(): void
+    {
+        $part = new MessagePart('Hello, world!');
+        $json = $part->toArray();
+        
+        $this->assertIsArray($json);
+        $this->assertArrayHasKey(MessagePart::KEY_TYPE, $json);
+        $this->assertArrayHasKey(MessagePart::KEY_TEXT, $json);
+        $this->assertEquals(MessagePartTypeEnum::text()->value, $json[MessagePart::KEY_TYPE]);
+        $this->assertEquals('Hello, world!', $json[MessagePart::KEY_TEXT]);
+        
+        // Ensure other fields are not present
+        $this->assertArrayNotHasKey(MessagePart::KEY_FILE, $json);
+        $this->assertArrayNotHasKey(MessagePart::KEY_FUNCTION_CALL, $json);
+        $this->assertArrayNotHasKey(MessagePart::KEY_FUNCTION_RESPONSE, $json);
+    }
+
+    /**
+     * Tests array transformation with file content.
+     *
+     * @return void
+     */
+    public function testToArrayWithFile(): void
+    {
+        $file = new File('https://example.com/image.jpg', 'image/jpeg');
+        $part = new MessagePart($file);
+        $json = $part->toArray();
+        
+        $this->assertIsArray($json);
+        $this->assertArrayHasKey(MessagePart::KEY_TYPE, $json);
+        $this->assertArrayHasKey(MessagePart::KEY_FILE, $json);
+        $this->assertEquals(MessagePartTypeEnum::file()->value, $json[MessagePart::KEY_TYPE]);
+        $this->assertIsArray($json[MessagePart::KEY_FILE]);
+    }
+
+    /**
+     * Tests fromJson with text content.
+     *
+     * @return void
+     */
+    public function testFromArrayWithText(): void
+    {
+        $json = [
+            MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+            MessagePart::KEY_TEXT => 'Test message'
+        ];
+        
+        $part = MessagePart::fromArray($json);
+        
+        $this->assertEquals(MessagePartTypeEnum::text(), $part->getType());
+        $this->assertEquals('Test message', $part->getText());
+    }
+
+    /**
+     * Tests fromJson with file content.
+     *
+     * @return void
+     */
+    public function testFromArrayWithFile(): void
+    {
+        $json = [
+            MessagePart::KEY_TYPE => MessagePartTypeEnum::file()->value,
+            MessagePart::KEY_FILE => [
+                File::KEY_FILE_TYPE => FileTypeEnum::remote()->value,
+                File::KEY_MIME_TYPE => 'image/jpeg',
+                File::KEY_URL => 'https://example.com/image.jpg'
+            ]
+        ];
+        
+        $part = MessagePart::fromArray($json);
+        
+        $this->assertEquals(MessagePartTypeEnum::file(), $part->getType());
+        $this->assertInstanceOf(File::class, $part->getFile());
+        $this->assertEquals('https://example.com/image.jpg', $part->getFile()->getUrl());
+    }
+
+    /**
+     * Tests round-trip array transformation with different content types.
+     *
+     * @return void
+     */
+    public function testArrayRoundTrip(): void
+    {
+        // Test with text
+        $textPart = new MessagePart('Test text');
+        $textJson = $textPart->toArray();
+        $restoredText = MessagePart::fromArray($textJson);
+        $this->assertEquals($textPart->getText(), $restoredText->getText());
+        
+        // Test with file
+        $file = new File('https://example.com/doc.pdf', 'application/pdf');
+        $filePart = new MessagePart($file);
+        $fileJson = $filePart->toArray();
+        $restoredFile = MessagePart::fromArray($fileJson);
+        $this->assertEquals($file->getUrl(), $restoredFile->getFile()->getUrl());
+        $this->assertEquals($file->getMimeType(), $restoredFile->getFile()->getMimeType());
+        
+        // Test with function call
+        $functionCall = new FunctionCall('id_123', 'getData', ['key' => 'value']);
+        $funcPart = new MessagePart($functionCall);
+        $funcJson = $funcPart->toArray();
+        $restoredFunc = MessagePart::fromArray($funcJson);
+        $this->assertEquals($functionCall->getId(), $restoredFunc->getFunctionCall()->getId());
+        $this->assertEquals($functionCall->getName(), $restoredFunc->getFunctionCall()->getName());
+        $this->assertEquals($functionCall->getArgs(), $restoredFunc->getFunctionCall()->getArgs());
+    }
+
+    /**
+     * Tests MessagePart implements WithArrayTransformationInterface.
+     *
+     * @return void
+     */
+    public function testImplementsWithArrayTransformationInterface(): void
+    {
+        $part = new MessagePart('test');
+        
+        $this->assertInstanceOf(
+            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            $part
+        );
+        
     }
 }
