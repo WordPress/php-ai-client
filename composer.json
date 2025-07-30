@@ -34,7 +34,10 @@
     "autoload": {
         "psr-4": {
             "WordPress\\AiClient\\": "src/"
-        }
+        },
+        "files": [
+            "src/polyfills.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
