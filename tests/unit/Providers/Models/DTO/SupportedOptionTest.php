@@ -176,7 +176,7 @@ class SupportedOptionTest extends TestCase
 
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals([SupportedOption::KEY_NAME, SupportedOption::KEY_SUPPORTED_VALUES], $schema['required']);
+        $this->assertEquals([SupportedOption::KEY_NAME], $schema['required']);
     }
 
     /**
@@ -407,6 +407,115 @@ class SupportedOptionTest extends TestCase
             JsonSerializable::class,
             $option
         );
+    }
+
+    /**
+     * Tests with null supportedValues (any value is supported).
+     *
+     * @return void
+     */
+    public function testWithNullSupportedValues(): void
+    {
+        $option = new SupportedOption('any_value_option');
+
+        $this->assertEquals('any_value_option', $option->getName());
+        $this->assertNull($option->getSupportedValues());
+
+        // Any value should be supported when supportedValues is null
+        $this->assertTrue($option->isSupportedValue('string'));
+        $this->assertTrue($option->isSupportedValue(123));
+        $this->assertTrue($option->isSupportedValue(45.67));
+        $this->assertTrue($option->isSupportedValue(true));
+        $this->assertTrue($option->isSupportedValue(false));
+        $this->assertTrue($option->isSupportedValue(null));
+        $this->assertTrue($option->isSupportedValue(['array']));
+        $this->assertTrue($option->isSupportedValue(['key' => 'value']));
+        $this->assertTrue($option->isSupportedValue(new \stdClass()));
+    }
+
+    /**
+     * Tests toArray with null supportedValues.
+     *
+     * @return void
+     */
+    public function testToArrayWithNullSupportedValues(): void
+    {
+        $option = new SupportedOption('flexible_option');
+        $array = $option->toArray();
+
+        $this->assertIsArray($array);
+        $this->assertEquals('flexible_option', $array[SupportedOption::KEY_NAME]);
+        $this->assertArrayNotHasKey(SupportedOption::KEY_SUPPORTED_VALUES, $array);
+        $this->assertCount(1, $array);
+    }
+
+    /**
+     * Tests fromArray with missing supportedValues.
+     *
+     * @return void
+     */
+    public function testFromArrayWithMissingSupportedValues(): void
+    {
+        $data = [
+            SupportedOption::KEY_NAME => 'open_option'
+        ];
+
+        $option = SupportedOption::fromArray($data);
+
+        $this->assertInstanceOf(SupportedOption::class, $option);
+        $this->assertEquals('open_option', $option->getName());
+        $this->assertNull($option->getSupportedValues());
+        $this->assertTrue($option->isSupportedValue('anything'));
+    }
+
+    /**
+     * Tests round-trip with null supportedValues.
+     *
+     * @return void
+     */
+    public function testRoundTripWithNullSupportedValues(): void
+    {
+        $original = new SupportedOption('unrestricted');
+        
+        $array = $original->toArray();
+        $restored = SupportedOption::fromArray($array);
+
+        $this->assertEquals($original->getName(), $restored->getName());
+        $this->assertEquals($original->getSupportedValues(), $restored->getSupportedValues());
+        $this->assertNull($restored->getSupportedValues());
+    }
+
+    /**
+     * Tests JSON serialization with null supportedValues.
+     *
+     * @return void
+     */
+    public function testJsonSerializationWithNullSupportedValues(): void
+    {
+        $option = new SupportedOption('json_option');
+
+        $json = json_encode($option);
+        $decoded = json_decode($json, true);
+
+        $this->assertIsString($json);
+        $this->assertIsArray($decoded);
+        $this->assertEquals('json_option', $decoded[SupportedOption::KEY_NAME]);
+        $this->assertArrayNotHasKey(SupportedOption::KEY_SUPPORTED_VALUES, $decoded);
+    }
+
+    /**
+     * Tests JSON schema reflects optional supportedValues.
+     *
+     * @return void
+     */
+    public function testJsonSchemaReflectsOptionalSupportedValues(): void
+    {
+        $schema = SupportedOption::getJsonSchema();
+
+        // Check that supportedValues is not in required fields
+        $this->assertArrayHasKey('required', $schema);
+        $this->assertEquals([SupportedOption::KEY_NAME], $schema['required']);
+        $this->assertNotContains(SupportedOption::KEY_SUPPORTED_VALUES, $schema['required']);
     }
 }
 

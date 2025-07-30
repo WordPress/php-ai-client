@@ -16,7 +16,7 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @phpstan-type SupportedOptionArrayShape array{
  *     name: string,
- *     supportedValues: array<int, mixed>
+ *     supportedValues?: array<int, mixed>
  * }
  *
  * @extends AbstractDataValueObject<SupportedOptionArrayShape>
@@ -32,9 +32,9 @@ class SupportedOption extends AbstractDataValueObject
     protected string $name;
 
     /**
-     * @var mixed[] The supported values for this option.
+     * @var mixed[]|null The supported values for this option.
      */
-    protected array $supportedValues;
+    protected ?array $supportedValues;
 
     /**
      * Constructor.
@@ -42,9 +42,9 @@ class SupportedOption extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param string $name The option name.
-     * @param mixed[] $supportedValues The supported values for this option.
+     * @param mixed[]|null $supportedValues The supported values for this option, or null if any value is supported.
      */
-    public function __construct(string $name, array $supportedValues)
+    public function __construct(string $name, ?array $supportedValues = null)
     {
         $this->name = $name;
         $this->supportedValues = $supportedValues;
@@ -72,6 +72,11 @@ class SupportedOption extends AbstractDataValueObject
      */
     public function isSupportedValue($value): bool
     {
+        // If supportedValues is null, any value is supported
+        if ($this->supportedValues === null) {
+            return true;
+        }
+
         return in_array($value, $this->supportedValues, true);
     }
 
@@ -80,9 +85,9 @@ class SupportedOption extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return mixed[] The supported values.
+     * @return mixed[]|null The supported values, or null if any value is supported.
      */
-    public function getSupportedValues(): array
+    public function getSupportedValues(): ?array
     {
         return $this->supportedValues;
     }
@@ -116,7 +121,7 @@ class SupportedOption extends AbstractDataValueObject
                     'description' => 'The supported values for this option.',
                 ],
             ],
-            'required' => [self::KEY_NAME, self::KEY_SUPPORTED_VALUES],
+            'required' => [self::KEY_NAME],
         ];
     }
 
@@ -129,10 +134,15 @@ class SupportedOption extends AbstractDataValueObject
      */
     public function toArray(): array
     {
-        return [
+        $data = [
             self::KEY_NAME => $this->name,
-            self::KEY_SUPPORTED_VALUES => array_values($this->supportedValues),
         ];
+
+        if ($this->supportedValues !== null) {
+            $data[self::KEY_SUPPORTED_VALUES] = array_values($this->supportedValues);
+        }
+
+        return $data;
     }
 
     /**
@@ -142,11 +152,11 @@ class SupportedOption extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
-        static::validateFromArrayData($array, [self::KEY_NAME, self::KEY_SUPPORTED_VALUES]);
+        static::validateFromArrayData($array, [self::KEY_NAME]);
 
         return new self(
             $array[self::KEY_NAME],
-            $array[self::KEY_SUPPORTED_VALUES]
+            $array[self::KEY_SUPPORTED_VALUES] ?? null
         );
     }
 }
