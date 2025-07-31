@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
@@ -32,7 +33,7 @@ class SupportedOption extends AbstractDataValueObject
     protected string $name;
 
     /**
-     * @var mixed[]|null The supported values for this option.
+     * @var list<mixed>|null The supported values for this option.
      */
     protected ?array $supportedValues;
 
@@ -42,10 +43,16 @@ class SupportedOption extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param string $name The option name.
-     * @param mixed[]|null $supportedValues The supported values for this option, or null if any value is supported.
+     * @param list<mixed>|null $supportedValues The supported values for this option, or null if any value is supported.
+     *
+     * @throws InvalidArgumentException If supportedValues is not null and not a list.
      */
     public function __construct(string $name, ?array $supportedValues = null)
     {
+        if ($supportedValues !== null && !array_is_list($supportedValues)) {
+            throw new InvalidArgumentException('Supported values must be a list array.');
+        }
+
         $this->name = $name;
         $this->supportedValues = $supportedValues;
     }
@@ -85,7 +92,7 @@ class SupportedOption extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return mixed[]|null The supported values, or null if any value is supported.
+     * @return list<mixed>|null The supported values, or null if any value is supported.
      */
     public function getSupportedValues(): ?array
     {
@@ -139,10 +146,11 @@ class SupportedOption extends AbstractDataValueObject
         ];
 
         if ($this->supportedValues !== null) {
-            $data[self::KEY_SUPPORTED_VALUES] = $this->supportedValues;
+            /** @var list<mixed> $supportedValues */
+            $supportedValues = $this->supportedValues;
+            $data[self::KEY_SUPPORTED_VALUES] = $supportedValues;
         }
 
-        /** @phpstan-ignore-next-line return.type (array doesn't guarantee list, validation will be added later) */
         return $data;
     }
 

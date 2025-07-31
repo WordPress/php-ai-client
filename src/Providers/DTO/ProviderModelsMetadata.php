@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
@@ -36,7 +37,7 @@ class ProviderModelsMetadata extends AbstractDataValueObject
     protected ProviderMetadata $provider;
 
     /**
-     * @var ModelMetadata[] The available models.
+     * @var list<ModelMetadata> The available models.
      */
     protected array $models;
 
@@ -46,10 +47,16 @@ class ProviderModelsMetadata extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param ProviderMetadata $provider The provider metadata.
-     * @param ModelMetadata[] $models The available models.
+     * @param list<ModelMetadata> $models The available models.
+     *
+     * @throws InvalidArgumentException If models is not a list.
      */
     public function __construct(ProviderMetadata $provider, array $models)
     {
+        if (!array_is_list($models)) {
+            throw new InvalidArgumentException('Models must be a list array.');
+        }
+
         $this->provider = $provider;
         $this->models = $models;
     }
@@ -71,7 +78,7 @@ class ProviderModelsMetadata extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return ModelMetadata[] The available models.
+     * @return list<ModelMetadata> The available models.
      */
     public function getModels(): array
     {
@@ -108,7 +115,6 @@ class ProviderModelsMetadata extends AbstractDataValueObject
      */
     public function toArray(): array
     {
-        /** @phpstan-ignore-next-line return.type (array_map doesn't guarantee list, validation will be added later) */
         return [
             self::KEY_PROVIDER => $this->provider->toArray(),
             self::KEY_MODELS => array_map(

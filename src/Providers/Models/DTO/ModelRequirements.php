@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
@@ -30,12 +31,12 @@ class ModelRequirements extends AbstractDataValueObject
     public const KEY_REQUIRED_OPTIONS = 'requiredOptions';
 
     /**
-     * @var CapabilityEnum[] The capabilities that the model must support.
+     * @var list<CapabilityEnum> The capabilities that the model must support.
      */
     protected array $requiredCapabilities;
 
     /**
-     * @var RequiredOption[] The options that the model must support with specific values.
+     * @var list<RequiredOption> The options that the model must support with specific values.
      */
     protected array $requiredOptions;
 
@@ -44,11 +45,21 @@ class ModelRequirements extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @param CapabilityEnum[] $requiredCapabilities The capabilities that the model must support.
-     * @param RequiredOption[] $requiredOptions The options that the model must support with specific values.
+     * @param list<CapabilityEnum> $requiredCapabilities The capabilities that the model must support.
+     * @param list<RequiredOption> $requiredOptions The options that the model must support with specific values.
+     *
+     * @throws InvalidArgumentException If arrays are not lists.
      */
     public function __construct(array $requiredCapabilities, array $requiredOptions)
     {
+        if (!array_is_list($requiredCapabilities)) {
+            throw new InvalidArgumentException('Required capabilities must be a list array.');
+        }
+
+        if (!array_is_list($requiredOptions)) {
+            throw new InvalidArgumentException('Required options must be a list array.');
+        }
+
         $this->requiredCapabilities = $requiredCapabilities;
         $this->requiredOptions = $requiredOptions;
     }
@@ -58,7 +69,7 @@ class ModelRequirements extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return CapabilityEnum[] The required capabilities.
+     * @return list<CapabilityEnum> The required capabilities.
      */
     public function getRequiredCapabilities(): array
     {
@@ -70,7 +81,7 @@ class ModelRequirements extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return RequiredOption[] The required options.
+     * @return list<RequiredOption> The required options.
      */
     public function getRequiredOptions(): array
     {
@@ -114,7 +125,6 @@ class ModelRequirements extends AbstractDataValueObject
      */
     public function toArray(): array
     {
-        /** @phpstan-ignore-next-line return.type (array_map doesn't guarantee list, validation will be added later) */
         return [
             self::KEY_REQUIRED_CAPABILITIES => array_map(
                 static fn(CapabilityEnum $capability): string => $capability->value,

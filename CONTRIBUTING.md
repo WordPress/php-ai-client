@@ -23,20 +23,24 @@ The following naming conventions must be followed for consistency and autoloadin
 All code must be properly documented with PHPDoc blocks following these standards:
 
 ### General rules
+
 - All descriptions must end with a period.
 - Use `@since n.e.x.t` for new code (will be replaced with actual version on release).
 - Place `@since` tags below the description and above `@param` tags, with blank comment lines around it.
 
 ### Method documentation
+
 - Method descriptions must start with a third-person verb (e.g., "Creates", "Returns", "Checks").
 - Exceptions: Constructors and magic methods may use different phrasing.
 - All `@return` annotations must include a description.
 
 ### Interface implementations
+
 - Use `{@inheritDoc}` instead of duplicating descriptions when implementing interface methods.
 - Only provide a unique description if it adds value beyond the interface documentation.
 
 ### Example
+
 ```php
 /**
  * Class for handling user authentication requests.
@@ -60,6 +64,12 @@ class AuthHandler
     }
 }
 ```
+
+### Array Lists
+
+When an array is a list — that is, an array where the keys are sequential, starting at 0 — use the `list` generic type within the docblock. For example, a parameter that is a list of strings would be documented as `@param list<string> $variable`.
+
+Note that `list<string>` and `string[]` _are not_ the same. The latter is an alias for `array<int, string>` which does not enforce that the keys are sequential. That particular syntax, therefore, will rarely be used.
 
 ## PHP Compatibility
 

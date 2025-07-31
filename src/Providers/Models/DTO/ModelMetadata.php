@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
@@ -44,12 +45,12 @@ class ModelMetadata extends AbstractDataValueObject
     protected string $name;
 
     /**
-     * @var CapabilityEnum[] The model's supported capabilities.
+     * @var list<CapabilityEnum> The model's supported capabilities.
      */
     protected array $supportedCapabilities;
 
     /**
-     * @var SupportedOption[] The model's supported configuration options.
+     * @var list<SupportedOption> The model's supported configuration options.
      */
     protected array $supportedOptions;
 
@@ -60,11 +61,21 @@ class ModelMetadata extends AbstractDataValueObject
      *
      * @param string $id The model's unique identifier.
      * @param string $name The model's display name.
-     * @param CapabilityEnum[] $supportedCapabilities The model's supported capabilities.
-     * @param SupportedOption[] $supportedOptions The model's supported configuration options.
+     * @param list<CapabilityEnum> $supportedCapabilities The model's supported capabilities.
+     * @param list<SupportedOption> $supportedOptions The model's supported configuration options.
+     *
+     * @throws InvalidArgumentException If arrays are not lists.
      */
     public function __construct(string $id, string $name, array $supportedCapabilities, array $supportedOptions)
     {
+        if (!array_is_list($supportedCapabilities)) {
+            throw new InvalidArgumentException('Supported capabilities must be a list array.');
+        }
+
+        if (!array_is_list($supportedOptions)) {
+            throw new InvalidArgumentException('Supported options must be a list array.');
+        }
+
         $this->id = $id;
         $this->name = $name;
         $this->supportedCapabilities = $supportedCapabilities;
@@ -100,7 +111,7 @@ class ModelMetadata extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return CapabilityEnum[] The supported capabilities.
+     * @return list<CapabilityEnum> The supported capabilities.
      */
     public function getSupportedCapabilities(): array
     {
@@ -112,7 +123,7 @@ class ModelMetadata extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return SupportedOption[] The supported options.
+     * @return list<SupportedOption> The supported options.
      */
     public function getSupportedOptions(): array
     {
@@ -164,7 +175,6 @@ class ModelMetadata extends AbstractDataValueObject
      */
     public function toArray(): array
     {
-        /** @phpstan-ignore-next-line return.type (array_map doesn't guarantee list, validation will be added later) */
         return [
             self::KEY_ID => $this->id,
             self::KEY_NAME => $this->name,

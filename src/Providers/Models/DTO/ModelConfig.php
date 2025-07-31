@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Tools\DTO\Tool;
@@ -60,7 +61,7 @@ class ModelConfig extends AbstractDataValueObject
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
 
     /**
-     * @var ModalityEnum[]|null Output modalities for the model.
+     * @var list<ModalityEnum>|null Output modalities for the model.
      */
     protected ?array $outputModalities = null;
 
@@ -95,7 +96,7 @@ class ModelConfig extends AbstractDataValueObject
     protected ?int $topK = null;
 
     /**
-     * @var string[]|null Stop sequences.
+     * @var list<string>|null Stop sequences.
      */
     protected ?array $stopSequences = null;
 
@@ -120,7 +121,7 @@ class ModelConfig extends AbstractDataValueObject
     protected ?int $topLogprobs = null;
 
     /**
-     * @var Tool[]|null Tools available to the model.
+     * @var list<Tool>|null Tools available to the model.
      */
     protected ?array $tools = null;
 
@@ -144,10 +145,16 @@ class ModelConfig extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @param ModalityEnum[] $outputModalities The output modalities.
+     * @param list<ModalityEnum> $outputModalities The output modalities.
+     *
+     * @throws InvalidArgumentException If the array is not a list.
      */
     public function setOutputModalities(array $outputModalities): void
     {
+        if (!array_is_list($outputModalities)) {
+            throw new InvalidArgumentException('Output modalities must be a list array.');
+        }
+
         $this->outputModalities = $outputModalities;
     }
 
@@ -156,7 +163,7 @@ class ModelConfig extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return ModalityEnum[]|null The output modalities.
+     * @return list<ModalityEnum>|null The output modalities.
      */
     public function getOutputModalities(): ?array
     {
@@ -312,10 +319,16 @@ class ModelConfig extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @param string[] $stopSequences The stop sequences.
+     * @param list<string> $stopSequences The stop sequences.
+     *
+     * @throws InvalidArgumentException If the array is not a list.
      */
     public function setStopSequences(array $stopSequences): void
     {
+        if (!array_is_list($stopSequences)) {
+            throw new InvalidArgumentException('Stop sequences must be a list array.');
+        }
+
         $this->stopSequences = $stopSequences;
     }
 
@@ -324,7 +337,7 @@ class ModelConfig extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return string[]|null The stop sequences.
+     * @return list<string>|null The stop sequences.
      */
     public function getStopSequences(): ?array
     {
@@ -432,10 +445,16 @@ class ModelConfig extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @param Tool[] $tools The tools.
+     * @param list<Tool> $tools The tools.
+     *
+     * @throws InvalidArgumentException If the array is not a list.
      */
     public function setTools(array $tools): void
     {
+        if (!array_is_list($tools)) {
+            throw new InvalidArgumentException('Tools must be a list array.');
+        }
+
         $this->tools = $tools;
     }
 
@@ -444,7 +463,7 @@ class ModelConfig extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return Tool[]|null The tools.
+     * @return list<Tool>|null The tools.
      */
     public function getTools(): ?array
     {
@@ -721,7 +740,6 @@ class ModelConfig extends AbstractDataValueObject
 
         $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
 
-        /** @phpstan-ignore-next-line return.type (array_map doesn't guarantee list, validation will be added later) */
         return $data;
     }
 
