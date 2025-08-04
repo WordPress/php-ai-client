@@ -170,6 +170,21 @@ final class MimeType
     }
 
     /**
+     * Checks if this MIME type has a specific MIME type.
+     *
+     * This method checks if the MIME type starts with the specified MIME type.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $mimeType The MIME type to check.
+     * @return bool True if the MIME type has the specified MIME type.
+     */
+    public function hasMimeType(string $mimeType): bool
+    {
+        return strpos($this->value, $mimeType . '/') === 0;
+    }
+
+    /**
      * Checks if this is an image MIME type.
      *
      * @since n.e.x.t
@@ -178,7 +193,7 @@ final class MimeType
      */
     public function isImage(): bool
     {
-        return strpos($this->value, 'image/') === 0;
+        return $this->hasMimeType('image');
     }
 
     /**
@@ -190,7 +205,7 @@ final class MimeType
      */
     public function isAudio(): bool
     {
-        return strpos($this->value, 'audio/') === 0;
+        return $this->hasMimeType('audio');
     }
 
     /**
@@ -202,7 +217,7 @@ final class MimeType
      */
     public function isVideo(): bool
     {
-        return strpos($this->value, 'video/') === 0;
+        return $this->hasMimeType('video');
     }
 
     /**
@@ -214,7 +229,7 @@ final class MimeType
      */
     public function isText(): bool
     {
-        return strpos($this->value, 'text/') === 0;
+        return $this->hasMimeType('text');
     }
 
     /**

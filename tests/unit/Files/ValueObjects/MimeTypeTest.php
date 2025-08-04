@@ -282,4 +282,16 @@ class MimeTypeTest extends TestCase
         $mimeType = new MimeType('IMAGE/JPEG');
         $this->assertEquals('image/jpeg', (string) $mimeType);
     }
+
+    public function testHasMimeType(): void
+    {
+        $mimeType = new MimeType('image/jpeg');
+        $fontType = new MimeType('font/ttf');
+        
+        $this->assertTrue($mimeType->hasMimeType('image'));
+        $this->assertFalse($mimeType->hasMimeType('video'));
+
+        $this->assertTrue($fontType->hasMimeType('font'));
+        $this->assertFalse($fontType->hasMimeType('image'));
+    }
 }
