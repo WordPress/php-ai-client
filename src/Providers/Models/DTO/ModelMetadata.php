@@ -190,6 +190,60 @@ class ModelMetadata extends AbstractDataValueObject
     }
 
     /**
+     * Checks whether this model meets the specified requirements.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelRequirements $requirements The requirements to check against.
+     * @return bool True if the model meets all requirements, false otherwise.
+     */
+    public function meetsRequirements(ModelRequirements $requirements): bool
+    {
+        // Check if all required capabilities are supported
+        foreach ($requirements->getRequiredCapabilities() as $requiredCapability) {
+            if (!in_array($requiredCapability, $this->supportedCapabilities, true)) {
+                return false;
+            }
+        }
+
+        // Check if all required options are supported with the specified values
+        foreach ($requirements->getRequiredOptions() as $requiredOption) {
+            $supportedOption = $this->findSupportedOption($requiredOption->getName());
+
+            // If the option is not supported at all, fail
+            if ($supportedOption === null) {
+                return false;
+            }
+
+            // Check if the required value is supported by this option
+            if (!$supportedOption->isSupportedValue($requiredOption->getValue())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Finds a supported option by name.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The option name to find.
+     * @return SupportedOption|null The supported option, or null if not found.
+     */
+    private function findSupportedOption(string $name): ?SupportedOption
+    {
+        foreach ($this->supportedOptions as $supportedOption) {
+            if ($supportedOption->getName() === $name) {
+                return $supportedOption;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since n.e.x.t
