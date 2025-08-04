@@ -170,14 +170,15 @@ final class MimeType
     }
 
     /**
-     * Checks if this MIME type has a specific MIME type.
+     * Checks if this MIME type is a specific type.
      *
-     * This method checks if the MIME type starts with the specified MIME type.
+     * This method returns true when the stored MIME type begins with the
+     * given prefix. For example, `"audio"` matches `"audio/mpeg"`.
      *
      * @since n.e.x.t
      *
-     * @param string $mimeType The MIME type to check.
-     * @return bool True if the MIME type has the specified MIME type.
+     * @param string $mimeType The MIME type prefix to check (e.g., "audio", "image").
+     * @return bool True if this MIME type is of the specified type.
      */
     public function isType(string $mimeType): bool
     {
