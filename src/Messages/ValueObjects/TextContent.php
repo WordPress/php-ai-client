@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Messages\ValueObjects;
 
 use WordPress\AiClient\Messages\Contracts\MessageContentInterface;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
+use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
 
 /**
  * Value object representing text content.
@@ -17,6 +18,11 @@ use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
  */
 final class TextContent implements MessageContentInterface
 {
+    /**
+     * @use ContentGettersTrait
+     */
+    use ContentGettersTrait;
+
     /**
      * The text content.
      *
