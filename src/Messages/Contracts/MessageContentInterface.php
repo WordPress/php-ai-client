@@ -15,8 +15,6 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * This interface defines the contract that all message content value objects
  * must implement, ensuring consistent behavior across different content types.
  *
- * @mixin ContentGettersTrait
- *
  * @since n.e.x.t
  */
 interface MessageContentInterface
