@@ -21,7 +21,6 @@ use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
 final class FileContent implements MessageContentInterface
 {
     /**
-     * @use ContentGettersTrait
      */
     use ContentGettersTrait;
 
@@ -73,7 +72,7 @@ final class FileContent implements MessageContentInterface
      *
      * @since n.e.x.t
      *
-     * @return array The file content as an array.
+     * @return array<string, array<string, mixed>> The file content as an array.
      */
     public function toArray(): array
     {
