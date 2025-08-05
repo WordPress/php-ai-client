@@ -222,7 +222,8 @@ class MessagePart extends AbstractDataValueObject
      */
     public function toArray(): array
     {
-        return $this->content->toArray();
+        $data = [self::KEY_TYPE => $this->getType()->value];
+        return array_merge($data, $this->content->toArray());
     }
 
     /**
