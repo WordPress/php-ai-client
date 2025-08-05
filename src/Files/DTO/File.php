@@ -87,10 +87,11 @@ class File extends AbstractDataValueObject
             return;
         }
 
-        // Check if it's a data URI
+        // Data URI pattern.
         $dataUriPattern = '/^data:(?:([a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*'
-            . '(?:;[a-zA-Z0-9\-]+=[a-zA-Z0-9\-]+)*)?;)?base64,([A-Za-z0-9+\/]*={0,2})$/';
+        . '(?:;[a-zA-Z0-9\-]+=[a-zA-Z0-9\-]+)*)?;)?base64,([A-Za-z0-9+\/]*={0,2})$/';
 
+        // Check if it's a data URI.
         if (preg_match($dataUriPattern, $file, $matches)) {
             $this->fileType = FileTypeEnum::inline();
             $this->base64Data = $matches[2]; // Extract just the base64 data
@@ -283,6 +284,20 @@ class File extends AbstractDataValueObject
     public function isText(): bool
     {
         return $this->mimeType->isText();
+    }
+
+    /**
+     * Checks if the file is a specific MIME type.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $type The type to check.
+     *
+     * @return bool True if the file is of the specified type.
+     */
+    public function isType(string $type): bool
+    {
+        return $this->mimeType->isType($type);
     }
 
     /**
