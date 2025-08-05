@@ -10,6 +10,10 @@ use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Messages\ValueObjects\TextContent;
+use WordPress\AiClient\Messages\ValueObjects\FileContent;
+use WordPress\AiClient\Messages\ValueObjects\FunctionCallContent;
+use WordPress\AiClient\Messages\ValueObjects\FunctionResponseContent;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
@@ -26,7 +30,7 @@ class MessageTest extends TestCase
     public function testCreateWithSingleTextPart(): void
     {
         $role = MessageRoleEnum::user();
-        $part = new MessagePart('Hello, AI!');
+        $part = new MessagePart(new TextContent('Hello, AI!'));
         $message = new Message($role, [$part]);
         
         $this->assertEquals($role, $message->getRole());
@@ -43,9 +47,9 @@ class MessageTest extends TestCase
     {
         $role = MessageRoleEnum::model();
         $parts = [
-            new MessagePart('Here is the information you requested:'),
-            new MessagePart(new File('https://example.com/data.json', 'application/json')),
-            new MessagePart('Let me know if you need anything else.'),
+            new MessagePart(new TextContent('Here is the information you requested:')),
+            new MessagePart(new FileContent(new File('https://example.com/data.json', 'application/json'))),
+            new MessagePart(new TextContent('Let me know if you need anything else.')),
         ];
         
         $message = new Message($role, $parts);
@@ -79,7 +83,7 @@ class MessageTest extends TestCase
      */
     public function testWithDifferentRoles(MessageRoleEnum $role): void
     {
-        $part = new MessagePart('Test message');
+        $part = new MessagePart(new TextContent('Test message'));
         $message = new Message($role, [$part]);
         
         $this->assertEquals($role, $message->getRole());
@@ -108,11 +112,11 @@ class MessageTest extends TestCase
     {
         $role = MessageRoleEnum::model();
         $parts = [
-            new MessagePart('I\'ll help you with that. Let me search for the information.'),
-            new MessagePart(new FunctionCall('search_123', 'webSearch', ['query' => 'latest PHP news'])),
-            new MessagePart(new FunctionResponse('search_123', 'webSearch', ['results' => ['item1', 'item2']])),
-            new MessagePart('Based on my search, here are the latest PHP news:'),
-            new MessagePart(new File('data:text/plain;base64,SGVsbG8=', 'text/plain')),
+            new MessagePart(new TextContent('I\'ll help you with that. Let me search for the information.')),
+            new MessagePart(new FunctionCallContent(new FunctionCall('search_123', 'webSearch', ['query' => 'latest PHP news']))),
+            new MessagePart(new FunctionResponseContent(new FunctionResponse('search_123', 'webSearch', ['results' => ['item1', 'item2']]))),
+            new MessagePart(new TextContent('Based on my search, here are the latest PHP news:')),
+            new MessagePart(new FileContent(new File('data:text/plain;base64,SGVsbG8=', 'text/plain'))),
         ];
         
         $message = new Message($role, $parts);
@@ -175,7 +179,7 @@ class MessageTest extends TestCase
         
         // Create 100 parts
         for ($i = 0; $i < 100; $i++) {
-            $parts[] = new MessagePart("Part number $i");
+            $parts[] = new MessagePart(new TextContent("Part number $i"));
         }
         
         $message = new Message($role, $parts);
@@ -193,10 +197,10 @@ class MessageTest extends TestCase
     public function testPreservesPartOrder(): void
     {
         $parts = [
-            new MessagePart('First'),
-            new MessagePart('Second'),
-            new MessagePart('Third'),
-            new MessagePart('Fourth'),
+            new MessagePart(new TextContent('First')),
+            new MessagePart(new TextContent('Second')),
+            new MessagePart(new TextContent('Third')),
+            new MessagePart(new TextContent('Fourth')),
         ];
         
         $message = new Message(MessageRoleEnum::user(), $parts);
@@ -221,7 +225,7 @@ class MessageTest extends TestCase
             'calculate',
             ['result' => 42, 'formula' => '6 * 7']
         );
-        $part = new MessagePart($functionResponse);
+        $part = new MessagePart(new FunctionResponseContent($functionResponse));
         
         $message = new Message($role, [$part]);
         
@@ -238,8 +242,8 @@ class MessageTest extends TestCase
     {
         $role = MessageRoleEnum::user();
         $parts = [
-            new MessagePart('Hello, world!'),
-            new MessagePart('How are you?')
+            new MessagePart(new TextContent('Hello, world!')),
+            new MessagePart(new TextContent('How are you?'))
         ];
         $message = new Message($role, $parts);
         $json = $message->toArray();
@@ -284,8 +288,8 @@ class MessageTest extends TestCase
         $original = new Message(
             MessageRoleEnum::model(),
             [
-                new MessagePart('Here is the result:'),
-                new MessagePart(new File('https://example.com/result.png', 'image/png'))
+                            new MessagePart(new TextContent('Here is the result:')),
+            new MessagePart(new FileContent(new File('https://example.com/result.png', 'image/png')))
             ]
         );
         
@@ -308,7 +312,7 @@ class MessageTest extends TestCase
      */
     public function testImplementsWithArrayTransformationInterface(): void
     {
-        $message = new Message(MessageRoleEnum::user(), [new MessagePart('test')]);
+        $message = new Message(MessageRoleEnum::user(), [new MessagePart(new TextContent('test'))]);
         
         $this->assertInstanceOf(
             \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
