@@ -11,6 +11,10 @@ use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
+use WordPress\AiClient\Messages\ValueObjects\TextContent;
+use WordPress\AiClient\Messages\ValueObjects\FileContent;
+use WordPress\AiClient\Messages\ValueObjects\FunctionCallContent;
+use WordPress\AiClient\Messages\ValueObjects\FunctionResponseContent;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
@@ -27,7 +31,7 @@ class MessagePartTest extends TestCase
     public function testCreateWithTextContent(): void
     {
         $text = 'Hello, this is a text message.';
-        $part = new MessagePart($text);
+        $part = new MessagePart(new TextContent($text));
         
         $this->assertEquals(MessagePartTypeEnum::text(), $part->getType());
         $this->assertEquals($text, $part->getText());
@@ -44,7 +48,7 @@ class MessagePartTest extends TestCase
     public function testCreateWithFileContent(): void
     {
         $file = new File('https://example.com/image.jpg', 'image/jpeg');
-        $part = new MessagePart($file);
+        $part = new MessagePart(new FileContent($file));
         
         $this->assertEquals(MessagePartTypeEnum::file(), $part->getType());
         $this->assertNull($part->getText());
@@ -61,7 +65,7 @@ class MessagePartTest extends TestCase
     public function testCreateWithFunctionCallContent(): void
     {
         $functionCall = new FunctionCall('func_123', 'testFunction', ['param' => 'value']);
-        $part = new MessagePart($functionCall);
+        $part = new MessagePart(new FunctionCallContent($functionCall));
         
         $this->assertEquals(MessagePartTypeEnum::functionCall(), $part->getType());
         $this->assertNull($part->getText());
@@ -78,7 +82,7 @@ class MessagePartTest extends TestCase
     public function testCreateWithFunctionResponseContent(): void
     {
         $functionResponse = new FunctionResponse('func_123', 'testFunction', ['result' => 'success']);
-        $part = new MessagePart($functionResponse);
+        $part = new MessagePart(new FunctionResponseContent($functionResponse));
         
         $this->assertEquals(MessagePartTypeEnum::functionResponse(), $part->getType());
         $this->assertNull($part->getText());
@@ -94,46 +98,36 @@ class MessagePartTest extends TestCase
      */
     public function testCreateWithEmptyString(): void
     {
-        $part = new MessagePart('');
+        $part = new MessagePart(new TextContent(''));
         
         $this->assertEquals(MessagePartTypeEnum::text(), $part->getType());
         $this->assertEquals('', $part->getText());
     }
 
     /**
-     * Tests that unsupported content type throws exception.
+     * Tests that invalid array data throws exception in fromArray.
      *
-     * @dataProvider unsupportedContentProvider
-     * @param mixed $content
-     * @param string $expectedType
      * @return void
      */
-    public function testUnsupportedContentThrowsException($content, string $expectedType): void
+    public function testInvalidArrayThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf(
-            'Unsupported content type %s. Expected string, File, FunctionCall, or FunctionResponse.',
-            $expectedType
-        ));
+        $this->expectExceptionMessage('MessagePart requires one of: text, file, functionCall, or functionResponse.');
         
-        new MessagePart($content);
+        MessagePart::fromArray(['type' => 'invalid', 'invalid' => 'data']);
     }
 
     /**
-     * Provides unsupported content types.
+     * Tests that missing required data throws exception in fromArray.
      *
-     * @return array
+     * @return void
      */
-    public function unsupportedContentProvider(): array
+    public function testMissingRequiredDataThrowsException(): void
     {
-        return [
-            'integer' => [123, 'integer'],
-            'float' => [3.14, 'double'],
-            'boolean' => [true, 'boolean'],
-            'array' => [['key' => 'value'], 'array'],
-            'null' => [null, 'NULL'],
-            'stdClass' => [new stdClass(), 'stdClass'],
-        ];
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('MessagePart requires one of: text, file, functionCall, or functionResponse.');
+        
+        MessagePart::fromArray(['type' => 'text']); // Missing 'text' key
     }
 
     /**
@@ -187,12 +181,12 @@ class MessagePartTest extends TestCase
     {
         // Remote file
         $remoteFile = new File('https://example.com/doc.pdf', 'application/pdf');
-        $part1 = new MessagePart($remoteFile);
+        $part1 = new MessagePart(new FileContent($remoteFile));
         $this->assertEquals('https://example.com/doc.pdf', $part1->getFile()->getUrl());
         
         // Inline file
         $inlineFile = new File('SGVsbG8gV29ybGQ=', 'text/plain');
-        $part2 = new MessagePart($inlineFile);
+        $part2 = new MessagePart(new FileContent($inlineFile));
         $this->assertEquals('SGVsbG8gV29ybGQ=', $part2->getFile()->getBase64Data());
     }
 
@@ -214,7 +208,7 @@ class MessagePartTest extends TestCase
         ];
         
         $functionCall = new FunctionCall('db_123', 'executeQuery', $complexArgs);
-        $part = new MessagePart($functionCall);
+        $part = new MessagePart(new FunctionCallContent($functionCall));
         
         $retrievedCall = $part->getFunctionCall();
         $this->assertNotNull($retrievedCall);
@@ -229,7 +223,7 @@ class MessagePartTest extends TestCase
     public function testWithUnicodeText(): void
     {
         $unicodeText = '你好世界 🌍 مرحبا بالعالم';
-        $part = new MessagePart($unicodeText);
+        $part = new MessagePart(new TextContent($unicodeText));
         
         $this->assertEquals($unicodeText, $part->getText());
     }
@@ -241,7 +235,7 @@ class MessagePartTest extends TestCase
      */
     public function testToArrayWithText(): void
     {
-        $part = new MessagePart('Hello, world!');
+        $part = new MessagePart(new TextContent('Hello, world!'));
         $json = $part->toArray();
         
         $this->assertIsArray($json);
@@ -264,7 +258,7 @@ class MessagePartTest extends TestCase
     public function testToArrayWithFile(): void
     {
         $file = new File('https://example.com/image.jpg', 'image/jpeg');
-        $part = new MessagePart($file);
+        $part = new MessagePart(new FileContent($file));
         $json = $part->toArray();
         
         $this->assertIsArray($json);
@@ -323,14 +317,14 @@ class MessagePartTest extends TestCase
     public function testArrayRoundTrip(): void
     {
         // Test with text
-        $textPart = new MessagePart('Test text');
+        $textPart = new MessagePart(new TextContent('Test text'));
         $textJson = $textPart->toArray();
         $restoredText = MessagePart::fromArray($textJson);
         $this->assertEquals($textPart->getText(), $restoredText->getText());
         
         // Test with file
         $file = new File('https://example.com/doc.pdf', 'application/pdf');
-        $filePart = new MessagePart($file);
+        $filePart = new MessagePart(new FileContent($file));
         $fileJson = $filePart->toArray();
         $restoredFile = MessagePart::fromArray($fileJson);
         $this->assertEquals($file->getUrl(), $restoredFile->getFile()->getUrl());
@@ -338,7 +332,7 @@ class MessagePartTest extends TestCase
         
         // Test with function call
         $functionCall = new FunctionCall('id_123', 'getData', ['key' => 'value']);
-        $funcPart = new MessagePart($functionCall);
+        $funcPart = new MessagePart(new FunctionCallContent($functionCall));
         $funcJson = $funcPart->toArray();
         $restoredFunc = MessagePart::fromArray($funcJson);
         $this->assertEquals($functionCall->getId(), $restoredFunc->getFunctionCall()->getId());
@@ -353,7 +347,7 @@ class MessagePartTest extends TestCase
      */
     public function testImplementsWithArrayTransformationInterface(): void
     {
-        $part = new MessagePart('test');
+        $part = new MessagePart(new TextContent('test'));
         
         $this->assertInstanceOf(
             \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
