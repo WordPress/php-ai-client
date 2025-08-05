@@ -114,11 +114,15 @@ class AiProviderRegistry
      */
     public function isProviderConfigured(string $idOrClassName): bool
     {
-        $instance = $this->getProviderInstance($idOrClassName);
-
-        // TODO: Call availability() method when ProviderInterface is available
-        // For now, assume configured if we can instantiate
-        return $instance !== null;
+        try {
+            $this->getProviderInstance($idOrClassName);
+            
+            // TODO: Call availability() method when ProviderInterface is available
+            // For now, assume configured if we can instantiate without exception
+            return true;
+        } catch (InvalidArgumentException $e) {
+            return false;
+        }
     }
 
     /**
@@ -136,8 +140,20 @@ class AiProviderRegistry
         foreach ($this->providerClassNames as $providerId => $className) {
             $providerResults = $this->findProviderModelsMetadataForSupport($providerId, $modelRequirements);
             if (!empty($providerResults)) {
+                $providerInstance = $this->getProviderInstance($providerId);
+                
+                // Validate that provider has metadata method
+                if (!method_exists($providerInstance, 'metadata')) {
+                    continue;
+                }
+                
+                $providerMetadata = $providerInstance->metadata();
+                if (!$providerMetadata instanceof ProviderMetadata) {
+                    continue;
+                }
+                
                 $results[] = new ProviderModelsMetadata(
-                    $this->getProviderInstance($providerId)->metadata(),
+                    $providerMetadata,
                     $providerResults
                 );
             }
@@ -173,20 +189,13 @@ class AiProviderRegistry
      *
      * @param string $idOrClassName The provider ID or class name.
      * @param string $modelId The model identifier.
-     * @param ModelConfig|array<string, mixed> $modelConfig The model configuration.
+     * @param ModelConfig $modelConfig The model configuration.
      * @return object The configured model instance.
      * @throws InvalidArgumentException If provider or model is not found.
      */
-    public function getProviderModel(string $idOrClassName, string $modelId, $modelConfig): object
+    public function getProviderModel(string $idOrClassName, string $modelId, ModelConfig $modelConfig): object
     {
         $instance = $this->getProviderInstance($idOrClassName);
-
-        // Normalize config to ModelConfig if needed
-        if (is_array($modelConfig)) {
-            // TODO: Improve type safety when ModelConfig::fromArray is finalized
-            /** @var ModelConfig $modelConfig */
-            $modelConfig = ModelConfig::fromArray($modelConfig);
-        }
 
         // TODO: Call model() method when ProviderInterface is available
         throw new InvalidArgumentException('Model instantiation not yet implemented');

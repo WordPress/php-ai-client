@@ -93,10 +93,7 @@ class AiProviderRegistryTest extends TestCase
      */
     public function testIsProviderConfiguredWithUnregisteredProvider(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Provider not registered: nonexistent');
-        
-        $this->registry->isProviderConfigured('nonexistent');
+        $this->assertFalse($this->registry->isProviderConfigured('nonexistent'));
     }
 
     /**
@@ -173,7 +170,8 @@ class AiProviderRegistryTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Model instantiation not yet implemented');
         
-        $this->registry->getProviderModel('mock', 'test-model', []);
+        $modelConfig = new \WordPress\AiClient\Providers\Models\DTO\ModelConfig([]);
+        $this->registry->getProviderModel('mock', 'test-model', $modelConfig);
     }
 
     /**
