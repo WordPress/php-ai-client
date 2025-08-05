@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Messages\ValueObjects;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Contracts\MessageContentInterface;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
+use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
 
 /**
  * Value object representing file content.
@@ -18,6 +19,11 @@ use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
  */
 final class FileContent implements MessageContentInterface
 {
+    /**
+     * @use ContentGettersTrait
+     */
+    use ContentGettersTrait;
+
     /**
      * The file content.
      *
