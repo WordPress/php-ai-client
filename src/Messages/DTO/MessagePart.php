@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use RuntimeException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\DTO\File;
-use WordPress\AiClient\Messages\Contracts\MessageContentInterface;
+use WordPress\AiClient\Messages\ValueObjects\MessageContent;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -47,18 +47,18 @@ class MessagePart extends AbstractDataValueObject
     public const KEY_FUNCTION_CALL = 'functionCall';
     public const KEY_FUNCTION_RESPONSE = 'functionResponse';
     /**
-     * @var MessageContentInterface The content of this message part.
+     * @var MessageContent The content of this message part.
      */
-    private MessageContentInterface $content;
+    private MessageContent $content;
 
     /**
      * Constructor that accepts a message content object.
      *
      * @since n.e.x.t
      *
-     * @param MessageContentInterface $content The content of this message part.
+     * @param MessageContent $content The content of this message part.
      */
-    public function __construct(MessageContentInterface $content)
+    public function __construct(MessageContent $content)
     {
         $this->content = $content;
     }

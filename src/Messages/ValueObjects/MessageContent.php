@@ -5,16 +5,38 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Messages\ValueObjects;
 
 use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
- * Trait for getting content from message parts.
+ * Abstract base class for message content types.
+ *
+ * This abstract class provides default implementations for all content getters,
+ * allowing concrete content classes to only override the methods they need.
  *
  * @since n.e.x.t
  */
-trait ContentGettersTrait
+abstract class MessageContent
 {
+    /**
+     * Gets the message part type for this content.
+     *
+     * @since n.e.x.t
+     *
+     * @return MessagePartTypeEnum The enum instance representing the content type.
+     */
+    abstract public function getMessagePartType(): MessagePartTypeEnum;
+
+    /**
+     * Converts the content to array representation.
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed> The array representation of the content.
+     */
+    abstract public function toArray(): array;
+
     /**
      * Gets the text content.
      *
