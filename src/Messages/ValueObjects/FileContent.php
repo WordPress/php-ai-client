@@ -56,7 +56,7 @@ final class FileContent extends MessageContent
      *
      * @return File The file content.
      */
-    public function getFile(): ?File
+    public function getFile(): File
     {
         return $this->file;
     }

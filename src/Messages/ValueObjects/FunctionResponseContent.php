@@ -56,7 +56,7 @@ final class FunctionResponseContent extends MessageContent
      *
      * @return FunctionResponse The function response content.
      */
-    public function getFunctionResponse(): ?FunctionResponse
+    public function getFunctionResponse(): FunctionResponse
     {
         return $this->functionResponse;
     }

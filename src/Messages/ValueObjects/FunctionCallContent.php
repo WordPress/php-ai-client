@@ -48,7 +48,7 @@ final class FunctionCallContent extends MessageContent
      *
      * @return FunctionCall The function call content.
      */
-    public function getFunctionCall(): ?FunctionCall
+    public function getFunctionCall(): FunctionCall
     {
         return $this->functionCall;
     }
