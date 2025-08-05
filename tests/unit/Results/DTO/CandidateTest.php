@@ -13,6 +13,9 @@ use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Messages\ValueObjects\TextContent;
+use WordPress\AiClient\Messages\ValueObjects\FileContent;
+use WordPress\AiClient\Messages\ValueObjects\FunctionCallContent;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
@@ -32,7 +35,7 @@ class CandidateTest extends TestCase
     public function testCreateWithBasicProperties(): void
     {
         $message = new ModelMessage([
-            new MessagePart('This is the generated response.')
+            new MessagePart(new TextContent('This is the generated response.'))
         ]);
         
         $candidate = new Candidate(
@@ -55,7 +58,7 @@ class CandidateTest extends TestCase
      */
     public function testWithDifferentFinishReasons(FinishReasonEnum $finishReason): void
     {
-        $message = new ModelMessage([new MessagePart('Response')]);
+        $message = new ModelMessage([new MessagePart(new TextContent('Response'))]);
         
         $candidate = new Candidate($message, $finishReason, 10);
         
@@ -92,12 +95,12 @@ class CandidateTest extends TestCase
         );
         
         $message = new ModelMessage([
-            new MessagePart('Let me search for that information.'),
-            new MessagePart($functionCall),
-            new MessagePart('Based on my search, here are the PHP best practices:'),
-            new MessagePart('1. Follow PSR standards'),
-            new MessagePart('2. Use type declarations'),
-            new MessagePart('3. Write unit tests'),
+            new MessagePart(new TextContent('Let me search for that information.')),
+            new MessagePart(new FunctionCallContent($functionCall)),
+            new MessagePart(new TextContent('Based on my search, here are the PHP best practices:')),
+            new MessagePart(new TextContent('1. Follow PSR standards')),
+            new MessagePart(new TextContent('2. Use type declarations')),
+            new MessagePart(new TextContent('3. Write unit tests')),
         ]);
         
         $candidate = new Candidate(
@@ -121,9 +124,9 @@ class CandidateTest extends TestCase
         $file = new File('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12P4DwABAQEAG7buVgAAAABJRU5ErkJggg==', 'image/png');
         
         $message = new ModelMessage([
-            new MessagePart('I\'ve generated the requested image:'),
-            new MessagePart($file),
-            new MessagePart('The image shows a flowchart of the process.'),
+            new MessagePart(new TextContent('I\'ve generated the requested image:')),
+            new MessagePart(new FileContent($file)),
+            new MessagePart(new TextContent('The image shows a flowchart of the process.')),
         ]);
         
         $candidate = new Candidate(
@@ -147,7 +150,7 @@ class CandidateTest extends TestCase
      */
     public function testWithDifferentTokenCounts(int $tokenCount): void
     {
-        $message = new ModelMessage([new MessagePart('Response')]);
+        $message = new ModelMessage([new MessagePart(new TextContent('Response'))]);
         
         $candidate = new Candidate(
             $message,
@@ -182,7 +185,7 @@ class CandidateTest extends TestCase
     public function testRejectsNonModelMessage(): void
     {
         $userMessage = new UserMessage([
-            new MessagePart('This is a user message.')
+            new MessagePart(new TextContent('This is a user message.'))
         ]);
         
         $this->expectException(InvalidArgumentException::class);
@@ -204,7 +207,7 @@ class CandidateTest extends TestCase
     {
         $message = new Message(
             MessageRoleEnum::user(),
-            [new MessagePart('User message')]
+            [new MessagePart(new TextContent('User message'))]
         );
         
         $this->expectException(InvalidArgumentException::class);
@@ -281,7 +284,7 @@ class CandidateTest extends TestCase
     public function testWithMaxLengthFinishReason(): void
     {
         $message = new ModelMessage([
-            new MessagePart('This is a long response that was cut off due to reaching the maximum token limit...')
+            new MessagePart(new TextContent('This is a long response that was cut off due to reaching the maximum token limit...'))
         ]);
         
         $candidate = new Candidate(
@@ -302,7 +305,7 @@ class CandidateTest extends TestCase
     public function testWithContentFilterFinishReason(): void
     {
         $message = new ModelMessage([
-            new MessagePart('I cannot provide that information.')
+            new MessagePart(new TextContent('I cannot provide that information.'))
         ]);
         
         $candidate = new Candidate(
@@ -322,7 +325,7 @@ class CandidateTest extends TestCase
     public function testWithErrorFinishReason(): void
     {
         $message = new ModelMessage([
-            new MessagePart('An error occurred while generating the response.')
+            new MessagePart(new TextContent('An error occurred while generating the response.'))
         ]);
         
         $candidate = new Candidate(
@@ -342,8 +345,8 @@ class CandidateTest extends TestCase
     public function testToArray(): void
     {
         $message = new ModelMessage([
-            new MessagePart('This is the AI response.'),
-            new MessagePart('It contains multiple parts.')
+            new MessagePart(new TextContent('This is the AI response.')),
+            new MessagePart(new TextContent('It contains multiple parts.'))
         ]);
         
         $candidate = new Candidate(
@@ -399,8 +402,8 @@ class CandidateTest extends TestCase
         $this->assertArrayRoundTrip(
             new Candidate(
                 new ModelMessage([
-                    new MessagePart('Generated response'),
-                    new MessagePart(new FunctionCall('call_123', 'search', ['q' => 'test']))
+                    new MessagePart(new TextContent('Generated response')),
+                    new MessagePart(new FunctionCallContent(new FunctionCall('call_123', 'search', ['q' => 'test'])))
                 ]),
                 FinishReasonEnum::toolCalls(),
                 120
@@ -432,7 +435,7 @@ class CandidateTest extends TestCase
     public function testImplementsWithArrayTransformationInterface(): void
     {
         $candidate = new Candidate(
-            new ModelMessage([new MessagePart('test')]),
+            new ModelMessage([new MessagePart(new TextContent('test'))]),
             FinishReasonEnum::stop(),
             10
         );
