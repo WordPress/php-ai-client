@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Messages\ValueObjects;
 
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Messages\Contracts\MessageContentInterface;
+use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
 
@@ -68,6 +69,6 @@ final class FunctionCallContent implements MessageContentInterface
      */
     public function toArray(): array
     {
-        return [ $this->getMessagePartType()->value => $this->functionCall->toArray() ];
+        return [MessagePart::KEY_FUNCTION_CALL => $this->functionCall->toArray()];
     }
 }
