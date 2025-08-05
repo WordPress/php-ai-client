@@ -10,6 +10,10 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Messages\ValueObjects\TextContent;
+use WordPress\AiClient\Messages\ValueObjects\FileContent;
+use WordPress\AiClient\Messages\ValueObjects\FunctionCallContent;
+use WordPress\AiClient\Messages\ValueObjects\FunctionResponseContent;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -29,7 +33,7 @@ class ModelMessageTest extends TestCase
     public function testAutomaticallySetsModelRole(): void
     {
         $parts = [
-            new MessagePart('This is a response from the AI model.'),
+            new MessagePart(new TextContent('This is a response from the AI model.')),
         ];
         
         $message = new ModelMessage($parts);
@@ -46,10 +50,10 @@ class ModelMessageTest extends TestCase
     public function testWithMultipleParts(): void
     {
         $parts = [
-            new MessagePart('Let me help you with that.'),
-            new MessagePart('Here are the steps:'),
-            new MessagePart('1. First step'),
-            new MessagePart('2. Second step'),
+            new MessagePart(new TextContent('Let me help you with that.')),
+            new MessagePart(new TextContent('Here are the steps:')),
+            new MessagePart(new TextContent('1. First step')),
+            new MessagePart(new TextContent('2. Second step')),
         ];
         
         $message = new ModelMessage($parts);
@@ -95,10 +99,10 @@ class ModelMessageTest extends TestCase
         $functionResponse = new FunctionResponse('func_123', 'search', ['results' => []]);
         
         $parts = [
-            new MessagePart('I found the following:'),
-            new MessagePart($file),
-            new MessagePart($functionCall),
-            new MessagePart($functionResponse),
+            new MessagePart(new TextContent('I found the following:')),
+            new MessagePart(new FileContent($file)),
+            new MessagePart(new FunctionCallContent($functionCall)),
+            new MessagePart(new FunctionResponseContent($functionResponse)),
         ];
         
         $message = new ModelMessage($parts);
@@ -130,8 +134,8 @@ class ModelMessageTest extends TestCase
     public function testToArray(): void
     {
         $message = new ModelMessage([
-            new MessagePart('I can help you with that.'),
-            new MessagePart('Here is the solution:')
+            new MessagePart(new TextContent('I can help you with that.')),
+            new MessagePart(new TextContent('Here is the solution:'))
         ]);
         
         $json = $this->assertToArrayReturnsArray($message);
@@ -176,8 +180,8 @@ class ModelMessageTest extends TestCase
     {
         $this->assertArrayRoundTrip(
             new ModelMessage([
-                new MessagePart('I\'ll search for that information.'),
-                new MessagePart(new FunctionCall('search_123', 'webSearch', ['query' => 'PHP 8 features']))
+                new MessagePart(new TextContent('I\'ll search for that information.')),
+                new MessagePart(new FunctionCallContent(new FunctionCall('search_123', 'webSearch', ['query' => 'PHP 8 features'])))
             ]),
             function ($original, $restored) {
                 $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
@@ -205,7 +209,7 @@ class ModelMessageTest extends TestCase
      */
     public function testImplementsWithArrayTransformationInterface(): void
     {
-        $message = new ModelMessage([new MessagePart('test')]);
+        $message = new ModelMessage([new MessagePart(new TextContent('test'))]);
         $this->assertImplementsArrayTransformation($message);
     }
 }
