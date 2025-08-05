@@ -12,6 +12,7 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
+use WordPress\AiClient\Messages\ValueObjects\TextContent;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
@@ -66,7 +67,7 @@ class GenerativeAiOperationTest extends TestCase
     public function testCreateInSucceededStateWithResult(): void
     {
         $modelMessage = new ModelMessage([
-            new MessagePart('Generated content')
+            new MessagePart(new TextContent('Generated content'))
         ]);
         $candidate = new Candidate(
             $modelMessage,
@@ -194,7 +195,7 @@ class GenerativeAiOperationTest extends TestCase
 
         // Processing -> Succeeded with result
         $modelMessage = new ModelMessage([
-            new MessagePart('Result')
+            new MessagePart(new TextContent('Result'))
         ]);
         $tokenUsage = new TokenUsage(5, 10, 15);
         $result = new GenerativeAiResult(
@@ -320,7 +321,7 @@ class GenerativeAiOperationTest extends TestCase
     public function testToArraySucceededState(): void
     {
         $modelMessage = new ModelMessage([
-            new MessagePart('Success response')
+            new MessagePart(new TextContent('Success response'))
         ]);
         $candidate = new Candidate(
             $modelMessage,
@@ -436,7 +437,7 @@ class GenerativeAiOperationTest extends TestCase
     public function testArrayRoundTripSucceededState(): void
     {
         $modelMessage = new ModelMessage([
-            new MessagePart('Roundtrip test response')
+            new MessagePart(new TextContent('Roundtrip test response'))
         ]);
         $candidate = new Candidate(
             $modelMessage,
