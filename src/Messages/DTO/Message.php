@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Messages\DTO;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
@@ -23,9 +23,9 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  *     parts: array<MessagePartArrayShape>
  * }
  *
- * @extends AbstractDataValueObject<MessageArrayShape>
+ * @extends AbstractDataTransferObject<MessageArrayShape>
  */
-class Message extends AbstractDataValueObject
+class Message extends AbstractDataTransferObject
 {
     public const KEY_ROLE = 'role';
     public const KEY_PARTS = 'parts';

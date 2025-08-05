@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
 
 /**
@@ -25,9 +25,9 @@ use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
  *     webSearch?: WebSearchArrayShape
  * }
  *
- * @extends AbstractDataValueObject<ToolArrayShape>
+ * @extends AbstractDataTransferObject<ToolArrayShape>
  */
-class Tool extends AbstractDataValueObject
+class Tool extends AbstractDataTransferObject
 {
     public const KEY_TYPE = 'type';
     public const KEY_FUNCTION_DECLARATIONS = 'functionDeclarations';

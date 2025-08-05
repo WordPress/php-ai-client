@@ -6,7 +6,7 @@ namespace WordPress\AiClient\Files\DTO;
 
 use InvalidArgumentException;
 use RuntimeException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\ValueObjects\MimeType;
 
@@ -25,9 +25,9 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  *     base64Data?: string
  * }
  *
- * @extends AbstractDataValueObject<FileArrayShape>
+ * @extends AbstractDataTransferObject<FileArrayShape>
  */
-class File extends AbstractDataValueObject
+class File extends AbstractDataTransferObject
 {
     public const KEY_FILE_TYPE = 'fileType';
     public const KEY_MIME_TYPE = 'mimeType';

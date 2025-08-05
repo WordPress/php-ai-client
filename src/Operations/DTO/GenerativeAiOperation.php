@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Operations\DTO;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Operations\Contracts\OperationInterface;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -22,9 +22,9 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *
  * @phpstan-type GenerativeAiOperationArrayShape array{id: string, state: string, result?: GenerativeAiResultArrayShape}
  *
- * @extends AbstractDataValueObject<GenerativeAiOperationArrayShape>
+ * @extends AbstractDataTransferObject<GenerativeAiOperationArrayShape>
  */
-class GenerativeAiOperation extends AbstractDataValueObject implements OperationInterface
+class GenerativeAiOperation extends AbstractDataTransferObject implements OperationInterface
 {
     public const KEY_ID = 'id';
     public const KEY_STATE = 'state';

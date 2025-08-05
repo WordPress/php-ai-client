@@ -6,7 +6,7 @@ namespace WordPress\AiClient\Messages\DTO;
 
 use InvalidArgumentException;
 use RuntimeException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -32,9 +32,9 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  *     functionResponse?: FunctionResponseArrayShape
  * }
  *
- * @extends AbstractDataValueObject<MessagePartArrayShape>
+ * @extends AbstractDataTransferObject<MessagePartArrayShape>
  */
-class MessagePart extends AbstractDataValueObject
+class MessagePart extends AbstractDataTransferObject
 {
     public const KEY_TYPE = 'type';
     public const KEY_TEXT = 'text';
