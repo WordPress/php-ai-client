@@ -7,9 +7,15 @@ namespace WordPress\AiClient\Messages\ValueObjects;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Messages\Contracts\MessageContentInterface;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
+use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
 
 final class FunctionCallContent implements MessageContentInterface
 {
+    /**
+     * @use ContentGettersTrait
+     */
+    use ContentGettersTrait;
+
     /**
      * The function call content.
      *
