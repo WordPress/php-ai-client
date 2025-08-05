@@ -37,7 +37,7 @@ class MimeTypeTest extends TestCase
         return [
             'simple type' => ['text/plain', 'text/plain'],
             'with uppercase' => ['TEXT/HTML', 'text/html'],
-            'complex type' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+            'complex type' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
         ];
     }
@@ -53,7 +53,7 @@ class MimeTypeTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid MIME type: ' . $input);
-        
+
         new MimeType($input);
     }
 
@@ -106,7 +106,7 @@ class MimeTypeTest extends TestCase
             ['json', 'application/json'],
             ['xml', 'application/xml'],
             ['csv', 'text/csv'],
-            
+
             // Images
             ['jpg', 'image/jpeg'],
             ['jpeg', 'image/jpeg'],
@@ -115,24 +115,24 @@ class MimeTypeTest extends TestCase
             ['webp', 'image/webp'],
             ['svg', 'image/svg+xml'],
             ['ico', 'image/x-icon'],
-            
+
             // Documents
             ['pdf', 'application/pdf'],
             ['doc', 'application/msword'],
             ['docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
             ['xls', 'application/vnd.ms-excel'],
             ['xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-            
+
             // Audio
             ['mp3', 'audio/mpeg'],
             ['wav', 'audio/wav'],
             ['ogg', 'audio/ogg'],
-            
+
             // Video
             ['mp4', 'video/mp4'],
             ['avi', 'video/x-msvideo'],
             ['webm', 'video/webm'],
-            
+
             // Archives
             ['zip', 'application/zip'],
             ['tar', 'application/x-tar'],
@@ -149,7 +149,7 @@ class MimeTypeTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown file extension: xyz');
-        
+
         MimeType::fromExtension('xyz');
     }
 
@@ -230,7 +230,9 @@ class MimeTypeTest extends TestCase
     {
         $this->assertTrue((new MimeType('application/pdf'))->isDocument());
         $this->assertTrue((new MimeType('application/msword'))->isDocument());
-        $this->assertTrue((new MimeType('application/vnd.openxmlformats-officedocument.wordprocessingml.document'))->isDocument());
+        $this->assertTrue(
+            (new MimeType('application/vnd.openxmlformats-officedocument.wordprocessingml.document'))->isDocument()
+        );
         $this->assertFalse((new MimeType('text/plain'))->isDocument());
         $this->assertFalse((new MimeType('image/jpeg'))->isDocument());
     }
@@ -245,16 +247,16 @@ class MimeTypeTest extends TestCase
         $mimeType1 = new MimeType('text/plain');
         $mimeType2 = new MimeType('text/plain');
         $mimeType3 = new MimeType('text/html');
-        
+
         // Test with MimeType objects
         $this->assertTrue($mimeType1->equals($mimeType2));
         $this->assertFalse($mimeType1->equals($mimeType3));
-        
+
         // Test with strings
         $this->assertTrue($mimeType1->equals('text/plain'));
         $this->assertTrue($mimeType1->equals('TEXT/PLAIN'));
         $this->assertFalse($mimeType1->equals('text/html'));
-        
+
         // Test with invalid types
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid MIME type comparison: integer');

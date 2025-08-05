@@ -100,16 +100,25 @@ class ProviderModelsMetadataTest extends TestCase
         $this->assertArrayHasKey(ProviderModelsMetadata::KEY_MODELS, $schema['properties']);
 
         // Check provider property
-        $this->assertEquals(ProviderMetadata::getJsonSchema(), $schema['properties'][ProviderModelsMetadata::KEY_PROVIDER]);
+        $this->assertEquals(
+            ProviderMetadata::getJsonSchema(),
+            $schema['properties'][ProviderModelsMetadata::KEY_PROVIDER]
+        );
 
         // Check models property
         $this->assertEquals('array', $schema['properties'][ProviderModelsMetadata::KEY_MODELS]['type']);
         $this->assertArrayHasKey('items', $schema['properties'][ProviderModelsMetadata::KEY_MODELS]);
-        $this->assertEquals(ModelMetadata::getJsonSchema(), $schema['properties'][ProviderModelsMetadata::KEY_MODELS]['items']);
+        $this->assertEquals(
+            ModelMetadata::getJsonSchema(),
+            $schema['properties'][ProviderModelsMetadata::KEY_MODELS]['items']
+        );
 
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals([ProviderModelsMetadata::KEY_PROVIDER, ProviderModelsMetadata::KEY_MODELS], $schema['required']);
+        $this->assertEquals(
+            [ProviderModelsMetadata::KEY_PROVIDER, ProviderModelsMetadata::KEY_MODELS],
+            $schema['required']
+        );
     }
 
     /**
@@ -362,4 +371,3 @@ class ProviderModelsMetadataTest extends TestCase
         );
     }
 }
-

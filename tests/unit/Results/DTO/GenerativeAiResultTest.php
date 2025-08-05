@@ -26,6 +26,7 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
 class GenerativeAiResultTest extends TestCase
 {
     use ArrayTransformationTestTrait;
+
     /**
      * Tests creating result with single candidate.
      *
@@ -38,13 +39,13 @@ class GenerativeAiResultTest extends TestCase
         ]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 10);
         $tokenUsage = new TokenUsage(20, 10, 30);
-        
+
         $result = new GenerativeAiResult(
             'result_123',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->assertEquals('result_123', $result->getId());
         $this->assertCount(1, $result->getCandidates());
         $this->assertSame($candidate, $result->getCandidates()[0]);
@@ -67,13 +68,13 @@ class GenerativeAiResultTest extends TestCase
             $candidates[] = new Candidate($message, FinishReasonEnum::stop(), $i * 10);
         }
         $tokenUsage = new TokenUsage(20, 90, 110);
-        
+
         $result = new GenerativeAiResult(
             'result_multi',
             $candidates,
             $tokenUsage
         );
-        
+
         $this->assertCount(3, $result->getCandidates());
         $this->assertEquals(3, $result->getCandidateCount());
         $this->assertTrue($result->hasMultipleCandidates());
@@ -95,14 +96,14 @@ class GenerativeAiResultTest extends TestCase
             'max_tokens' => 1000,
             'custom_data' => ['key' => 'value']
         ];
-        
+
         $result = new GenerativeAiResult(
             'result_meta',
             [$candidate],
             $tokenUsage,
             $metadata
         );
-        
+
         $this->assertEquals($metadata, $result->getProviderMetadata());
     }
 
@@ -114,10 +115,10 @@ class GenerativeAiResultTest extends TestCase
     public function testRejectsEmptyCandidatesArray(): void
     {
         $tokenUsage = new TokenUsage(0, 0, 0);
-        
+
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('At least one candidate must be provided');
-        
+
         new GenerativeAiResult('result_empty', [], $tokenUsage);
     }
 
@@ -134,13 +135,13 @@ class GenerativeAiResultTest extends TestCase
         ]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 8);
         $tokenUsage = new TokenUsage(10, 8, 18);
-        
+
         $result = new GenerativeAiResult(
             'result_text',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->assertEquals($text, $result->toText());
     }
 
@@ -157,16 +158,16 @@ class GenerativeAiResultTest extends TestCase
         ]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 5);
         $tokenUsage = new TokenUsage(10, 5, 15);
-        
+
         $result = new GenerativeAiResult(
             'result_no_text',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('No text content found in first candidate');
-        
+
         $result->toText();
     }
 
@@ -177,20 +178,24 @@ class GenerativeAiResultTest extends TestCase
      */
     public function testToFile(): void
     {
-        $file = new File('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12P4DwABAQEAG7buVgAAAABJRU5ErkJggg==', 'image/png');
+        $base64Data = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12P4DwABAQEAG7buVgAAAABJRU5ErkJggg==';
+        $file = new File(
+            'data:image/png;base64,' . $base64Data,
+            'image/png'
+        );
         $message = new ModelMessage([
             new MessagePart('Here is the generated image:'),
             new MessagePart($file)
         ]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 20);
         $tokenUsage = new TokenUsage(15, 20, 35);
-        
+
         $result = new GenerativeAiResult(
             'result_file',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->assertSame($file, $result->toFile());
     }
 
@@ -206,16 +211,16 @@ class GenerativeAiResultTest extends TestCase
         ]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 5);
         $tokenUsage = new TokenUsage(10, 5, 15);
-        
+
         $result = new GenerativeAiResult(
             'result_no_file',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('No file content found in first candidate');
-        
+
         $result->toFile();
     }
 
@@ -232,13 +237,13 @@ class GenerativeAiResultTest extends TestCase
         ]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 10);
         $tokenUsage = new TokenUsage(5, 10, 15);
-        
+
         $result = new GenerativeAiResult(
             'result_image',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->assertSame($imageFile, $result->toImageFile());
     }
 
@@ -255,16 +260,16 @@ class GenerativeAiResultTest extends TestCase
         ]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 10);
         $tokenUsage = new TokenUsage(5, 10, 15);
-        
+
         $result = new GenerativeAiResult(
             'result_pdf',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('File is not an image. MIME type: application/pdf');
-        
+
         $result->toImageFile();
     }
 
@@ -281,13 +286,13 @@ class GenerativeAiResultTest extends TestCase
         ]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 10);
         $tokenUsage = new TokenUsage(5, 10, 15);
-        
+
         $result = new GenerativeAiResult(
             'result_audio',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->assertSame($audioFile, $result->toAudioFile());
     }
 
@@ -304,13 +309,13 @@ class GenerativeAiResultTest extends TestCase
         ]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 10);
         $tokenUsage = new TokenUsage(5, 10, 15);
-        
+
         $result = new GenerativeAiResult(
             'result_video',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->assertSame($videoFile, $result->toVideoFile());
     }
 
@@ -326,13 +331,13 @@ class GenerativeAiResultTest extends TestCase
         ]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 3);
         $tokenUsage = new TokenUsage(5, 3, 8);
-        
+
         $result = new GenerativeAiResult(
             'result_msg',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->assertSame($message, $result->toMessage());
     }
 
@@ -345,21 +350,21 @@ class GenerativeAiResultTest extends TestCase
     {
         $texts = ['First response', 'Second response', 'Third response'];
         $candidates = [];
-        
+
         foreach ($texts as $text) {
             $message = new ModelMessage([
                 new MessagePart($text)
             ]);
             $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 5);
         }
-        
+
         $tokenUsage = new TokenUsage(20, 15, 35);
         $result = new GenerativeAiResult(
             'result_texts',
             $candidates,
             $tokenUsage
         );
-        
+
         $this->assertEquals($texts, $result->toTexts());
     }
 
@@ -373,7 +378,7 @@ class GenerativeAiResultTest extends TestCase
         $file1 = new File('https://example.com/image1.jpg', 'image/jpeg');
         $file2 = new File('https://example.com/image2.png', 'image/png');
         $file3 = new File('https://example.com/doc.pdf', 'application/pdf');
-        
+
         $candidates = [];
         foreach ([$file1, $file2, $file3] as $file) {
             $message = new ModelMessage([
@@ -382,14 +387,14 @@ class GenerativeAiResultTest extends TestCase
             ]);
             $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 10);
         }
-        
+
         $tokenUsage = new TokenUsage(30, 30, 60);
         $result = new GenerativeAiResult(
             'result_files',
             $candidates,
             $tokenUsage
         );
-        
+
         $files = $result->toFiles();
         $this->assertCount(3, $files);
         $this->assertSame($file1, $files[0]);
@@ -407,20 +412,20 @@ class GenerativeAiResultTest extends TestCase
         $imageFile1 = new File('https://example.com/image1.jpg', 'image/jpeg');
         $pdfFile = new File('https://example.com/doc.pdf', 'application/pdf');
         $imageFile2 = new File('https://example.com/image2.png', 'image/png');
-        
+
         $candidates = [];
         foreach ([$imageFile1, $pdfFile, $imageFile2] as $file) {
             $message = new ModelMessage([new MessagePart($file)]);
             $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 10);
         }
-        
+
         $tokenUsage = new TokenUsage(30, 30, 60);
         $result = new GenerativeAiResult(
             'result_mixed',
             $candidates,
             $tokenUsage
         );
-        
+
         $images = $result->toImageFiles();
         $this->assertCount(2, $images);
         $this->assertSame($imageFile1, $images[0]);
@@ -437,20 +442,20 @@ class GenerativeAiResultTest extends TestCase
         $audioFile1 = new File('https://example.com/song.mp3', 'audio/mpeg');
         $imageFile = new File('https://example.com/image.jpg', 'image/jpeg');
         $audioFile2 = new File('https://example.com/podcast.wav', 'audio/wav');
-        
+
         $candidates = [];
         foreach ([$audioFile1, $imageFile, $audioFile2] as $file) {
             $message = new ModelMessage([new MessagePart($file)]);
             $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 10);
         }
-        
+
         $tokenUsage = new TokenUsage(30, 30, 60);
         $result = new GenerativeAiResult(
             'result_audio_mix',
             $candidates,
             $tokenUsage
         );
-        
+
         $audioFiles = $result->toAudioFiles();
         $this->assertCount(2, $audioFiles);
         $this->assertSame($audioFile1, $audioFiles[0]);
@@ -467,20 +472,20 @@ class GenerativeAiResultTest extends TestCase
         $videoFile1 = new File('https://example.com/movie.mp4', 'video/mp4');
         $imageFile = new File('https://example.com/image.jpg', 'image/jpeg');
         $videoFile2 = new File('https://example.com/clip.webm', 'video/webm');
-        
+
         $candidates = [];
         foreach ([$videoFile1, $imageFile, $videoFile2] as $file) {
             $message = new ModelMessage([new MessagePart($file)]);
             $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 10);
         }
-        
+
         $tokenUsage = new TokenUsage(30, 30, 60);
         $result = new GenerativeAiResult(
             'result_video_mix',
             $candidates,
             $tokenUsage
         );
-        
+
         $videoFiles = $result->toVideoFiles();
         $this->assertCount(2, $videoFiles);
         $this->assertSame($videoFile1, $videoFiles[0]);
@@ -496,7 +501,7 @@ class GenerativeAiResultTest extends TestCase
     {
         $messages = [];
         $candidates = [];
-        
+
         for ($i = 1; $i <= 3; $i++) {
             $message = new ModelMessage([
                 new MessagePart("Message $i")
@@ -504,14 +509,14 @@ class GenerativeAiResultTest extends TestCase
             $messages[] = $message;
             $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 5);
         }
-        
+
         $tokenUsage = new TokenUsage(15, 15, 30);
         $result = new GenerativeAiResult(
             'result_messages',
             $candidates,
             $tokenUsage
         );
-        
+
         $extractedMessages = $result->toMessages();
         $this->assertCount(3, $extractedMessages);
         foreach ($messages as $index => $message) {
@@ -527,30 +532,30 @@ class GenerativeAiResultTest extends TestCase
     public function testJsonSchema(): void
     {
         $schema = GenerativeAiResult::getJsonSchema();
-        
+
         $this->assertIsArray($schema);
         $this->assertEquals('object', $schema['type']);
-        
+
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
         $this->assertArrayHasKey(GenerativeAiResult::KEY_ID, $schema['properties']);
         $this->assertArrayHasKey(GenerativeAiResult::KEY_CANDIDATES, $schema['properties']);
         $this->assertArrayHasKey(GenerativeAiResult::KEY_TOKEN_USAGE, $schema['properties']);
         $this->assertArrayHasKey(GenerativeAiResult::KEY_PROVIDER_METADATA, $schema['properties']);
-        
+
         // Check id property
         $this->assertEquals('string', $schema['properties'][GenerativeAiResult::KEY_ID]['type']);
-        
+
         // Check candidates property
         $candidatesSchema = $schema['properties'][GenerativeAiResult::KEY_CANDIDATES];
         $this->assertEquals('array', $candidatesSchema['type']);
         $this->assertEquals(1, $candidatesSchema['minItems']);
-        
+
         // Check providerMetadata property
         $metadataSchema = $schema['properties'][GenerativeAiResult::KEY_PROVIDER_METADATA];
         $this->assertEquals('object', $metadataSchema['type']);
         $this->assertTrue($metadataSchema['additionalProperties']);
-        
+
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
         $this->assertContains(GenerativeAiResult::KEY_ID, $schema['required']);
@@ -569,13 +574,13 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([new MessagePart('Test')]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 1);
         $tokenUsage = new TokenUsage(1, 1, 2);
-        
+
         $result = new GenerativeAiResult(
             'result_interface',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->assertInstanceOf(
             \WordPress\AiClient\Results\Contracts\ResultInterface::class,
             $result
@@ -592,13 +597,13 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([new MessagePart('Single response')]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 3);
         $tokenUsage = new TokenUsage(5, 3, 8);
-        
+
         $result = new GenerativeAiResult(
             'result_single',
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->assertFalse($result->hasMultipleCandidates());
         $this->assertEquals(1, $result->getCandidateCount());
     }
@@ -617,17 +622,25 @@ class GenerativeAiResultTest extends TestCase
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 15);
         $tokenUsage = new TokenUsage(10, 15, 25);
         $metadata = ['model' => 'test-model', 'version' => '1.0'];
-        
+
         $result = new GenerativeAiResult(
             'result_json_123',
             [$candidate],
             $tokenUsage,
             $metadata
         );
-        
+
         $json = $this->assertToArrayReturnsArray($result);
-        
-        $this->assertArrayHasKeys($json, [GenerativeAiResult::KEY_ID, GenerativeAiResult::KEY_CANDIDATES, GenerativeAiResult::KEY_TOKEN_USAGE, GenerativeAiResult::KEY_PROVIDER_METADATA]);
+
+        $this->assertArrayHasKeys(
+            $json,
+            [
+                GenerativeAiResult::KEY_ID,
+                GenerativeAiResult::KEY_CANDIDATES,
+                GenerativeAiResult::KEY_TOKEN_USAGE,
+                GenerativeAiResult::KEY_PROVIDER_METADATA
+            ]
+        );
         $this->assertEquals('result_json_123', $json[GenerativeAiResult::KEY_ID]);
         $this->assertIsArray($json[GenerativeAiResult::KEY_CANDIDATES]);
         $this->assertCount(1, $json[GenerativeAiResult::KEY_CANDIDATES]);
@@ -649,8 +662,14 @@ class GenerativeAiResultTest extends TestCase
                     Candidate::KEY_MESSAGE => [
                         Message::KEY_ROLE => MessageRoleEnum::model()->value,
                         Message::KEY_PARTS => [
-                            [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'First part'],
-                            [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Second part']
+                            [
+                                MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                                MessagePart::KEY_TEXT => 'First part'
+                            ],
+                            [
+                                MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                                MessagePart::KEY_TEXT => 'Second part'
+                            ]
                         ]
                     ],
                     Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
@@ -664,9 +683,9 @@ class GenerativeAiResultTest extends TestCase
             ],
             GenerativeAiResult::KEY_PROVIDER_METADATA => ['provider' => 'test']
         ];
-        
+
         $result = GenerativeAiResult::fromArray($json);
-        
+
         $this->assertInstanceOf(GenerativeAiResult::class, $result);
         $this->assertEquals('result_from_json', $result->getId());
         $this->assertCount(1, $result->getCandidates());
@@ -691,7 +710,7 @@ class GenerativeAiResultTest extends TestCase
             ]);
             $candidates[] = new Candidate($message, FinishReasonEnum::toolCalls(), 25 * $i);
         }
-        
+
         $this->assertArrayRoundTrip(
             new GenerativeAiResult(
                 'result_roundtrip',
@@ -702,10 +721,12 @@ class GenerativeAiResultTest extends TestCase
             function ($original, $restored) {
                 $this->assertEquals($original->getId(), $restored->getId());
                 $this->assertCount(count($original->getCandidates()), $restored->getCandidates());
-                $this->assertEquals($original->getTokenUsage()->getTotalTokens(), 
-                    $restored->getTokenUsage()->getTotalTokens());
+                $this->assertEquals(
+                    $original->getTokenUsage()->getTotalTokens(),
+                    $restored->getTokenUsage()->getTotalTokens()
+                );
                 $this->assertEquals($original->getProviderMetadata(), $restored->getProviderMetadata());
-                
+
                 // Check first candidate details
                 $originalFirst = $original->getCandidates()[0];
                 $restoredFirst = $restored->getCandidates()[0];
@@ -731,16 +752,24 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([new MessagePart('Simple response')]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 5);
         $tokenUsage = new TokenUsage(3, 5, 8);
-        
+
         $result = new GenerativeAiResult(
             'result_no_meta',
             [$candidate],
             $tokenUsage
         );
-        
+
         $json = $this->assertToArrayReturnsArray($result);
-        
-        $this->assertArrayHasKeys($json, [GenerativeAiResult::KEY_ID, GenerativeAiResult::KEY_CANDIDATES, GenerativeAiResult::KEY_TOKEN_USAGE, GenerativeAiResult::KEY_PROVIDER_METADATA]);
+
+        $this->assertArrayHasKeys(
+            $json,
+            [
+                GenerativeAiResult::KEY_ID,
+                GenerativeAiResult::KEY_CANDIDATES,
+                GenerativeAiResult::KEY_TOKEN_USAGE,
+                GenerativeAiResult::KEY_PROVIDER_METADATA
+            ]
+        );
         $this->assertEquals([], $json[GenerativeAiResult::KEY_PROVIDER_METADATA]);
     }
 
@@ -754,7 +783,7 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([new MessagePart('test')]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 1);
         $tokenUsage = new TokenUsage(1, 1, 2);
-        
+
         $result = new GenerativeAiResult('test', [$candidate], $tokenUsage);
         $this->assertImplementsArrayTransformation($result);
     }

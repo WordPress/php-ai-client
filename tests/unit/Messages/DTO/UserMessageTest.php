@@ -29,9 +29,9 @@ class UserMessageTest extends TestCase
         $parts = [
             new MessagePart('Hello, can you help me with PHP?'),
         ];
-        
+
         $message = new UserMessage($parts);
-        
+
         $this->assertEquals(MessageRoleEnum::user(), $message->getRole());
         $this->assertTrue($message->getRole()->isUser());
     }
@@ -52,9 +52,9 @@ class UserMessageTest extends TestCase
             new MessagePart('```'),
             new MessagePart('How can I add type hints?'),
         ];
-        
+
         $message = new UserMessage($parts);
-        
+
         $this->assertCount(7, $message->getParts());
         $this->assertEquals($parts, $message->getParts());
     }
@@ -67,7 +67,7 @@ class UserMessageTest extends TestCase
     public function testWithEmptyParts(): void
     {
         $message = new UserMessage([]);
-        
+
         $this->assertEquals(MessageRoleEnum::user(), $message->getRole());
         $this->assertCount(0, $message->getParts());
     }
@@ -80,7 +80,7 @@ class UserMessageTest extends TestCase
     public function testInheritsFromMessage(): void
     {
         $message = new UserMessage([]);
-        
+
         $this->assertInstanceOf(\WordPress\AiClient\Messages\DTO\Message::class, $message);
     }
 
@@ -92,15 +92,15 @@ class UserMessageTest extends TestCase
     public function testWithFileAttachment(): void
     {
         $file = new File('https://example.com/document.pdf', 'application/pdf');
-        
+
         $parts = [
             new MessagePart('Can you analyze this document for me?'),
             new MessagePart($file),
             new MessagePart('I need a summary of the key points.'),
         ];
-        
+
         $message = new UserMessage($parts);
-        
+
         $this->assertCount(3, $message->getParts());
         $this->assertEquals('Can you analyze this document for me?', $message->getParts()[0]->getText());
         $this->assertSame($file, $message->getParts()[1]->getFile());
@@ -115,14 +115,14 @@ class UserMessageTest extends TestCase
     public function testWithImageAndText(): void
     {
         $imageFile = new File('data:image/png;base64,iVBORw0KGgoAAAANS', 'image/png');
-        
+
         $parts = [
             new MessagePart('What do you see in this image?'),
             new MessagePart($imageFile),
         ];
-        
+
         $message = new UserMessage($parts);
-        
+
         $this->assertCount(2, $message->getParts());
         $this->assertNotNull($message->getParts()[0]->getText());
         $this->assertNotNull($message->getParts()[1]->getFile());
@@ -138,7 +138,7 @@ class UserMessageTest extends TestCase
     {
         $schema = UserMessage::getJsonSchema();
         $parentSchema = \WordPress\AiClient\Messages\DTO\Message::getJsonSchema();
-        
+
         $this->assertEquals($parentSchema, $schema);
     }
 
@@ -150,9 +150,9 @@ class UserMessageTest extends TestCase
     public function testWithSingleQuestion(): void
     {
         $question = 'What is the difference between abstract classes and interfaces in PHP?';
-        
+
         $message = new UserMessage([new MessagePart($question)]);
-        
+
         $this->assertCount(1, $message->getParts());
         $this->assertEquals($question, $message->getParts()[0]->getText());
     }
@@ -171,9 +171,9 @@ class UserMessageTest extends TestCase
             new MessagePart('2. Static instance method'),
             new MessagePart('3. Clone prevention'),
         ];
-        
+
         $message = new UserMessage($parts);
-        
+
         $this->assertCount(5, $message->getParts());
         $this->assertTrue($message->getRole()->isUser());
     }
@@ -191,10 +191,10 @@ class UserMessageTest extends TestCase
             new MessagePart('Third part'),
             new MessagePart('Fourth part'),
         ];
-        
+
         $message = new UserMessage($parts);
         $retrievedParts = $message->getParts();
-        
+
         $this->assertEquals('First part', $retrievedParts[0]->getText());
         $this->assertEquals('Second part', $retrievedParts[1]->getText());
         $this->assertEquals('Third part', $retrievedParts[2]->getText());
@@ -211,7 +211,7 @@ class UserMessageTest extends TestCase
         $file1 = new File('https://example.com/image1.jpg', 'image/jpeg');
         $file2 = new File('https://example.com/image2.png', 'image/png');
         $file3 = new File('data:application/pdf;base64,JVBERi0xLjMNCg==', 'application/pdf');
-        
+
         $parts = [
             new MessagePart('Please compare these images:'),
             new MessagePart($file1),
@@ -219,9 +219,9 @@ class UserMessageTest extends TestCase
             new MessagePart('And review this document:'),
             new MessagePart($file3),
         ];
-        
+
         $message = new UserMessage($parts);
-        
+
         $this->assertCount(5, $message->getParts());
         $this->assertInstanceOf(File::class, $message->getParts()[1]->getFile());
         $this->assertInstanceOf(File::class, $message->getParts()[2]->getFile());
@@ -239,9 +239,9 @@ class UserMessageTest extends TestCase
             new MessagePart('Hello, I need help'),
             new MessagePart('Can you assist?')
         ]);
-        
+
         $json = $this->assertToArrayReturnsArray($message);
-        
+
         $this->assertArrayHasKeys($json, ['role', 'parts']);
         $this->assertEquals(MessageRoleEnum::user()->value, $json['role']);
         $this->assertCount(2, $json['parts']);
@@ -263,9 +263,9 @@ class UserMessageTest extends TestCase
                 ['type' => MessagePartTypeEnum::text()->value, 'text' => 'Question 2']
             ]
         ];
-        
+
         $message = UserMessage::fromArray($json);
-        
+
         $this->assertInstanceOf(UserMessage::class, $message);
         $this->assertEquals(MessageRoleEnum::user(), $message->getRole());
         $this->assertCount(2, $message->getParts());
@@ -289,7 +289,7 @@ class UserMessageTest extends TestCase
                 $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
                 $this->assertCount(count($original->getParts()), $restored->getParts());
                 $this->assertEquals(
-                    $original->getParts()[0]->getText(), 
+                    $original->getParts()[0]->getText(),
                     $restored->getParts()[0]->getText()
                 );
                 $this->assertEquals(

@@ -75,16 +75,28 @@ class ModelRequirementsTest extends TestCase
 
         // Check array items
         $this->assertArrayHasKey('items', $schema['properties'][ModelRequirements::KEY_REQUIRED_CAPABILITIES]);
-        $this->assertEquals('string', $schema['properties'][ModelRequirements::KEY_REQUIRED_CAPABILITIES]['items']['type']);
+        $this->assertEquals(
+            'string',
+            $schema['properties'][ModelRequirements::KEY_REQUIRED_CAPABILITIES]['items']['type']
+        );
         $this->assertArrayHasKey('enum', $schema['properties'][ModelRequirements::KEY_REQUIRED_CAPABILITIES]['items']);
-        $this->assertEquals(CapabilityEnum::getValues(), $schema['properties'][ModelRequirements::KEY_REQUIRED_CAPABILITIES]['items']['enum']);
+        $this->assertEquals(
+            CapabilityEnum::getValues(),
+            $schema['properties'][ModelRequirements::KEY_REQUIRED_CAPABILITIES]['items']['enum']
+        );
 
         $this->assertArrayHasKey('items', $schema['properties'][ModelRequirements::KEY_REQUIRED_OPTIONS]);
-        $this->assertEquals(RequiredOption::getJsonSchema(), $schema['properties'][ModelRequirements::KEY_REQUIRED_OPTIONS]['items']);
+        $this->assertEquals(
+            RequiredOption::getJsonSchema(),
+            $schema['properties'][ModelRequirements::KEY_REQUIRED_OPTIONS]['items']
+        );
 
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals([ModelRequirements::KEY_REQUIRED_CAPABILITIES, ModelRequirements::KEY_REQUIRED_OPTIONS], $schema['required']);
+        $this->assertEquals(
+            [ModelRequirements::KEY_REQUIRED_CAPABILITIES, ModelRequirements::KEY_REQUIRED_OPTIONS],
+            $schema['required']
+        );
     }
 
     /**
@@ -105,7 +117,10 @@ class ModelRequirementsTest extends TestCase
         $array = $requirements->toArray();
 
         $this->assertIsArray($array);
-        $this->assertEquals(['image_generation', 'text_generation'], $array[ModelRequirements::KEY_REQUIRED_CAPABILITIES]);
+        $this->assertEquals(
+            ['image_generation', 'text_generation'],
+            $array[ModelRequirements::KEY_REQUIRED_CAPABILITIES]
+        );
         $this->assertCount(2, $array[ModelRequirements::KEY_REQUIRED_OPTIONS]);
         $this->assertEquals('resolution', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_NAME]);
         $this->assertEquals('1024x1024', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_VALUE]);
@@ -210,7 +225,10 @@ class ModelRequirementsTest extends TestCase
         $this->assertIsArray($decoded);
         $this->assertEquals(['embedding_generation'], $decoded[ModelRequirements::KEY_REQUIRED_CAPABILITIES]);
         $this->assertCount(1, $decoded[ModelRequirements::KEY_REQUIRED_OPTIONS]);
-        $this->assertEquals('dimensions', $decoded[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_NAME]);
+        $this->assertEquals(
+            'dimensions',
+            $decoded[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_NAME]
+        );
         $this->assertEquals(1536, $decoded[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_VALUE]);
     }
 
@@ -366,4 +384,3 @@ class ModelRequirementsTest extends TestCase
         );
     }
 }
-

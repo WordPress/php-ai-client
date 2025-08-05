@@ -88,7 +88,10 @@ class ProviderMetadataTest extends TestCase
 
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals([ProviderMetadata::KEY_ID, ProviderMetadata::KEY_NAME, ProviderMetadata::KEY_TYPE], $schema['required']);
+        $this->assertEquals(
+            [ProviderMetadata::KEY_ID, ProviderMetadata::KEY_NAME, ProviderMetadata::KEY_TYPE],
+            $schema['required']
+        );
     }
 
     /**
@@ -223,4 +226,3 @@ class ProviderMetadataTest extends TestCase
         );
     }
 }
-

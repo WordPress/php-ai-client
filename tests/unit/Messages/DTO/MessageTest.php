@@ -28,7 +28,7 @@ class MessageTest extends TestCase
         $role = MessageRoleEnum::user();
         $part = new MessagePart('Hello, AI!');
         $message = new Message($role, [$part]);
-        
+
         $this->assertEquals($role, $message->getRole());
         $this->assertCount(1, $message->getParts());
         $this->assertSame($part, $message->getParts()[0]);
@@ -47,9 +47,9 @@ class MessageTest extends TestCase
             new MessagePart(new File('https://example.com/data.json', 'application/json')),
             new MessagePart('Let me know if you need anything else.'),
         ];
-        
+
         $message = new Message($role, $parts);
-        
+
         $this->assertEquals($role, $message->getRole());
         $this->assertCount(3, $message->getParts());
         $this->assertEquals($parts, $message->getParts());
@@ -64,7 +64,7 @@ class MessageTest extends TestCase
     {
         $role = MessageRoleEnum::system();
         $message = new Message($role, []);
-        
+
         $this->assertEquals($role, $message->getRole());
         $this->assertCount(0, $message->getParts());
         $this->assertEquals([], $message->getParts());
@@ -81,7 +81,7 @@ class MessageTest extends TestCase
     {
         $part = new MessagePart('Test message');
         $message = new Message($role, [$part]);
-        
+
         $this->assertEquals($role, $message->getRole());
     }
 
@@ -114,13 +114,16 @@ class MessageTest extends TestCase
             new MessagePart('Based on my search, here are the latest PHP news:'),
             new MessagePart(new File('data:text/plain;base64,SGVsbG8=', 'text/plain')),
         ];
-        
+
         $message = new Message($role, $parts);
-        
+
         $this->assertCount(5, $message->getParts());
-        
+
         // Verify each part type
-        $this->assertEquals('I\'ll help you with that. Let me search for the information.', $message->getParts()[0]->getText());
+        $this->assertEquals(
+            'I\'ll help you with that. Let me search for the information.',
+            $message->getParts()[0]->getText()
+        );
         $this->assertInstanceOf(FunctionCall::class, $message->getParts()[1]->getFunctionCall());
         $this->assertInstanceOf(FunctionResponse::class, $message->getParts()[2]->getFunctionResponse());
         $this->assertEquals('Based on my search, here are the latest PHP news:', $message->getParts()[3]->getText());
@@ -135,15 +138,15 @@ class MessageTest extends TestCase
     public function testJsonSchema(): void
     {
         $schema = Message::getJsonSchema();
-        
+
         $this->assertIsArray($schema);
         $this->assertEquals('object', $schema['type']);
-        
+
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
         $this->assertArrayHasKey(Message::KEY_ROLE, $schema['properties']);
         $this->assertArrayHasKey(Message::KEY_PARTS, $schema['properties']);
-        
+
         // Check role property
         $roleSchema = $schema['properties'][Message::KEY_ROLE];
         $this->assertEquals('string', $roleSchema['type']);
@@ -151,13 +154,13 @@ class MessageTest extends TestCase
         $this->assertContains('system', $roleSchema['enum']);
         $this->assertContains('user', $roleSchema['enum']);
         $this->assertContains('model', $roleSchema['enum']);
-        
+
         // Check parts property
         $partsSchema = $schema['properties'][Message::KEY_PARTS];
         $this->assertEquals('array', $partsSchema['type']);
         $this->assertArrayHasKey('items', $partsSchema);
         $this->assertIsArray($partsSchema['items']);
-        
+
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
         $this->assertEquals([Message::KEY_ROLE, Message::KEY_PARTS], $schema['required']);
@@ -172,14 +175,14 @@ class MessageTest extends TestCase
     {
         $role = MessageRoleEnum::user();
         $parts = [];
-        
+
         // Create 100 parts
         for ($i = 0; $i < 100; $i++) {
             $parts[] = new MessagePart("Part number $i");
         }
-        
+
         $message = new Message($role, $parts);
-        
+
         $this->assertCount(100, $message->getParts());
         $this->assertEquals('Part number 0', $message->getParts()[0]->getText());
         $this->assertEquals('Part number 99', $message->getParts()[99]->getText());
@@ -198,10 +201,10 @@ class MessageTest extends TestCase
             new MessagePart('Third'),
             new MessagePart('Fourth'),
         ];
-        
+
         $message = new Message(MessageRoleEnum::user(), $parts);
         $retrievedParts = $message->getParts();
-        
+
         $this->assertEquals('First', $retrievedParts[0]->getText());
         $this->assertEquals('Second', $retrievedParts[1]->getText());
         $this->assertEquals('Third', $retrievedParts[2]->getText());
@@ -222,9 +225,9 @@ class MessageTest extends TestCase
             ['result' => 42, 'formula' => '6 * 7']
         );
         $part = new MessagePart($functionResponse);
-        
+
         $message = new Message($role, [$part]);
-        
+
         $this->assertTrue($message->getRole()->isModel());
         $this->assertNotNull($message->getParts()[0]->getFunctionResponse());
     }
@@ -243,7 +246,7 @@ class MessageTest extends TestCase
         ];
         $message = new Message($role, $parts);
         $json = $message->toArray();
-        
+
         $this->assertIsArray($json);
         $this->assertEquals($role->value, $json[Message::KEY_ROLE]);
         $this->assertIsArray($json[Message::KEY_PARTS]);
@@ -262,12 +265,15 @@ class MessageTest extends TestCase
         $json = [
             Message::KEY_ROLE => MessageRoleEnum::system()->value,
             Message::KEY_PARTS => [
-                [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'You are a helpful assistant.']
+                [
+                    MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                    MessagePart::KEY_TEXT => 'You are a helpful assistant.'
+                ]
             ]
         ];
-        
+
         $message = Message::fromArray($json);
-        
+
         $this->assertInstanceOf(Message::class, $message);
         $this->assertEquals(MessageRoleEnum::system(), $message->getRole());
         $this->assertCount(1, $message->getParts());
@@ -288,10 +294,10 @@ class MessageTest extends TestCase
                 new MessagePart(new File('https://example.com/result.png', 'image/png'))
             ]
         );
-        
+
         $json = $original->toArray();
         $restored = Message::fromArray($json);
-        
+
         $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
         $this->assertCount(count($original->getParts()), $restored->getParts());
         $this->assertEquals($original->getParts()[0]->getText(), $restored->getParts()[0]->getText());
@@ -309,11 +315,10 @@ class MessageTest extends TestCase
     public function testImplementsWithArrayTransformationInterface(): void
     {
         $message = new Message(MessageRoleEnum::user(), [new MessagePart('test')]);
-        
+
         $this->assertInstanceOf(
             \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
             $message
         );
-        
     }
 }

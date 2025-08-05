@@ -4,6 +4,7 @@
 
     <!-- Scan these files -->
     <file>src</file>
+    <file>tests</file>
 
     <!-- Ignore vendor directory -->
     <exclude-pattern>*/vendor/*</exclude-pattern>
@@ -19,7 +20,4 @@
 
     <!-- Enable colors in output -->
     <arg name="colors"/>
-
-    <!-- Check PHP syntax -->
-    <arg name="parallel" value="8"/>
 </ruleset>

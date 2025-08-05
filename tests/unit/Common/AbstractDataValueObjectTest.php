@@ -545,7 +545,10 @@ class AbstractDataValueObjectTest extends TestCase
         };
 
         // Verify interface implementations
-        $this->assertInstanceOf(\WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class, $testObject);
+        $this->assertInstanceOf(
+            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            $testObject
+        );
         $this->assertInstanceOf(\WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class, $testObject);
         $this->assertInstanceOf(JsonSerializable::class, $testObject);
 

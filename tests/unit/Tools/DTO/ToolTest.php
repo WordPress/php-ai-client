@@ -19,6 +19,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
 class ToolTest extends TestCase
 {
     use ArrayTransformationTestTrait;
+
     /**
      * Tests creating tool with function declarations.
      *
@@ -36,9 +37,9 @@ class ToolTest extends TestCase
             'Sends an email',
             ['to' => ['type' => 'string'], 'subject' => ['type' => 'string']]
         );
-        
+
         $tool = new Tool([$function1, $function2]);
-        
+
         $this->assertEquals(ToolTypeEnum::functionDeclarations(), $tool->getType());
         $this->assertTrue($tool->getType()->isFunctionDeclarations());
         $this->assertCount(2, $tool->getFunctionDeclarations());
@@ -57,9 +58,9 @@ class ToolTest extends TestCase
             'getCurrentWeather',
             'Gets the current weather for a location'
         );
-        
+
         $tool = new Tool([$function]);
-        
+
         $this->assertEquals(ToolTypeEnum::functionDeclarations(), $tool->getType());
         $this->assertCount(1, $tool->getFunctionDeclarations());
         $this->assertSame($function, $tool->getFunctionDeclarations()[0]);
@@ -73,7 +74,7 @@ class ToolTest extends TestCase
     public function testCreateWithEmptyFunctionDeclarationsArray(): void
     {
         $tool = new Tool([]);
-        
+
         $this->assertEquals(ToolTypeEnum::functionDeclarations(), $tool->getType());
         $this->assertCount(0, $tool->getFunctionDeclarations());
         $this->assertEquals([], $tool->getFunctionDeclarations());
@@ -90,9 +91,9 @@ class ToolTest extends TestCase
             ['example.com', 'docs.example.com'],
             ['spam.com', 'malware.com']
         );
-        
+
         $tool = new Tool($webSearch);
-        
+
         $this->assertEquals(ToolTypeEnum::webSearch(), $tool->getType());
         $this->assertTrue($tool->getType()->isWebSearch());
         $this->assertSame($webSearch, $tool->getWebSearch());
@@ -110,7 +111,7 @@ class ToolTest extends TestCase
         $this->expectExceptionMessage(
             'Tool content must be an array of FunctionDeclaration instances or a WebSearch instance'
         );
-        
+
         new Tool('invalid content');
     }
 
@@ -125,7 +126,7 @@ class ToolTest extends TestCase
         $this->expectExceptionMessage(
             'Tool content must be an array of FunctionDeclaration instances or a WebSearch instance'
         );
-        
+
         new Tool(new stdClass());
     }
 
@@ -137,27 +138,27 @@ class ToolTest extends TestCase
     public function testJsonSchemaForFunctionDeclarationsTool(): void
     {
         $schema = Tool::getJsonSchema();
-        
+
         $this->assertArrayHasKey('oneOf', $schema);
         $this->assertCount(2, $schema['oneOf']);
-        
+
         // First schema is for function declarations
         $functionSchema = $schema['oneOf'][0];
         $this->assertEquals('object', $functionSchema['type']);
         $this->assertArrayHasKey('properties', $functionSchema);
         $this->assertArrayHasKey(Tool::KEY_TYPE, $functionSchema['properties']);
         $this->assertArrayHasKey(Tool::KEY_FUNCTION_DECLARATIONS, $functionSchema['properties']);
-        
+
         // Type property
         $typeProperty = $functionSchema['properties'][Tool::KEY_TYPE];
         $this->assertEquals('string', $typeProperty['type']);
         $this->assertEquals(ToolTypeEnum::functionDeclarations()->value, $typeProperty['const']);
-        
+
         // Function declarations property
         $functionsProperty = $functionSchema['properties'][Tool::KEY_FUNCTION_DECLARATIONS];
         $this->assertEquals('array', $functionsProperty['type']);
         $this->assertArrayHasKey('items', $functionsProperty);
-        
+
         // Required fields
         $this->assertEquals([Tool::KEY_TYPE, Tool::KEY_FUNCTION_DECLARATIONS], $functionSchema['required']);
     }
@@ -170,22 +171,22 @@ class ToolTest extends TestCase
     public function testJsonSchemaForWebSearchTool(): void
     {
         $schema = Tool::getJsonSchema();
-        
+
         // Second schema is for web search
         $webSearchSchema = $schema['oneOf'][1];
         $this->assertEquals('object', $webSearchSchema['type']);
         $this->assertArrayHasKey('properties', $webSearchSchema);
         $this->assertArrayHasKey(Tool::KEY_TYPE, $webSearchSchema['properties']);
         $this->assertArrayHasKey(Tool::KEY_WEB_SEARCH, $webSearchSchema['properties']);
-        
+
         // Type property
         $typeProperty = $webSearchSchema['properties'][Tool::KEY_TYPE];
         $this->assertEquals('string', $typeProperty['type']);
         $this->assertEquals(ToolTypeEnum::webSearch()->value, $typeProperty['const']);
-        
+
         // Web search property
         $this->assertArrayHasKey(Tool::KEY_WEB_SEARCH, $webSearchSchema['properties']);
-        
+
         // Required fields
         $this->assertEquals([Tool::KEY_TYPE, Tool::KEY_WEB_SEARCH], $webSearchSchema['required']);
     }
@@ -248,9 +249,9 @@ class ToolTest extends TestCase
                 ]
             )
         ];
-        
+
         $tool = new Tool($functions);
-        
+
         $this->assertCount(3, $tool->getFunctionDeclarations());
         $this->assertEquals('createUser', $tool->getFunctionDeclarations()[0]->getName());
         $this->assertEquals('deleteUser', $tool->getFunctionDeclarations()[1]->getName());
@@ -265,7 +266,7 @@ class ToolTest extends TestCase
     public function testImplementsWithJsonSchemaInterface(): void
     {
         $tool = new Tool([]);
-        
+
         $this->assertInstanceOf(
             \WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class,
             $tool
@@ -281,18 +282,18 @@ class ToolTest extends TestCase
     {
         $function = new FunctionDeclaration('test', 'Test function');
         $webSearch = new WebSearch(['example.com'], ['spam.com']);
-        
+
         $tool1 = new Tool([$function]);
         $tool2 = new Tool($webSearch);
         $tool3 = new Tool([$function]);
-        
+
         // Different tool types
         $this->assertNotEquals($tool1->getType(), $tool2->getType());
-        
+
         // Same content type but different instances
         $this->assertNotSame($tool1, $tool3);
         $this->assertEquals($tool1->getType(), $tool3->getType());
-        
+
         // Check content accessors
         $this->assertNotNull($tool1->getFunctionDeclarations());
         $this->assertNull($tool1->getWebSearch());
@@ -311,10 +312,10 @@ class ToolTest extends TestCase
             new FunctionDeclaration('func1', 'First function', ['param1' => ['type' => 'string']]),
             new FunctionDeclaration('func2', 'Second function')
         ];
-        
+
         $tool = new Tool($functions);
         $json = $this->assertToArrayReturnsArray($tool);
-        
+
         $this->assertArrayHasKeys($json, [Tool::KEY_TYPE, Tool::KEY_FUNCTION_DECLARATIONS]);
         $this->assertEquals(ToolTypeEnum::functionDeclarations()->value, $json[Tool::KEY_TYPE]);
         $this->assertIsArray($json[Tool::KEY_FUNCTION_DECLARATIONS]);
@@ -334,10 +335,10 @@ class ToolTest extends TestCase
             ['allowed1.com', 'allowed2.com'],
             ['blocked1.com', 'blocked2.com']
         );
-        
+
         $tool = new Tool($webSearch);
         $json = $this->assertToArrayReturnsArray($tool);
-        
+
         $this->assertArrayHasKeys($json, [Tool::KEY_TYPE, Tool::KEY_WEB_SEARCH]);
         $this->assertEquals(ToolTypeEnum::webSearch()->value, $json[Tool::KEY_TYPE]);
         $this->assertIsArray($json[Tool::KEY_WEB_SEARCH]);
@@ -362,9 +363,9 @@ class ToolTest extends TestCase
                 ]
             ]
         ];
-        
+
         $tool = Tool::fromArray($json);
-        
+
         $this->assertInstanceOf(Tool::class, $tool);
         $this->assertEquals(ToolTypeEnum::functionDeclarations(), $tool->getType());
         $this->assertCount(1, $tool->getFunctionDeclarations());
@@ -386,9 +387,9 @@ class ToolTest extends TestCase
                 WebSearch::KEY_DISALLOWED_DOMAINS => ['spam.com']
             ]
         ];
-        
+
         $tool = Tool::fromArray($json);
-        
+
         $this->assertInstanceOf(Tool::class, $tool);
         $this->assertEquals(ToolTypeEnum::webSearch(), $tool->getType());
         $this->assertNotNull($tool->getWebSearch());

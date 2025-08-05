@@ -28,7 +28,7 @@ class MessagePartTest extends TestCase
     {
         $text = 'Hello, this is a text message.';
         $part = new MessagePart($text);
-        
+
         $this->assertEquals(MessagePartTypeEnum::text(), $part->getType());
         $this->assertEquals($text, $part->getText());
         $this->assertNull($part->getFile());
@@ -45,7 +45,7 @@ class MessagePartTest extends TestCase
     {
         $file = new File('https://example.com/image.jpg', 'image/jpeg');
         $part = new MessagePart($file);
-        
+
         $this->assertEquals(MessagePartTypeEnum::file(), $part->getType());
         $this->assertNull($part->getText());
         $this->assertSame($file, $part->getFile());
@@ -62,7 +62,7 @@ class MessagePartTest extends TestCase
     {
         $functionCall = new FunctionCall('func_123', 'testFunction', ['param' => 'value']);
         $part = new MessagePart($functionCall);
-        
+
         $this->assertEquals(MessagePartTypeEnum::functionCall(), $part->getType());
         $this->assertNull($part->getText());
         $this->assertNull($part->getFile());
@@ -79,7 +79,7 @@ class MessagePartTest extends TestCase
     {
         $functionResponse = new FunctionResponse('func_123', 'testFunction', ['result' => 'success']);
         $part = new MessagePart($functionResponse);
-        
+
         $this->assertEquals(MessagePartTypeEnum::functionResponse(), $part->getType());
         $this->assertNull($part->getText());
         $this->assertNull($part->getFile());
@@ -95,7 +95,7 @@ class MessagePartTest extends TestCase
     public function testCreateWithEmptyString(): void
     {
         $part = new MessagePart('');
-        
+
         $this->assertEquals(MessagePartTypeEnum::text(), $part->getType());
         $this->assertEquals('', $part->getText());
     }
@@ -115,7 +115,7 @@ class MessagePartTest extends TestCase
             'Unsupported content type %s. Expected string, File, FunctionCall, or FunctionResponse.',
             $expectedType
         ));
-        
+
         new MessagePart($content);
     }
 
@@ -144,38 +144,53 @@ class MessagePartTest extends TestCase
     public function testJsonSchema(): void
     {
         $schema = MessagePart::getJsonSchema();
-        
+
         $this->assertIsArray($schema);
         $this->assertArrayHasKey('oneOf', $schema);
         $this->assertCount(4, $schema['oneOf']); // text, file, function_call, function_response
-        
+
         // Check text variant
         $textSchema = $schema['oneOf'][0];
         $this->assertEquals('object', $textSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::text()->value, $textSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertEquals(
+            MessagePartTypeEnum::text()->value,
+            $textSchema['properties'][MessagePart::KEY_TYPE]['const']
+        );
         $this->assertArrayHasKey(MessagePart::KEY_TEXT, $textSchema['properties']);
         $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_TEXT], $textSchema['required']);
-        
+
         // Check file variant
         $fileSchema = $schema['oneOf'][1];
         $this->assertEquals('object', $fileSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::file()->value, $fileSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertEquals(
+            MessagePartTypeEnum::file()->value,
+            $fileSchema['properties'][MessagePart::KEY_TYPE]['const']
+        );
         $this->assertArrayHasKey(MessagePart::KEY_FILE, $fileSchema['properties']);
         $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_FILE], $fileSchema['required']);
-        
+
         // Check function_call variant
         $functionCallSchema = $schema['oneOf'][2];
         $this->assertEquals('object', $functionCallSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::functionCall()->value, $functionCallSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertEquals(
+            MessagePartTypeEnum::functionCall()->value,
+            $functionCallSchema['properties'][MessagePart::KEY_TYPE]['const']
+        );
         $this->assertArrayHasKey(MessagePart::KEY_FUNCTION_CALL, $functionCallSchema['properties']);
         $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_FUNCTION_CALL], $functionCallSchema['required']);
-        
+
         // Check function_response variant
         $functionResponseSchema = $schema['oneOf'][3];
         $this->assertEquals('object', $functionResponseSchema['type']);
-        $this->assertEquals(MessagePartTypeEnum::functionResponse()->value, $functionResponseSchema['properties'][MessagePart::KEY_TYPE]['const']);
+        $this->assertEquals(
+            MessagePartTypeEnum::functionResponse()->value,
+            $functionResponseSchema['properties'][MessagePart::KEY_TYPE]['const']
+        );
         $this->assertArrayHasKey(MessagePart::KEY_FUNCTION_RESPONSE, $functionResponseSchema['properties']);
-        $this->assertEquals([MessagePart::KEY_TYPE, MessagePart::KEY_FUNCTION_RESPONSE], $functionResponseSchema['required']);
+        $this->assertEquals(
+            [MessagePart::KEY_TYPE, MessagePart::KEY_FUNCTION_RESPONSE],
+            $functionResponseSchema['required']
+        );
     }
 
     /**
@@ -189,7 +204,7 @@ class MessagePartTest extends TestCase
         $remoteFile = new File('https://example.com/doc.pdf', 'application/pdf');
         $part1 = new MessagePart($remoteFile);
         $this->assertEquals('https://example.com/doc.pdf', $part1->getFile()->getUrl());
-        
+
         // Inline file
         $inlineFile = new File('SGVsbG8gV29ybGQ=', 'text/plain');
         $part2 = new MessagePart($inlineFile);
@@ -212,10 +227,10 @@ class MessagePartTest extends TestCase
                 'cache' => false
             ]
         ];
-        
+
         $functionCall = new FunctionCall('db_123', 'executeQuery', $complexArgs);
         $part = new MessagePart($functionCall);
-        
+
         $retrievedCall = $part->getFunctionCall();
         $this->assertNotNull($retrievedCall);
         $this->assertEquals($complexArgs, $retrievedCall->getArgs());
@@ -230,7 +245,7 @@ class MessagePartTest extends TestCase
     {
         $unicodeText = '你好世界 🌍 مرحبا بالعالم';
         $part = new MessagePart($unicodeText);
-        
+
         $this->assertEquals($unicodeText, $part->getText());
     }
 
@@ -243,13 +258,13 @@ class MessagePartTest extends TestCase
     {
         $part = new MessagePart('Hello, world!');
         $json = $part->toArray();
-        
+
         $this->assertIsArray($json);
         $this->assertArrayHasKey(MessagePart::KEY_TYPE, $json);
         $this->assertArrayHasKey(MessagePart::KEY_TEXT, $json);
         $this->assertEquals(MessagePartTypeEnum::text()->value, $json[MessagePart::KEY_TYPE]);
         $this->assertEquals('Hello, world!', $json[MessagePart::KEY_TEXT]);
-        
+
         // Ensure other fields are not present
         $this->assertArrayNotHasKey(MessagePart::KEY_FILE, $json);
         $this->assertArrayNotHasKey(MessagePart::KEY_FUNCTION_CALL, $json);
@@ -266,7 +281,7 @@ class MessagePartTest extends TestCase
         $file = new File('https://example.com/image.jpg', 'image/jpeg');
         $part = new MessagePart($file);
         $json = $part->toArray();
-        
+
         $this->assertIsArray($json);
         $this->assertArrayHasKey(MessagePart::KEY_TYPE, $json);
         $this->assertArrayHasKey(MessagePart::KEY_FILE, $json);
@@ -285,9 +300,9 @@ class MessagePartTest extends TestCase
             MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
             MessagePart::KEY_TEXT => 'Test message'
         ];
-        
+
         $part = MessagePart::fromArray($json);
-        
+
         $this->assertEquals(MessagePartTypeEnum::text(), $part->getType());
         $this->assertEquals('Test message', $part->getText());
     }
@@ -307,9 +322,9 @@ class MessagePartTest extends TestCase
                 File::KEY_URL => 'https://example.com/image.jpg'
             ]
         ];
-        
+
         $part = MessagePart::fromArray($json);
-        
+
         $this->assertEquals(MessagePartTypeEnum::file(), $part->getType());
         $this->assertInstanceOf(File::class, $part->getFile());
         $this->assertEquals('https://example.com/image.jpg', $part->getFile()->getUrl());
@@ -327,7 +342,7 @@ class MessagePartTest extends TestCase
         $textJson = $textPart->toArray();
         $restoredText = MessagePart::fromArray($textJson);
         $this->assertEquals($textPart->getText(), $restoredText->getText());
-        
+
         // Test with file
         $file = new File('https://example.com/doc.pdf', 'application/pdf');
         $filePart = new MessagePart($file);
@@ -335,7 +350,7 @@ class MessagePartTest extends TestCase
         $restoredFile = MessagePart::fromArray($fileJson);
         $this->assertEquals($file->getUrl(), $restoredFile->getFile()->getUrl());
         $this->assertEquals($file->getMimeType(), $restoredFile->getFile()->getMimeType());
-        
+
         // Test with function call
         $functionCall = new FunctionCall('id_123', 'getData', ['key' => 'value']);
         $funcPart = new MessagePart($functionCall);
@@ -354,11 +369,10 @@ class MessagePartTest extends TestCase
     public function testImplementsWithArrayTransformationInterface(): void
     {
         $part = new MessagePart('test');
-        
+
         $this->assertInstanceOf(
             \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
             $part
         );
-        
     }
 }
