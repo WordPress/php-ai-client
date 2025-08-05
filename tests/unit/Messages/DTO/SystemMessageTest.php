@@ -9,6 +9,7 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\SystemMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Messages\ValueObjects\TextContent;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 
 /**
@@ -26,7 +27,7 @@ class SystemMessageTest extends TestCase
     public function testAutomaticallySetsSystemRole(): void
     {
         $parts = [
-            new MessagePart('You are a helpful AI assistant.'),
+            new MessagePart(new TextContent('You are a helpful AI assistant.')),
         ];
         
         $message = new SystemMessage($parts);
@@ -43,10 +44,10 @@ class SystemMessageTest extends TestCase
     public function testWithMultipleInstructionParts(): void
     {
         $parts = [
-            new MessagePart('You are an expert in PHP programming.'),
-            new MessagePart('Always provide code examples when explaining concepts.'),
-            new MessagePart('Be concise and clear in your explanations.'),
-            new MessagePart('Follow PSR-12 coding standards.'),
+            new MessagePart(new TextContent('You are an expert in PHP programming.')),
+            new MessagePart(new TextContent('Always provide code examples when explaining concepts.')),
+            new MessagePart(new TextContent('Be concise and clear in your explanations.')),
+            new MessagePart(new TextContent('Follow PSR-12 coding standards.')),
         ];
         
         $message = new SystemMessage($parts);
@@ -88,14 +89,14 @@ class SystemMessageTest extends TestCase
     public function testWithComplexInstructions(): void
     {
         $parts = [
-            new MessagePart('You are a specialized code review assistant with expertise in:'),
-            new MessagePart('- Security best practices'),
-            new MessagePart('- Performance optimization'),
-            new MessagePart('- Code maintainability'),
-            new MessagePart('When reviewing code, always check for:'),
-            new MessagePart('1. SQL injection vulnerabilities'),
-            new MessagePart('2. XSS vulnerabilities'),
-            new MessagePart('3. Performance bottlenecks'),
+            new MessagePart(new TextContent('You are a specialized code review assistant with expertise in:')),
+            new MessagePart(new TextContent('- Security best practices')),
+            new MessagePart(new TextContent('- Performance optimization')),
+            new MessagePart(new TextContent('- Code maintainability')),
+            new MessagePart(new TextContent('When reviewing code, always check for:')),
+            new MessagePart(new TextContent('1. SQL injection vulnerabilities')),
+            new MessagePart(new TextContent('2. XSS vulnerabilities')),
+            new MessagePart(new TextContent('3. Performance bottlenecks')),
         ];
         
         $message = new SystemMessage($parts);
@@ -139,7 +140,7 @@ class SystemMessageTest extends TestCase
             'When explaining complex concepts, break them down into simpler parts ' .
             'and provide practical examples. Be patient and thorough in your responses.';
         
-        $message = new SystemMessage([new MessagePart($longInstruction)]);
+        $message = new SystemMessage([new MessagePart(new TextContent($longInstruction))]);
         
         $this->assertCount(1, $message->getParts());
         $this->assertEquals($longInstruction, $message->getParts()[0]->getText());
@@ -153,10 +154,10 @@ class SystemMessageTest extends TestCase
     public function testPreservesPartOrder(): void
     {
         $parts = [
-            new MessagePart('First instruction'),
-            new MessagePart('Second instruction'),
-            new MessagePart('Third instruction'),
-            new MessagePart('Fourth instruction'),
+            new MessagePart(new TextContent('First instruction')),
+            new MessagePart(new TextContent('Second instruction')),
+            new MessagePart(new TextContent('Third instruction')),
+            new MessagePart(new TextContent('Fourth instruction')),
         ];
         
         $message = new SystemMessage($parts);
@@ -176,8 +177,8 @@ class SystemMessageTest extends TestCase
     public function testToArray(): void
     {
         $message = new SystemMessage([
-            new MessagePart('You are a helpful assistant.'),
-            new MessagePart('Always be respectful and accurate.')
+            new MessagePart(new TextContent('You are a helpful assistant.')),
+            new MessagePart(new TextContent('Always be respectful and accurate.'))
         ]);
         
         $json = $this->assertToArrayReturnsArray($message);
@@ -222,8 +223,8 @@ class SystemMessageTest extends TestCase
     {
         $this->assertArrayRoundTrip(
             new SystemMessage([
-                new MessagePart('You are an expert in PHP.'),
-                new MessagePart('Follow best practices.')
+                new MessagePart(new TextContent('You are an expert in PHP.')),
+                new MessagePart(new TextContent('Follow best practices.'))
             ]),
             function ($original, $restored) {
                 $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
@@ -247,7 +248,7 @@ class SystemMessageTest extends TestCase
      */
     public function testImplementsWithArrayTransformationInterface(): void
     {
-        $message = new SystemMessage([new MessagePart('test')]);
+        $message = new SystemMessage([new MessagePart(new TextContent('test'))]);
         $this->assertImplementsArrayTransformation($message);
     }
 }
