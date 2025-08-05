@@ -19,7 +19,7 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *
  * @phpstan-import-type MessageArrayShape from Message
  *
- * @phpstan-type CandidateArrayShape array{message: MessageArrayShape, finishReason: string, tokenCount: int}
+ * @phpstan-type CandidateArrayShape array{message: MessageArrayShape, finishReason: string}
  *
  * @extends AbstractDataValueObject<CandidateArrayShape>
  */
@@ -27,7 +27,6 @@ class Candidate extends AbstractDataValueObject
 {
     public const KEY_MESSAGE = 'message';
     public const KEY_FINISH_REASON = 'finishReason';
-    public const KEY_TOKEN_COUNT = 'tokenCount';
     /**
      * @var Message The generated message.
      */
@@ -39,20 +38,14 @@ class Candidate extends AbstractDataValueObject
     private FinishReasonEnum $finishReason;
 
     /**
-     * @var int The number of tokens in this candidate.
-     */
-    private int $tokenCount;
-
-    /**
      * Constructor.
      *
      * @since n.e.x.t
      *
      * @param Message $message The generated message.
      * @param FinishReasonEnum $finishReason The reason generation stopped.
-     * @param int $tokenCount The number of tokens in this candidate.
      */
-    public function __construct(Message $message, FinishReasonEnum $finishReason, int $tokenCount)
+    public function __construct(Message $message, FinishReasonEnum $finishReason)
     {
         if (!$message->getRole()->isModel()) {
             throw new InvalidArgumentException(
@@ -62,7 +55,6 @@ class Candidate extends AbstractDataValueObject
 
         $this->message = $message;
         $this->finishReason = $finishReason;
-        $this->tokenCount = $tokenCount;
     }
 
     /**
@@ -90,18 +82,6 @@ class Candidate extends AbstractDataValueObject
     }
 
     /**
-     * Gets the token count.
-     *
-     * @since n.e.x.t
-     *
-     * @return int The token count.
-     */
-    public function getTokenCount(): int
-    {
-        return $this->tokenCount;
-    }
-
-    /**
      * {@inheritDoc}
      *
      * @since n.e.x.t
@@ -117,12 +97,8 @@ class Candidate extends AbstractDataValueObject
                     'enum' => FinishReasonEnum::getValues(),
                     'description' => 'The reason generation stopped.',
                 ],
-                self::KEY_TOKEN_COUNT => [
-                    'type' => 'integer',
-                    'description' => 'The number of tokens in this candidate.',
-                ],
             ],
-            'required' => [self::KEY_MESSAGE, self::KEY_FINISH_REASON, self::KEY_TOKEN_COUNT],
+            'required' => [self::KEY_MESSAGE, self::KEY_FINISH_REASON],
         ];
     }
 
@@ -138,7 +114,6 @@ class Candidate extends AbstractDataValueObject
         return [
             self::KEY_MESSAGE => $this->message->toArray(),
             self::KEY_FINISH_REASON => $this->finishReason->value,
-            self::KEY_TOKEN_COUNT => $this->tokenCount,
         ];
     }
 
@@ -149,14 +124,13 @@ class Candidate extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
-        static::validateFromArrayData($array, [self::KEY_MESSAGE, self::KEY_FINISH_REASON, self::KEY_TOKEN_COUNT]);
+        static::validateFromArrayData($array, [self::KEY_MESSAGE, self::KEY_FINISH_REASON]);
 
         $messageData = $array[self::KEY_MESSAGE];
 
         return new self(
             Message::fromArray($messageData),
             FinishReasonEnum::from($array[self::KEY_FINISH_REASON]),
-            $array[self::KEY_TOKEN_COUNT]
         );
     }
 }

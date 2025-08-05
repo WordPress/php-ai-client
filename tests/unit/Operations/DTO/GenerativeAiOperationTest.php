@@ -24,6 +24,7 @@ use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 class GenerativeAiOperationTest extends TestCase
 {
     use ArrayTransformationTestTrait;
+
     /**
      * Tests creating operation in starting state.
      *
@@ -35,7 +36,7 @@ class GenerativeAiOperationTest extends TestCase
             'op_123',
             OperationStateEnum::starting()
         );
-        
+
         $this->assertEquals('op_123', $operation->getId());
         $this->assertEquals(OperationStateEnum::starting(), $operation->getState());
         $this->assertNull($operation->getResult());
@@ -52,7 +53,7 @@ class GenerativeAiOperationTest extends TestCase
             'op_456',
             OperationStateEnum::processing()
         );
-        
+
         $this->assertEquals('op_456', $operation->getId());
         $this->assertTrue($operation->getState()->isProcessing());
         $this->assertNull($operation->getResult());
@@ -80,13 +81,13 @@ class GenerativeAiOperationTest extends TestCase
             $tokenUsage,
             ['provider' => 'test']
         );
-        
+
         $operation = new GenerativeAiOperation(
             'op_789',
             OperationStateEnum::succeeded(),
             $result
         );
-        
+
         $this->assertEquals('op_789', $operation->getId());
         $this->assertTrue($operation->getState()->isSucceeded());
         $this->assertSame($result, $operation->getResult());
@@ -103,7 +104,7 @@ class GenerativeAiOperationTest extends TestCase
             'op_failed',
             OperationStateEnum::failed()
         );
-        
+
         $this->assertEquals('op_failed', $operation->getId());
         $this->assertTrue($operation->getState()->isFailed());
         $this->assertNull($operation->getResult());
@@ -120,7 +121,7 @@ class GenerativeAiOperationTest extends TestCase
             'op_canceled',
             OperationStateEnum::canceled()
         );
-        
+
         $this->assertEquals('op_canceled', $operation->getId());
         $this->assertTrue($operation->getState()->isCanceled());
         $this->assertNull($operation->getResult());
@@ -137,7 +138,7 @@ class GenerativeAiOperationTest extends TestCase
             'op_test',
             OperationStateEnum::starting()
         );
-        
+
         $this->assertInstanceOf(
             \WordPress\AiClient\Operations\Contracts\OperationInterface::class,
             $operation
@@ -157,7 +158,7 @@ class GenerativeAiOperationTest extends TestCase
             $id,
             OperationStateEnum::processing()
         );
-        
+
         $this->assertEquals($id, $operation->getId());
     }
 
@@ -227,10 +228,10 @@ class GenerativeAiOperationTest extends TestCase
     public function testJsonSchemaForSucceededState(): void
     {
         $schema = GenerativeAiOperation::getJsonSchema();
-        
+
         $this->assertArrayHasKey('oneOf', $schema);
         $this->assertCount(2, $schema['oneOf']);
-        
+
         // First schema is for succeeded state with result
         $succeededSchema = $schema['oneOf'][0];
         $this->assertEquals('object', $succeededSchema['type']);
@@ -238,13 +239,13 @@ class GenerativeAiOperationTest extends TestCase
         $this->assertArrayHasKey(GenerativeAiOperation::KEY_ID, $succeededSchema['properties']);
         $this->assertArrayHasKey(GenerativeAiOperation::KEY_STATE, $succeededSchema['properties']);
         $this->assertArrayHasKey(GenerativeAiOperation::KEY_RESULT, $succeededSchema['properties']);
-        
+
         // State should be const for succeeded
         $this->assertEquals(
             OperationStateEnum::succeeded()->value,
             $succeededSchema['properties'][GenerativeAiOperation::KEY_STATE]['const']
         );
-        
+
         // Required fields
         $this->assertEquals([GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE, GenerativeAiOperation::KEY_RESULT], $succeededSchema['required']);
     }
@@ -257,7 +258,7 @@ class GenerativeAiOperationTest extends TestCase
     public function testJsonSchemaForNonSucceededStates(): void
     {
         $schema = GenerativeAiOperation::getJsonSchema();
-        
+
         // Second schema is for all other states without result
         $otherStatesSchema = $schema['oneOf'][1];
         $this->assertEquals('object', $otherStatesSchema['type']);
@@ -265,14 +266,14 @@ class GenerativeAiOperationTest extends TestCase
         $this->assertArrayHasKey(GenerativeAiOperation::KEY_ID, $otherStatesSchema['properties']);
         $this->assertArrayHasKey(GenerativeAiOperation::KEY_STATE, $otherStatesSchema['properties']);
         $this->assertArrayNotHasKey(GenerativeAiOperation::KEY_RESULT, $otherStatesSchema['properties']);
-        
+
         // State should be enum for other states
         $stateEnum = $otherStatesSchema['properties'][GenerativeAiOperation::KEY_STATE]['enum'];
         $this->assertContains(OperationStateEnum::starting()->value, $stateEnum);
         $this->assertContains(OperationStateEnum::processing()->value, $stateEnum);
         $this->assertContains(OperationStateEnum::failed()->value, $stateEnum);
         $this->assertContains(OperationStateEnum::canceled()->value, $stateEnum);
-        
+
         // Required fields
         $this->assertEquals([GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE], $otherStatesSchema['required']);
     }
@@ -288,7 +289,7 @@ class GenerativeAiOperationTest extends TestCase
             '',
             OperationStateEnum::starting()
         );
-        
+
         $this->assertEquals('', $operation->getId());
     }
 
@@ -303,9 +304,9 @@ class GenerativeAiOperationTest extends TestCase
             'op_start_123',
             OperationStateEnum::starting()
         );
-        
+
         $json = $this->assertToArrayReturnsArray($operation);
-        
+
         $this->assertArrayHasKeys($json, [GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE]);
         $this->assertArrayNotHasKeys($json, [GenerativeAiOperation::KEY_RESULT]);
         $this->assertEquals('op_start_123', $json[GenerativeAiOperation::KEY_ID]);
@@ -333,15 +334,15 @@ class GenerativeAiOperationTest extends TestCase
             [$candidate],
             $tokenUsage
         );
-        
+
         $operation = new GenerativeAiOperation(
             'op_success_456',
             OperationStateEnum::succeeded(),
             $result
         );
-        
+
         $json = $this->assertToArrayReturnsArray($operation);
-        
+
         $this->assertArrayHasKeys($json, [GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE, GenerativeAiOperation::KEY_RESULT]);
         $this->assertEquals('op_success_456', $json[GenerativeAiOperation::KEY_ID]);
         $this->assertEquals(OperationStateEnum::succeeded()->value, $json[GenerativeAiOperation::KEY_STATE]);
@@ -360,9 +361,9 @@ class GenerativeAiOperationTest extends TestCase
             GenerativeAiOperation::KEY_ID => 'op_from_json_start',
             GenerativeAiOperation::KEY_STATE => OperationStateEnum::starting()->value
         ];
-        
+
         $operation = GenerativeAiOperation::fromArray($json);
-        
+
         $this->assertInstanceOf(GenerativeAiOperation::class, $operation);
         $this->assertEquals('op_from_json_start', $operation->getId());
         $this->assertEquals(OperationStateEnum::starting(), $operation->getState());
@@ -388,7 +389,6 @@ class GenerativeAiOperationTest extends TestCase
                             Message::KEY_PARTS => [[MessagePart::KEY_TYPE => 'text', MessagePart::KEY_TEXT => 'Response text']]
                         ],
                         Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
-                        Candidate::KEY_TOKEN_COUNT => 30
                     ]
                 ],
                 GenerativeAiResult::KEY_TOKEN_USAGE => [
@@ -398,9 +398,9 @@ class GenerativeAiOperationTest extends TestCase
                 ]
             ]
         ];
-        
+
         $operation = GenerativeAiOperation::fromArray($json);
-        
+
         $this->assertInstanceOf(GenerativeAiOperation::class, $operation);
         $this->assertEquals('op_from_json_success', $operation->getId());
         $this->assertEquals(OperationStateEnum::succeeded(), $operation->getState());
@@ -449,7 +449,7 @@ class GenerativeAiOperationTest extends TestCase
             [$candidate],
             $tokenUsage
         );
-        
+
         $this->assertArrayRoundTrip(
             new GenerativeAiOperation(
                 'op_roundtrip_success',
