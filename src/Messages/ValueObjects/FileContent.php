@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Messages\ValueObjects;
 
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Contracts\MessageContentInterface;
+use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
 
@@ -76,6 +77,6 @@ final class FileContent implements MessageContentInterface
      */
     public function toArray(): array
     {
-        return [ $this->getMessagePartType()->value => $this->file->toArray() ];
+        return [MessagePart::KEY_FILE => $this->file->toArray()];
     }
 }
