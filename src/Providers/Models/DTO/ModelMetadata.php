@@ -55,6 +55,16 @@ class ModelMetadata extends AbstractDataValueObject
     protected array $supportedOptions;
 
     /**
+     * @var array<string, true> Map of supported capabilities for O(1) lookups.
+     */
+    private array $capabilitiesMap = [];
+
+    /**
+     * @var array<string, SupportedOption> Map of supported options by name for O(1) lookups.
+     */
+    private array $optionsMap = [];
+
+    /**
      * Constructor.
      *
      * @since n.e.x.t
@@ -80,6 +90,16 @@ class ModelMetadata extends AbstractDataValueObject
         $this->name = $name;
         $this->supportedCapabilities = $supportedCapabilities;
         $this->supportedOptions = $supportedOptions;
+
+        // Build capability map for efficient lookups
+        foreach ($supportedCapabilities as $capability) {
+            $this->capabilitiesMap[$capability->value] = true;
+        }
+
+        // Build options map for efficient lookups
+        foreach ($supportedOptions as $option) {
+            $this->optionsMap[$option->getName()] = $option;
+        }
     }
 
     /**
@@ -199,21 +219,21 @@ class ModelMetadata extends AbstractDataValueObject
      */
     public function meetsRequirements(ModelRequirements $requirements): bool
     {
-        // Check if all required capabilities are supported
+        // Check if all required capabilities are supported using map lookup
         foreach ($requirements->getRequiredCapabilities() as $requiredCapability) {
-            if (!in_array($requiredCapability, $this->supportedCapabilities, true)) {
+            if (!isset($this->capabilitiesMap[$requiredCapability->value])) {
                 return false;
             }
         }
 
         // Check if all required options are supported with the specified values
         foreach ($requirements->getRequiredOptions() as $requiredOption) {
-            $supportedOption = $this->findSupportedOption($requiredOption->getName());
-
-            // If the option is not supported at all, fail
-            if ($supportedOption === null) {
+            // Use map lookup instead of linear search
+            if (!isset($this->optionsMap[$requiredOption->getName()])) {
                 return false;
             }
+
+            $supportedOption = $this->optionsMap[$requiredOption->getName()];
 
             // Check if the required value is supported by this option
             if (!$supportedOption->isSupportedValue($requiredOption->getValue())) {
@@ -224,24 +244,6 @@ class ModelMetadata extends AbstractDataValueObject
         return true;
     }
 
-    /**
-     * Finds a supported option by name.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $name The option name to find.
-     * @return SupportedOption|null The supported option, or null if not found.
-     */
-    private function findSupportedOption(string $name): ?SupportedOption
-    {
-        foreach ($this->supportedOptions as $supportedOption) {
-            if ($supportedOption->getName() === $name) {
-                return $supportedOption;
-            }
-        }
-
-        return null;
-    }
 
     /**
      * {@inheritDoc}
