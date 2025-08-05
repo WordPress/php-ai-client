@@ -295,7 +295,7 @@ class File extends AbstractDataValueObject
      *
      * @return bool True if the file is of the specified type.
      */
-    public function isType(string $type): bool
+    public function isMimeType(string $type): bool
     {
         return $this->mimeType->isType($type);
     }

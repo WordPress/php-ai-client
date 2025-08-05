@@ -207,10 +207,10 @@ class FileTest extends TestCase
         $this->assertFalse($file->isImage());
         $this->assertFalse($file->isAudio());
         $this->assertFalse($file->isText());
-        $this->assertTrue($file->isType('video'));
-        $this->assertFalse($file->isType('image'));
-        $this->assertFalse($file->isType('audio'));
-        $this->assertFalse($file->isType('text'));
+        $this->assertTrue($file->isMimeType('video'));
+        $this->assertFalse($file->isMimeType('image'));
+        $this->assertFalse($file->isMimeType('audio'));
+        $this->assertFalse($file->isMimeType('text'));
     }
 
     /**
