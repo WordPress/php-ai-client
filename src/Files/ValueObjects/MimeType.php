@@ -170,6 +170,22 @@ final class MimeType
     }
 
     /**
+     * Checks if this MIME type is a specific type.
+     *
+     * This method returns true when the stored MIME type begins with the
+     * given prefix. For example, `"audio"` matches `"audio/mpeg"`.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $mimeType The MIME type prefix to check (e.g., "audio", "image").
+     * @return bool True if this MIME type is of the specified type.
+     */
+    public function isType(string $mimeType): bool
+    {
+        return strpos($this->value, strtolower($mimeType) . '/') === 0;
+    }
+
+    /**
      * Checks if this is an image MIME type.
      *
      * @since n.e.x.t
@@ -178,7 +194,7 @@ final class MimeType
      */
     public function isImage(): bool
     {
-        return strpos($this->value, 'image/') === 0;
+        return $this->isType('image');
     }
 
     /**
@@ -190,7 +206,7 @@ final class MimeType
      */
     public function isAudio(): bool
     {
-        return strpos($this->value, 'audio/') === 0;
+        return $this->isType('audio');
     }
 
     /**
@@ -202,7 +218,7 @@ final class MimeType
      */
     public function isVideo(): bool
     {
-        return strpos($this->value, 'video/') === 0;
+        return $this->isType('video');
     }
 
     /**
@@ -214,7 +230,7 @@ final class MimeType
      */
     public function isText(): bool
     {
-        return strpos($this->value, 'text/') === 0;
+        return $this->isType('text');
     }
 
     /**
