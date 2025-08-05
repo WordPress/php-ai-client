@@ -5,17 +5,11 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Messages\ValueObjects;
 
 use WordPress\AiClient\Tools\DTO\FunctionCall;
-use WordPress\AiClient\Messages\Contracts\MessageContentInterface;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
-use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
 
-final class FunctionCallContent implements MessageContentInterface
+final class FunctionCallContent extends MessageContent
 {
-    /**
-     */
-    use ContentGettersTrait;
-
     /**
      * The function call content.
      *
@@ -54,7 +48,7 @@ final class FunctionCallContent implements MessageContentInterface
      *
      * @return FunctionCall The function call content.
      */
-    public function getFunctionCall(): FunctionCall
+    public function getFunctionCall(): ?FunctionCall
     {
         return $this->functionCall;
     }

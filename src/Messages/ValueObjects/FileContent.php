@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Messages\ValueObjects;
 
 use WordPress\AiClient\Files\DTO\File;
-use WordPress\AiClient\Messages\Contracts\MessageContentInterface;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
-use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
 
 /**
  * Value object representing file content.
@@ -18,12 +16,8 @@ use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
  *
  * @since n.e.x.t
  */
-final class FileContent implements MessageContentInterface
+final class FileContent extends MessageContent
 {
-    /**
-     */
-    use ContentGettersTrait;
-
     /**
      * The file content.
      *
@@ -62,7 +56,7 @@ final class FileContent implements MessageContentInterface
      *
      * @return File The file content.
      */
-    public function getFile(): File
+    public function getFile(): ?File
     {
         return $this->file;
     }

@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\ValueObjects;
 
-use WordPress\AiClient\Messages\Contracts\MessageContentInterface;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
-use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
 
 /**
  * Value object representing text content.
@@ -17,10 +15,8 @@ use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
  *
  * @since n.e.x.t
  */
-final class TextContent implements MessageContentInterface
+final class TextContent extends MessageContent
 {
-    use ContentGettersTrait;
-
     /**
      * The text content.
      *
