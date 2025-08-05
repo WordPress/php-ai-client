@@ -19,9 +19,6 @@ use WordPress\AiClient\Messages\ValueObjects\ContentGettersTrait;
  */
 final class TextContent implements MessageContentInterface
 {
-    /**
-     * @use ContentGettersTrait
-     */
     use ContentGettersTrait;
 
     /**
@@ -72,7 +69,7 @@ final class TextContent implements MessageContentInterface
      *
      * @since n.e.x.t
      *
-     * @return array The text content as an array.
+     * @return array<string, string> The text content as an array.
      */
     public function toArray(): array
     {
