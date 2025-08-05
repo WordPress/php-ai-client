@@ -8,9 +8,14 @@ use InvalidArgumentException;
 use RuntimeException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Messages\Contracts\MessageContentInterface;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
+use WordPress\AiClient\Messages\ValueObjects\TextContent;
+use WordPress\AiClient\Messages\ValueObjects\FileContent;
+use WordPress\AiClient\Messages\ValueObjects\FunctionCallContent;
+use WordPress\AiClient\Messages\ValueObjects\FunctionResponseContent;
 
 /**
  * Represents a part of a message.
@@ -62,6 +67,11 @@ class MessagePart extends AbstractDataValueObject
     private ?FunctionCall $functionCall = null;
 
     /**
+     * @var MessageContentInterface The content of this message part.
+     */
+    private $content;
+
+    /**
      * @var FunctionResponse|null Function response (when type is FUNCTION_RESPONSE).
      */
     private ?FunctionResponse $functionResponse = null;
@@ -74,30 +84,9 @@ class MessagePart extends AbstractDataValueObject
      * @param mixed $content The content of this message part.
      * @throws InvalidArgumentException If an unsupported content type is provided.
      */
-    public function __construct($content)
+    public function __construct(MessageContentInterface $content)
     {
-        if (is_string($content)) {
-            $this->type = MessagePartTypeEnum::text();
-            $this->text = $content;
-        } elseif ($content instanceof File) {
-            $this->type = MessagePartTypeEnum::file();
-            $this->file = $content;
-        } elseif ($content instanceof FunctionCall) {
-            $this->type = MessagePartTypeEnum::functionCall();
-            $this->functionCall = $content;
-        } elseif ($content instanceof FunctionResponse) {
-            $this->type = MessagePartTypeEnum::functionResponse();
-            $this->functionResponse = $content;
-        } else {
-            $type = is_object($content) ? get_class($content) : gettype($content);
-            throw new InvalidArgumentException(
-                sprintf(
-                    'Unsupported content type %s. Expected string, File, '
-                    . 'FunctionCall, or FunctionResponse.',
-                    $type
-                )
-            );
-        }
+        $this->content = $content;
     }
 
     /**
@@ -109,7 +98,7 @@ class MessagePart extends AbstractDataValueObject
      */
     public function getType(): MessagePartTypeEnum
     {
-        return $this->type;
+        return $this->content->getMessagePartType();
     }
 
     /**
@@ -121,7 +110,7 @@ class MessagePart extends AbstractDataValueObject
      */
     public function getText(): ?string
     {
-        return $this->text;
+        return $this->content->getText();
     }
 
     /**
@@ -133,7 +122,7 @@ class MessagePart extends AbstractDataValueObject
      */
     public function getFile(): ?File
     {
-        return $this->file;
+        return $this->content->getFile();
     }
 
     /**
@@ -145,7 +134,7 @@ class MessagePart extends AbstractDataValueObject
      */
     public function getFunctionCall(): ?FunctionCall
     {
-        return $this->functionCall;
+        return $this->content->getFunctionCall();
     }
 
     /**
@@ -157,7 +146,7 @@ class MessagePart extends AbstractDataValueObject
      */
     public function getFunctionResponse(): ?FunctionResponse
     {
-        return $this->functionResponse;
+        return $this->content->getFunctionResponse();
     }
 
     /**
@@ -233,24 +222,7 @@ class MessagePart extends AbstractDataValueObject
      */
     public function toArray(): array
     {
-        $data = [self::KEY_TYPE => $this->type->value];
-
-        if ($this->text !== null) {
-            $data[self::KEY_TEXT] = $this->text;
-        } elseif ($this->file !== null) {
-            $data[self::KEY_FILE] = $this->file->toArray();
-        } elseif ($this->functionCall !== null) {
-            $data[self::KEY_FUNCTION_CALL] = $this->functionCall->toArray();
-        } elseif ($this->functionResponse !== null) {
-            $data[self::KEY_FUNCTION_RESPONSE] = $this->functionResponse->toArray();
-        } else {
-            throw new RuntimeException(
-                'MessagePart requires one of: text, file, functionCall, or functionResponse. '
-                . 'This should not be a possible condition.'
-            );
-        }
-
-        return $data;
+        return $this->content->toArray();
     }
 
     /**
@@ -260,19 +232,29 @@ class MessagePart extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
-        // Check which properties are set to determine how to construct the MessagePart
-        if (isset($array[self::KEY_TEXT])) {
-            return new self($array[self::KEY_TEXT]);
-        } elseif (isset($array[self::KEY_FILE])) {
-            return new self(File::fromArray($array[self::KEY_FILE]));
-        } elseif (isset($array[self::KEY_FUNCTION_CALL])) {
-            return new self(FunctionCall::fromArray($array[self::KEY_FUNCTION_CALL]));
-        } elseif (isset($array[self::KEY_FUNCTION_RESPONSE])) {
-            return new self(FunctionResponse::fromArray($array[self::KEY_FUNCTION_RESPONSE]));
-        } else {
-            throw new InvalidArgumentException(
-                'MessagePart requires one of: text, file, functionCall, or functionResponse.'
-            );
+        $factories = [
+            self::KEY_TEXT => function ($data) {
+                return new TextContent($data);
+            },
+            self::KEY_FILE => function ($data) {
+                return new FileContent(File::fromArray($data));
+            },
+            self::KEY_FUNCTION_CALL => function ($data) {
+                return new FunctionCallContent(FunctionCall::fromArray($data));
+            },
+            self::KEY_FUNCTION_RESPONSE => function ($data) {
+                return new FunctionResponseContent(FunctionResponse::fromArray($data));
+            },
+        ];
+
+        foreach ($factories as $key => $factory) {
+            if (isset($array[$key])) {
+                return new self($factory($array[$key]));
+            }
         }
+
+        throw new InvalidArgumentException(
+            'MessagePart requires one of: text, file, functionCall, or functionResponse.'
+        );
     }
 }
