@@ -47,42 +47,16 @@ class MessagePart extends AbstractDataValueObject
     public const KEY_FUNCTION_CALL = 'functionCall';
     public const KEY_FUNCTION_RESPONSE = 'functionResponse';
     /**
-     * @var MessagePartTypeEnum The type of this message part.
-     */
-    private MessagePartTypeEnum $type;
-
-    /**
-     * @var string|null Text content (when type is TEXT).
-     */
-    private ?string $text = null;
-
-    /**
-     * @var File|null File data (when type is FILE).
-     */
-    private ?File $file = null;
-
-    /**
-     * @var FunctionCall|null Function call request (when type is FUNCTION_CALL).
-     */
-    private ?FunctionCall $functionCall = null;
-
-    /**
      * @var MessageContentInterface The content of this message part.
      */
-    private $content;
+    private MessageContentInterface $content;
 
     /**
-     * @var FunctionResponse|null Function response (when type is FUNCTION_RESPONSE).
-     */
-    private ?FunctionResponse $functionResponse = null;
-
-    /**
-     * Constructor that accepts various content types and infers the message part type.
+     * Constructor that accepts a message content object.
      *
      * @since n.e.x.t
      *
-     * @param mixed $content The content of this message part.
-     * @throws InvalidArgumentException If an unsupported content type is provided.
+     * @param MessageContentInterface $content The content of this message part.
      */
     public function __construct(MessageContentInterface $content)
     {
@@ -222,8 +196,11 @@ class MessagePart extends AbstractDataValueObject
      */
     public function toArray(): array
     {
-        $data = [self::KEY_TYPE => $this->getType()->value];
-        return array_merge($data, $this->content->toArray());
+        $contentArray = $this->content->toArray();
+        $result = [self::KEY_TYPE => $this->getType()->value];
+
+        /** @var MessagePartArrayShape */
+        return array_merge($result, $contentArray);
     }
 
     /**
@@ -233,27 +210,29 @@ class MessagePart extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
-        $factories = [
-            self::KEY_TEXT => function ($data) {
-                return new TextContent($data);
-            },
-            self::KEY_FILE => function ($data) {
-                return new FileContent(File::fromArray($data));
-            },
-            self::KEY_FUNCTION_CALL => function ($data) {
-                return new FunctionCallContent(FunctionCall::fromArray($data));
-            },
-            self::KEY_FUNCTION_RESPONSE => function ($data) {
-                return new FunctionResponseContent(FunctionResponse::fromArray($data));
-            },
-        ];
-
-        foreach ($factories as $key => $factory) {
-            if (isset($array[$key])) {
-                return new self($factory($array[$key]));
-            }
+        // Returns a TextContent object if the array has a text key.
+        if (isset($array[self::KEY_TEXT]) && is_string($array[self::KEY_TEXT])) {
+            return new self(new TextContent($array[self::KEY_TEXT]));
         }
 
+        // Returns a FileContent object if the array has a file key.
+        if (isset($array[self::KEY_FILE]) && is_array($array[self::KEY_FILE])) {
+            return new self(new FileContent(File::fromArray($array[self::KEY_FILE])));
+        }
+
+        // Returns a FunctionCallContent object if the array has a functionCall key.
+        if (isset($array[self::KEY_FUNCTION_CALL]) && is_array($array[self::KEY_FUNCTION_CALL])) {
+            return new self(new FunctionCallContent(FunctionCall::fromArray($array[self::KEY_FUNCTION_CALL])));
+        }
+
+        // Returns a FunctionResponseContent object if the array has a functionResponse key.
+        if (isset($array[self::KEY_FUNCTION_RESPONSE]) && is_array($array[self::KEY_FUNCTION_RESPONSE])) {
+            // Avoids PHPStan line exceed errors.
+            $functionResponse = FunctionResponse::fromArray($array[self::KEY_FUNCTION_RESPONSE]);
+            return new self(new FunctionResponseContent($functionResponse));
+        }
+
+        // Throws an exception if the array does not have a valid key.
         throw new InvalidArgumentException(
             'MessagePart requires one of: text, file, functionCall, or functionResponse.'
         );
