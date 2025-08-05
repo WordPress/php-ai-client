@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\DTO;
 
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 
 /**
  * Represents an option that the implementing code requires the model to support.
@@ -19,9 +19,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *     value: mixed
  * }
  *
- * @extends AbstractDataValueObject<RequiredOptionArrayShape>
+ * @extends AbstractDataTransferObject<RequiredOptionArrayShape>
  */
-class RequiredOption extends AbstractDataValueObject
+class RequiredOption extends AbstractDataTransferObject
 {
     public const KEY_NAME = 'name';
     public const KEY_VALUE = 'value';

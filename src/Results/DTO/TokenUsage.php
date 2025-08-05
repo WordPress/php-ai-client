@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 
 /**
  * Represents token usage statistics for an AI operation.
@@ -20,9 +20,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *     totalTokens: int
  * }
  *
- * @extends AbstractDataValueObject<TokenUsageArrayShape>
+ * @extends AbstractDataTransferObject<TokenUsageArrayShape>
  */
-class TokenUsage extends AbstractDataValueObject
+class TokenUsage extends AbstractDataTransferObject
 {
     public const KEY_PROMPT_TOKENS = 'promptTokens';
     public const KEY_COMPLETION_TOKENS = 'completionTokens';

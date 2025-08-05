@@ -6,7 +6,7 @@ namespace WordPress\AiClient\Results\DTO;
 
 use InvalidArgumentException;
 use RuntimeException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
@@ -29,9 +29,9 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  *     providerMetadata?: array<string, mixed>
  * }
  *
- * @extends AbstractDataValueObject<GenerativeAiResultArrayShape>
+ * @extends AbstractDataTransferObject<GenerativeAiResultArrayShape>
  */
-class GenerativeAiResult extends AbstractDataValueObject implements ResultInterface
+class GenerativeAiResult extends AbstractDataTransferObject implements ResultInterface
 {
     public const KEY_ID = 'id';
     public const KEY_CANDIDATES = 'candidates';

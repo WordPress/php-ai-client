@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\DTO;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
@@ -24,9 +24,9 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  *     models: list<ModelMetadataArrayShape>
  * }
  *
- * @extends AbstractDataValueObject<ProviderModelsMetadataArrayShape>
+ * @extends AbstractDataTransferObject<ProviderModelsMetadataArrayShape>
  */
-class ProviderModelsMetadata extends AbstractDataValueObject
+class ProviderModelsMetadata extends AbstractDataTransferObject
 {
     public const KEY_PROVIDER = 'provider';
     public const KEY_MODELS = 'models';

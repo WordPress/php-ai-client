@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\DTO;
 
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 
 /**
@@ -21,9 +21,9 @@ use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
  *     type: string
  * }
  *
- * @extends AbstractDataValueObject<ProviderMetadataArrayShape>
+ * @extends AbstractDataTransferObject<ProviderMetadataArrayShape>
  */
-class ProviderMetadata extends AbstractDataValueObject
+class ProviderMetadata extends AbstractDataTransferObject
 {
     public const KEY_ID = 'id';
     public const KEY_NAME = 'name';

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Results\DTO;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
@@ -21,9 +21,9 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *
  * @phpstan-type CandidateArrayShape array{message: MessageArrayShape, finishReason: string, tokenCount: int}
  *
- * @extends AbstractDataValueObject<CandidateArrayShape>
+ * @extends AbstractDataTransferObject<CandidateArrayShape>
  */
-class Candidate extends AbstractDataValueObject
+class Candidate extends AbstractDataTransferObject
 {
     public const KEY_MESSAGE = 'message';
     public const KEY_FINISH_REASON = 'finishReason';

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 
 /**
  * Represents a response to a function call.
@@ -16,9 +16,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @phpstan-type FunctionResponseArrayShape array{id: string, name: string, response: mixed}
  *
- * @extends AbstractDataValueObject<FunctionResponseArrayShape>
+ * @extends AbstractDataTransferObject<FunctionResponseArrayShape>
  */
-class FunctionResponse extends AbstractDataValueObject
+class FunctionResponse extends AbstractDataTransferObject
 {
     public const KEY_ID = 'id';
     public const KEY_NAME = 'name';

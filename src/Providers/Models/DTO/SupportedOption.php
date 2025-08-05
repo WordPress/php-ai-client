@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Models\DTO;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 
 /**
  * Represents a supported configuration option for an AI model.
@@ -20,9 +20,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *     supportedValues?: list<mixed>
  * }
  *
- * @extends AbstractDataValueObject<SupportedOptionArrayShape>
+ * @extends AbstractDataTransferObject<SupportedOptionArrayShape>
  */
-class SupportedOption extends AbstractDataValueObject
+class SupportedOption extends AbstractDataTransferObject
 {
     public const KEY_NAME = 'name';
     public const KEY_SUPPORTED_VALUES = 'supportedValues';
