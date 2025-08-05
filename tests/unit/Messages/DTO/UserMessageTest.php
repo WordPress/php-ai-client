@@ -10,6 +10,8 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Messages\ValueObjects\TextContent;
+use WordPress\AiClient\Messages\ValueObjects\FileContent;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 
 /**
@@ -27,7 +29,7 @@ class UserMessageTest extends TestCase
     public function testAutomaticallySetsUserRole(): void
     {
         $parts = [
-            new MessagePart('Hello, can you help me with PHP?'),
+            new MessagePart(new TextContent('Hello, can you help me with PHP?')),
         ];
         
         $message = new UserMessage($parts);
@@ -44,13 +46,13 @@ class UserMessageTest extends TestCase
     public function testWithMultipleParts(): void
     {
         $parts = [
-            new MessagePart('I have a question about this code:'),
-            new MessagePart('```php'),
-            new MessagePart('function calculateSum($a, $b) {'),
-            new MessagePart('    return $a + $b;'),
-            new MessagePart('}'),
-            new MessagePart('```'),
-            new MessagePart('How can I add type hints?'),
+            new MessagePart(new TextContent('I have a question about this code:')),
+            new MessagePart(new TextContent('```php')),
+            new MessagePart(new TextContent('function calculateSum($a, $b) {')),
+            new MessagePart(new TextContent('    return $a + $b;')),
+            new MessagePart(new TextContent('}')),
+            new MessagePart(new TextContent('```')),
+            new MessagePart(new TextContent('How can I add type hints?')),
         ];
         
         $message = new UserMessage($parts);
@@ -94,9 +96,9 @@ class UserMessageTest extends TestCase
         $file = new File('https://example.com/document.pdf', 'application/pdf');
         
         $parts = [
-            new MessagePart('Can you analyze this document for me?'),
-            new MessagePart($file),
-            new MessagePart('I need a summary of the key points.'),
+            new MessagePart(new TextContent('Can you analyze this document for me?')),
+            new MessagePart(new FileContent($file)),
+            new MessagePart(new TextContent('I need a summary of the key points.')),
         ];
         
         $message = new UserMessage($parts);
@@ -117,8 +119,8 @@ class UserMessageTest extends TestCase
         $imageFile = new File('data:image/png;base64,iVBORw0KGgoAAAANS', 'image/png');
         
         $parts = [
-            new MessagePart('What do you see in this image?'),
-            new MessagePart($imageFile),
+            new MessagePart(new TextContent('What do you see in this image?')),
+            new MessagePart(new FileContent($imageFile)),
         ];
         
         $message = new UserMessage($parts);
@@ -151,7 +153,7 @@ class UserMessageTest extends TestCase
     {
         $question = 'What is the difference between abstract classes and interfaces in PHP?';
         
-        $message = new UserMessage([new MessagePart($question)]);
+        $message = new UserMessage([new MessagePart(new TextContent($question))]);
         
         $this->assertCount(1, $message->getParts());
         $this->assertEquals($question, $message->getParts()[0]->getText());
@@ -165,11 +167,11 @@ class UserMessageTest extends TestCase
     public function testWithCodeExampleRequest(): void
     {
         $parts = [
-            new MessagePart('Can you show me an example of the Singleton pattern in PHP?'),
-            new MessagePart('Please include:'),
-            new MessagePart('1. Private constructor'),
-            new MessagePart('2. Static instance method'),
-            new MessagePart('3. Clone prevention'),
+            new MessagePart(new TextContent('Can you show me an example of the Singleton pattern in PHP?')),
+            new MessagePart(new TextContent('Please include:')),
+            new MessagePart(new TextContent('1. Private constructor')),
+            new MessagePart(new TextContent('2. Static instance method')),
+            new MessagePart(new TextContent('3. Clone prevention')),
         ];
         
         $message = new UserMessage($parts);
@@ -186,10 +188,10 @@ class UserMessageTest extends TestCase
     public function testPreservesPartOrder(): void
     {
         $parts = [
-            new MessagePart('First part'),
-            new MessagePart('Second part'),
-            new MessagePart('Third part'),
-            new MessagePart('Fourth part'),
+            new MessagePart(new TextContent('First part')),
+            new MessagePart(new TextContent('Second part')),
+            new MessagePart(new TextContent('Third part')),
+            new MessagePart(new TextContent('Fourth part')),
         ];
         
         $message = new UserMessage($parts);
@@ -213,11 +215,11 @@ class UserMessageTest extends TestCase
         $file3 = new File('data:application/pdf;base64,JVBERi0xLjMNCg==', 'application/pdf');
         
         $parts = [
-            new MessagePart('Please compare these images:'),
-            new MessagePart($file1),
-            new MessagePart($file2),
-            new MessagePart('And review this document:'),
-            new MessagePart($file3),
+            new MessagePart(new TextContent('Please compare these images:')),
+            new MessagePart(new FileContent($file1)),
+            new MessagePart(new FileContent($file2)),
+            new MessagePart(new TextContent('And review this document:')),
+            new MessagePart(new FileContent($file3)),
         ];
         
         $message = new UserMessage($parts);
@@ -236,8 +238,8 @@ class UserMessageTest extends TestCase
     public function testToArray(): void
     {
         $message = new UserMessage([
-            new MessagePart('Hello, I need help'),
-            new MessagePart('Can you assist?')
+            new MessagePart(new TextContent('Hello, I need help')),
+            new MessagePart(new TextContent('Can you assist?'))
         ]);
         
         $json = $this->assertToArrayReturnsArray($message);
@@ -282,8 +284,8 @@ class UserMessageTest extends TestCase
     {
         $this->assertArrayRoundTrip(
             new UserMessage([
-                new MessagePart('Test message'),
-                new MessagePart(new File('https://example.com/image.jpg', 'image/jpeg'))
+                new MessagePart(new TextContent('Test message')),
+                new MessagePart(new FileContent(new File('https://example.com/image.jpg', 'image/jpeg')))
             ]),
             function ($original, $restored) {
                 $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
@@ -307,7 +309,7 @@ class UserMessageTest extends TestCase
      */
     public function testImplementsWithArrayTransformationInterface(): void
     {
-        $message = new UserMessage([new MessagePart('test')]);
+        $message = new UserMessage([new MessagePart(new TextContent('test'))]);
         $this->assertImplementsArrayTransformation($message);
     }
 }
