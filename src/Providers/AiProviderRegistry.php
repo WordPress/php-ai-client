@@ -51,14 +51,14 @@ class AiProviderRegistry
 
         // Get provider metadata to extract ID
         $instance = new $className();
-        
+
         // Check if provider has metadata method
         if (!method_exists($instance, 'metadata')) {
             throw new InvalidArgumentException(
                 sprintf('Provider must implement metadata() method: %s', $className)
             );
         }
-        
+
         $metadata = $instance->metadata();
 
         if (!$metadata instanceof ProviderMetadata) {
@@ -116,7 +116,7 @@ class AiProviderRegistry
     {
         try {
             $this->getProviderInstance($idOrClassName);
-            
+
             // TODO: Call availability() method when ProviderInterface is available
             // For now, assume configured if we can instantiate without exception
             return true;
@@ -141,17 +141,17 @@ class AiProviderRegistry
             $providerResults = $this->findProviderModelsMetadataForSupport($providerId, $modelRequirements);
             if (!empty($providerResults)) {
                 $providerInstance = $this->getProviderInstance($providerId);
-                
+
                 // Validate that provider has metadata method
                 if (!method_exists($providerInstance, 'metadata')) {
                     continue;
                 }
-                
+
                 $providerMetadata = $providerInstance->metadata();
                 if (!$providerMetadata instanceof ProviderMetadata) {
                     continue;
                 }
-                
+
                 $results[] = new ProviderModelsMetadata(
                     $providerMetadata,
                     $providerResults
