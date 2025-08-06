@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Models\DTO;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Tools\DTO\Tool;
 
@@ -39,9 +39,9 @@ use WordPress\AiClient\Tools\DTO\Tool;
  *     customOptions?: array<string, mixed>
  * }
  *
- * @extends AbstractDataValueObject<ModelConfigArrayShape>
+ * @extends AbstractDataTransferObject<ModelConfigArrayShape>
  */
-class ModelConfig extends AbstractDataValueObject
+class ModelConfig extends AbstractDataTransferObject
 {
     public const KEY_OUTPUT_MODALITIES = 'outputModalities';
     public const KEY_SYSTEM_INSTRUCTION = 'systemInstruction';

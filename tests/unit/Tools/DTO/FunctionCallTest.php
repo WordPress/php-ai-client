@@ -23,9 +23,9 @@ class FunctionCallTest extends TestCase
         $id = 'func_123';
         $name = 'getWeather';
         $args = ['city' => 'New York', 'units' => 'celsius'];
-        
+
         $functionCall = new FunctionCall($id, $name, $args);
-        
+
         $this->assertEquals($id, $functionCall->getId());
         $this->assertEquals($name, $functionCall->getName());
         $this->assertEquals($args, $functionCall->getArgs());
@@ -40,9 +40,9 @@ class FunctionCallTest extends TestCase
     {
         $id = 'func_123';
         $args = ['param' => 'value'];
-        
+
         $functionCall = new FunctionCall($id, null, $args);
-        
+
         $this->assertEquals($id, $functionCall->getId());
         $this->assertNull($functionCall->getName());
         $this->assertEquals($args, $functionCall->getArgs());
@@ -57,9 +57,9 @@ class FunctionCallTest extends TestCase
     {
         $name = 'calculateTotal';
         $args = ['items' => [1, 2, 3]];
-        
+
         $functionCall = new FunctionCall(null, $name, $args);
-        
+
         $this->assertNull($functionCall->getId());
         $this->assertEquals($name, $functionCall->getName());
         $this->assertEquals($args, $functionCall->getArgs());
@@ -73,7 +73,7 @@ class FunctionCallTest extends TestCase
     public function testCreateWithoutArgs(): void
     {
         $functionCall = new FunctionCall('func_123', 'getTime');
-        
+
         $this->assertEquals('func_123', $functionCall->getId());
         $this->assertEquals('getTime', $functionCall->getName());
         $this->assertEquals([], $functionCall->getArgs());
@@ -88,7 +88,7 @@ class FunctionCallTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('At least one of id or name must be provided.');
-        
+
         new FunctionCall(null, null, []);
     }
 
@@ -100,35 +100,35 @@ class FunctionCallTest extends TestCase
     public function testJsonSchema(): void
     {
         $schema = FunctionCall::getJsonSchema();
-        
+
         $this->assertIsArray($schema);
         $this->assertEquals('object', $schema['type']);
-        
+
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
         $this->assertArrayHasKey(FunctionCall::KEY_ID, $schema['properties']);
         $this->assertArrayHasKey(FunctionCall::KEY_NAME, $schema['properties']);
         $this->assertArrayHasKey(FunctionCall::KEY_ARGS, $schema['properties']);
-        
+
         // Check id property
         $this->assertEquals('string', $schema['properties'][FunctionCall::KEY_ID]['type']);
         $this->assertArrayHasKey('description', $schema['properties'][FunctionCall::KEY_ID]);
-        
+
         // Check name property
         $this->assertEquals('string', $schema['properties'][FunctionCall::KEY_NAME]['type']);
         $this->assertArrayHasKey('description', $schema['properties'][FunctionCall::KEY_NAME]);
-        
+
         // Check args property
         $this->assertEquals('object', $schema['properties'][FunctionCall::KEY_ARGS]['type']);
         $this->assertTrue($schema['properties'][FunctionCall::KEY_ARGS]['additionalProperties']);
-        
+
         // Check oneOf for required fields
         $this->assertArrayHasKey('oneOf', $schema);
         $this->assertCount(2, $schema['oneOf']);
-        
+
         // First option: only id required
         $this->assertEquals([FunctionCall::KEY_ID], $schema['oneOf'][0]['required']);
-        
+
         // Second option: only name required
         $this->assertEquals([FunctionCall::KEY_NAME], $schema['oneOf'][1]['required']);
     }
@@ -154,9 +154,9 @@ class FunctionCallTest extends TestCase
                 ]
             ]
         ];
-        
+
         $functionCall = new FunctionCall('id', 'name', $args);
-        
+
         $this->assertEquals($args, $functionCall->getArgs());
     }
 
@@ -169,7 +169,7 @@ class FunctionCallTest extends TestCase
     {
         $functionCall = new FunctionCall('func_123', 'calculate', ['x' => 10, 'y' => 20]);
         $json = $functionCall->toArray();
-        
+
         $this->assertIsArray($json);
         $this->assertEquals('func_123', $json[FunctionCall::KEY_ID]);
         $this->assertEquals('calculate', $json[FunctionCall::KEY_NAME]);
@@ -185,7 +185,7 @@ class FunctionCallTest extends TestCase
     {
         $functionCall = new FunctionCall('func_456', null);
         $json = $functionCall->toArray();
-        
+
         $this->assertIsArray($json);
         $this->assertEquals('func_456', $json[FunctionCall::KEY_ID]);
         $this->assertArrayNotHasKey(FunctionCall::KEY_NAME, $json);
@@ -201,7 +201,7 @@ class FunctionCallTest extends TestCase
     {
         $functionCall = new FunctionCall(null, 'search');
         $json = $functionCall->toArray();
-        
+
         $this->assertIsArray($json);
         $this->assertEquals('search', $json[FunctionCall::KEY_NAME]);
         $this->assertArrayNotHasKey(FunctionCall::KEY_ID, $json);
@@ -220,9 +220,9 @@ class FunctionCallTest extends TestCase
             FunctionCall::KEY_NAME => 'process',
             FunctionCall::KEY_ARGS => ['input' => 'data', 'format' => 'json']
         ];
-        
+
         $functionCall = FunctionCall::fromArray($json);
-        
+
         $this->assertInstanceOf(FunctionCall::class, $functionCall);
         $this->assertEquals('func_789', $functionCall->getId());
         $this->assertEquals('process', $functionCall->getName());
@@ -237,9 +237,9 @@ class FunctionCallTest extends TestCase
     public function testFromArrayMinimalFields(): void
     {
         $json = [FunctionCall::KEY_NAME => 'minimal'];
-        
+
         $functionCall = FunctionCall::fromArray($json);
-        
+
         $this->assertInstanceOf(FunctionCall::class, $functionCall);
         $this->assertNull($functionCall->getId());
         $this->assertEquals('minimal', $functionCall->getName());
@@ -256,7 +256,7 @@ class FunctionCallTest extends TestCase
         $original = new FunctionCall('id_123', 'execute', ['param' => 'value', 'count' => 5]);
         $json = $original->toArray();
         $restored = FunctionCall::fromArray($json);
-        
+
         $this->assertEquals($original->getId(), $restored->getId());
         $this->assertEquals($original->getName(), $restored->getName());
         $this->assertEquals($original->getArgs(), $restored->getArgs());
@@ -270,11 +270,10 @@ class FunctionCallTest extends TestCase
     public function testImplementsWithArrayTransformationInterface(): void
     {
         $functionCall = new FunctionCall('id', 'name');
-        
+
         $this->assertInstanceOf(
             \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
             $functionCall
         );
-        
     }
 }

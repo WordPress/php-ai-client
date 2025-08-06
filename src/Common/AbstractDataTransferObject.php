@@ -27,7 +27,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
  * @template TArrayShape of array<string, mixed>
  * @implements WithArrayTransformationInterface<TArrayShape>
  */
-abstract class AbstractDataValueObject implements
+abstract class AbstractDataTransferObject implements
     WithArrayTransformationInterface,
     WithJsonSchemaInterface,
     JsonSerializable

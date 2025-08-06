@@ -14,6 +14,7 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 class FunctionDeclarationTest extends TestCase
 {
     use ArrayTransformationTestTrait;
+
     /**
      * Tests creating FunctionDeclaration with all properties.
      *
@@ -31,9 +32,9 @@ class FunctionDeclarationTest extends TestCase
             ],
             'required' => ['a', 'b'],
         ];
-        
+
         $declaration = new FunctionDeclaration($name, $description, $parameters);
-        
+
         $this->assertEquals($name, $declaration->getName());
         $this->assertEquals($description, $declaration->getDescription());
         $this->assertEquals($parameters, $declaration->getParameters());
@@ -48,9 +49,9 @@ class FunctionDeclarationTest extends TestCase
     {
         $name = 'getCurrentTime';
         $description = 'Gets the current system time';
-        
+
         $declaration = new FunctionDeclaration($name, $description);
-        
+
         $this->assertEquals($name, $declaration->getName());
         $this->assertEquals($description, $declaration->getDescription());
         $this->assertNull($declaration->getParameters());
@@ -66,7 +67,7 @@ class FunctionDeclarationTest extends TestCase
     public function testWithVariousParameterTypes($parameters): void
     {
         $declaration = new FunctionDeclaration('test', 'test function', $parameters);
-        
+
         $this->assertSame($parameters, $declaration->getParameters());
     }
 
@@ -107,24 +108,24 @@ class FunctionDeclarationTest extends TestCase
     public function testJsonSchema(): void
     {
         $schema = FunctionDeclaration::getJsonSchema();
-        
+
         $this->assertIsArray($schema);
         $this->assertEquals('object', $schema['type']);
-        
+
         // Check properties
         $this->assertArrayHasKey('properties', $schema);
         $this->assertArrayHasKey(FunctionDeclaration::KEY_NAME, $schema['properties']);
         $this->assertArrayHasKey(FunctionDeclaration::KEY_DESCRIPTION, $schema['properties']);
         $this->assertArrayHasKey(FunctionDeclaration::KEY_PARAMETERS, $schema['properties']);
-        
+
         // Check name property
         $this->assertEquals('string', $schema['properties'][FunctionDeclaration::KEY_NAME]['type']);
         $this->assertArrayHasKey('description', $schema['properties'][FunctionDeclaration::KEY_NAME]);
-        
+
         // Check description property
         $this->assertEquals('string', $schema['properties'][FunctionDeclaration::KEY_DESCRIPTION]['type']);
         $this->assertArrayHasKey('description', $schema['properties'][FunctionDeclaration::KEY_DESCRIPTION]);
-        
+
         // Check parameters property allows multiple types
         $paramTypes = $schema['properties'][FunctionDeclaration::KEY_PARAMETERS]['type'];
         $this->assertIsArray($paramTypes);
@@ -134,7 +135,7 @@ class FunctionDeclarationTest extends TestCase
         $this->assertContains('object', $paramTypes);
         $this->assertContains('array', $paramTypes);
         $this->assertContains('null', $paramTypes);
-        
+
         // Check required fields - parameters should NOT be required
         $this->assertArrayHasKey('required', $schema);
         $this->assertEquals([FunctionDeclaration::KEY_NAME, FunctionDeclaration::KEY_DESCRIPTION], $schema['required']);
@@ -149,7 +150,7 @@ class FunctionDeclarationTest extends TestCase
     public function testEmptyStringValues(): void
     {
         $declaration = new FunctionDeclaration('', '');
-        
+
         $this->assertEquals('', $declaration->getName());
         $this->assertEquals('', $declaration->getDescription());
         $this->assertNull($declaration->getParameters());
@@ -178,13 +179,13 @@ class FunctionDeclarationTest extends TestCase
             'required' => ['location'],
             'additionalProperties' => false
         ];
-        
+
         $declaration = new FunctionDeclaration(
             'get_weather',
             'Get the current weather in a given location',
             $parameters
         );
-        
+
         $this->assertEquals($parameters, $declaration->getParameters());
     }
 
@@ -200,13 +201,19 @@ class FunctionDeclarationTest extends TestCase
             'Searches the web for information',
             ['type' => 'object', 'properties' => ['query' => ['type' => 'string']]]
         );
-        
+
         $json = $this->assertToArrayReturnsArray($declaration);
-        
-        $this->assertArrayHasKeys($json, [FunctionDeclaration::KEY_NAME, FunctionDeclaration::KEY_DESCRIPTION, FunctionDeclaration::KEY_PARAMETERS]);
+
+        $this->assertArrayHasKeys(
+            $json,
+            [FunctionDeclaration::KEY_NAME, FunctionDeclaration::KEY_DESCRIPTION, FunctionDeclaration::KEY_PARAMETERS]
+        );
         $this->assertEquals('searchWeb', $json[FunctionDeclaration::KEY_NAME]);
         $this->assertEquals('Searches the web for information', $json[FunctionDeclaration::KEY_DESCRIPTION]);
-        $this->assertEquals(['type' => 'object', 'properties' => ['query' => ['type' => 'string']]], $json[FunctionDeclaration::KEY_PARAMETERS]);
+        $this->assertEquals(
+            ['type' => 'object', 'properties' => ['query' => ['type' => 'string']]],
+            $json[FunctionDeclaration::KEY_PARAMETERS]
+        );
     }
 
     /**
@@ -220,9 +227,9 @@ class FunctionDeclarationTest extends TestCase
             'getTimestamp',
             'Returns the current Unix timestamp'
         );
-        
+
         $json = $this->assertToArrayReturnsArray($declaration);
-        
+
         $this->assertArrayHasKeys($json, [FunctionDeclaration::KEY_NAME, FunctionDeclaration::KEY_DESCRIPTION]);
         $this->assertArrayNotHasKey(FunctionDeclaration::KEY_PARAMETERS, $json);
         $this->assertEquals('getTimestamp', $json[FunctionDeclaration::KEY_NAME]);
@@ -248,9 +255,9 @@ class FunctionDeclarationTest extends TestCase
                 'required' => ['width', 'height']
             ]
         ];
-        
+
         $declaration = FunctionDeclaration::fromArray($json);
-        
+
         $this->assertInstanceOf(FunctionDeclaration::class, $declaration);
         $this->assertEquals('calculateArea', $declaration->getName());
         $this->assertEquals('Calculates the area of a rectangle', $declaration->getDescription());
@@ -268,9 +275,9 @@ class FunctionDeclarationTest extends TestCase
             FunctionDeclaration::KEY_NAME => 'ping',
             FunctionDeclaration::KEY_DESCRIPTION => 'Simple ping function'
         ];
-        
+
         $declaration = FunctionDeclaration::fromArray($json);
-        
+
         $this->assertInstanceOf(FunctionDeclaration::class, $declaration);
         $this->assertEquals('ping', $declaration->getName());
         $this->assertEquals('Simple ping function', $declaration->getDescription());

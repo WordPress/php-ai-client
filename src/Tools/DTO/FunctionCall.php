@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 
 /**
  * Represents a function call request from an AI model.
@@ -17,9 +17,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @phpstan-type FunctionCallArrayShape array{id?: string, name?: string, args?: array<string, mixed>}
  *
- * @extends AbstractDataValueObject<FunctionCallArrayShape>
+ * @extends AbstractDataTransferObject<FunctionCallArrayShape>
  */
-class FunctionCall extends AbstractDataValueObject
+class FunctionCall extends AbstractDataTransferObject
 {
     public const KEY_ID = 'id';
     public const KEY_NAME = 'name';

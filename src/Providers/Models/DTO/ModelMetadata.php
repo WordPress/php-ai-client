@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Models\DTO;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
@@ -25,9 +25,9 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  *     supportedOptions: list<SupportedOptionArrayShape>
  * }
  *
- * @extends AbstractDataValueObject<ModelMetadataArrayShape>
+ * @extends AbstractDataTransferObject<ModelMetadataArrayShape>
  */
-class ModelMetadata extends AbstractDataValueObject
+class ModelMetadata extends AbstractDataTransferObject
 {
     public const KEY_ID = 'id';
     public const KEY_NAME = 'name';

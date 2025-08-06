@@ -191,7 +191,10 @@ class SupportedOptionTest extends TestCase
 
         $this->assertIsArray($array);
         $this->assertEquals('style', $array[SupportedOption::KEY_NAME]);
-        $this->assertEquals(['realistic', 'artistic', 'cartoon', 'abstract'], $array[SupportedOption::KEY_SUPPORTED_VALUES]);
+        $this->assertEquals(
+            ['realistic', 'artistic', 'cartoon', 'abstract'],
+            $array[SupportedOption::KEY_SUPPORTED_VALUES]
+        );
         $this->assertCount(2, $array);
     }
 
@@ -476,7 +479,7 @@ class SupportedOptionTest extends TestCase
     public function testRoundTripWithNullSupportedValues(): void
     {
         $original = new SupportedOption('unrestricted');
-        
+
         $array = $original->toArray();
         $restored = SupportedOption::fromArray($array);
 
@@ -518,4 +521,3 @@ class SupportedOptionTest extends TestCase
         $this->assertNotContains(SupportedOption::KEY_SUPPORTED_VALUES, $schema['required']);
     }
 }
-

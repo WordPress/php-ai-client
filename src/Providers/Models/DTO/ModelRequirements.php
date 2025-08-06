@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Models\DTO;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
@@ -23,9 +23,9 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  *     requiredOptions: list<RequiredOptionArrayShape>
  * }
  *
- * @extends AbstractDataValueObject<ModelRequirementsArrayShape>
+ * @extends AbstractDataTransferObject<ModelRequirementsArrayShape>
  */
-class ModelRequirements extends AbstractDataValueObject
+class ModelRequirements extends AbstractDataTransferObject
 {
     public const KEY_REQUIRED_CAPABILITIES = 'requiredCapabilities';
     public const KEY_REQUIRED_OPTIONS = 'requiredOptions';

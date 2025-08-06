@@ -28,9 +28,9 @@ class SystemMessageTest extends TestCase
         $parts = [
             new MessagePart('You are a helpful AI assistant.'),
         ];
-        
+
         $message = new SystemMessage($parts);
-        
+
         $this->assertEquals(MessageRoleEnum::system(), $message->getRole());
         $this->assertTrue($message->getRole()->isSystem());
     }
@@ -48,9 +48,9 @@ class SystemMessageTest extends TestCase
             new MessagePart('Be concise and clear in your explanations.'),
             new MessagePart('Follow PSR-12 coding standards.'),
         ];
-        
+
         $message = new SystemMessage($parts);
-        
+
         $this->assertCount(4, $message->getParts());
         $this->assertEquals($parts, $message->getParts());
     }
@@ -63,7 +63,7 @@ class SystemMessageTest extends TestCase
     public function testWithEmptyParts(): void
     {
         $message = new SystemMessage([]);
-        
+
         $this->assertEquals(MessageRoleEnum::system(), $message->getRole());
         $this->assertCount(0, $message->getParts());
     }
@@ -76,7 +76,7 @@ class SystemMessageTest extends TestCase
     public function testInheritsFromMessage(): void
     {
         $message = new SystemMessage([]);
-        
+
         $this->assertInstanceOf(\WordPress\AiClient\Messages\DTO\Message::class, $message);
     }
 
@@ -97,13 +97,16 @@ class SystemMessageTest extends TestCase
             new MessagePart('2. XSS vulnerabilities'),
             new MessagePart('3. Performance bottlenecks'),
         ];
-        
+
         $message = new SystemMessage($parts);
-        
+
         $this->assertCount(8, $message->getParts());
-        
+
         // Verify each part
-        $this->assertEquals('You are a specialized code review assistant with expertise in:', $message->getParts()[0]->getText());
+        $this->assertEquals(
+            'You are a specialized code review assistant with expertise in:',
+            $message->getParts()[0]->getText()
+        );
         $this->assertEquals('- Security best practices', $message->getParts()[1]->getText());
         $this->assertEquals('- Performance optimization', $message->getParts()[2]->getText());
         $this->assertEquals('- Code maintainability', $message->getParts()[3]->getText());
@@ -122,7 +125,7 @@ class SystemMessageTest extends TestCase
     {
         $schema = SystemMessage::getJsonSchema();
         $parentSchema = \WordPress\AiClient\Messages\DTO\Message::getJsonSchema();
-        
+
         $this->assertEquals($parentSchema, $schema);
     }
 
@@ -138,9 +141,9 @@ class SystemMessageTest extends TestCase
             'terminology, and ensure your code examples follow PSR-12 standards. ' .
             'When explaining complex concepts, break them down into simpler parts ' .
             'and provide practical examples. Be patient and thorough in your responses.';
-        
+
         $message = new SystemMessage([new MessagePart($longInstruction)]);
-        
+
         $this->assertCount(1, $message->getParts());
         $this->assertEquals($longInstruction, $message->getParts()[0]->getText());
     }
@@ -158,10 +161,10 @@ class SystemMessageTest extends TestCase
             new MessagePart('Third instruction'),
             new MessagePart('Fourth instruction'),
         ];
-        
+
         $message = new SystemMessage($parts);
         $retrievedParts = $message->getParts();
-        
+
         $this->assertEquals('First instruction', $retrievedParts[0]->getText());
         $this->assertEquals('Second instruction', $retrievedParts[1]->getText());
         $this->assertEquals('Third instruction', $retrievedParts[2]->getText());
@@ -179,9 +182,9 @@ class SystemMessageTest extends TestCase
             new MessagePart('You are a helpful assistant.'),
             new MessagePart('Always be respectful and accurate.')
         ]);
-        
+
         $json = $this->assertToArrayReturnsArray($message);
-        
+
         $this->assertArrayHasKeys($json, ['role', 'parts']);
         $this->assertEquals(MessageRoleEnum::system()->value, $json['role']);
         $this->assertCount(2, $json['parts']);
@@ -203,9 +206,9 @@ class SystemMessageTest extends TestCase
                 ['type' => MessagePartTypeEnum::text()->value, 'text' => 'System instruction 2']
             ]
         ];
-        
+
         $message = SystemMessage::fromArray($json);
-        
+
         $this->assertInstanceOf(SystemMessage::class, $message);
         $this->assertEquals(MessageRoleEnum::system(), $message->getRole());
         $this->assertCount(2, $message->getParts());
@@ -229,7 +232,7 @@ class SystemMessageTest extends TestCase
                 $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
                 $this->assertCount(count($original->getParts()), $restored->getParts());
                 $this->assertEquals(
-                    $original->getParts()[0]->getText(), 
+                    $original->getParts()[0]->getText(),
                     $restored->getParts()[0]->getText()
                 );
                 $this->assertEquals(

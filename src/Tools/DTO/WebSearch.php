@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 
 /**
  * Represents web search configuration for AI models.
@@ -16,9 +16,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  *
  * @phpstan-type WebSearchArrayShape array{allowedDomains?: string[], disallowedDomains?: string[]}
  *
- * @extends AbstractDataValueObject<WebSearchArrayShape>
+ * @extends AbstractDataTransferObject<WebSearchArrayShape>
  */
-class WebSearch extends AbstractDataValueObject
+class WebSearch extends AbstractDataTransferObject
 {
     public const KEY_ALLOWED_DOMAINS = 'allowedDomains';
     public const KEY_DISALLOWED_DOMAINS = 'disallowedDomains';

@@ -31,9 +31,9 @@ class ModelMessageTest extends TestCase
         $parts = [
             new MessagePart('This is a response from the AI model.'),
         ];
-        
+
         $message = new ModelMessage($parts);
-        
+
         $this->assertEquals(MessageRoleEnum::model(), $message->getRole());
         $this->assertTrue($message->getRole()->isModel());
     }
@@ -51,9 +51,9 @@ class ModelMessageTest extends TestCase
             new MessagePart('1. First step'),
             new MessagePart('2. Second step'),
         ];
-        
+
         $message = new ModelMessage($parts);
-        
+
         $this->assertCount(4, $message->getParts());
         $this->assertEquals($parts, $message->getParts());
     }
@@ -66,7 +66,7 @@ class ModelMessageTest extends TestCase
     public function testWithEmptyParts(): void
     {
         $message = new ModelMessage([]);
-        
+
         $this->assertEquals(MessageRoleEnum::model(), $message->getRole());
         $this->assertCount(0, $message->getParts());
     }
@@ -79,7 +79,7 @@ class ModelMessageTest extends TestCase
     public function testInheritsFromMessage(): void
     {
         $message = new ModelMessage([]);
-        
+
         $this->assertInstanceOf(\WordPress\AiClient\Messages\DTO\Message::class, $message);
     }
 
@@ -93,16 +93,16 @@ class ModelMessageTest extends TestCase
         $file = new File('https://example.com/image.jpg', 'image/jpeg');
         $functionCall = new FunctionCall('func_123', 'search', ['q' => 'test']);
         $functionResponse = new FunctionResponse('func_123', 'search', ['results' => []]);
-        
+
         $parts = [
             new MessagePart('I found the following:'),
             new MessagePart($file),
             new MessagePart($functionCall),
             new MessagePart($functionResponse),
         ];
-        
+
         $message = new ModelMessage($parts);
-        
+
         $this->assertEquals('I found the following:', $message->getParts()[0]->getText());
         $this->assertSame($file, $message->getParts()[1]->getFile());
         $this->assertSame($functionCall, $message->getParts()[2]->getFunctionCall());
@@ -118,7 +118,7 @@ class ModelMessageTest extends TestCase
     {
         $schema = ModelMessage::getJsonSchema();
         $parentSchema = \WordPress\AiClient\Messages\DTO\Message::getJsonSchema();
-        
+
         $this->assertEquals($parentSchema, $schema);
     }
 
@@ -133,9 +133,9 @@ class ModelMessageTest extends TestCase
             new MessagePart('I can help you with that.'),
             new MessagePart('Here is the solution:')
         ]);
-        
+
         $json = $this->assertToArrayReturnsArray($message);
-        
+
         $this->assertArrayHasKeys($json, ['role', 'parts']);
         $this->assertEquals(MessageRoleEnum::model()->value, $json['role']);
         $this->assertCount(2, $json['parts']);
@@ -157,9 +157,9 @@ class ModelMessageTest extends TestCase
                 ['type' => MessagePartTypeEnum::text()->value, 'text' => 'Model response 2']
             ]
         ];
-        
+
         $message = ModelMessage::fromArray($json);
-        
+
         $this->assertInstanceOf(ModelMessage::class, $message);
         $this->assertEquals(MessageRoleEnum::model(), $message->getRole());
         $this->assertCount(2, $message->getParts());
@@ -183,7 +183,7 @@ class ModelMessageTest extends TestCase
                 $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
                 $this->assertCount(count($original->getParts()), $restored->getParts());
                 $this->assertEquals(
-                    $original->getParts()[0]->getText(), 
+                    $original->getParts()[0]->getText(),
                     $restored->getParts()[0]->getText()
                 );
                 $this->assertEquals(

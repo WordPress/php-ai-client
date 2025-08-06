@@ -179,30 +179,51 @@ class RequiredOptionTest extends TestCase
     {
         // String value
         $stringOption = new RequiredOption('string_opt', 'value');
-        $this->assertEquals([RequiredOption::KEY_NAME => 'string_opt', RequiredOption::KEY_VALUE => 'value'], $stringOption->toArray());
+        $this->assertEquals(
+            [RequiredOption::KEY_NAME => 'string_opt', RequiredOption::KEY_VALUE => 'value'],
+            $stringOption->toArray()
+        );
 
         // Number values
         $intOption = new RequiredOption('int_opt', 42);
-        $this->assertEquals([RequiredOption::KEY_NAME => 'int_opt', RequiredOption::KEY_VALUE => 42], $intOption->toArray());
+        $this->assertEquals(
+            [RequiredOption::KEY_NAME => 'int_opt', RequiredOption::KEY_VALUE => 42],
+            $intOption->toArray()
+        );
 
         $floatOption = new RequiredOption('float_opt', 3.14);
-        $this->assertEquals([RequiredOption::KEY_NAME => 'float_opt', RequiredOption::KEY_VALUE => 3.14], $floatOption->toArray());
+        $this->assertEquals(
+            [RequiredOption::KEY_NAME => 'float_opt', RequiredOption::KEY_VALUE => 3.14],
+            $floatOption->toArray()
+        );
 
         // Boolean value
         $boolOption = new RequiredOption('bool_opt', true);
-        $this->assertEquals([RequiredOption::KEY_NAME => 'bool_opt', RequiredOption::KEY_VALUE => true], $boolOption->toArray());
+        $this->assertEquals(
+            [RequiredOption::KEY_NAME => 'bool_opt', RequiredOption::KEY_VALUE => true],
+            $boolOption->toArray()
+        );
 
         // Null value
         $nullOption = new RequiredOption('null_opt', null);
-        $this->assertEquals([RequiredOption::KEY_NAME => 'null_opt', RequiredOption::KEY_VALUE => null], $nullOption->toArray());
+        $this->assertEquals(
+            [RequiredOption::KEY_NAME => 'null_opt', RequiredOption::KEY_VALUE => null],
+            $nullOption->toArray()
+        );
 
         // Array value
         $arrayOption = new RequiredOption('array_opt', [1, 2, 3]);
-        $this->assertEquals([RequiredOption::KEY_NAME => 'array_opt', RequiredOption::KEY_VALUE => [1, 2, 3]], $arrayOption->toArray());
+        $this->assertEquals(
+            [RequiredOption::KEY_NAME => 'array_opt', RequiredOption::KEY_VALUE => [1, 2, 3]],
+            $arrayOption->toArray()
+        );
 
         // Object value
         $objectOption = new RequiredOption('object_opt', ['key' => 'value']);
-        $this->assertEquals([RequiredOption::KEY_NAME => 'object_opt', RequiredOption::KEY_VALUE => ['key' => 'value']], $objectOption->toArray());
+        $this->assertEquals(
+            [RequiredOption::KEY_NAME => 'object_opt', RequiredOption::KEY_VALUE => ['key' => 'value']],
+            $objectOption->toArray()
+        );
     }
 
     /**
@@ -213,37 +234,51 @@ class RequiredOptionTest extends TestCase
     public function testFromArrayWithDifferentValueTypes(): void
     {
         // String value
-        $stringOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'str', RequiredOption::KEY_VALUE => 'test']);
+        $stringOption = RequiredOption::fromArray(
+            [RequiredOption::KEY_NAME => 'str', RequiredOption::KEY_VALUE => 'test']
+        );
         $this->assertEquals('str', $stringOption->getName());
         $this->assertEquals('test', $stringOption->getValue());
 
         // Integer value
-        $intOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'num', RequiredOption::KEY_VALUE => 100]);
+        $intOption = RequiredOption::fromArray(
+            [RequiredOption::KEY_NAME => 'num', RequiredOption::KEY_VALUE => 100]
+        );
         $this->assertEquals('num', $intOption->getName());
         $this->assertEquals(100, $intOption->getValue());
 
         // Float value
-        $floatOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'float', RequiredOption::KEY_VALUE => 1.5]);
+        $floatOption = RequiredOption::fromArray(
+            [RequiredOption::KEY_NAME => 'float', RequiredOption::KEY_VALUE => 1.5]
+        );
         $this->assertEquals('float', $floatOption->getName());
         $this->assertEquals(1.5, $floatOption->getValue());
 
         // Boolean value
-        $boolOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'bool', RequiredOption::KEY_VALUE => false]);
+        $boolOption = RequiredOption::fromArray(
+            [RequiredOption::KEY_NAME => 'bool', RequiredOption::KEY_VALUE => false]
+        );
         $this->assertEquals('bool', $boolOption->getName());
         $this->assertFalse($boolOption->getValue());
 
         // Null value
-        $nullOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'nullable', RequiredOption::KEY_VALUE => null]);
+        $nullOption = RequiredOption::fromArray(
+            [RequiredOption::KEY_NAME => 'nullable', RequiredOption::KEY_VALUE => null]
+        );
         $this->assertEquals('nullable', $nullOption->getName());
         $this->assertNull($nullOption->getValue());
 
         // Array value
-        $arrayOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'arr', RequiredOption::KEY_VALUE => ['a', 'b', 'c']]);
+        $arrayOption = RequiredOption::fromArray(
+            [RequiredOption::KEY_NAME => 'arr', RequiredOption::KEY_VALUE => ['a', 'b', 'c']]
+        );
         $this->assertEquals('arr', $arrayOption->getName());
         $this->assertEquals(['a', 'b', 'c'], $arrayOption->getValue());
 
         // Object value
-        $objectOption = RequiredOption::fromArray([RequiredOption::KEY_NAME => 'obj', RequiredOption::KEY_VALUE => ['nested' => ['deep' => true]]]);
+        $objectOption = RequiredOption::fromArray(
+            [RequiredOption::KEY_NAME => 'obj', RequiredOption::KEY_VALUE => ['nested' => ['deep' => true]]]
+        );
         $this->assertEquals('obj', $objectOption->getName());
         $this->assertEquals(['nested' => ['deep' => true]], $objectOption->getValue());
     }
@@ -404,4 +439,3 @@ class RequiredOptionTest extends TestCase
         );
     }
 }
-

@@ -7,19 +7,19 @@ namespace WordPress\AiClient\Tests\unit\Common;
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use stdClass;
-use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Common\AbstractDataTransferObject;
 
 /**
- * Tests for the AbstractDataValueObject class.
+ * Tests for the AbstractDataTransferObject class.
  *
- * This test class verifies that the AbstractDataValueObject correctly
+ * This test class verifies that the AbstractDataTransferObject correctly
  * implements JSON serialization with proper empty array to object conversion
  * based on JSON schema definitions. It combines the functionality previously
  * tested in HasJsonSerializationTest.
  *
- * @covers \WordPress\AiClient\Common\AbstractDataValueObject
+ * @covers \WordPress\AiClient\Common\AbstractDataTransferObject
  */
-class AbstractDataValueObjectTest extends TestCase
+class AbstractDataTransferObjectTest extends TestCase
 {
     /**
      * Tests that empty arrays are converted to objects when schema expects object type.
@@ -28,7 +28,7 @@ class AbstractDataValueObjectTest extends TestCase
      */
     public function testEmptyArraysConvertedToObjects(): void
     {
-        $testObject = new class extends AbstractDataValueObject {
+        $testObject = new class extends AbstractDataTransferObject {
             public function toArray(): array
             {
                 return [
@@ -109,7 +109,7 @@ class AbstractDataValueObjectTest extends TestCase
      */
     public function testNestedObjectConversion(): void
     {
-        $testObject = new class extends AbstractDataValueObject {
+        $testObject = new class extends AbstractDataTransferObject {
             public function toArray(): array
             {
                 return [
@@ -170,7 +170,7 @@ class AbstractDataValueObjectTest extends TestCase
      */
     public function testOneOfSchemaHandling(): void
     {
-        $testObject = new class extends AbstractDataValueObject {
+        $testObject = new class extends AbstractDataTransferObject {
             public function toArray(): array
             {
                 return [
@@ -250,7 +250,7 @@ class AbstractDataValueObjectTest extends TestCase
      */
     public function testArrayOfObjectsProcessing(): void
     {
-        $testObject = new class extends AbstractDataValueObject {
+        $testObject = new class extends AbstractDataTransferObject {
             public function toArray(): array
             {
                 return [
@@ -321,7 +321,7 @@ class AbstractDataValueObjectTest extends TestCase
      */
     public function testDeeplyNestedStructures(): void
     {
-        $testObject = new class extends AbstractDataValueObject {
+        $testObject = new class extends AbstractDataTransferObject {
             public function toArray(): array
             {
                 return [
@@ -397,7 +397,7 @@ class AbstractDataValueObjectTest extends TestCase
      */
     public function testNonArrayDataPassesThrough(): void
     {
-        $testObject = new class extends AbstractDataValueObject {
+        $testObject = new class extends AbstractDataTransferObject {
             public function toArray(): array
             {
                 return [
@@ -468,7 +468,7 @@ class AbstractDataValueObjectTest extends TestCase
      */
     public function testMissingSchemaProperties(): void
     {
-        $testObject = new class extends AbstractDataValueObject {
+        $testObject = new class extends AbstractDataTransferObject {
             public function toArray(): array
             {
                 return [
@@ -516,13 +516,13 @@ class AbstractDataValueObjectTest extends TestCase
     }
 
     /**
-     * Tests that AbstractDataValueObject implements all required interfaces.
+     * Tests that AbstractDataTransferObject implements all required interfaces.
      *
      * @return void
      */
     public function testImplementsRequiredInterfaces(): void
     {
-        $testObject = new class extends AbstractDataValueObject {
+        $testObject = new class extends AbstractDataTransferObject {
             public function toArray(): array
             {
                 return ['test' => 'value'];
@@ -545,7 +545,10 @@ class AbstractDataValueObjectTest extends TestCase
         };
 
         // Verify interface implementations
-        $this->assertInstanceOf(\WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class, $testObject);
+        $this->assertInstanceOf(
+            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            $testObject
+        );
         $this->assertInstanceOf(\WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class, $testObject);
         $this->assertInstanceOf(JsonSerializable::class, $testObject);
 

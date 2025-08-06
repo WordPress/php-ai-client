@@ -96,16 +96,33 @@ class ModelMetadataTest extends TestCase
 
         // Check array items
         $this->assertArrayHasKey('items', $schema['properties'][ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);
-        $this->assertEquals('string', $schema['properties'][ModelMetadata::KEY_SUPPORTED_CAPABILITIES]['items']['type']);
+        $this->assertEquals(
+            'string',
+            $schema['properties'][ModelMetadata::KEY_SUPPORTED_CAPABILITIES]['items']['type']
+        );
         $this->assertArrayHasKey('enum', $schema['properties'][ModelMetadata::KEY_SUPPORTED_CAPABILITIES]['items']);
-        $this->assertEquals(CapabilityEnum::getValues(), $schema['properties'][ModelMetadata::KEY_SUPPORTED_CAPABILITIES]['items']['enum']);
+        $this->assertEquals(
+            CapabilityEnum::getValues(),
+            $schema['properties'][ModelMetadata::KEY_SUPPORTED_CAPABILITIES]['items']['enum']
+        );
 
         $this->assertArrayHasKey('items', $schema['properties'][ModelMetadata::KEY_SUPPORTED_OPTIONS]);
-        $this->assertEquals(SupportedOption::getJsonSchema(), $schema['properties'][ModelMetadata::KEY_SUPPORTED_OPTIONS]['items']);
+        $this->assertEquals(
+            SupportedOption::getJsonSchema(),
+            $schema['properties'][ModelMetadata::KEY_SUPPORTED_OPTIONS]['items']
+        );
 
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals([ModelMetadata::KEY_ID, ModelMetadata::KEY_NAME, ModelMetadata::KEY_SUPPORTED_CAPABILITIES, ModelMetadata::KEY_SUPPORTED_OPTIONS], $schema['required']);
+        $this->assertEquals(
+            [
+                ModelMetadata::KEY_ID,
+                ModelMetadata::KEY_NAME,
+                ModelMetadata::KEY_SUPPORTED_CAPABILITIES,
+                ModelMetadata::KEY_SUPPORTED_OPTIONS
+            ],
+            $schema['required']
+        );
     }
 
     /**
@@ -133,9 +150,15 @@ class ModelMetadataTest extends TestCase
         $this->assertEquals(['text_generation', 'chat_history'], $array[ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);
         $this->assertCount(2, $array[ModelMetadata::KEY_SUPPORTED_OPTIONS]);
         $this->assertEquals('max_tokens', $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_NAME]);
-        $this->assertEquals([100, 1000, 10000], $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_SUPPORTED_VALUES]);
+        $this->assertEquals(
+            [100, 1000, 10000],
+            $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_SUPPORTED_VALUES]
+        );
         $this->assertEquals('temperature', $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][1][SupportedOption::KEY_NAME]);
-        $this->assertEquals([0.0, 1.0], $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][1][SupportedOption::KEY_SUPPORTED_VALUES]);
+        $this->assertEquals(
+            [0.0, 1.0],
+            $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][1][SupportedOption::KEY_SUPPORTED_VALUES]
+        );
     }
 
     /**
@@ -248,7 +271,10 @@ class ModelMetadataTest extends TestCase
         $this->assertEquals(['embedding_generation'], $decoded[ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);
         $this->assertCount(1, $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS]);
         $this->assertEquals('dimensions', $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_NAME]);
-        $this->assertEquals([256, 512, 1024], $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_SUPPORTED_VALUES]);
+        $this->assertEquals(
+            [256, 512, 1024],
+            $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_SUPPORTED_VALUES]
+        );
     }
 
     /**
@@ -311,13 +337,34 @@ class ModelMetadataTest extends TestCase
         $this->assertCount(7, $array[ModelMetadata::KEY_SUPPORTED_OPTIONS]);
 
         // Verify different value types are preserved
-        $this->assertEquals(['option1', 'option2', 'option3'], $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_SUPPORTED_VALUES]);
-        $this->assertEquals([1, 2, 3, 4, 5], $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][1][SupportedOption::KEY_SUPPORTED_VALUES]);
-        $this->assertEquals([0.1, 0.5, 0.9], $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][2][SupportedOption::KEY_SUPPORTED_VALUES]);
-        $this->assertEquals([true, false], $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][3][SupportedOption::KEY_SUPPORTED_VALUES]);
-        $this->assertEquals(['text', 123, true, null], $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][4][SupportedOption::KEY_SUPPORTED_VALUES]);
-        $this->assertEquals([['a', 'b'], ['c', 'd']], $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][5][SupportedOption::KEY_SUPPORTED_VALUES]);
-        $this->assertEquals([['key' => 'value'], ['another' => 'object']], $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][6][SupportedOption::KEY_SUPPORTED_VALUES]);
+        $this->assertEquals(
+            ['option1', 'option2', 'option3'],
+            $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_SUPPORTED_VALUES]
+        );
+        $this->assertEquals(
+            [1, 2, 3, 4, 5],
+            $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][1][SupportedOption::KEY_SUPPORTED_VALUES]
+        );
+        $this->assertEquals(
+            [0.1, 0.5, 0.9],
+            $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][2][SupportedOption::KEY_SUPPORTED_VALUES]
+        );
+        $this->assertEquals(
+            [true, false],
+            $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][3][SupportedOption::KEY_SUPPORTED_VALUES]
+        );
+        $this->assertEquals(
+            ['text', 123, true, null],
+            $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][4][SupportedOption::KEY_SUPPORTED_VALUES]
+        );
+        $this->assertEquals(
+            [['a', 'b'], ['c', 'd']],
+            $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][5][SupportedOption::KEY_SUPPORTED_VALUES]
+        );
+        $this->assertEquals(
+            [['key' => 'value'], ['another' => 'object']],
+            $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][6][SupportedOption::KEY_SUPPORTED_VALUES]
+        );
     }
 
     /**
@@ -392,4 +439,3 @@ class ModelMetadataTest extends TestCase
         );
     }
 }
-
