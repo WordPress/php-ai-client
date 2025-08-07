@@ -39,12 +39,10 @@ class CandidateTest extends TestCase
         $candidate = new Candidate(
             $message,
             FinishReasonEnum::stop(),
-            25
         );
 
         $this->assertSame($message, $candidate->getMessage());
         $this->assertEquals(FinishReasonEnum::stop(), $candidate->getFinishReason());
-        $this->assertEquals(25, $candidate->getTokenCount());
     }
 
     /**
@@ -58,7 +56,7 @@ class CandidateTest extends TestCase
     {
         $message = new ModelMessage([new MessagePart('Response')]);
 
-        $candidate = new Candidate($message, $finishReason, 10);
+        $candidate = new Candidate($message, $finishReason);
 
         $this->assertEquals($finishReason, $candidate->getFinishReason());
     }
@@ -103,13 +101,11 @@ class CandidateTest extends TestCase
 
         $candidate = new Candidate(
             $message,
-            FinishReasonEnum::toolCalls(),
-            150
+            FinishReasonEnum::toolCalls()
         );
 
         $this->assertCount(6, $candidate->getMessage()->getParts());
         $this->assertTrue($candidate->getFinishReason()->isToolCalls());
-        $this->assertEquals(150, $candidate->getTokenCount());
     }
 
     /**
@@ -119,7 +115,11 @@ class CandidateTest extends TestCase
      */
     public function testWithMessageContainingFiles(): void
     {
-        $file = new File('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12P4DwABAQEAG7buVgAAAABJRU5ErkJggg==', 'image/png');
+        $base64Data = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12P4DwABAQEAG7buVgAAAABJRU5ErkJggg==';
+        $file = new File(
+            'data:image/png;base64,' . $base64Data,
+            'image/png'
+        );
 
         $message = new ModelMessage([
             new MessagePart('I\'ve generated the requested image:'),
@@ -130,49 +130,12 @@ class CandidateTest extends TestCase
         $candidate = new Candidate(
             $message,
             FinishReasonEnum::stop(),
-            85
         );
 
         $parts = $candidate->getMessage()->getParts();
         $this->assertEquals('I\'ve generated the requested image:', $parts[0]->getText());
         $this->assertSame($file, $parts[1]->getFile());
         $this->assertEquals('The image shows a flowchart of the process.', $parts[2]->getText());
-    }
-
-    /**
-     * Tests candidate with different token counts.
-     *
-     * @dataProvider tokenCountProvider
-     * @param int $tokenCount
-     * @return void
-     */
-    public function testWithDifferentTokenCounts(int $tokenCount): void
-    {
-        $message = new ModelMessage([new MessagePart('Response')]);
-
-        $candidate = new Candidate(
-            $message,
-            FinishReasonEnum::stop(),
-            $tokenCount
-        );
-
-        $this->assertEquals($tokenCount, $candidate->getTokenCount());
-    }
-
-    /**
-     * Provides different token counts.
-     *
-     * @return array
-     */
-    public function tokenCountProvider(): array
-    {
-        return [
-            'zero' => [0],
-            'small' => [10],
-            'medium' => [500],
-            'large' => [4000],
-            'very_large' => [100000],
-        ];
     }
 
     /**
@@ -191,8 +154,7 @@ class CandidateTest extends TestCase
 
         new Candidate(
             $userMessage,
-            FinishReasonEnum::stop(),
-            10
+            FinishReasonEnum::stop()
         );
     }
 
@@ -213,8 +175,7 @@ class CandidateTest extends TestCase
 
         new Candidate(
             $message,
-            FinishReasonEnum::stop(),
-            10
+            FinishReasonEnum::stop()
         );
     }
 
@@ -234,7 +195,6 @@ class CandidateTest extends TestCase
         $this->assertArrayHasKey('properties', $schema);
         $this->assertArrayHasKey(Candidate::KEY_MESSAGE, $schema['properties']);
         $this->assertArrayHasKey(Candidate::KEY_FINISH_REASON, $schema['properties']);
-        $this->assertArrayHasKey(Candidate::KEY_TOKEN_COUNT, $schema['properties']);
 
         // Check finishReason property
         $finishReasonSchema = $schema['properties'][Candidate::KEY_FINISH_REASON];
@@ -246,13 +206,9 @@ class CandidateTest extends TestCase
         $this->assertContains('tool_calls', $finishReasonSchema['enum']);
         $this->assertContains('error', $finishReasonSchema['enum']);
 
-        // Check tokenCount property
-        $tokenCountSchema = $schema['properties'][Candidate::KEY_TOKEN_COUNT];
-        $this->assertEquals('integer', $tokenCountSchema['type']);
-
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
-        $this->assertEquals([Candidate::KEY_MESSAGE, Candidate::KEY_FINISH_REASON, Candidate::KEY_TOKEN_COUNT], $schema['required']);
+        $this->assertEquals([Candidate::KEY_MESSAGE, Candidate::KEY_FINISH_REASON], $schema['required']);
     }
 
     /**
@@ -266,12 +222,10 @@ class CandidateTest extends TestCase
 
         $candidate = new Candidate(
             $message,
-            FinishReasonEnum::stop(),
-            0
+            FinishReasonEnum::stop()
         );
 
         $this->assertCount(0, $candidate->getMessage()->getParts());
-        $this->assertEquals(0, $candidate->getTokenCount());
     }
 
     /**
@@ -287,12 +241,10 @@ class CandidateTest extends TestCase
 
         $candidate = new Candidate(
             $message,
-            FinishReasonEnum::length(),
-            4096
+            FinishReasonEnum::length()
         );
 
         $this->assertTrue($candidate->getFinishReason()->isLength());
-        $this->assertEquals(4096, $candidate->getTokenCount());
     }
 
     /**
@@ -308,8 +260,7 @@ class CandidateTest extends TestCase
 
         $candidate = new Candidate(
             $message,
-            FinishReasonEnum::contentFilter(),
-            8
+            FinishReasonEnum::contentFilter()
         );
 
         $this->assertTrue($candidate->getFinishReason()->isContentFilter());
@@ -328,8 +279,7 @@ class CandidateTest extends TestCase
 
         $candidate = new Candidate(
             $message,
-            FinishReasonEnum::error(),
-            9
+            FinishReasonEnum::error()
         );
 
         $this->assertTrue($candidate->getFinishReason()->isError());
@@ -349,16 +299,14 @@ class CandidateTest extends TestCase
 
         $candidate = new Candidate(
             $message,
-            FinishReasonEnum::stop(),
-            45
+            FinishReasonEnum::stop()
         );
 
         $json = $this->assertToArrayReturnsArray($candidate);
 
-        $this->assertArrayHasKeys($json, [Candidate::KEY_MESSAGE, Candidate::KEY_FINISH_REASON, Candidate::KEY_TOKEN_COUNT]);
+        $this->assertArrayHasKeys($json, [Candidate::KEY_MESSAGE, Candidate::KEY_FINISH_REASON]);
         $this->assertIsArray($json[Candidate::KEY_MESSAGE]);
         $this->assertEquals(FinishReasonEnum::stop()->value, $json[Candidate::KEY_FINISH_REASON]);
-        $this->assertEquals(45, $json[Candidate::KEY_TOKEN_COUNT]);
     }
 
     /**
@@ -372,19 +320,23 @@ class CandidateTest extends TestCase
             Candidate::KEY_MESSAGE => [
                 Message::KEY_ROLE => MessageRoleEnum::model()->value,
                 Message::KEY_PARTS => [
-                    [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Response text 1'],
-                    [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Response text 2']
+                    [
+                        MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                        MessagePart::KEY_TEXT => 'Response text 1'
+                    ],
+                    [
+                        MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                        MessagePart::KEY_TEXT => 'Response text 2'
+                    ]
                 ]
             ],
             Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
-            Candidate::KEY_TOKEN_COUNT => 75
         ];
 
         $candidate = Candidate::fromArray($json);
 
         $this->assertInstanceOf(Candidate::class, $candidate);
         $this->assertEquals(FinishReasonEnum::stop(), $candidate->getFinishReason());
-        $this->assertEquals(75, $candidate->getTokenCount());
         $this->assertCount(2, $candidate->getMessage()->getParts());
         $this->assertEquals('Response text 1', $candidate->getMessage()->getParts()[0]->getText());
         $this->assertEquals('Response text 2', $candidate->getMessage()->getParts()[1]->getText());
@@ -403,12 +355,10 @@ class CandidateTest extends TestCase
                     new MessagePart('Generated response'),
                     new MessagePart(new FunctionCall('call_123', 'search', ['q' => 'test']))
                 ]),
-                FinishReasonEnum::toolCalls(),
-                120
+                FinishReasonEnum::toolCalls()
             ),
             function ($original, $restored) {
                 $this->assertEquals($original->getFinishReason()->value, $restored->getFinishReason()->value);
-                $this->assertEquals($original->getTokenCount(), $restored->getTokenCount());
                 $this->assertCount(
                     count($original->getMessage()->getParts()),
                     $restored->getMessage()->getParts()
@@ -434,8 +384,7 @@ class CandidateTest extends TestCase
     {
         $candidate = new Candidate(
             new ModelMessage([new MessagePart('test')]),
-            FinishReasonEnum::stop(),
-            10
+            FinishReasonEnum::stop()
         );
         $this->assertImplementsArrayTransformation($candidate);
     }

@@ -37,7 +37,7 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([
             new MessagePart('This is the AI response.')
         ]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 10);
         $tokenUsage = new TokenUsage(20, 10, 30);
 
         $result = new GenerativeAiResult(
@@ -65,7 +65,7 @@ class GenerativeAiResultTest extends TestCase
             $message = new ModelMessage([
                 new MessagePart("Response variant $i")
             ]);
-            $candidates[] = new Candidate($message, FinishReasonEnum::stop());
+            $candidates[] = new Candidate($message, FinishReasonEnum::stop(), $i * 10);
         }
         $tokenUsage = new TokenUsage(20, 90, 110);
 
@@ -88,7 +88,7 @@ class GenerativeAiResultTest extends TestCase
     public function testCreateWithProviderMetadata(): void
     {
         $message = new ModelMessage([new MessagePart('Response')]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 5);
         $tokenUsage = new TokenUsage(10, 5, 15);
         $metadata = [
             'model' => 'gpt-4',
@@ -133,7 +133,7 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([
             new MessagePart($text)
         ]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 8);
         $tokenUsage = new TokenUsage(10, 8, 18);
 
         $result = new GenerativeAiResult(
@@ -156,7 +156,7 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([
             new MessagePart($file)
         ]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 5);
         $tokenUsage = new TokenUsage(10, 5, 15);
 
         $result = new GenerativeAiResult(
@@ -187,7 +187,7 @@ class GenerativeAiResultTest extends TestCase
             new MessagePart('Here is the generated image:'),
             new MessagePart($file)
         ]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 20);
         $tokenUsage = new TokenUsage(15, 20, 35);
 
         $result = new GenerativeAiResult(
@@ -209,7 +209,7 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([
             new MessagePart('Just text, no file.')
         ]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 5);
         $tokenUsage = new TokenUsage(10, 5, 15);
 
         $result = new GenerativeAiResult(
@@ -235,7 +235,7 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([
             new MessagePart($imageFile)
         ]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 10);
         $tokenUsage = new TokenUsage(5, 10, 15);
 
         $result = new GenerativeAiResult(
@@ -258,7 +258,7 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([
             new MessagePart($pdfFile)
         ]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 10);
         $tokenUsage = new TokenUsage(5, 10, 15);
 
         $result = new GenerativeAiResult(
@@ -284,7 +284,7 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([
             new MessagePart($audioFile)
         ]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 10);
         $tokenUsage = new TokenUsage(5, 10, 15);
 
         $result = new GenerativeAiResult(
@@ -307,7 +307,7 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([
             new MessagePart($videoFile)
         ]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 10);
         $tokenUsage = new TokenUsage(5, 10, 15);
 
         $result = new GenerativeAiResult(
@@ -329,7 +329,7 @@ class GenerativeAiResultTest extends TestCase
         $message = new ModelMessage([
             new MessagePart('Response message')
         ]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 3);
         $tokenUsage = new TokenUsage(5, 3, 8);
 
         $result = new GenerativeAiResult(
@@ -355,7 +355,7 @@ class GenerativeAiResultTest extends TestCase
             $message = new ModelMessage([
                 new MessagePart($text)
             ]);
-            $candidates[] = new Candidate($message, FinishReasonEnum::stop());
+            $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 5);
         }
 
         $tokenUsage = new TokenUsage(20, 15, 35);
@@ -385,7 +385,7 @@ class GenerativeAiResultTest extends TestCase
                 new MessagePart('Generated file:'),
                 new MessagePart($file)
             ]);
-            $candidates[] = new Candidate($message, FinishReasonEnum::stop());
+            $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 10);
         }
 
         $tokenUsage = new TokenUsage(30, 30, 60);
@@ -416,7 +416,7 @@ class GenerativeAiResultTest extends TestCase
         $candidates = [];
         foreach ([$imageFile1, $pdfFile, $imageFile2] as $file) {
             $message = new ModelMessage([new MessagePart($file)]);
-            $candidates[] = new Candidate($message, FinishReasonEnum::stop());
+            $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 10);
         }
 
         $tokenUsage = new TokenUsage(30, 30, 60);
@@ -446,7 +446,7 @@ class GenerativeAiResultTest extends TestCase
         $candidates = [];
         foreach ([$audioFile1, $imageFile, $audioFile2] as $file) {
             $message = new ModelMessage([new MessagePart($file)]);
-            $candidates[] = new Candidate($message, FinishReasonEnum::stop());
+            $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 10);
         }
 
         $tokenUsage = new TokenUsage(30, 30, 60);
@@ -476,7 +476,7 @@ class GenerativeAiResultTest extends TestCase
         $candidates = [];
         foreach ([$videoFile1, $imageFile, $videoFile2] as $file) {
             $message = new ModelMessage([new MessagePart($file)]);
-            $candidates[] = new Candidate($message, FinishReasonEnum::stop());
+            $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 10);
         }
 
         $tokenUsage = new TokenUsage(30, 30, 60);
@@ -507,7 +507,7 @@ class GenerativeAiResultTest extends TestCase
                 new MessagePart("Message $i")
             ]);
             $messages[] = $message;
-            $candidates[] = new Candidate($message, FinishReasonEnum::stop());
+            $candidates[] = new Candidate($message, FinishReasonEnum::stop(), 5);
         }
 
         $tokenUsage = new TokenUsage(15, 15, 30);
@@ -572,7 +572,7 @@ class GenerativeAiResultTest extends TestCase
     public function testImplementsResultInterface(): void
     {
         $message = new ModelMessage([new MessagePart('Test')]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 1);
         $tokenUsage = new TokenUsage(1, 1, 2);
 
         $result = new GenerativeAiResult(
@@ -595,7 +595,7 @@ class GenerativeAiResultTest extends TestCase
     public function testHasMultipleCandidatesReturnsFalseForSingle(): void
     {
         $message = new ModelMessage([new MessagePart('Single response')]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 3);
         $tokenUsage = new TokenUsage(5, 3, 8);
 
         $result = new GenerativeAiResult(
@@ -619,7 +619,7 @@ class GenerativeAiResultTest extends TestCase
             new MessagePart('AI generated response'),
             new MessagePart('with multiple parts')
         ]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 15);
         $tokenUsage = new TokenUsage(10, 15, 25);
         $metadata = ['model' => 'test-model', 'version' => '1.0'];
 
@@ -707,7 +707,7 @@ class GenerativeAiResultTest extends TestCase
                 new MessagePart("Response $i"),
                 new MessagePart(new FunctionCall("call_$i", "func$i", ['arg' => $i]))
             ]);
-            $candidates[] = new Candidate($message, FinishReasonEnum::toolCalls());
+            $candidates[] = new Candidate($message, FinishReasonEnum::toolCalls(), 25 * $i);
         }
 
         $this->assertArrayRoundTrip(
@@ -749,7 +749,7 @@ class GenerativeAiResultTest extends TestCase
     public function testToArrayWithoutProviderMetadata(): void
     {
         $message = new ModelMessage([new MessagePart('Simple response')]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 5);
         $tokenUsage = new TokenUsage(3, 5, 8);
 
         $result = new GenerativeAiResult(
@@ -780,7 +780,7 @@ class GenerativeAiResultTest extends TestCase
     public function testImplementsWithArrayTransformationInterface(): void
     {
         $message = new ModelMessage([new MessagePart('test')]);
-        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 1);
         $tokenUsage = new TokenUsage(1, 1, 2);
 
         $result = new GenerativeAiResult('test', [$candidate], $tokenUsage);
