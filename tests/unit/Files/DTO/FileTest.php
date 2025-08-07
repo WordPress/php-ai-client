@@ -117,7 +117,9 @@ class FileTest extends TestCase
     public function testPlainBase64WithoutMimeTypeThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('MIME type is required when providing plain base64 data without data URI format.');
+        $this->expectExceptionMessage(
+            'MIME type is required when providing plain base64 data without data URI format.'
+        );
 
         new File('SGVsbG8gV29ybGQ=');
     }
@@ -184,7 +186,9 @@ class FileTest extends TestCase
 
         try {
             $this->expectException(InvalidArgumentException::class);
-            $this->expectExceptionMessage('Invalid file provided. Expected URL, base64 data, or valid local file path.');
+            $this->expectExceptionMessage(
+                'Invalid file provided. Expected URL, base64 data, or valid local file path.'
+            );
 
             new File($tempDir, 'text/plain');
         } finally {
@@ -237,7 +241,10 @@ class FileTest extends TestCase
         $this->assertArrayHasKey(File::KEY_FILE_TYPE, $inlineSchema['properties']);
         $this->assertArrayHasKey(File::KEY_MIME_TYPE, $inlineSchema['properties']);
         $this->assertArrayHasKey(File::KEY_BASE64_DATA, $inlineSchema['properties']);
-        $this->assertEquals([File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_BASE64_DATA], $inlineSchema['required']);
+        $this->assertEquals(
+            [File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_BASE64_DATA],
+            $inlineSchema['required']
+        );
     }
 
     /**
