@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers;
 
 use InvalidArgumentException;
+use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
+use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
+use WordPress\AiClient\Providers\Contracts\ProviderInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
+use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
@@ -26,10 +30,6 @@ class AiProviderRegistry
      */
     private array $providerClassNames = [];
 
-    /**
-     * @var array<string, object> Cache of instantiated provider instances.
-     */
-    private array $providerInstances = [];
 
     /**
      * Registers a provider class with the registry.
@@ -47,19 +47,16 @@ class AiProviderRegistry
             );
         }
 
-        // TODO: Add interface validation when ProviderInterface is available
-
-        // Get provider metadata to extract ID
-        $instance = new $className();
-
-        // Check if provider has metadata method
-        if (!method_exists($instance, 'metadata')) {
+        // Validate that class implements ProviderInterface
+        if (!is_subclass_of($className, ProviderInterface::class)) {
             throw new InvalidArgumentException(
-                sprintf('Provider must implement metadata() method: %s', $className)
+                sprintf('Provider class must implement %s: %s', ProviderInterface::class, $className)
             );
         }
 
-        $metadata = $instance->metadata();
+        // Get provider metadata to extract ID (using static method from interface)
+        /** @var class-string<ProviderInterface> $className */
+        $metadata = $className::metadata();
 
         if (!$metadata instanceof ProviderMetadata) {
             throw new InvalidArgumentException(
@@ -115,11 +112,13 @@ class AiProviderRegistry
     public function isProviderConfigured(string $idOrClassName): bool
     {
         try {
-            $this->getProviderInstance($idOrClassName);
+            $className = $this->resolveProviderClassName($idOrClassName);
 
-            // TODO: Call availability() method when ProviderInterface is available
-            // For now, assume configured if we can instantiate without exception
-            return true;
+            // Use static method from ProviderInterface
+            /** @var class-string<ProviderInterface> $className */
+            $availability = $className::availability();
+
+            return $availability->isConfigured();
         } catch (InvalidArgumentException $e) {
             return false;
         }
@@ -140,17 +139,9 @@ class AiProviderRegistry
         foreach ($this->providerClassNames as $providerId => $className) {
             $providerResults = $this->findProviderModelsMetadataForSupport($providerId, $modelRequirements);
             if (!empty($providerResults)) {
-                $providerInstance = $this->getProviderInstance($providerId);
-
-                // Validate that provider has metadata method
-                if (!method_exists($providerInstance, 'metadata')) {
-                    continue;
-                }
-
-                $providerMetadata = $providerInstance->metadata();
-                if (!$providerMetadata instanceof ProviderMetadata) {
-                    continue;
-                }
+                // Use static method from ProviderInterface
+                /** @var class-string<ProviderInterface> $className */
+                $providerMetadata = $className::metadata();
 
                 $results[] = new ProviderModelsMetadata(
                     $providerMetadata,
@@ -175,11 +166,21 @@ class AiProviderRegistry
         string $idOrClassName,
         ModelRequirements $modelRequirements
     ): array {
-        $instance = $this->getProviderInstance($idOrClassName);
+        $className = $this->resolveProviderClassName($idOrClassName);
 
-        // TODO: Get model metadata directory when ProviderInterface is available
-        // For now, return empty array as placeholder
-        return [];
+        // Use static method from ProviderInterface
+        /** @var class-string<ProviderInterface> $className */
+        $modelMetadataDirectory = $className::modelMetadataDirectory();
+
+        // Filter models that meet requirements
+        $matchingModels = [];
+        foreach ($modelMetadataDirectory->listModelMetadata() as $modelMetadata) {
+            if ($modelMetadata->meetsRequirements($modelRequirements)) {
+                $matchingModels[] = $modelMetadata;
+            }
+        }
+
+        return $matchingModels;
     }
 
     /**
@@ -189,26 +190,27 @@ class AiProviderRegistry
      *
      * @param string $idOrClassName The provider ID or class name.
      * @param string $modelId The model identifier.
-     * @param ModelConfig $modelConfig The model configuration.
-     * @return object The configured model instance.
+     * @param ModelConfig|null $modelConfig The model configuration.
+     * @return ModelInterface The configured model instance.
      * @throws InvalidArgumentException If provider or model is not found.
      */
-    public function getProviderModel(string $idOrClassName, string $modelId, ModelConfig $modelConfig): object
+    public function getProviderModel(string $idOrClassName, string $modelId, ?ModelConfig $modelConfig = null): ModelInterface
     {
-        $instance = $this->getProviderInstance($idOrClassName);
+        $className = $this->resolveProviderClassName($idOrClassName);
 
-        // TODO: Call model() method when ProviderInterface is available
-        throw new InvalidArgumentException('Model instantiation not yet implemented');
+        // Use static method from ProviderInterface
+        /** @var class-string<ProviderInterface> $className */
+        return $className::model($modelId, $modelConfig);
     }
 
     /**
-     * Gets or creates a provider instance.
+     * Gets the class name for a registered provider (handles both ID and class name input).
      *
      * @param string $idOrClassName The provider ID or class name.
-     * @return object The provider instance.
+     * @return string The provider class name.
      * @throws InvalidArgumentException If provider is not registered.
      */
-    private function getProviderInstance(string $idOrClassName): object
+    private function resolveProviderClassName(string $idOrClassName): string
     {
         // Handle both ID and class name
         $className = $this->providerClassNames[$idOrClassName] ?? $idOrClassName;
@@ -219,14 +221,6 @@ class AiProviderRegistry
             );
         }
 
-        // Use cached instance if available
-        if (isset($this->providerInstances[$className])) {
-            return $this->providerInstances[$className];
-        }
-
-        // Create and cache new instance
-        $this->providerInstances[$className] = new $className();
-
-        return $this->providerInstances[$className];
+        return $className;
     }
 }

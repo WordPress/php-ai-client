@@ -151,6 +151,41 @@ class ModelMetadata extends AbstractDataTransferObject
     }
 
     /**
+     * Checks whether this model meets the specified requirements.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelRequirements $requirements The requirements to check against.
+     * @return bool True if the model meets all requirements, false otherwise.
+     */
+    public function meetsRequirements(ModelRequirements $requirements): bool
+    {
+        // Check if all required capabilities are supported using map lookup
+        foreach ($requirements->getRequiredCapabilities() as $requiredCapability) {
+            if (!isset($this->capabilitiesMap[$requiredCapability->value])) {
+                return false;
+            }
+        }
+
+        // Check if all required options are supported with the specified values
+        foreach ($requirements->getRequiredOptions() as $requiredOption) {
+            // Use map lookup instead of linear search
+            if (!isset($this->optionsMap[$requiredOption->getName()])) {
+                return false;
+            }
+
+            $supportedOption = $this->optionsMap[$requiredOption->getName()];
+
+            // Check if the required value is supported by this option
+            if (!$supportedOption->isSupportedValue($requiredOption->getValue())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since n.e.x.t

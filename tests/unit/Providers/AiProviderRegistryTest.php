@@ -103,7 +103,7 @@ class AiProviderRegistryTest extends TestCase
      */
     public function testFindModelsMetadataForSupportWithNoProviders(): void
     {
-        $requirements = new ModelRequirements([CapabilityEnum::TEXT_GENERATION()], []);
+        $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], []);
         $results = $this->registry->findModelsMetadataForSupport($requirements);
         
         $this->assertIsArray($results);
@@ -119,12 +119,13 @@ class AiProviderRegistryTest extends TestCase
     {
         $this->registry->registerProvider(MockProvider::class);
         
-        $requirements = new ModelRequirements([CapabilityEnum::TEXT_GENERATION()], []);
+        $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], []);
         $results = $this->registry->findModelsMetadataForSupport($requirements);
         
         $this->assertIsArray($results);
-        // Note: Empty for now since MockProvider doesn't have models yet
-        $this->assertEmpty($results);
+        // Should now find models that match the text generation requirement
+        $this->assertNotEmpty($results);
+        $this->assertCount(1, $results);
     }
 
     /**
@@ -136,12 +137,13 @@ class AiProviderRegistryTest extends TestCase
     {
         $this->registry->registerProvider(MockProvider::class);
         
-        $requirements = new ModelRequirements([CapabilityEnum::TEXT_GENERATION()], []);
+        $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], []);
         $results = $this->registry->findProviderModelsMetadataForSupport('mock', $requirements);
         
         $this->assertIsArray($results);
-        // Note: Empty for now since MockProvider doesn't have models yet
-        $this->assertEmpty($results);
+        // Should now find models that match the text generation requirement
+        $this->assertNotEmpty($results);
+        $this->assertCount(1, $results);
     }
 
     /**
@@ -154,12 +156,12 @@ class AiProviderRegistryTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Provider not registered: nonexistent');
         
-        $requirements = new ModelRequirements([CapabilityEnum::TEXT_GENERATION()], []);
+        $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], []);
         $this->registry->findProviderModelsMetadataForSupport('nonexistent', $requirements);
     }
 
     /**
-     * Tests getProviderModel throws exception (not yet implemented).
+     * Tests getProviderModel throws exception for non-existent model.
      *
      * @return void
      */
@@ -168,7 +170,7 @@ class AiProviderRegistryTest extends TestCase
         $this->registry->registerProvider(MockProvider::class);
         
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model instantiation not yet implemented');
+        $this->expectExceptionMessage('Model not found: test-model');
         
         $modelConfig = new \WordPress\AiClient\Providers\Models\DTO\ModelConfig([]);
         $this->registry->getProviderModel('mock', 'test-model', $modelConfig);
