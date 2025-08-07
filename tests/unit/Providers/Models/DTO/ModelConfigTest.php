@@ -160,22 +160,10 @@ class ModelConfigTest extends TestCase
 
         // Check all properties exist
         $expectedProperties = [
-            ModelConfig::KEY_OUTPUT_MODALITIES,
-            ModelConfig::KEY_SYSTEM_INSTRUCTION,
-            ModelConfig::KEY_CANDIDATE_COUNT,
-            ModelConfig::KEY_MAX_TOKENS,
-            ModelConfig::KEY_TEMPERATURE,
-            ModelConfig::KEY_TOP_P,
-            ModelConfig::KEY_TOP_K,
-            ModelConfig::KEY_STOP_SEQUENCES,
-            ModelConfig::KEY_PRESENCE_PENALTY,
-            ModelConfig::KEY_FREQUENCY_PENALTY,
-            ModelConfig::KEY_LOGPROBS,
-            ModelConfig::KEY_TOP_LOGPROBS,
-            ModelConfig::KEY_TOOLS,
-            ModelConfig::KEY_OUTPUT_MIME_TYPE,
-            ModelConfig::KEY_OUTPUT_SCHEMA,
-            ModelConfig::KEY_CUSTOM_OPTIONS
+            ModelConfig::KEY_OUTPUT_MODALITIES, ModelConfig::KEY_SYSTEM_INSTRUCTION, ModelConfig::KEY_CANDIDATE_COUNT, ModelConfig::KEY_MAX_TOKENS,
+            ModelConfig::KEY_TEMPERATURE, ModelConfig::KEY_TOP_P, ModelConfig::KEY_TOP_K, ModelConfig::KEY_STOP_SEQUENCES, ModelConfig::KEY_PRESENCE_PENALTY,
+            ModelConfig::KEY_FREQUENCY_PENALTY, ModelConfig::KEY_LOGPROBS, ModelConfig::KEY_TOP_LOGPROBS, ModelConfig::KEY_TOOLS,
+            ModelConfig::KEY_OUTPUT_MIME_TYPE, ModelConfig::KEY_OUTPUT_SCHEMA, ModelConfig::KEY_CUSTOM_OPTIONS
         ];
 
         foreach ($expectedProperties as $property) {

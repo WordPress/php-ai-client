@@ -204,16 +204,10 @@ class FunctionDeclarationTest extends TestCase
 
         $json = $this->assertToArrayReturnsArray($declaration);
 
-        $this->assertArrayHasKeys(
-            $json,
-            [FunctionDeclaration::KEY_NAME, FunctionDeclaration::KEY_DESCRIPTION, FunctionDeclaration::KEY_PARAMETERS]
-        );
+        $this->assertArrayHasKeys($json, [FunctionDeclaration::KEY_NAME, FunctionDeclaration::KEY_DESCRIPTION, FunctionDeclaration::KEY_PARAMETERS]);
         $this->assertEquals('searchWeb', $json[FunctionDeclaration::KEY_NAME]);
         $this->assertEquals('Searches the web for information', $json[FunctionDeclaration::KEY_DESCRIPTION]);
-        $this->assertEquals(
-            ['type' => 'object', 'properties' => ['query' => ['type' => 'string']]],
-            $json[FunctionDeclaration::KEY_PARAMETERS]
-        );
+        $this->assertEquals(['type' => 'object', 'properties' => ['query' => ['type' => 'string']]], $json[FunctionDeclaration::KEY_PARAMETERS]);
     }
 
     /**

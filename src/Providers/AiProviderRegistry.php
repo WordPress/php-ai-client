@@ -194,8 +194,11 @@ class AiProviderRegistry
      * @return ModelInterface The configured model instance.
      * @throws InvalidArgumentException If provider or model is not found.
      */
-    public function getProviderModel(string $idOrClassName, string $modelId, ?ModelConfig $modelConfig = null): ModelInterface
-    {
+    public function getProviderModel(
+        string $idOrClassName,
+        string $modelId,
+        ?ModelConfig $modelConfig = null
+    ): ModelInterface {
         $className = $this->resolveProviderClassName($idOrClassName);
 
         // Use static method from ProviderInterface

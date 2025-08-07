@@ -30,7 +30,7 @@ class AiProviderRegistryTest extends TestCase
     public function testRegisterProviderWithValidProvider(): void
     {
         $this->registry->registerProvider(MockProvider::class);
-        
+
         $this->assertTrue($this->registry->hasProvider('mock'));
         $this->assertTrue($this->registry->hasProvider(MockProvider::class));
         $this->assertEquals(MockProvider::class, $this->registry->getProviderClassName('mock'));
@@ -45,7 +45,7 @@ class AiProviderRegistryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Provider class does not exist: NonExistentProvider');
-        
+
         $this->registry->registerProvider('NonExistentProvider');
     }
 
@@ -69,7 +69,7 @@ class AiProviderRegistryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Provider not registered: nonexistent');
-        
+
         $this->registry->getProviderClassName('nonexistent');
     }
 
@@ -81,7 +81,7 @@ class AiProviderRegistryTest extends TestCase
     public function testIsProviderConfiguredWithRegisteredProvider(): void
     {
         $this->registry->registerProvider(MockProvider::class);
-        
+
         $this->assertTrue($this->registry->isProviderConfigured('mock'));
         $this->assertTrue($this->registry->isProviderConfigured(MockProvider::class));
     }
@@ -105,7 +105,7 @@ class AiProviderRegistryTest extends TestCase
     {
         $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], []);
         $results = $this->registry->findModelsMetadataForSupport($requirements);
-        
+
         $this->assertIsArray($results);
         $this->assertEmpty($results);
     }
@@ -118,10 +118,10 @@ class AiProviderRegistryTest extends TestCase
     public function testFindModelsMetadataForSupportWithRegisteredProvider(): void
     {
         $this->registry->registerProvider(MockProvider::class);
-        
+
         $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], []);
         $results = $this->registry->findModelsMetadataForSupport($requirements);
-        
+
         $this->assertIsArray($results);
         // Should now find models that match the text generation requirement
         $this->assertNotEmpty($results);
@@ -136,10 +136,10 @@ class AiProviderRegistryTest extends TestCase
     public function testFindProviderModelsMetadataForSupportWithRegisteredProvider(): void
     {
         $this->registry->registerProvider(MockProvider::class);
-        
+
         $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], []);
         $results = $this->registry->findProviderModelsMetadataForSupport('mock', $requirements);
-        
+
         $this->assertIsArray($results);
         // Should now find models that match the text generation requirement
         $this->assertNotEmpty($results);
@@ -155,7 +155,7 @@ class AiProviderRegistryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Provider not registered: nonexistent');
-        
+
         $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], []);
         $this->registry->findProviderModelsMetadataForSupport('nonexistent', $requirements);
     }
@@ -168,10 +168,10 @@ class AiProviderRegistryTest extends TestCase
     public function testGetProviderModelThrowsException(): void
     {
         $this->registry->registerProvider(MockProvider::class);
-        
+
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Model not found: test-model');
-        
+
         $modelConfig = new \WordPress\AiClient\Providers\Models\DTO\ModelConfig([]);
         $this->registry->getProviderModel('mock', 'test-model', $modelConfig);
     }
@@ -184,10 +184,10 @@ class AiProviderRegistryTest extends TestCase
     public function testMultipleProviderRegistration(): void
     {
         $this->registry->registerProvider(MockProvider::class);
-        
+
         // Register another instance of the same provider (should update)
         $this->registry->registerProvider(MockProvider::class);
-        
+
         $this->assertTrue($this->registry->hasProvider('mock'));
         $this->assertEquals(MockProvider::class, $this->registry->getProviderClassName('mock'));
     }
@@ -200,11 +200,11 @@ class AiProviderRegistryTest extends TestCase
     public function testProviderInstanceCaching(): void
     {
         $this->registry->registerProvider(MockProvider::class);
-        
+
         // Call methods that create instances
         $this->assertTrue($this->registry->isProviderConfigured('mock'));
         $this->assertTrue($this->registry->isProviderConfigured('mock'));
-        
+
         // Should not throw any errors and should reuse cached instance
         $this->addToAssertionCount(1);
     }

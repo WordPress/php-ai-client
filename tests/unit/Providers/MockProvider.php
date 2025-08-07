@@ -48,9 +48,9 @@ class MockProvider implements ProviderInterface
     public static function model(string $modelId, ?ModelConfig $modelConfig = null): ModelInterface
     {
         $modelMetadata = static::modelMetadataDirectory()->getModelMetadata($modelId);
-        
+
         $config = $modelConfig ?? new ModelConfig();
-        
+
         return new MockModel($modelMetadata, $config);
     }
 
@@ -62,7 +62,7 @@ class MockProvider implements ProviderInterface
         if (static::$availability === null) {
             static::$availability = new MockProviderAvailability(true);
         }
-        
+
         return static::$availability;
     }
 
@@ -81,10 +81,10 @@ class MockProvider implements ProviderInterface
                     []
                 )
             ];
-            
+
             static::$modelMetadataDirectory = new MockModelMetadataDirectory($mockModels);
         }
-        
+
         return static::$modelMetadataDirectory;
     }
 
