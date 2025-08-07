@@ -127,16 +127,10 @@ class FunctionResponseTest extends TestCase
         $this->assertCount(2, $schema['oneOf']);
 
         // First option: response and id required
-        $this->assertEquals(
-            [FunctionResponse::KEY_RESPONSE, FunctionResponse::KEY_ID],
-            $schema['oneOf'][0]['required']
-        );
+        $this->assertEquals([FunctionResponse::KEY_RESPONSE, FunctionResponse::KEY_ID], $schema['oneOf'][0]['required']);
 
         // Second option: response and name required
-        $this->assertEquals(
-            [FunctionResponse::KEY_RESPONSE, FunctionResponse::KEY_NAME],
-            $schema['oneOf'][1]['required']
-        );
+        $this->assertEquals([FunctionResponse::KEY_RESPONSE, FunctionResponse::KEY_NAME], $schema['oneOf'][1]['required']);
     }
 
     /**
@@ -206,10 +200,7 @@ class FunctionResponseTest extends TestCase
         $response = new FunctionResponse('func_123', 'calculate', ['result' => 42]);
         $json = $this->assertToArrayReturnsArray($response);
 
-        $this->assertArrayHasKeys(
-            $json,
-            [FunctionResponse::KEY_ID, FunctionResponse::KEY_NAME, FunctionResponse::KEY_RESPONSE]
-        );
+        $this->assertArrayHasKeys($json, [FunctionResponse::KEY_ID, FunctionResponse::KEY_NAME, FunctionResponse::KEY_RESPONSE]);
         $this->assertEquals('func_123', $json[FunctionResponse::KEY_ID]);
         $this->assertEquals('calculate', $json[FunctionResponse::KEY_NAME]);
         $this->assertEquals(['result' => 42], $json[FunctionResponse::KEY_RESPONSE]);

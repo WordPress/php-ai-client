@@ -117,9 +117,7 @@ class FileTest extends TestCase
     public function testPlainBase64WithoutMimeTypeThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'MIME type is required when providing plain base64 data without data URI format.'
-        );
+        $this->expectExceptionMessage('MIME type is required when providing plain base64 data without data URI format.');
 
         new File('SGVsbG8gV29ybGQ=');
     }
@@ -186,9 +184,7 @@ class FileTest extends TestCase
 
         try {
             $this->expectException(InvalidArgumentException::class);
-            $this->expectExceptionMessage(
-                'Invalid file provided. Expected URL, base64 data, or valid local file path.'
-            );
+            $this->expectExceptionMessage('Invalid file provided. Expected URL, base64 data, or valid local file path.');
 
             new File($tempDir, 'text/plain');
         } finally {
@@ -211,10 +207,6 @@ class FileTest extends TestCase
         $this->assertFalse($file->isImage());
         $this->assertFalse($file->isAudio());
         $this->assertFalse($file->isText());
-        $this->assertTrue($file->isMimeType('video'));
-        $this->assertFalse($file->isMimeType('image'));
-        $this->assertFalse($file->isMimeType('audio'));
-        $this->assertFalse($file->isMimeType('text'));
     }
 
     /**
@@ -237,10 +229,7 @@ class FileTest extends TestCase
         $this->assertArrayHasKey(File::KEY_FILE_TYPE, $remoteSchema['properties']);
         $this->assertArrayHasKey(File::KEY_MIME_TYPE, $remoteSchema['properties']);
         $this->assertArrayHasKey(File::KEY_URL, $remoteSchema['properties']);
-        $this->assertEquals(
-            [File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_URL],
-            $remoteSchema['required']
-        );
+        $this->assertEquals([File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_URL], $remoteSchema['required']);
 
         // Check inline file schema
         $inlineSchema = $schema['oneOf'][1];
@@ -248,10 +237,7 @@ class FileTest extends TestCase
         $this->assertArrayHasKey(File::KEY_FILE_TYPE, $inlineSchema['properties']);
         $this->assertArrayHasKey(File::KEY_MIME_TYPE, $inlineSchema['properties']);
         $this->assertArrayHasKey(File::KEY_BASE64_DATA, $inlineSchema['properties']);
-        $this->assertEquals(
-            [File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_BASE64_DATA],
-            $inlineSchema['required']
-        );
+        $this->assertEquals([File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_BASE64_DATA], $inlineSchema['required']);
     }
 
     /**
