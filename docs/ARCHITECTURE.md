@@ -802,6 +802,158 @@ direction LR
     Tool "1" o-- "0..1" WebSearch
 ```
 
+## HTTP Communication Layer
+
+This section describes the HTTP communication architecture that differs from the original design. Instead of models directly using PSR-18 HTTP clients, we introduce a layer of abstraction that provides better separation of concerns and flexibility.
+
+### Design Principles
+
+1. **Custom Request/Response Objects**: Models create and receive custom Request and Response objects specific to this library
+2. **HttpTransporter**: A dedicated class that handles the translation between custom objects and PSR standards
+3. **PSR Compliance**: The transporter uses PSR-7 (HTTP messages), PSR-17 (HTTP factories), and PSR-18 (HTTP client) internally
+4. **No Direct Coupling**: The library remains decoupled from any specific HTTP client implementation
+
+### HTTP Communication Flow
+
+```mermaid
+sequenceDiagram
+    participant Model
+    participant HttpTransporter
+    participant PSR17Factory
+    participant PSR18Client
+    
+    Model->>HttpTransporter: send(Request)
+    HttpTransporter->>PSR17Factory: createRequest(Request)
+    PSR17Factory-->>HttpTransporter: PSR-7 Request
+    HttpTransporter->>PSR18Client: sendRequest(PSR-7 Request)
+    PSR18Client-->>HttpTransporter: PSR-7 Response
+    HttpTransporter->>PSR17Factory: parseResponse(PSR-7 Response)
+    PSR17Factory-->>HttpTransporter: Response
+    HttpTransporter-->>Model: Response
+```
+
+### HTTP Components Class Diagram
+
+```mermaid
+---
+config:
+  class:
+    hideEmptyMembersBox: true
+---
+classDiagram
+direction TB
+    namespace AiClientNamespace.Http.DTO {
+        class Request {
+            +getMethod() string
+            +getUri() string
+            +getHeaders() array< string, string|string[] >
+            +getBody() string|null
+            +withHeader(string $name, string|string[] $value) self
+            +withBody(string $body) self
+            +getJsonSchema() array< string, mixed >$
+        }
+        
+        class Response {
+            +getStatusCode() int
+            +getHeaders() array< string, string|string[] >
+            +getBody() string
+            +getReasonPhrase() string
+            +isSuccessful() bool
+            +getJsonSchema() array< string, mixed >$
+        }
+    }
+    
+    namespace AiClientNamespace.Http.Contracts {
+        class HttpTransporterInterface {
+            +send(Request $request) Response
+        }
+    }
+    
+    namespace AiClientNamespace.Http {
+        class HttpTransporter {
+            -requestFactory Psr17RequestFactoryInterface
+            -streamFactory Psr17StreamFactoryInterface
+            -client Psr18ClientInterface
+            +__construct(Psr17RequestFactoryInterface $requestFactory, Psr17StreamFactoryInterface $streamFactory, Psr18ClientInterface $client)
+            +send(Request $request) Response
+            -convertToPsr7Request(Request $request) Psr7RequestInterface
+            -convertFromPsr7Response(Psr7ResponseInterface $response) Response
+        }
+    }
+    
+    namespace PSR {
+        class Psr17RequestFactoryInterface {
+            <<interface>>
+            +createRequest(string $method, UriInterface|string $uri) RequestInterface
+        }
+        
+        class Psr17StreamFactoryInterface {
+            <<interface>>
+            +createStream(string $content) StreamInterface
+        }
+        
+        class Psr18ClientInterface {
+            <<interface>>
+            +sendRequest(RequestInterface $request) ResponseInterface
+        }
+        
+        class Psr7RequestInterface {
+            <<interface>>
+        }
+        
+        class Psr7ResponseInterface {
+            <<interface>>
+        }
+    }
+    
+    <<interface>> HttpTransporterInterface
+    
+    HttpTransporter ..|> HttpTransporterInterface
+    HttpTransporter --> Psr17RequestFactoryInterface : uses
+    HttpTransporter --> Psr17StreamFactoryInterface : uses
+    HttpTransporter --> Psr18ClientInterface : uses
+    HttpTransporter ..> Request : receives
+    HttpTransporter ..> Response : creates
+    HttpTransporter ..> Psr7RequestInterface : creates
+    HttpTransporter ..> Psr7ResponseInterface : receives
+```
+
+### Integration with Models
+
+Models that need HTTP communication will use the `HttpTransporterInterface`:
+
+```mermaid
+---
+config:
+  class:
+    hideEmptyMembersBox: true
+---
+classDiagram
+    namespace AiClientNamespace.Providers.Models.Contracts {
+        class WithHttpTransporterInterface {
+            +setHttpTransporter(HttpTransporterInterface $transporter) void
+            +getHttpTransporter() HttpTransporterInterface
+        }
+    }
+    
+    namespace AiClientNamespace.Providers.Models.TextGeneration {
+        class SomeProviderTextGenerationModel {
+            -transporter HttpTransporterInterface
+            +generateTextResult(Message[] $prompt) GenerativeAiResult
+            -createApiRequest(Message[] $prompt) Request
+            -parseApiResponse(Response $response) GenerativeAiResult
+        }
+    }
+    
+    <<interface>> WithHttpTransporterInterface
+    
+    SomeProviderTextGenerationModel ..|> TextGenerationModelInterface
+    SomeProviderTextGenerationModel ..|> WithHttpTransporterInterface
+    SomeProviderTextGenerationModel --> HttpTransporterInterface : uses
+    SomeProviderTextGenerationModel --> Request : creates
+    SomeProviderTextGenerationModel --> Response : receives
+```
+
 ### Details: Class diagram for AI extenders
 
 ```mermaid
@@ -826,12 +978,8 @@ direction LR
 
     namespace AiClientNamespace.Providers.Contracts {
         class AuthenticationInterface {
-            +authenticate(RequestInterface $request) void
+            +authenticate(Request $request) void
             +getJsonSchema() array< string, mixed >$
-        }
-        class HttpClientInterface {
-            +send(RequestInterface $request, array< string, mixed > $options) ResponseInterface
-            +request(string $method, string $uri, array< string, mixed > $options) ResponseInterface
         }
         class ModelMetadataDirectoryInterface {
             +listModelMetadata() ModelMetadata[]
@@ -885,15 +1033,9 @@ direction LR
             +setAuthentication(AuthenticationInterface $authentication) void
             +getAuthentication() AuthenticationInterface
         }
-        class WithEmbeddingOperationsInterface {
-            +getOperation(string $operationId) EmbeddingOperation
-        }
-        class WithGenerativeAiOperationsInterface {
-            +getOperation(string $operationId) GenerativeAiOperation
-        }
-        class WithHttpClientInterface {
-            +setHttpClient(HttpClientInterface $client) void
-            +getHttpClient() HttpClientInterface
+        class WithHttpTransporterInterface {
+            +setHttpTransporter(HttpTransporterInterface $transporter) void
+            +getHttpTransporter() HttpTransporterInterface
         }
     }
 
@@ -973,14 +1115,6 @@ direction LR
         }
     }
 
-    namespace AiClientNamespace.Providers.Models.EmbeddingGeneration.Contracts {
-        class EmbeddingGenerationModelInterface {
-            +generateEmbeddingsResult(Message[] $input) EmbeddingResult
-        }
-        class EmbeddingGenerationOperationModelInterface {
-            +generateEmbeddingsOperation(Message[] $input) EmbeddingOperation
-        }
-    }
 
     namespace AiClientNamespace.Providers.Models.ImageGeneration.Contracts {
         class ImageGenerationModelInterface {
@@ -1050,20 +1184,15 @@ direction LR
     <<interface>> ModelInterface
     <<interface>> ProviderAvailabilityInterface
     <<interface>> ModelMetadataDirectoryInterface
-    <<interface>> WithGenerativeAiOperationsInterface
-    <<interface>> WithEmbeddingOperationsInterface
     <<interface>> TextGenerationModelInterface
     <<interface>> ImageGenerationModelInterface
     <<interface>> TextToSpeechConversionModelInterface
     <<interface>> SpeechGenerationModelInterface
-    <<interface>> EmbeddingGenerationModelInterface
     <<interface>> TextGenerationOperationModelInterface
     <<interface>> ImageGenerationOperationModelInterface
     <<interface>> TextToSpeechConversionOperationModelInterface
     <<interface>> SpeechGenerationOperationModelInterface
-    <<interface>> EmbeddingGenerationOperationModelInterface
-    <<interface>> WithHttpClientInterface
-    <<interface>> HttpClientInterface
+    <<interface>> WithHttpTransporterInterface
     <<interface>> WithAuthenticationInterface
     <<interface>> AuthenticationInterface
     <<Enumeration>> CapabilityEnum
@@ -1095,10 +1224,8 @@ direction LR
     ModelInterface <|-- ImageGenerationModelInterface
     ModelInterface <|-- TextToSpeechConversionModelInterface
     ModelInterface <|-- SpeechGenerationModelInterface
-    ModelInterface <|-- EmbeddingGenerationModelInterface
     ModelInterface <|-- TextGenerationOperationModelInterface
     ModelInterface <|-- ImageGenerationOperationModelInterface
     ModelInterface <|-- TextToSpeechConversionOperationModelInterface
     ModelInterface <|-- SpeechGenerationOperationModelInterface
-    ModelInterface <|-- EmbeddingGenerationOperationModelInterface
 ```
