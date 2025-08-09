@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers;
+namespace WordPress\AiClient\Providers\Models;
 
 use InvalidArgumentException;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;

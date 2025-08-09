@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\ProviderImplementations\OpenAi;
 
-use WordPress\AiClient\Providers\AbstractOpenAiCompatibleTextGenerationModel;
+use WordPress\AiClient\Providers\Models\AbstractOpenAiCompatibleTextGenerationModel;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
