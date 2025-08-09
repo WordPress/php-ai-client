@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Providers\Models\DTO;
 
 use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Tools\DTO\Tool;
 
@@ -56,6 +57,7 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_LOGPROBS = 'logprobs';
     public const KEY_TOP_LOGPROBS = 'topLogprobs';
     public const KEY_TOOLS = 'tools';
+    public const KEY_OUTPUT_FILE_TYPE = 'outputFileType';
     public const KEY_OUTPUT_MIME_TYPE = 'outputMimeType';
     public const KEY_OUTPUT_SCHEMA = 'outputSchema';
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
@@ -124,6 +126,11 @@ class ModelConfig extends AbstractDataTransferObject
      * @var list<Tool>|null Tools available to the model.
      */
     protected ?array $tools = null;
+
+    /**
+     * @var FileTypeEnum|null Output file type.
+     */
+    protected ?FileTypeEnum $outputFileType = null;
 
     /**
      * @var string|null Output MIME type.
@@ -471,6 +478,30 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Sets the output file type.
+     *
+     * @since n.e.x.t
+     *
+     * @param FileTypeEnum $outputFileType The output file type.
+     */
+    public function setOutputFileType(FileTypeEnum $outputFileType): void
+    {
+        $this->outputFileType = $outputFileType;
+    }
+
+    /**
+     * Gets the output file type.
+     *
+     * @since n.e.x.t
+     *
+     * @return FileTypeEnum|null The output file type.
+     */
+    public function getOutputFileType(): ?FileTypeEnum
+    {
+        return $this->outputFileType;
+    }
+
+    /**
      * Sets the output MIME type.
      *
      * @since n.e.x.t
@@ -641,6 +672,11 @@ class ModelConfig extends AbstractDataTransferObject
                     'items' => Tool::getJsonSchema(),
                     'description' => 'Tools available to the model.',
                 ],
+                self::KEY_OUTPUT_FILE_TYPE => [
+                    'type' => 'string',
+                    'enum' => FileTypeEnum::getValues(),
+                    'description' => 'Output file type.',
+                ],
                 self::KEY_OUTPUT_MIME_TYPE => [
                     'type' => 'string',
                     'description' => 'Output MIME type.',
@@ -730,6 +766,10 @@ class ModelConfig extends AbstractDataTransferObject
             }, $this->tools);
         }
 
+        if ($this->outputFileType !== null) {
+            $data[self::KEY_OUTPUT_FILE_TYPE] = $this->outputFileType->value;
+        }
+
         if ($this->outputMimeType !== null) {
             $data[self::KEY_OUTPUT_MIME_TYPE] = $this->outputMimeType;
         }
@@ -807,6 +847,15 @@ class ModelConfig extends AbstractDataTransferObject
             $config->setTools(array_map(static function (array $toolData): Tool {
                 return Tool::fromArray($toolData);
             }, $array[self::KEY_TOOLS]));
+        }
+
+        if (isset($array[self::KEY_OUTPUT_FILE_TYPE])) {
+            if (!is_string($array[self::KEY_OUTPUT_FILE_TYPE])) {
+                throw new InvalidArgumentException(
+                    'Output file type must be a string.'
+                );
+            }
+            $config->setOutputFileType(FileTypeEnum::from($array[self::KEY_OUTPUT_FILE_TYPE]));
         }
 
         if (isset($array[self::KEY_OUTPUT_MIME_TYPE])) {
