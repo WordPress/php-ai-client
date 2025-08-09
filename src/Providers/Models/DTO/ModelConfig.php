@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Providers\Models\DTO;
 use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Tools\DTO\Tool;
 
@@ -38,6 +39,7 @@ use WordPress\AiClient\Tools\DTO\Tool;
  *     outputFileType?: string,
  *     outputMimeType?: string,
  *     outputSchema?: array<string, mixed>,
+ *     outputMediaOrientation?: string,
  *     customOptions?: array<string, mixed>
  * }
  *
@@ -61,6 +63,7 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_OUTPUT_FILE_TYPE = 'outputFileType';
     public const KEY_OUTPUT_MIME_TYPE = 'outputMimeType';
     public const KEY_OUTPUT_SCHEMA = 'outputSchema';
+    public const KEY_OUTPUT_MEDIA_ORIENTATION = 'outputMediaOrientation';
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
 
     /**
@@ -142,6 +145,11 @@ class ModelConfig extends AbstractDataTransferObject
      * @var array<string, mixed>|null Output schema (JSON schema).
      */
     protected ?array $outputSchema = null;
+
+    /**
+     * @var MediaOrientationEnum|null Output media orientation.
+     */
+    protected ?MediaOrientationEnum $outputMediaOrientation = null;
 
     /**
      * @var array<string, mixed> Custom provider-specific options.
@@ -559,6 +567,30 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Sets the output media orientation.
+     *
+     * @since n.e.x.t
+     *
+     * @param MediaOrientationEnum $outputMediaOrientation The output media orientation.
+     */
+    public function setOutputMediaOrientation(MediaOrientationEnum $outputMediaOrientation): void
+    {
+        $this->outputMediaOrientation = $outputMediaOrientation;
+    }
+
+    /**
+     * Gets the output media orientation.
+     *
+     * @since n.e.x.t
+     *
+     * @return MediaOrientationEnum|null The output media orientation.
+     */
+    public function getOutputMediaOrientation(): ?MediaOrientationEnum
+    {
+        return $this->outputMediaOrientation;
+    }
+
+    /**
      * Sets a single custom option.
      *
      * @since n.e.x.t
@@ -687,6 +719,11 @@ class ModelConfig extends AbstractDataTransferObject
                     'additionalProperties' => true,
                     'description' => 'Output schema (JSON schema).',
                 ],
+                self::KEY_OUTPUT_MEDIA_ORIENTATION => [
+                    'type' => 'string',
+                    'enum' => MediaOrientationEnum::getValues(),
+                    'description' => 'Output media orientation.',
+                ],
                 self::KEY_CUSTOM_OPTIONS => [
                     'type' => 'object',
                     'additionalProperties' => true,
@@ -779,6 +816,10 @@ class ModelConfig extends AbstractDataTransferObject
             $data[self::KEY_OUTPUT_SCHEMA] = $this->outputSchema;
         }
 
+        if ($this->outputMediaOrientation !== null) {
+            $data[self::KEY_OUTPUT_MEDIA_ORIENTATION] = $this->outputMediaOrientation->value;
+        }
+
         $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
 
         return $data;
@@ -860,6 +901,10 @@ class ModelConfig extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_OUTPUT_SCHEMA])) {
             $config->setOutputSchema($array[self::KEY_OUTPUT_SCHEMA]);
+        }
+
+        if (isset($array[self::KEY_OUTPUT_MEDIA_ORIENTATION])) {
+            $config->setOutputMediaOrientation(MediaOrientationEnum::from($array[self::KEY_OUTPUT_MEDIA_ORIENTATION]));
         }
 
         if (isset($array[self::KEY_CUSTOM_OPTIONS])) {
