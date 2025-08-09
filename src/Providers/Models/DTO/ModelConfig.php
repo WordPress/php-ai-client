@@ -35,6 +35,7 @@ use WordPress\AiClient\Tools\DTO\Tool;
  *     logprobs?: bool,
  *     topLogprobs?: int,
  *     tools?: list<ToolArrayShape>,
+ *     outputFileType?: string,
  *     outputMimeType?: string,
  *     outputSchema?: array<string, mixed>,
  *     customOptions?: array<string, mixed>
@@ -850,11 +851,6 @@ class ModelConfig extends AbstractDataTransferObject
         }
 
         if (isset($array[self::KEY_OUTPUT_FILE_TYPE])) {
-            if (!is_string($array[self::KEY_OUTPUT_FILE_TYPE])) {
-                throw new InvalidArgumentException(
-                    'Output file type must be a string.'
-                );
-            }
             $config->setOutputFileType(FileTypeEnum::from($array[self::KEY_OUTPUT_FILE_TYPE]));
         }
 
