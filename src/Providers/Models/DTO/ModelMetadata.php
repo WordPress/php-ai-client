@@ -55,6 +55,16 @@ class ModelMetadata extends AbstractDataTransferObject
     protected array $supportedOptions;
 
     /**
+     * @var array<string, true> Map of supported capabilities for O(1) lookups.
+     */
+    private array $capabilitiesMap = [];
+
+    /**
+     * @var array<string, SupportedOption> Map of supported options by name for O(1) lookups.
+     */
+    private array $optionsMap = [];
+
+    /**
      * Constructor.
      *
      * @since n.e.x.t
@@ -80,6 +90,16 @@ class ModelMetadata extends AbstractDataTransferObject
         $this->name = $name;
         $this->supportedCapabilities = $supportedCapabilities;
         $this->supportedOptions = $supportedOptions;
+
+        // Build capability map for efficient lookups
+        foreach ($supportedCapabilities as $capability) {
+            $this->capabilitiesMap[$capability->value] = true;
+        }
+
+        // Build options map for efficient lookups
+        foreach ($supportedOptions as $option) {
+            $this->optionsMap[$option->getName()] = $option;
+        }
     }
 
     /**
@@ -188,6 +208,42 @@ class ModelMetadata extends AbstractDataTransferObject
             ),
         ];
     }
+
+    /**
+     * Checks whether this model meets the specified requirements.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelRequirements $requirements The requirements to check against.
+     * @return bool True if the model meets all requirements, false otherwise.
+     */
+    public function meetsRequirements(ModelRequirements $requirements): bool
+    {
+        // Check if all required capabilities are supported using map lookup
+        foreach ($requirements->getRequiredCapabilities() as $requiredCapability) {
+            if (!isset($this->capabilitiesMap[$requiredCapability->value])) {
+                return false;
+            }
+        }
+
+        // Check if all required options are supported with the specified values
+        foreach ($requirements->getRequiredOptions() as $requiredOption) {
+            // Use map lookup instead of linear search
+            if (!isset($this->optionsMap[$requiredOption->getName()])) {
+                return false;
+            }
+
+            $supportedOption = $this->optionsMap[$requiredOption->getName()];
+
+            // Check if the required value is supported by this option
+            if (!$supportedOption->isSupportedValue($requiredOption->getValue())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 
     /**
      * {@inheritDoc}
