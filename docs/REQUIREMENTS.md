@@ -8,7 +8,7 @@ There are two primary developer audiences this client is intended for. This is i
 
 ### Extenders
 
-Extenders are the folks that will be adding providers, models, and otherwise extending the functionality of the client itself. These are highly technical people who likely have a stronger understanding of how models and model APIs work. Given their capabilities, these APIs will be more technical and formal in nature, using things such as interfaces, traits, and so forth, relying on a knowledge of inheritence and composition.
+Extenders are the folks that will be adding providers, models, and otherwise extending the functionality of the client itself. These are highly technical people who likely have a stronger understanding of how models and model APIs work. Given their capabilities, these APIs will be more technical and formal in nature, using things such as interfaces, traits, and so forth, relying on a knowledge of inheritance and composition.
 
 ### Implementers
 

@@ -16,7 +16,7 @@ The following naming conventions must be followed for consistency and autoloadin
 - Traits are suffixed with `Trait`.
 - Enums are suffixed with `Enum`.
 - File names are the same as the class, trait, and interface name for PSR-4 autoloading.
-- Classes, interfaces, and traits, and namespaces are not prefixed with `Ai`, exluding the root namespace.
+- Classes, interfaces, and traits, and namespaces are not prefixed with `Ai`, excluding the root namespace.
 
 ## Documentation standards
 
