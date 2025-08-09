@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\ProviderImplementations\OpenAi;
 
+use RuntimeException;
 use WordPress\AiClient\Providers\AbstractOpenAiCompatibleModelMetadataDirectory;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
@@ -34,11 +35,13 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                 'Unexpected API response: Missing the data key.'
             );
         }
-        return array_map(
-            static function (array $modelData): ModelMetadata {
-                // TODO: Create ModelMetadata object from API data.
-            },
-            $responseData['data']
+        return array_values(
+            array_map(
+                static function (array $modelData): ModelMetadata {
+                    // TODO: Create ModelMetadata object from API data.
+                },
+                (array) $responseData['data']
+            )
         );
     }
 }

@@ -43,11 +43,7 @@ class GenerateTextApiBasedProviderAvailability implements ProviderAvailabilityIn
     }
 
     /**
-     * Checks whether the provider is available.
-     *
-     * @since n.e.x.t
-     *
-     * @return bool True if the provider is available, false otherwise.
+     * @inheritdoc
      */
     public function isConfigured(): bool
     {
@@ -60,10 +56,10 @@ class GenerateTextApiBasedProviderAvailability implements ProviderAvailabilityIn
         try {
             // Attempt to generate text to check if the provider is available.
             $this->model->generateTextResult([
-                Message::fromArray([
-                    Message::KEY_ROLE => MessageRoleEnum::user(),
-                    Message::KEY_PARTS => [[MessagePart::KEY_TEXT => 'a']],
-                ]),
+                new Message(
+                    MessageRoleEnum::user(),
+                    [new MessagePart('a')]
+                ),
             ]);
             return true;
         } catch (Exception $e) {

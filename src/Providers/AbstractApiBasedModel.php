@@ -15,6 +15,9 @@ use WordPress\AiClient\Providers\Models\Traits\WithHttpTransporterTrait;
 /**
  * Base class for an API-based model for a provider.
  *
+ * While this class contains no abstract methods, it is still abstract to ensure that each model class can actually
+ * perform generative AI tasks by implementing the corresponding interfaces.
+ *
  * @since n.e.x.t
  */
 abstract class AbstractApiBasedModel implements
@@ -54,49 +57,33 @@ abstract class AbstractApiBasedModel implements
     }
 
     /**
-     * Returns the metadata for the model.
-     *
-     * @since n.e.x.t
-     *
-     * @return ModelMetadata The model metadata.
+     * @inheritdoc
      */
-    public function metadata(): ModelMetadata
+    final public function metadata(): ModelMetadata
     {
         return $this->metadata;
     }
 
     /**
-     * Returns the metadata for the model's provider.
-     *
-     * @since n.e.x.t
-     *
-     * @return ProviderMetadata The provider metadata.
+     * @inheritdoc
      */
-    public function providerMetadata(): ProviderMetadata
+    final public function providerMetadata(): ProviderMetadata
     {
         return $this->providerMetadata;
     }
 
     /**
-     * Sets the configuration for the model.
-     *
-     * @since n.e.x.t
-     *
-     * @param ModelConfig $config The configuration for the model.
+     * @inheritdoc
      */
-    public function setConfig(ModelConfig $config): void
+    final public function setConfig(ModelConfig $config): void
     {
         $this->config = $config;
     }
 
     /**
-     * Returns the configuration for the model.
-     *
-     * @since n.e.x.t
-     *
-     * @return ModelConfig The model configuration.
+     * @inheritdoc
      */
-    public function getConfig(): ModelConfig
+    final public function getConfig(): ModelConfig
     {
         return $this->config;
     }

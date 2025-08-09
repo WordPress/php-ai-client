@@ -14,11 +14,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractApiBasedModelMetadataDirectory
 {
     /**
-     * Sends the API request to list models from the provider and returns the map of model ID to model metadata.
-     *
-     * @since n.e.x.t
-     *
-     * @return array<string, ModelMetadata> Map of model ID to model metadata.
+     * @inheritdoc
      */
     protected function sendListModelsRequest(): array
     {

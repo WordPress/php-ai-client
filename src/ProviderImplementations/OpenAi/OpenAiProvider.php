@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\ProviderImplementations\OpenAi;
 
+use RuntimeException;
 use WordPress\AiClient\Providers\AbstractProvider;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
@@ -29,7 +30,7 @@ class OpenAiProvider extends AbstractProvider
         ModelMetadata $modelMetadata,
         ProviderMetadata $providerMetadata
     ): ModelInterface {
-        $capabilities = $modelMetadata->getCapabilities();
+        $capabilities = $modelMetadata->getSupportedCapabilities();
         foreach ($capabilities as $capability) {
             if ($capability->isTextGeneration()) {
                 return new OpenAiTextGenerationModel($modelMetadata, $providerMetadata);

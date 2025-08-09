@@ -27,11 +27,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     private ?array $modelMetadataMap = null;
 
     /**
-     * Lists the metadata for all models from the provider.
-     *
-     * @since n.e.x.t
-     *
-     * @return list<ModelMetadata> List of model metadata objects.
+     * @inheritdoc
      */
     final public function listModelMetadata(): array
     {
@@ -40,14 +36,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     }
 
     /**
-     * Checks whether model metadata for the given model ID exists.
-     *
-     * This is effectively a check for whether the given model ID is for a valid model from the provider.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $modelId The model ID.
-     * @return bool True if there is metadata for the model.
+     * @inheritdoc
      */
     final public function hasModelMetadata(string $modelId): bool
     {
@@ -60,13 +49,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     }
 
     /**
-     * Gets the model metadata for the given model ID.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $modelId The model ID.
-     * @return ModelMetadata The model metadata.
-     * @throws InvalidArgumentException If the model for the given ID does not exist.
+     * @inheritdoc
      */
     final public function getModelMetadata(string $modelId): ModelMetadata
     {

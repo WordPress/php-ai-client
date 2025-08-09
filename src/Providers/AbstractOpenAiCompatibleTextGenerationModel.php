@@ -80,9 +80,11 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         ];
 
         $outputModalities = $config->getOutputModalities();
-        $this->validateOutputModalities($outputModalities);
-        if (count($outputModalities) > 1) {
-            $params['modalities'] = $this->prepareModalitiesParam($outputModalities);
+        if (is_array($outputModalities)) {
+            $this->validateOutputModalities($outputModalities);
+            if (count($outputModalities) > 1) {
+                $params['modalities'] = $this->prepareOutputModalitiesParam($outputModalities);
+            }
         }
 
         // TODO: Prepare other parameters based on config.
@@ -132,6 +134,12 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 $messageParts = $message->getParts();
                 if (count($messageParts) === 1 && $messageParts[0]->getType()->isFunctionResponse()) {
                     $functionResponse = $messageParts[0]->getFunctionResponse();
+                    if (!$functionResponse) {
+                        // This should be impossible due to class internals, but still needs to be checked.
+                        throw new RuntimeException(
+                            'The function response typed message part must contain a function response.'
+                        );
+                    }
                     return [
                         'role' => 'tool',
                         'content' => json_encode($functionResponse->getResponse()),
@@ -144,13 +152,13 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                         function (MessagePart $part): ?array {
                             return $this->getMessagePartContentData($part);
                         },
-                        $messageParts()
+                        $messageParts
                     )),
                     'tool_calls' => array_filter(array_map(
                         function (MessagePart $part): ?array {
                             return $this->getMessagePartToolCallData($part);
                         },
-                        $messageParts()
+                        $messageParts
                     )),
                 ];
             },
@@ -197,6 +205,12 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
         if ($type->isFile()) {
             $file = $part->getFile();
+            if (!$file) {
+                // This should be impossible due to class internals, but still needs to be checked.
+                throw new RuntimeException(
+                    'The file typed message part must contain a file.'
+                );
+            }
             if ($file->getFileType()->isRemote()) {
                 if ($file->isImage()) {
                     return [
@@ -265,11 +279,17 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      * @return ?array<string, mixed> The data for the message tool call part, or null if not applicable.
      * @throws InvalidArgumentException If the message part type or data is unsupported.
      */
-    protected function getMessagePartToolCallData(MessagePart $part): array
+    protected function getMessagePartToolCallData(MessagePart $part): ?array
     {
         $type = $part->getType();
         if ($type->isFunctionCall()) {
             $functionCall = $part->getFunctionCall();
+            if (!$functionCall) {
+                // This should be impossible due to class internals, but still needs to be checked.
+                throw new RuntimeException(
+                    'The function call typed message part must contain a function call.'
+                );
+            }
             return [
                 'type' => 'function',
                 'id' => $functionCall->getId(),
@@ -310,14 +330,14 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     }
 
     /**
-     * Prepares the modalities parameter for the API request.
+     * Prepares the output modalities parameter for the API request.
      *
      * @since n.e.x.t
      *
      * @param array<ModalityEnum> $modalities The modalities to prepare.
-     * @return array<string, mixed> The prepared modalities parameter.
+     * @return list<string> The prepared modalities parameter.
      */
-    protected function prepareModalitiesParam(array $modalities): array
+    protected function prepareOutputModalitiesParam(array $modalities): array
     {
         $prepared = [];
         foreach ($modalities as $modality) {

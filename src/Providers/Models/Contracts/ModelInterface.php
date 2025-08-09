@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\Contracts;
 
+use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
@@ -25,6 +26,15 @@ interface ModelInterface
      * @return ModelMetadata Model metadata.
      */
     public function metadata(): ModelMetadata;
+
+    /**
+     * Returns the metadata for the model's provider.
+     *
+     * @since n.e.x.t
+     *
+     * @return ProviderMetadata The provider metadata.
+     */
+    public function providerMetadata(): ProviderMetadata;
 
     /**
      * Sets model configuration.

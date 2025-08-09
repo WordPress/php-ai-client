@@ -34,11 +34,7 @@ class ListModelsApiBasedProviderAvailability implements ProviderAvailabilityInte
     }
 
     /**
-     * Checks whether the provider is available.
-     *
-     * @since n.e.x.t
-     *
-     * @return bool True if the provider is available, false otherwise.
+     * @inheritdoc
      */
     public function isConfigured(): bool
     {

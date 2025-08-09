@@ -35,11 +35,7 @@ abstract class AbstractProvider implements ProviderInterface
     private static array $modelMetadataDirectoryCache = [];
 
     /**
-     * Returns the metadata for the provider.
-     *
-     * @since n.e.x.t
-     *
-     * @return ProviderMetadata The provider metadata.
+     * @inheritdoc
      */
     final public static function metadata(): ProviderMetadata
     {
@@ -51,13 +47,7 @@ abstract class AbstractProvider implements ProviderInterface
     }
 
     /**
-     * Creates a model instance based on the given model ID and configuration.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $modelId The model's unique identifier.
-     * @param ModelConfig|null $modelConfig Optional configuration for the model.
-     * @return ModelInterface The new model instance.
+     * @inheritdoc
      */
     final public static function model(string $modelId, ?ModelConfig $modelConfig = null): ModelInterface
     {
@@ -72,11 +62,7 @@ abstract class AbstractProvider implements ProviderInterface
     }
 
     /**
-     * Returns the availability for the provider.
-     *
-     * @since n.e.x.t
-     *
-     * @return ProviderAvailabilityInterface The availability.
+     * @inheritdoc
      */
     final public static function availability(): ProviderAvailabilityInterface
     {
@@ -88,11 +74,7 @@ abstract class AbstractProvider implements ProviderInterface
     }
 
     /**
-     * Returns the model metadata directory for the provider.
-     *
-     * @since n.e.x.t
-     *
-     * @return ModelMetadataDirectoryInterface The model metadata directory.
+     * @inheritdoc
      */
     final public static function modelMetadataDirectory(): ModelMetadataDirectoryInterface
     {
