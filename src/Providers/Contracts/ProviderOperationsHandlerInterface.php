@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Contracts;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
+use WordPress\AiClient\Operations\Contracts\OperationInterface;
 
 /**
  * Interface for handling provider-level operations.
@@ -24,8 +24,8 @@ interface ProviderOperationsHandlerInterface
      * @since n.e.x.t
      *
      * @param string $operationId Operation identifier.
-     * @return GenerativeAiOperation The operation.
+     * @return OperationInterface The operation.
      * @throws InvalidArgumentException If operation not found.
      */
-    public function getOperation(string $operationId): GenerativeAiOperation;
+    public function getOperation(string $operationId): OperationInterface;
 }

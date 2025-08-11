@@ -826,17 +826,20 @@ direction LR
 
     namespace AiClientNamespace.Providers.Contracts {
         class AuthenticationInterface {
-            +authenticate(RequestInterface $request) void
+            +authenticate(Request $request) void
             +getJsonSchema() array< string, mixed >$
         }
         class HttpClientInterface {
-            +send(RequestInterface $request, array< string, mixed > $options) ResponseInterface
-            +request(string $method, string $uri, array< string, mixed > $options) ResponseInterface
+            +send(Request $request, array< string, mixed > $options) Response
+            +request(string $method, string $uri, array< string, mixed > $options) Response
         }
         class ModelMetadataDirectoryInterface {
             +listModelMetadata() ModelMetadata[]
             +hasModelMetadata(string $modelId) bool
             +getModelMetadata(string $modelId) ModelMetadata
+        }
+        class ProviderAvailabilityInterface {
+            +isConfigured() bool
         }
         class ProviderInterface {
             +metadata() ProviderMetadata$
@@ -844,8 +847,11 @@ direction LR
             +availability() ProviderAvailabilityInterface$
             +modelMetadataDirectory() ModelMetadataDirectoryInterface$
         }
-        class ProviderAvailabilityInterface {
-            +isConfigured() bool
+        class ProviderOperationsHandlerInterface {
+            +getOperation(string $operationId) OperationInterface
+        }
+        class ProviderWithOperationsHandlerInterface {
+            +operationsHandler() ProviderOperationsHandlerInterface$
         }
     }
 
@@ -887,9 +893,6 @@ direction LR
         }
         class WithEmbeddingOperationsInterface {
             +getOperation(string $operationId) EmbeddingOperation
-        }
-        class WithGenerativeAiOperationsInterface {
-            +getOperation(string $operationId) GenerativeAiOperation
         }
         class WithHttpClientInterface {
             +setHttpClient(HttpClientInterface $client) void
@@ -1050,7 +1053,8 @@ direction LR
     <<interface>> ModelInterface
     <<interface>> ProviderAvailabilityInterface
     <<interface>> ModelMetadataDirectoryInterface
-    <<interface>> WithGenerativeAiOperationsInterface
+    <<interface>> ProviderOperationsHandlerInterface
+    <<interface>> ProviderWithOperationsHandlerInterface
     <<interface>> WithEmbeddingOperationsInterface
     <<interface>> TextGenerationModelInterface
     <<interface>> ImageGenerationModelInterface
@@ -1074,6 +1078,7 @@ direction LR
     ProviderInterface "1" *-- "1" ProviderMetadata
     ProviderInterface "1" *-- "1" ProviderAvailabilityInterface
     ProviderInterface "1" *-- "1" ModelMetadataDirectoryInterface
+    ProviderWithOperationsHandlerInterface "1" *-- "1" ProviderOperationsHandlerInterface
     ModelInterface "1" *-- "1" ModelMetadata
     ModelInterface "1" *-- "1" ModelConfig
     ProviderModelsMetadata "1" o-- "1" ProviderMetadata
