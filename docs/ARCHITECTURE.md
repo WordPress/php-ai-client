@@ -810,14 +810,6 @@ direction LR
     }
 
     namespace AiClientNamespace.Providers.Contracts {
-        class AuthenticationInterface {
-            +authenticate(Request $request) void
-            +getJsonSchema() array< string, mixed >$
-        }
-        class HttpClientInterface {
-            +send(Request $request, array< string, mixed > $options) Response
-            +request(string $method, string $uri, array< string, mixed > $options) Response
-        }
         class ModelMetadataDirectoryInterface {
             +listModelMetadata() ModelMetadata[]
             +hasModelMetadata(string $modelId) bool
@@ -866,22 +858,51 @@ direction LR
         }
     }
 
+    namespace AiClientNamespace.Providers.Http.Contracts {
+        class HttpTransporterInterface {
+            +send(Request $request) Response
+        }
+        class RequestAuthenticationInterface {
+            +authenticate(Request $request) void
+            +getJsonSchema() array< string, mixed >$
+        }
+        class WithHttpTransporterInterface {
+            +setHttpTransporter(HttpTransporterInterface $transporter) void
+            +getHttpTransporter() HttpTransporterInterface
+        }
+        class WithRequestAuthenticationInterface {
+            +setRequestAuthentication(RequestAuthenticationInterface $authentication) void
+            +getRequestAuthentication() RequestAuthenticationInterface
+        }
+    }
+
+    namespace AiClientNamespace.Providers.Http.DTO {
+        class Request {
+            +getMethod() string
+            +getUri() string
+            +getHeaders() array< string, string[] >
+            +getBody() ?string
+            +getData() ?array< string, mixed >
+            +getJsonSchema() array< string, mixed >$
+        }
+
+        class Response {
+            +getStatusCode() int
+            +getHeaders() array< string, string[] >
+            +getBody() ?string
+            +getData() ?array< string, mixed >
+            +getJsonSchema() array< string, mixed >$
+        }
+    }
+
     namespace AiClientNamespace.Providers.Models.Contracts {
         class ModelInterface {
             +metadata() ModelMetadata
             +setConfig(ModelConfig $config) void
             +getConfig() ModelConfig
         }
-        class WithAuthenticationInterface {
-            +setAuthentication(AuthenticationInterface $authentication) void
-            +getAuthentication() AuthenticationInterface
-        }
         class WithEmbeddingOperationsInterface {
             +getOperation(string $operationId) EmbeddingOperation
-        }
-        class WithHttpClientInterface {
-            +setHttpClient(HttpClientInterface $client) void
-            +getHttpClient() HttpClientInterface
         }
     }
 
@@ -1051,10 +1072,10 @@ direction LR
     <<interface>> TextToSpeechConversionOperationModelInterface
     <<interface>> SpeechGenerationOperationModelInterface
     <<interface>> EmbeddingGenerationOperationModelInterface
-    <<interface>> WithHttpClientInterface
-    <<interface>> HttpClientInterface
-    <<interface>> WithAuthenticationInterface
-    <<interface>> AuthenticationInterface
+    <<interface>> HttpTransporterInterface
+    <<interface>> WithHttpTransporterInterface
+    <<interface>> RequestAuthenticationInterface
+    <<interface>> WithRequestAuthenticationInterface
     <<Enumeration>> CapabilityEnum
     <<Enumeration>> OptionEnum
     <<Enumeration>> ProviderTypeEnum
