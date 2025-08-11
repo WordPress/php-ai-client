@@ -304,7 +304,6 @@ direction LR
         class PromptBuilder {
             +withText(string $text) self
             +withInlineImage(string $base64Blob, string $mimeType)
-            +withLocalImage(string $path, string $mimeType)
             +withRemoteImage(string $uri, string $mimeType)
             +withImageFile(File $file) self
             +withAudioFile(File $file) self
@@ -340,12 +339,12 @@ direction LR
             +generateText() string
             +generateTexts(?int $candidateCount) string[]
             +streamGenerateText() Generator< string >
-            +generateImage() FileInterface
-            +generateImages(?int $candidateCount) FileInterface[]
-            +convertTextToSpeech() FileInterface
-            +convertTextToSpeeches(?int $candidateCount) FileInterface[]
-            +generateSpeech() FileInterface
-            +generateSpeeches(?int $candidateCount) FileInterface[]
+            +generateImage() File
+            +generateImages(?int $candidateCount) File[]
+            +convertTextToSpeech() File
+            +convertTextToSpeeches(?int $candidateCount) File[]
+            +generateSpeech() File
+            +generateSpeeches(?int $candidateCount) File[]
             +generateEmbeddings() Embedding[]
             +getModelRequirements() ModelRequirements
             +isSupported() bool
@@ -468,7 +467,6 @@ direction LR
         class PromptBuilder {
             +withText(string $text) self
             +withInlineImage(string $base64Blob, string $mimeType)
-            +withLocalImage(string $path, string $mimeType)
             +withRemoteImage(string $uri, string $mimeType)
             +withImageFile(File $file) self
             +withAudioFile(File $file) self
@@ -504,12 +502,12 @@ direction LR
             +generateText() string
             +generateTexts(?int $candidateCount) string[]
             +streamGenerateText() Generator< string >
-            +generateImage() FileInterface
-            +generateImages(?int $candidateCount) FileInterface[]
-            +convertTextToSpeech() FileInterface
-            +convertTextToSpeeches(?int $candidateCount) FileInterface[]
-            +generateSpeech() FileInterface
-            +generateSpeeches(?int $candidateCount) FileInterface[]
+            +generateImage() File
+            +generateImages(?int $candidateCount) File[]
+            +convertTextToSpeech() File
+            +convertTextToSpeeches(?int $candidateCount) File[]
+            +generateSpeech() File
+            +generateSpeeches(?int $candidateCount) File[]
             +generateEmbeddings() Embedding[]
             +getModelRequirements() ModelRequirements
             +isSupported() bool
@@ -535,26 +533,20 @@ direction LR
         }
     }
 
-    namespace AiClientNamespace.Files.Contracts {
-        class FileInterface {
+    namespace AiClientNamespace.Files.DTO {
+        class File {
+            +getFileType() FileTypeEnum
+            +getMimeType() string
+            +getUrl() ?string
+            +getBase64Data() ?string
+            +getJsonSchema() array< string, mixed >$
         }
     }
 
-    namespace AiClientNamespace.Files.DTO {
-        class InlineFile {
-            +getMimeType() string
-            +getBase64Data() string
-            +getJsonSchema() array< string, mixed >$
-        }
-        class LocalFile {
-            +getMimeType() string
-            +getPath() string
-            +getJsonSchema() array< string, mixed >$
-        }
-        class RemoteFile {
-            +getMimeType() string
-            +getUrl() string
-            +getJsonSchema() array< string, mixed >$
+    namespace AiClientNamespace.Files.Enums {
+        class FileTypeEnum {
+            INLINE
+            REMOTE
         }
     }
 
@@ -567,8 +559,7 @@ direction LR
         class MessagePart {
             +getType() MessagePartTypeEnum
             +getText() string?
-            +getInlineFile() InlineFile?
-            +getRemoteFile() RemoteFile?
+            +getFile() File?
             +getFunctionCall() FunctionCall?
             +getFunctionResponse() FunctionResponse?
             +getJsonSchema() array< string, mixed >$
@@ -584,8 +575,7 @@ direction LR
     namespace AiClientNamespace.Messages.Enums {
         class MessagePartTypeEnum {
             TEXT
-            INLINE_FILE
-            REMOTE_FILE
+            FILE
             FUNCTION_CALL
             FUNCTION_RESPONSE
         }
@@ -667,14 +657,14 @@ direction LR
             +getJsonSchema() array< string, mixed >$
             %% The following utility methods transform the result candidates into a specific shape.
             +toText() string
-            +toImageFile() FileInterface
-            +toAudioFile() FileInterface
-            +toVideoFile() FileInterface
+            +toImageFile() File
+            +toAudioFile() File
+            +toVideoFile() File
             +toMessage() Message
             +toTexts() string[]
-            +toImageFiles() FileInterface[]
-            +toAudioFiles() FileInterface[]
-            +toVideoFiles() FileInterface[]
+            +toImageFiles() File[]
+            +toAudioFiles() File[]
+            +toVideoFiles() File[]
             +toMessages() Message[]
         }
         class TokenUsage {
@@ -730,26 +720,25 @@ direction LR
     namespace AiClientNamespace.Util {
         class CandidatesUtil {
             +toTexts(Candidate[] $candidates) string[]$
-            +toImageFiles(Candidate[] $candidates) FileInterface[]$
-            +toAudioFiles(Candidate[] $candidates) FileInterface[]$
-            +toVideoFiles(Candidate[] $candidates) FileInterface[]$
+            +toImageFiles(Candidate[] $candidates) File[]$
+            +toAudioFiles(Candidate[] $candidates) File[]$
+            +toVideoFiles(Candidate[] $candidates) File[]$
             +toFirstText(Candidate[] $candidates) string$
-            +toFirstImageFile(Candidate[] $candidates) FileInterface$
-            +toFirstAudioFile(Candidate[] $candidates) FileInterface$
-            +toFirstVideoFile(Candidate[] $candidates) FileInterface$
+            +toFirstImageFile(Candidate[] $candidates) File$
+            +toFirstAudioFile(Candidate[] $candidates) File$
+            +toFirstVideoFile(Candidate[] $candidates) File$
         }
         class MessageUtil {
             +toText(Message $message) string$
-            +toImageFile(Message $message) FileInterface$
-            +toAudioFile(Message $message) FileInterface$
-            +toVideoFile(Message $message) FileInterface$
+            +toImageFile(Message $message) File$
+            +toAudioFile(Message $message) File$
+            +toVideoFile(Message $message) File$
         }
         class RequirementsUtil {
             +inferRequirements(Message[] $messages, ModelConfig $modelConfig) ModelRequirements$
         }
     }
 
-    <<interface>> FileInterface
     <<interface>> OperationInterface
     <<interface>> ResultInterface
     <<Enumeration>> MessageRoleEnum
@@ -772,8 +761,7 @@ direction LR
     PromptBuilder .. EmbeddingOperation : creates
     MessageBuilder .. Message : creates
     Message "1" *-- "1..*" MessagePart
-    MessagePart "1" o-- "0..1" InlineFile
-    MessagePart "1" o-- "0..1" RemoteFile
+    MessagePart "1" o-- "0..1" File
     MessagePart "1" o-- "0..1" FunctionCall
     MessagePart "1" o-- "0..1" FunctionResponse
     GenerativeAiOperation "1" o-- "0..1" GenerativeAiResult
@@ -788,9 +776,6 @@ direction LR
     OperationInterface ..> OperationStateEnum
     GenerativeAiOperation ..> OperationStateEnum
     Candidate ..> FinishReasonEnum
-    FileInterface <|-- InlineFile
-    FileInterface <|-- RemoteFile
-    FileInterface <|-- LocalFile
     Message <|-- UserMessage
     Message <|-- ModelMessage
     Message <|-- SystemMessage
