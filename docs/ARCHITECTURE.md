@@ -810,8 +810,11 @@ This section describes the HTTP communication architecture that differs from the
 
 1. **Custom Request/Response Objects**: Models create and receive custom Request and Response objects specific to this library
 2. **HttpTransporter**: A dedicated class that handles the translation between custom objects and PSR standards
-3. **PSR Compliance**: The transporter uses PSR-7 (HTTP messages), PSR-17 (HTTP factories), and PSR-18 (HTTP client) internally
-4. **No Direct Coupling**: The library remains decoupled from any specific HTTP client implementation
+3. **HTTPlug Integration**: Uses HTTPlug's Discovery component for automatic detection of available HTTP clients and factories
+4. **PSR Compliance**: The transporter uses PSR-7 (HTTP messages), PSR-17 (HTTP factories), and PSR-18 (HTTP client) internally
+5. **No Direct Coupling**: The library remains decoupled from any specific HTTP client implementation
+6. **Provider Domain Location**: HTTP components are located within the Providers domain (`src/Providers/Http/`) as they are provider-specific infrastructure
+7. **Synchronous Only**: Currently supports only synchronous HTTP requests. Async support may be added in the future if needed
 
 ### HTTP Communication Flow
 
@@ -842,7 +845,7 @@ config:
 ---
 classDiagram
 direction TB
-    namespace AiClientNamespace.Http.DTO {
+    namespace AiClientNamespace.Providers.Http.DTO {
         class Request {
             +getMethod() string
             +getUri() string
@@ -863,21 +866,25 @@ direction TB
         }
     }
     
-    namespace AiClientNamespace.Http.Contracts {
+    namespace AiClientNamespace.Providers.Http.Contracts {
         class HttpTransporterInterface {
             +send(Request $request) Response
         }
     }
     
-    namespace AiClientNamespace.Http {
+    namespace AiClientNamespace.Providers.Http {
         class HttpTransporter {
             -requestFactory Psr17RequestFactoryInterface
-            -streamFactory Psr17StreamFactoryInterface
+            -streamFactory Psr17StreamFactoryInterface  
             -client Psr18ClientInterface
-            +__construct(Psr17RequestFactoryInterface $requestFactory, Psr17StreamFactoryInterface $streamFactory, Psr18ClientInterface $client)
+            +__construct(?Psr18ClientInterface $client, ?Psr17RequestFactoryInterface $requestFactory, ?Psr17StreamFactoryInterface $streamFactory)
             +send(Request $request) Response
             -convertToPsr7Request(Request $request) Psr7RequestInterface
             -convertFromPsr7Response(Psr7ResponseInterface $response) Response
+        }
+        
+        class HttpTransporterFactory {
+            +createTransporter() HttpTransporterInterface$
         }
     }
     
@@ -912,6 +919,7 @@ direction TB
     HttpTransporter --> Psr17RequestFactoryInterface : uses
     HttpTransporter --> Psr17StreamFactoryInterface : uses
     HttpTransporter --> Psr18ClientInterface : uses
+    HttpTransporterFactory ..> HttpTransporter : creates
     HttpTransporter ..> Request : receives
     HttpTransporter ..> Response : creates
     HttpTransporter ..> Psr7RequestInterface : creates
