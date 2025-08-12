@@ -158,6 +158,32 @@ class Request extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the request data as an array.
+     *
+     * Attempts to decode the body as JSON. Returns null if the body
+     * is empty or not valid JSON.
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>|null The decoded data or null.
+     */
+    public function getData(): ?array
+    {
+        if ($this->body === null || $this->body === '') {
+            return null;
+        }
+
+        $data = json_decode($this->body, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return null;
+        }
+
+        /** @var array<string, mixed>|null $data */
+        return is_array($data) ? $data : null;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since n.e.x.t

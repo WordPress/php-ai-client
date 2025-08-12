@@ -18,7 +18,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * @phpstan-type ResponseArrayShape array{
  *     statusCode: int,
  *     headers: array<string, string|list<string>>,
- *     body: string,
+ *     body?: string|null,
  *     reasonPhrase: string
  * }
  *
@@ -42,9 +42,9 @@ class Response extends AbstractDataTransferObject
     protected array $headers;
 
     /**
-     * @var string The response body.
+     * @var string|null The response body.
      */
-    protected string $body;
+    protected ?string $body;
 
     /**
      * @var string The reason phrase.
@@ -58,12 +58,12 @@ class Response extends AbstractDataTransferObject
      *
      * @param int $statusCode The HTTP status code.
      * @param array<string, string|list<string>> $headers The response headers.
-     * @param string $body The response body.
+     * @param string|null $body The response body.
      * @param string $reasonPhrase The reason phrase.
      *
      * @throws InvalidArgumentException If the status code is invalid.
      */
-    public function __construct(int $statusCode, array $headers, string $body, string $reasonPhrase = '')
+    public function __construct(int $statusCode, array $headers, ?string $body = null, string $reasonPhrase = '')
     {
         if ($statusCode < 100 || $statusCode >= 600) {
             throw new InvalidArgumentException('Invalid HTTP status code: ' . $statusCode);
@@ -123,9 +123,9 @@ class Response extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string The body.
+     * @return string|null The body.
      */
-    public function getBody(): string
+    public function getBody(): ?string
     {
         return $this->body;
     }
@@ -152,6 +152,32 @@ class Response extends AbstractDataTransferObject
     public function isSuccessful(): bool
     {
         return $this->statusCode >= 200 && $this->statusCode < 300;
+    }
+
+    /**
+     * Gets the response data as an array.
+     *
+     * Attempts to decode the body as JSON. Returns null if the body
+     * is empty or not valid JSON.
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>|null The decoded data or null.
+     */
+    public function getData(): ?array
+    {
+        if ($this->body === null || $this->body === '') {
+            return null;
+        }
+
+        $data = json_decode($this->body, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return null;
+        }
+
+        /** @var array<string, mixed>|null $data */
+        return is_array($data) ? $data : null;
     }
 
     /**
@@ -184,7 +210,7 @@ class Response extends AbstractDataTransferObject
                     'description' => 'The response headers.',
                 ],
                 self::KEY_BODY => [
-                    'type' => 'string',
+                    'type' => ['string', 'null'],
                     'description' => 'The response body.',
                 ],
                 self::KEY_REASON_PHRASE => [
@@ -192,7 +218,7 @@ class Response extends AbstractDataTransferObject
                     'description' => 'The reason phrase.',
                 ],
             ],
-            'required' => [self::KEY_STATUS_CODE, self::KEY_HEADERS, self::KEY_BODY, self::KEY_REASON_PHRASE],
+            'required' => [self::KEY_STATUS_CODE, self::KEY_HEADERS, self::KEY_REASON_PHRASE],
         ];
     }
 
@@ -205,12 +231,17 @@ class Response extends AbstractDataTransferObject
      */
     public function toArray(): array
     {
-        return [
+        $data = [
             self::KEY_STATUS_CODE => $this->statusCode,
             self::KEY_HEADERS => $this->headers,
-            self::KEY_BODY => $this->body,
             self::KEY_REASON_PHRASE => $this->reasonPhrase,
         ];
+
+        if ($this->body !== null) {
+            $data[self::KEY_BODY] = $this->body;
+        }
+
+        return $data;
     }
 
     /**
@@ -223,14 +254,13 @@ class Response extends AbstractDataTransferObject
         static::validateFromArrayData($array, [
             self::KEY_STATUS_CODE,
             self::KEY_HEADERS,
-            self::KEY_BODY,
             self::KEY_REASON_PHRASE,
         ]);
 
         return new self(
             $array[self::KEY_STATUS_CODE],
             $array[self::KEY_HEADERS],
-            $array[self::KEY_BODY],
+            $array[self::KEY_BODY] ?? null,
             $array[self::KEY_REASON_PHRASE]
         );
     }

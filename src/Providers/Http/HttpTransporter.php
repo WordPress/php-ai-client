@@ -125,10 +125,12 @@ class HttpTransporter implements HttpTransporterInterface
             $headers[(string) $name] = count($values) === 1 ? $values[0] : array_values($values);
         }
 
+        $body = (string) $psr7Response->getBody();
+
         return new Response(
             $psr7Response->getStatusCode(),
             $headers,
-            (string) $psr7Response->getBody(),
+            $body === '' ? null : $body,
             $psr7Response->getReasonPhrase()
         );
     }
