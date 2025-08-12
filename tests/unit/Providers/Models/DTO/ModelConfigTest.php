@@ -6,6 +6,8 @@ namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Tools\DTO\Tool;
@@ -53,8 +55,11 @@ class ModelConfigTest extends TestCase
         $this->assertNull($config->getLogprobs());
         $this->assertNull($config->getTopLogprobs());
         $this->assertNull($config->getTools());
+        $this->assertNull($config->getOutputFileType());
         $this->assertNull($config->getOutputMimeType());
         $this->assertNull($config->getOutputSchema());
+        $this->assertNull($config->getOutputMediaOrientation());
+        $this->assertNull($config->getOutputMediaAspectRatio());
         $this->assertEquals([], $config->getCustomOptions());
     }
 
@@ -138,6 +143,18 @@ class ModelConfigTest extends TestCase
         $config->setOutputSchema($outputSchema);
         $this->assertEquals($outputSchema, $config->getOutputSchema());
 
+        // Test output file type
+        $config->setOutputFileType(FileTypeEnum::inline());
+        $this->assertEquals(FileTypeEnum::inline(), $config->getOutputFileType());
+
+        // Test output media orientation
+        $config->setOutputMediaOrientation(MediaOrientationEnum::landscape());
+        $this->assertEquals(MediaOrientationEnum::landscape(), $config->getOutputMediaOrientation());
+
+        // Test output media aspect ratio
+        $config->setOutputMediaAspectRatio('4:3');
+        $this->assertEquals('4:3', $config->getOutputMediaAspectRatio());
+
         // Test custom options
         $customOptions = ['custom_param' => 'value', 'another_param' => 123];
         $config->setCustomOptions($customOptions);
@@ -160,13 +177,24 @@ class ModelConfigTest extends TestCase
 
         // Check all properties exist
         $expectedProperties = [
-            ModelConfig::KEY_OUTPUT_MODALITIES, ModelConfig::KEY_SYSTEM_INSTRUCTION,
-            ModelConfig::KEY_CANDIDATE_COUNT, ModelConfig::KEY_MAX_TOKENS,
-            ModelConfig::KEY_TEMPERATURE, ModelConfig::KEY_TOP_P, ModelConfig::KEY_TOP_K,
-            ModelConfig::KEY_STOP_SEQUENCES, ModelConfig::KEY_PRESENCE_PENALTY,
-            ModelConfig::KEY_FREQUENCY_PENALTY, ModelConfig::KEY_LOGPROBS,
-            ModelConfig::KEY_TOP_LOGPROBS, ModelConfig::KEY_TOOLS,
-            ModelConfig::KEY_OUTPUT_MIME_TYPE, ModelConfig::KEY_OUTPUT_SCHEMA,
+            ModelConfig::KEY_OUTPUT_MODALITIES,
+            ModelConfig::KEY_SYSTEM_INSTRUCTION,
+            ModelConfig::KEY_CANDIDATE_COUNT,
+            ModelConfig::KEY_MAX_TOKENS,
+            ModelConfig::KEY_TEMPERATURE,
+            ModelConfig::KEY_TOP_P,
+            ModelConfig::KEY_TOP_K,
+            ModelConfig::KEY_STOP_SEQUENCES,
+            ModelConfig::KEY_PRESENCE_PENALTY,
+            ModelConfig::KEY_FREQUENCY_PENALTY,
+            ModelConfig::KEY_LOGPROBS,
+            ModelConfig::KEY_TOP_LOGPROBS,
+            ModelConfig::KEY_TOOLS,
+            ModelConfig::KEY_OUTPUT_FILE_TYPE,
+            ModelConfig::KEY_OUTPUT_MIME_TYPE,
+            ModelConfig::KEY_OUTPUT_SCHEMA,
+            ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION,
+            ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO,
             ModelConfig::KEY_CUSTOM_OPTIONS
         ];
 
@@ -182,6 +210,9 @@ class ModelConfigTest extends TestCase
         $this->assertEquals('boolean', $schema['properties'][ModelConfig::KEY_LOGPROBS]['type']);
         $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_MIME_TYPE]['type']);
         $this->assertEquals('object', $schema['properties'][ModelConfig::KEY_OUTPUT_SCHEMA]['type']);
+        $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_FILE_TYPE]['type']);
+        $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION]['type']);
+        $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO]['type']);
         $this->assertEquals('object', $schema['properties'][ModelConfig::KEY_CUSTOM_OPTIONS]['type']);
 
         // Check constraints
@@ -215,8 +246,11 @@ class ModelConfigTest extends TestCase
         $config->setLogprobs(true);
         $config->setTopLogprobs(10);
         $config->setTools([$tool]);
+        $config->setOutputFileType(FileTypeEnum::remote());
         $config->setOutputMimeType('application/json');
         $config->setOutputSchema(['type' => 'object']);
+        $config->setOutputMediaOrientation(MediaOrientationEnum::portrait());
+        $config->setOutputMediaAspectRatio('9:16');
         $config->setCustomOptions(['key' => 'value']);
 
         $array = $config->toArray();
@@ -235,8 +269,11 @@ class ModelConfigTest extends TestCase
         $this->assertTrue($array[ModelConfig::KEY_LOGPROBS]);
         $this->assertEquals(10, $array[ModelConfig::KEY_TOP_LOGPROBS]);
         $this->assertCount(1, $array[ModelConfig::KEY_TOOLS]);
+        $this->assertEquals('remote', $array[ModelConfig::KEY_OUTPUT_FILE_TYPE]);
         $this->assertEquals('application/json', $array[ModelConfig::KEY_OUTPUT_MIME_TYPE]);
         $this->assertEquals(['type' => 'object'], $array[ModelConfig::KEY_OUTPUT_SCHEMA]);
+        $this->assertEquals('portrait', $array[ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION]);
+        $this->assertEquals('9:16', $array[ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO]);
         $this->assertEquals(['key' => 'value'], $array[ModelConfig::KEY_CUSTOM_OPTIONS]);
     }
 
@@ -312,6 +349,9 @@ class ModelConfigTest extends TestCase
             ],
             ModelConfig::KEY_OUTPUT_MIME_TYPE => 'application/json',
             ModelConfig::KEY_OUTPUT_SCHEMA => ['type' => 'array', 'items' => ['type' => 'string']],
+            ModelConfig::KEY_OUTPUT_FILE_TYPE => 'inline',
+            ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION => 'landscape',
+            ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO => '16:9',
             ModelConfig::KEY_CUSTOM_OPTIONS => ['custom' => true]
         ];
 
@@ -335,6 +375,9 @@ class ModelConfigTest extends TestCase
         $this->assertCount(1, $config->getTools());
         $this->assertEquals('application/json', $config->getOutputMimeType());
         $this->assertEquals(['type' => 'array', 'items' => ['type' => 'string']], $config->getOutputSchema());
+        $this->assertEquals(FileTypeEnum::inline(), $config->getOutputFileType());
+        $this->assertEquals(MediaOrientationEnum::landscape(), $config->getOutputMediaOrientation());
+        $this->assertEquals('16:9', $config->getOutputMediaAspectRatio());
         $this->assertEquals(['custom' => true], $config->getCustomOptions());
     }
 
@@ -366,6 +409,9 @@ class ModelConfigTest extends TestCase
         $original->setMaxTokens(1500);
         $original->setStopSequences(['END', 'STOP']);
         $original->setLogprobs(true);
+        $original->setOutputFileType(FileTypeEnum::inline());
+        $original->setOutputMediaOrientation(MediaOrientationEnum::square());
+        $original->setOutputMediaAspectRatio('1:1');
         $original->setCustomOptions(['test' => 'value']);
 
         $array = $original->toArray();
@@ -376,6 +422,9 @@ class ModelConfigTest extends TestCase
         $this->assertEquals($original->getMaxTokens(), $restored->getMaxTokens());
         $this->assertEquals($original->getStopSequences(), $restored->getStopSequences());
         $this->assertEquals($original->getLogprobs(), $restored->getLogprobs());
+        $this->assertEquals($original->getOutputFileType(), $restored->getOutputFileType());
+        $this->assertEquals($original->getOutputMediaOrientation(), $restored->getOutputMediaOrientation());
+        $this->assertEquals($original->getOutputMediaAspectRatio(), $restored->getOutputMediaAspectRatio());
         $this->assertEquals($original->getCustomOptions(), $restored->getCustomOptions());
     }
 

@@ -73,7 +73,7 @@ $texts = AiClient::generateTextResult(
 
 ##### Fluent API
 ```php
-$imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Carribean sea.')
+$imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Caribbean sea.')
     ->usingProvider('openai')
     ->generateImage();
 ```
@@ -85,7 +85,7 @@ $modelsMetadata = AiClient::defaultRegistry()->findProviderModelsMetadataForSupp
     new ModelRequirements([CapabilityEnum::IMAGE_GENERATION])
 );
 $imageFile = AiClient::generateImageResult(
-    'Generate an illustration of the PHP elephant in the Carribean sea.',
+    'Generate an illustration of the PHP elephant in the Caribbean sea.',
     AiClient::defaultRegistry()->getProviderModel(
         'openai',
         $modelsMetadata[0]->getId()
@@ -97,7 +97,7 @@ $imageFile = AiClient::generateImageResult(
 
 ##### Fluent API
 ```php
-$imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Carribean sea.')
+$imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Caribbean sea.')
     ->generateImage();
 ```
 
@@ -107,7 +107,7 @@ $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupp
     new ModelRequirements([CapabilityEnum::IMAGE_GENERATION])
 );
 $imageFile = AiClient::generateImageResult(
-    'Generate an illustration of the PHP elephant in the Carribean sea.',
+    'Generate an illustration of the PHP elephant in the Caribbean sea.',
     AiClient::defaultRegistry()->getProviderModel(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId()
