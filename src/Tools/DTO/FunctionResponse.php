@@ -59,9 +59,9 @@ class FunctionResponse extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string The function call ID.
+     * @return string|null The function call ID.
      */
-    public function getId(): string
+    public function getId(): ?string
     {
         return $this->id;
     }
@@ -71,9 +71,9 @@ class FunctionResponse extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string The function name.
+     * @return string|null The function name.
      */
-    public function getName(): string
+    public function getName(): ?string
     {
         return $this->name;
     }

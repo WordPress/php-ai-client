@@ -6,6 +6,8 @@ namespace WordPress\AiClient\Providers\Models\DTO;
 
 use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Tools\DTO\Tool;
 
@@ -34,8 +36,11 @@ use WordPress\AiClient\Tools\DTO\Tool;
  *     logprobs?: bool,
  *     topLogprobs?: int,
  *     tools?: list<ToolArrayShape>,
+ *     outputFileType?: string,
  *     outputMimeType?: string,
  *     outputSchema?: array<string, mixed>,
+ *     outputMediaOrientation?: string,
+ *     outputMediaAspectRatio?: string,
  *     customOptions?: array<string, mixed>
  * }
  *
@@ -56,8 +61,11 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_LOGPROBS = 'logprobs';
     public const KEY_TOP_LOGPROBS = 'topLogprobs';
     public const KEY_TOOLS = 'tools';
+    public const KEY_OUTPUT_FILE_TYPE = 'outputFileType';
     public const KEY_OUTPUT_MIME_TYPE = 'outputMimeType';
     public const KEY_OUTPUT_SCHEMA = 'outputSchema';
+    public const KEY_OUTPUT_MEDIA_ORIENTATION = 'outputMediaOrientation';
+    public const KEY_OUTPUT_MEDIA_ASPECT_RATIO = 'outputMediaAspectRatio';
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
 
     /**
@@ -126,6 +134,11 @@ class ModelConfig extends AbstractDataTransferObject
     protected ?array $tools = null;
 
     /**
+     * @var FileTypeEnum|null Output file type.
+     */
+    protected ?FileTypeEnum $outputFileType = null;
+
+    /**
      * @var string|null Output MIME type.
      */
     protected ?string $outputMimeType = null;
@@ -134,6 +147,16 @@ class ModelConfig extends AbstractDataTransferObject
      * @var array<string, mixed>|null Output schema (JSON schema).
      */
     protected ?array $outputSchema = null;
+
+    /**
+     * @var MediaOrientationEnum|null Output media orientation.
+     */
+    protected ?MediaOrientationEnum $outputMediaOrientation = null;
+
+    /**
+     * @var string|null Output media aspect ratio (e.g. 3:2, 16:9).
+     */
+    protected ?string $outputMediaAspectRatio = null;
 
     /**
      * @var array<string, mixed> Custom provider-specific options.
@@ -471,6 +494,30 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Sets the output file type.
+     *
+     * @since n.e.x.t
+     *
+     * @param FileTypeEnum $outputFileType The output file type.
+     */
+    public function setOutputFileType(FileTypeEnum $outputFileType): void
+    {
+        $this->outputFileType = $outputFileType;
+    }
+
+    /**
+     * Gets the output file type.
+     *
+     * @since n.e.x.t
+     *
+     * @return FileTypeEnum|null The output file type.
+     */
+    public function getOutputFileType(): ?FileTypeEnum
+    {
+        return $this->outputFileType;
+    }
+
+    /**
      * Sets the output MIME type.
      *
      * @since n.e.x.t
@@ -524,6 +571,61 @@ class ModelConfig extends AbstractDataTransferObject
     public function getOutputSchema(): ?array
     {
         return $this->outputSchema;
+    }
+
+    /**
+     * Sets the output media orientation.
+     *
+     * @since n.e.x.t
+     *
+     * @param MediaOrientationEnum $outputMediaOrientation The output media orientation.
+     */
+    public function setOutputMediaOrientation(MediaOrientationEnum $outputMediaOrientation): void
+    {
+        $this->outputMediaOrientation = $outputMediaOrientation;
+    }
+
+    /**
+     * Gets the output media orientation.
+     *
+     * @since n.e.x.t
+     *
+     * @return MediaOrientationEnum|null The output media orientation.
+     */
+    public function getOutputMediaOrientation(): ?MediaOrientationEnum
+    {
+        return $this->outputMediaOrientation;
+    }
+
+    /**
+     * Sets the output media aspect ratio.
+     *
+     * If set, this supersedes the output media orientation, as it is a more specific configuration.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $outputMediaAspectRatio The output media aspect ratio (e.g. 3:2, 16:9).
+     */
+    public function setOutputMediaAspectRatio(string $outputMediaAspectRatio): void
+    {
+        if (!preg_match('/^\d+:\d+$/', $outputMediaAspectRatio)) {
+            throw new InvalidArgumentException(
+                'Output media aspect ratio must be in the format "width:height" (e.g. 3:2, 16:9).'
+            );
+        }
+        $this->outputMediaAspectRatio = $outputMediaAspectRatio;
+    }
+
+    /**
+     * Gets the output media aspect ratio.
+     *
+     * @since n.e.x.t
+     *
+     * @return string|null The output media aspect ratio (e.g. 3:2, 16:9).
+     */
+    public function getOutputMediaAspectRatio(): ?string
+    {
+        return $this->outputMediaAspectRatio;
     }
 
     /**
@@ -641,6 +743,11 @@ class ModelConfig extends AbstractDataTransferObject
                     'items' => Tool::getJsonSchema(),
                     'description' => 'Tools available to the model.',
                 ],
+                self::KEY_OUTPUT_FILE_TYPE => [
+                    'type' => 'string',
+                    'enum' => FileTypeEnum::getValues(),
+                    'description' => 'Output file type.',
+                ],
                 self::KEY_OUTPUT_MIME_TYPE => [
                     'type' => 'string',
                     'description' => 'Output MIME type.',
@@ -649,6 +756,16 @@ class ModelConfig extends AbstractDataTransferObject
                     'type' => 'object',
                     'additionalProperties' => true,
                     'description' => 'Output schema (JSON schema).',
+                ],
+                self::KEY_OUTPUT_MEDIA_ORIENTATION => [
+                    'type' => 'string',
+                    'enum' => MediaOrientationEnum::getValues(),
+                    'description' => 'Output media orientation.',
+                ],
+                self::KEY_OUTPUT_MEDIA_ASPECT_RATIO => [
+                    'type' => 'string',
+                    'pattern' => '^\d+:\d+$',
+                    'description' => 'Output media aspect ratio.',
                 ],
                 self::KEY_CUSTOM_OPTIONS => [
                     'type' => 'object',
@@ -730,12 +847,24 @@ class ModelConfig extends AbstractDataTransferObject
             }, $this->tools);
         }
 
+        if ($this->outputFileType !== null) {
+            $data[self::KEY_OUTPUT_FILE_TYPE] = $this->outputFileType->value;
+        }
+
         if ($this->outputMimeType !== null) {
             $data[self::KEY_OUTPUT_MIME_TYPE] = $this->outputMimeType;
         }
 
         if ($this->outputSchema !== null) {
             $data[self::KEY_OUTPUT_SCHEMA] = $this->outputSchema;
+        }
+
+        if ($this->outputMediaOrientation !== null) {
+            $data[self::KEY_OUTPUT_MEDIA_ORIENTATION] = $this->outputMediaOrientation->value;
+        }
+
+        if ($this->outputMediaAspectRatio !== null) {
+            $data[self::KEY_OUTPUT_MEDIA_ASPECT_RATIO] = $this->outputMediaAspectRatio;
         }
 
         $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
@@ -809,12 +938,24 @@ class ModelConfig extends AbstractDataTransferObject
             }, $array[self::KEY_TOOLS]));
         }
 
+        if (isset($array[self::KEY_OUTPUT_FILE_TYPE])) {
+            $config->setOutputFileType(FileTypeEnum::from($array[self::KEY_OUTPUT_FILE_TYPE]));
+        }
+
         if (isset($array[self::KEY_OUTPUT_MIME_TYPE])) {
             $config->setOutputMimeType($array[self::KEY_OUTPUT_MIME_TYPE]);
         }
 
         if (isset($array[self::KEY_OUTPUT_SCHEMA])) {
             $config->setOutputSchema($array[self::KEY_OUTPUT_SCHEMA]);
+        }
+
+        if (isset($array[self::KEY_OUTPUT_MEDIA_ORIENTATION])) {
+            $config->setOutputMediaOrientation(MediaOrientationEnum::from($array[self::KEY_OUTPUT_MEDIA_ORIENTATION]));
+        }
+
+        if (isset($array[self::KEY_OUTPUT_MEDIA_ASPECT_RATIO])) {
+            $config->setOutputMediaAspectRatio($array[self::KEY_OUTPUT_MEDIA_ASPECT_RATIO]);
         }
 
         if (isset($array[self::KEY_CUSTOM_OPTIONS])) {

@@ -65,7 +65,7 @@ class FunctionCall extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string|null The unique identifier.
+     * @return string|null The function call ID.
      */
     public function getId(): ?string
     {
