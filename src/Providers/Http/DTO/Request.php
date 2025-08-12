@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Providers\Http\DTO;
 
 use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 
 /**
  * Represents an HTTP request.
@@ -32,9 +33,9 @@ class Request extends AbstractDataTransferObject
     public const KEY_BODY = 'body';
 
     /**
-     * @var string The HTTP method (GET, POST, etc.).
+     * @var HttpMethodEnum The HTTP method.
      */
-    protected string $method;
+    protected HttpMethodEnum $method;
 
     /**
      * @var string The request URI.
@@ -56,24 +57,27 @@ class Request extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @param string $method The HTTP method.
+     * @param HttpMethodEnum|string $method The HTTP method.
      * @param string $uri The request URI.
      * @param array<string, string|list<string>> $headers The request headers.
      * @param string|null $body The request body.
      *
-     * @throws InvalidArgumentException If the method is empty.
+     * @throws InvalidArgumentException If the URI is empty or method is invalid.
      */
-    public function __construct(string $method, string $uri, array $headers = [], ?string $body = null)
+    public function __construct($method, string $uri, array $headers = [], ?string $body = null)
     {
-        if (empty($method)) {
-            throw new InvalidArgumentException('HTTP method cannot be empty.');
-        }
-
         if (empty($uri)) {
             throw new InvalidArgumentException('URI cannot be empty.');
         }
 
-        $this->method = strtoupper($method);
+        if (is_string($method)) {
+            $this->method = HttpMethodEnum::from(strtoupper($method));
+        } elseif ($method instanceof HttpMethodEnum) {
+            $this->method = $method;
+        } else {
+            throw new InvalidArgumentException('Method must be a string or HttpMethodEnum instance.');
+        }
+
         $this->uri = $uri;
         $this->headers = $headers;
         $this->body = $body;
@@ -87,6 +91,18 @@ class Request extends AbstractDataTransferObject
      * @return string The HTTP method.
      */
     public function getMethod(): string
+    {
+        return $this->method->value;
+    }
+
+    /**
+     * Gets the HTTP method enum.
+     *
+     * @since n.e.x.t
+     *
+     * @return HttpMethodEnum The HTTP method enum.
+     */
+    public function getMethodEnum(): HttpMethodEnum
     {
         return $this->method;
     }
@@ -233,7 +249,7 @@ class Request extends AbstractDataTransferObject
     public function toArray(): array
     {
         $data = [
-            self::KEY_METHOD => $this->method,
+            self::KEY_METHOD => $this->method->value,
             self::KEY_URI => $this->uri,
             self::KEY_HEADERS => $this->headers,
         ];
