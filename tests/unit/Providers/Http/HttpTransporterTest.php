@@ -159,6 +159,84 @@ class HttpTransporterTest extends TestCase
     }
 
     /**
+     * Tests sending a GET request with array data as query parameters.
+     *
+     * @covers ::send
+     * @covers ::convertToPsr7Request
+     *
+     * @return void
+     */
+    public function testSendGetRequestWithArrayData(): void
+    {
+        // Arrange
+        $data = ['search' => 'test', 'limit' => '10'];
+        $request = new Request(HttpMethodEnum::GET(), 'https://api.example.com/search', [], $data);
+
+        $mockResponse = new Psr7Response(200, [], '[]');
+        $this->mockClient->addResponse($mockResponse);
+
+        // Act
+        $response = $this->transporter->send($request);
+
+        // Assert
+        $sentRequest = $this->mockClient->getRequests()[0];
+        $this->assertEquals('https://api.example.com/search?search=test&limit=10', (string) $sentRequest->getUri());
+        $this->assertEmpty((string) $sentRequest->getBody());
+    }
+
+    /**
+     * Tests sending a POST request with array data as JSON.
+     *
+     * @covers ::send
+     * @covers ::convertToPsr7Request
+     *
+     * @return void
+     */
+    public function testSendPostRequestWithArrayDataAsJson(): void
+    {
+        // Arrange
+        $headers = ['Content-Type' => 'application/json'];
+        $data = ['name' => 'test', 'value' => 123];
+        $request = new Request(HttpMethodEnum::POST(), 'https://api.example.com/create', $headers, $data);
+
+        $mockResponse = new Psr7Response(201, [], '{"id":1}');
+        $this->mockClient->addResponse($mockResponse);
+
+        // Act
+        $response = $this->transporter->send($request);
+
+        // Assert
+        $sentRequest = $this->mockClient->getRequests()[0];
+        $this->assertEquals('{"name":"test","value":123}', (string) $sentRequest->getBody());
+    }
+
+    /**
+     * Tests sending a POST request with array data as form-encoded.
+     *
+     * @covers ::send
+     * @covers ::convertToPsr7Request
+     *
+     * @return void
+     */
+    public function testSendPostRequestWithArrayDataAsForm(): void
+    {
+        // Arrange
+        $headers = ['Content-Type' => 'application/x-www-form-urlencoded'];
+        $data = ['name' => 'test', 'value' => '123'];
+        $request = new Request(HttpMethodEnum::POST(), 'https://api.example.com/create', $headers, $data);
+
+        $mockResponse = new Psr7Response(201, [], '{"id":1}');
+        $this->mockClient->addResponse($mockResponse);
+
+        // Act
+        $response = $this->transporter->send($request);
+
+        // Assert
+        $sentRequest = $this->mockClient->getRequests()[0];
+        $this->assertEquals('name=test&value=123', (string) $sentRequest->getBody());
+    }
+
+    /**
      * Tests using discovery when no dependencies provided.
      *
      * @covers ::__construct

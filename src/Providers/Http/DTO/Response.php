@@ -140,6 +140,19 @@ class Response extends AbstractDataTransferObject
     }
 
     /**
+     * Checks if the response has a header.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The header name.
+     * @return bool True if the header exists, false otherwise.
+     */
+    public function hasHeader(string $name): bool
+    {
+        return isset($this->headersMap[strtolower($name)]);
+    }
+
+    /**
      * Checks if the response indicates success.
      *
      * @since n.e.x.t
