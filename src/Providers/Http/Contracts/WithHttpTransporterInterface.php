@@ -7,14 +7,14 @@ namespace WordPress\AiClient\Providers\Http\Contracts;
 /**
  * Interface for models that require HTTP transport capabilities.
  *
- * @since 1.0.0
+ * @since n.e.x.t
  */
 interface WithHttpTransporterInterface
 {
     /**
      * Sets the HTTP transporter.
      *
-     * @since 1.0.0
+     * @since n.e.x.t
      *
      * @param HttpTransporterInterface $transporter The HTTP transporter instance.
      * @return void
@@ -24,7 +24,7 @@ interface WithHttpTransporterInterface
     /**
      * Returns the HTTP transporter.
      *
-     * @since 1.0.0
+     * @since n.e.x.t
      *
      * @return HttpTransporterInterface The HTTP transporter instance.
      */

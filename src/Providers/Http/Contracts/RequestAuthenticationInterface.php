@@ -9,14 +9,14 @@ use WordPress\AiClient\Providers\Http\DTO\Request;
 /**
  * Interface for HTTP request authentication.
  *
- * @since 1.0.0
+ * @since n.e.x.t
  */
 interface RequestAuthenticationInterface
 {
     /**
      * Authenticates an HTTP request.
      *
-     * @since 1.0.0
+     * @since n.e.x.t
      *
      * @param Request $request The request to authenticate.
      * @return void
@@ -26,7 +26,7 @@ interface RequestAuthenticationInterface
     /**
      * Returns the JSON schema for this authentication.
      *
-     * @since 1.0.0
+     * @since n.e.x.t
      *
      * @return array<string, mixed> The JSON schema.
      */

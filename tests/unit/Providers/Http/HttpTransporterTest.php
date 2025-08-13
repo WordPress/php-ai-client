@@ -16,8 +16,6 @@ use GuzzleHttp\Psr7\HttpFactory;
 /**
  * Tests for HttpTransporter class.
  *
- * @since n.e.x.t
- *
  * @covers \WordPress\AiClient\Providers\Http\HttpTransporter
  */
 class HttpTransporterTest extends TestCase
@@ -40,8 +38,6 @@ class HttpTransporterTest extends TestCase
     /**
      * Sets up the test fixture.
      *
-     * @since n.e.x.t
-     *
      * @return void
      */
     protected function setUp(): void
@@ -59,8 +55,6 @@ class HttpTransporterTest extends TestCase
 
     /**
      * Tests sending a simple GET request.
-     *
-     * @since n.e.x.t
      *
      * @covers ::send
      * @covers ::convertToPsr7Request
@@ -91,8 +85,6 @@ class HttpTransporterTest extends TestCase
 
     /**
      * Tests sending a POST request with body.
-     *
-     * @since n.e.x.t
      *
      * @covers ::send
      * @covers ::convertToPsr7Request
@@ -131,8 +123,6 @@ class HttpTransporterTest extends TestCase
     /**
      * Tests handling headers with multiple values.
      *
-     * @since n.e.x.t
-     *
      * @covers ::send
      * @covers ::convertToPsr7Request
      * @covers ::convertFromPsr7Response
@@ -169,8 +159,6 @@ class HttpTransporterTest extends TestCase
 
     /**
      * Tests using discovery when no dependencies provided.
-     *
-     * @since n.e.x.t
      *
      * @covers ::__construct
      *

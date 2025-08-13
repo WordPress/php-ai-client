@@ -11,16 +11,12 @@ use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 /**
  * Tests for HttpTransporterFactory class.
  *
- * @since n.e.x.t
- *
  * @covers \WordPress\AiClient\Providers\Http\HttpTransporterFactory
  */
 class HttpTransporterFactoryTest extends TestCase
 {
     /**
      * Tests creating an HTTP transporter.
-     *
-     * @since n.e.x.t
      *
      * @covers ::createTransporter
      *

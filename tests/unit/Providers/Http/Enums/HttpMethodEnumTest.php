@@ -11,8 +11,6 @@ use WordPress\AiClient\Tests\traits\EnumTestTrait;
 /**
  * Tests for the HttpMethodEnum class.
  *
- * @since n.e.x.t
- *
  * @covers \WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum
  */
 class HttpMethodEnumTest extends TestCase
@@ -21,8 +19,6 @@ class HttpMethodEnumTest extends TestCase
 
     /**
      * {@inheritDoc}
-     *
-     * @since n.e.x.t
      */
     protected function getEnumClass(): string
     {
@@ -31,8 +27,6 @@ class HttpMethodEnumTest extends TestCase
 
     /**
      * {@inheritDoc}
-     *
-     * @since n.e.x.t
      */
     protected function getExpectedValues(): array
     {
@@ -51,8 +45,6 @@ class HttpMethodEnumTest extends TestCase
 
     /**
      * Tests that safe methods are correctly identified.
-     *
-     * @since n.e.x.t
      *
      * @return void
      */
@@ -73,8 +65,6 @@ class HttpMethodEnumTest extends TestCase
     /**
      * Tests that idempotent methods are correctly identified.
      *
-     * @since n.e.x.t
-     *
      * @return void
      */
     public function testIsIdempotent(): void
@@ -93,8 +83,6 @@ class HttpMethodEnumTest extends TestCase
 
     /**
      * Tests that methods with bodies are correctly identified.
-     *
-     * @since n.e.x.t
      *
      * @return void
      */
