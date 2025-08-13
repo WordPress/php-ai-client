@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Contracts;
 
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 
 /**
@@ -11,7 +12,7 @@ use WordPress\AiClient\Providers\Http\DTO\Request;
  *
  * @since n.e.x.t
  */
-interface RequestAuthenticationInterface
+interface RequestAuthenticationInterface extends WithJsonSchemaInterface
 {
     /**
      * Authenticates an HTTP request.
@@ -22,13 +23,4 @@ interface RequestAuthenticationInterface
      * @return void
      */
     public function authenticate(Request $request): void;
-
-    /**
-     * Returns the JSON schema for this authentication.
-     *
-     * @since n.e.x.t
-     *
-     * @return array<string, mixed> The JSON schema.
-     */
-    public static function getJsonSchema(): array;
 }
