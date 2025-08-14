@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers;
 
 use InvalidArgumentException;
-use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
-use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
@@ -78,7 +76,7 @@ class ProviderRegistry
     public function hasProvider(string $idOrClassName): bool
     {
         return isset($this->providerClassNames[$idOrClassName]) ||
-               in_array($idOrClassName, $this->providerClassNames, true);
+            in_array($idOrClassName, $this->providerClassNames, true);
     }
 
     /**
