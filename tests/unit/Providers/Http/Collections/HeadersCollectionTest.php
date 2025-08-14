@@ -31,6 +31,22 @@ class HeadersCollectionTest extends TestCase
     }
 
     /**
+     * Tests constructor with comma-separated string values.
+     *
+     * @return void
+     */
+    public function testConstructorWithCommaSeparatedString(): void
+    {
+        $headers = new HeadersCollection([
+            'Accept' => 'application/json, text/html, application/xml',
+            'Cache-Control' => 'no-cache, no-store',
+        ]);
+
+        $this->assertEquals(['application/json', 'text/html', 'application/xml'], $headers->get('Accept'));
+        $this->assertEquals(['no-cache', 'no-store'], $headers->get('Cache-Control'));
+    }
+
+    /**
      * Tests case-insensitive header access.
      *
      * @return void
@@ -125,5 +141,18 @@ class HeadersCollectionTest extends TestCase
         $this->assertNull($original->get('Accept'));
         $this->assertEquals(['text/html'], $new->get('Accept'));
         $this->assertEquals(['application/json'], $original->get('Content-Type'));
+    }
+
+    /**
+     * Tests withHeader with comma-separated string.
+     *
+     * @return void
+     */
+    public function testWithHeaderCommaSeparatedString(): void
+    {
+        $headers = new HeadersCollection();
+        $new = $headers->withHeader('Accept', 'application/json, text/html, application/xml');
+
+        $this->assertEquals(['application/json', 'text/html', 'application/xml'], $new->get('Accept'));
     }
 }

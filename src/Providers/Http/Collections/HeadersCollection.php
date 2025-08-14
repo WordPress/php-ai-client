@@ -107,7 +107,12 @@ class HeadersCollection
      */
     private function set(string $name, $value): void
     {
-        $normalizedValues = is_array($value) ? array_values($value) : [$value];
+        if (is_array($value)) {
+            $normalizedValues = array_values($value);
+        } else {
+            // Split comma-separated string into array
+            $normalizedValues = array_map('trim', explode(',', $value));
+        }
         $lowerName = strtolower($name);
 
         // If header exists with different casing, use the existing casing
