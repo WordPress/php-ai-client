@@ -23,7 +23,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
  *
  * @since n.e.x.t
  */
-class AiProviderRegistry
+class ProviderRegistry
 {
     /**
      * @var array<string, string> Mapping of provider IDs to class names.

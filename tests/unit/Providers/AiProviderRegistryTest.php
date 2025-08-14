@@ -6,7 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Providers;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Providers\AiProviderRegistry;
+use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
@@ -15,11 +15,11 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  */
 class AiProviderRegistryTest extends TestCase
 {
-    private AiProviderRegistry $registry;
+    private ProviderRegistry $registry;
 
     protected function setUp(): void
     {
-        $this->registry = new AiProviderRegistry();
+        $this->registry = new ProviderRegistry();
     }
 
     /**
