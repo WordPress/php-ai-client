@@ -211,6 +211,10 @@ class FileTest extends TestCase
         $this->assertFalse($file->isImage());
         $this->assertFalse($file->isAudio());
         $this->assertFalse($file->isText());
+        $this->assertTrue($file->isMimeType('video'));
+        $this->assertFalse($file->isMimeType('image'));
+        $this->assertFalse($file->isMimeType('audio'));
+        $this->assertFalse($file->isMimeType('text'));
     }
 
     /**
@@ -233,7 +237,10 @@ class FileTest extends TestCase
         $this->assertArrayHasKey(File::KEY_FILE_TYPE, $remoteSchema['properties']);
         $this->assertArrayHasKey(File::KEY_MIME_TYPE, $remoteSchema['properties']);
         $this->assertArrayHasKey(File::KEY_URL, $remoteSchema['properties']);
-        $this->assertEquals([File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_URL], $remoteSchema['required']);
+        $this->assertEquals(
+            [File::KEY_FILE_TYPE, File::KEY_MIME_TYPE, File::KEY_URL],
+            $remoteSchema['required']
+        );
 
         // Check inline file schema
         $inlineSchema = $schema['oneOf'][1];

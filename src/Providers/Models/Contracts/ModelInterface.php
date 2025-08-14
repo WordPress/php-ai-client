@@ -10,37 +10,38 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 /**
  * Interface for AI models.
  *
- * All models must implement this interface to provide
- * metadata access and configuration capabilities.
+ * Models represent specific AI models from providers and define
+ * their capabilities, configuration, and execution methods.
  *
  * @since n.e.x.t
  */
 interface ModelInterface
 {
     /**
-     * Gets the model's metadata.
+     * Gets model metadata.
      *
      * @since n.e.x.t
      *
-     * @return ModelMetadata The model metadata.
+     * @return ModelMetadata Model metadata.
      */
-    public function getMetadata(): ModelMetadata;
+    public function metadata(): ModelMetadata;
 
     /**
-     * Gets the current model configuration.
+     * Sets model configuration.
      *
      * @since n.e.x.t
      *
-     * @return ModelConfig The model configuration.
-     */
-    public function getConfig(): ModelConfig;
-
-    /**
-     * Sets the model configuration.
-     *
-     * @since n.e.x.t
-     *
-     * @param ModelConfig $config The model configuration.
+     * @param ModelConfig $config Model configuration.
+     * @return void
      */
     public function setConfig(ModelConfig $config): void;
+
+    /**
+     * Gets model configuration.
+     *
+     * @since n.e.x.t
+     *
+     * @return ModelConfig Current model configuration.
+     */
+    public function getConfig(): ModelConfig;
 }
