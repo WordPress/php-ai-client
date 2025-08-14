@@ -10,6 +10,7 @@ use RuntimeException;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\SystemMessage;
+use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
@@ -17,6 +18,7 @@ use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tools\DTO\FunctionCall;
 
 /**
  * Base class for a text generation model for an OpenAI compatible provider.
@@ -437,14 +439,14 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             );
         }
 
-        // TODO: Correctly implement this, as this is not correct - 'message' isn't just a string.
-        $message = new Message($choice['message']);
-
         if (!isset($choice['finish_reason']) || !is_string($choice['finish_reason'])) {
             throw new RuntimeException(
                 'Unexpected API response: Each choice must contain a finish_reason key with a string value.'
             );
         }
+
+        $message = $this->parseResponseChoiceMessage($choice['message']);
+
         switch ($choice['finish_reason']) {
             case 'stop':
                 $finishReason = FinishReasonEnum::stop();
@@ -468,5 +470,92 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
 
         return new Candidate($message, $finishReason);
+    }
+
+    /**
+     * Parses the message from a choice in the API response.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, mixed> $message The message data from the API response.
+     * @return Message The parsed message.
+     */
+    protected function parseResponseChoiceMessage(array $message): Message
+    {
+        $role = isset($message['role']) && 'user' === $message['role']
+            ? MessageRoleEnum::user()
+            : MessageRoleEnum::model();
+
+        $parts = $this->parseResponseChoiceMessageParts($message);
+
+        return new Message($role, $parts);
+    }
+
+    /**
+     * Parses the message parts from a choice in the API response.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, mixed> $message The message data from the API response.
+     * @return MessagePart[] The parsed message parts.
+     */
+    protected function parseResponseChoiceMessageParts(array $message): array
+    {
+        $parts = [];
+
+        if (isset($message['reasoning_content']) && is_string($message['reasoning_content'])) {
+            $parts[] = new MessagePart($message['reasoning_content'], MessagePartChannelEnum::thought());
+        }
+
+        if (isset($message['content']) && is_string($message['content'])) {
+            $parts[] = new MessagePart($message['content']);
+        }
+
+        if (isset($message['tool_calls']) && is_array($message['tool_calls'])) {
+            foreach ($message['tool_calls'] as $toolCall) {
+                $toolCallPart = $this->parseResponseChoiceMessageToolCallPart($toolCall);
+                if (!$toolCallPart) {
+                    throw new RuntimeException(
+                        'Unexpected API response: The response includes a tool call of an unexpected type.'
+                    );
+                }
+                $parts[] = $toolCallPart;
+            }
+        }
+
+        return $parts;
+    }
+
+    /**
+     * Parses a tool call part from the API response.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, mixed> $toolCall The tool call data from the API response.
+     * @return MessagePart|null The parsed message part for the tool call, or null if not applicable.
+     */
+    protected function parseResponseChoiceMessageToolCallPart(array $toolCall): ?MessagePart
+    {
+        /*
+         * For now, only function calls are supported.
+         *
+         * Not all OpenAI compatible APIs include a 'type' key, so we only check its value if it is set.
+         */
+        if (
+            (isset($toolCall['type']) && 'function' !== $toolCall['type']) ||
+            !isset($toolCall['function'])
+        ) {
+            return null;
+        }
+
+        $functionCall = new FunctionCall(
+            $toolCall['id'] ?? null,
+            $toolCall['function']['name'],
+            is_string($toolCall['function']['arguments'])
+                ? json_decode($toolCall['function']['arguments'], true)
+                : $toolCall['function']['arguments']
+        );
+
+        return new MessagePart($functionCall);
     }
 }
