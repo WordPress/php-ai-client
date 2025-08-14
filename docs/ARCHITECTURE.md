@@ -1143,6 +1143,15 @@ direction LR
     }
 
 
+    namespace AiClientNamespace.Providers.Models.EmbeddingGeneration.Contracts {
+        class EmbeddingGenerationModelInterface {
+            +generateEmbeddingsResult(string[]|Message[] $input) EmbeddingResult
+        }
+        class EmbeddingGenerationOperationModelInterface {
+            +generateEmbeddingsOperation(string[]|Message[] $input) EmbeddingOperation
+        }
+    }
+
     namespace AiClientNamespace.Providers.Models.ImageGeneration.Contracts {
         class ImageGenerationModelInterface {
             +generateImageResult(Message[] $prompt) GenerativeAiResult
@@ -1218,6 +1227,7 @@ direction LR
     <<interface>> ImageGenerationModelInterface
     <<interface>> TextToSpeechConversionModelInterface
     <<interface>> SpeechGenerationModelInterface
+    <<interface>> EmbeddingGenerationModelInterface
     <<interface>> TextGenerationOperationModelInterface
     <<interface>> ImageGenerationOperationModelInterface
     <<interface>> TextToSpeechConversionOperationModelInterface
@@ -1257,8 +1267,10 @@ direction LR
     ModelInterface <|-- ImageGenerationModelInterface
     ModelInterface <|-- TextToSpeechConversionModelInterface
     ModelInterface <|-- SpeechGenerationModelInterface
+    ModelInterface <|-- EmbeddingGenerationModelInterface
     ModelInterface <|-- TextGenerationOperationModelInterface
     ModelInterface <|-- ImageGenerationOperationModelInterface
     ModelInterface <|-- TextToSpeechConversionOperationModelInterface
     ModelInterface <|-- SpeechGenerationOperationModelInterface
+    ModelInterface <|-- EmbeddingGenerationOperationModelInterface
 ```
