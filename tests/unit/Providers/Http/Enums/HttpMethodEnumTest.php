@@ -44,25 +44,6 @@ class HttpMethodEnumTest extends TestCase
     }
 
     /**
-     * Tests that safe methods are correctly identified.
-     *
-     * @return void
-     */
-    public function testIsSafe(): void
-    {
-        $this->assertTrue(HttpMethodEnum::GET()->isSafe());
-        $this->assertTrue(HttpMethodEnum::HEAD()->isSafe());
-        $this->assertTrue(HttpMethodEnum::OPTIONS()->isSafe());
-        $this->assertTrue(HttpMethodEnum::TRACE()->isSafe());
-
-        $this->assertFalse(HttpMethodEnum::POST()->isSafe());
-        $this->assertFalse(HttpMethodEnum::PUT()->isSafe());
-        $this->assertFalse(HttpMethodEnum::PATCH()->isSafe());
-        $this->assertFalse(HttpMethodEnum::DELETE()->isSafe());
-        $this->assertFalse(HttpMethodEnum::CONNECT()->isSafe());
-    }
-
-    /**
      * Tests that idempotent methods are correctly identified.
      *
      * @return void

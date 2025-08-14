@@ -97,18 +97,6 @@ final class HttpMethodEnum extends AbstractEnum
     public const TRACE = 'TRACE';
 
     /**
-     * Checks if this method is safe (doesn't modify server state).
-     *
-     * @since n.e.x.t
-     *
-     * @return bool True if the method is safe, false otherwise.
-     */
-    public function isSafe(): bool
-    {
-        return in_array($this->value, [self::GET, self::HEAD, self::OPTIONS, self::TRACE], true);
-    }
-
-    /**
      * Checks if this method is idempotent.
      *
      * @since n.e.x.t
