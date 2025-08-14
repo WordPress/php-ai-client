@@ -7,7 +7,6 @@ namespace WordPress\AiClient\Providers\Models;
 use Generator;
 use InvalidArgumentException;
 use RuntimeException;
-use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\SystemMessage;

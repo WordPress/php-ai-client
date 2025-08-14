@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WordPress\AiClient\ProviderImplementations\OpenAi;
 
 use WordPress\AiClient\Providers\Models\AbstractOpenAiCompatibleTextGenerationModel;
-use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
  * Class for an OpenAI text generation model.
