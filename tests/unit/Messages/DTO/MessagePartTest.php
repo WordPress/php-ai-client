@@ -10,6 +10,7 @@ use stdClass;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -31,6 +32,7 @@ class MessagePartTest extends TestCase
 
         $this->assertEquals(MessagePartTypeEnum::text(), $part->getType());
         $this->assertEquals($text, $part->getText());
+        $this->assertEquals(MessagePartChannelEnum::content(), $part->getChannel());
         $this->assertNull($part->getFile());
         $this->assertNull($part->getFunctionCall());
         $this->assertNull($part->getFunctionResponse());
@@ -47,6 +49,7 @@ class MessagePartTest extends TestCase
         $part = new MessagePart($file);
 
         $this->assertEquals(MessagePartTypeEnum::file(), $part->getType());
+        $this->assertEquals(MessagePartChannelEnum::content(), $part->getChannel());
         $this->assertNull($part->getText());
         $this->assertSame($file, $part->getFile());
         $this->assertNull($part->getFunctionCall());
@@ -64,6 +67,7 @@ class MessagePartTest extends TestCase
         $part = new MessagePart($functionCall);
 
         $this->assertEquals(MessagePartTypeEnum::functionCall(), $part->getType());
+        $this->assertEquals(MessagePartChannelEnum::content(), $part->getChannel());
         $this->assertNull($part->getText());
         $this->assertNull($part->getFile());
         $this->assertSame($functionCall, $part->getFunctionCall());
@@ -81,6 +85,7 @@ class MessagePartTest extends TestCase
         $part = new MessagePart($functionResponse);
 
         $this->assertEquals(MessagePartTypeEnum::functionResponse(), $part->getType());
+        $this->assertEquals(MessagePartChannelEnum::content(), $part->getChannel());
         $this->assertNull($part->getText());
         $this->assertNull($part->getFile());
         $this->assertNull($part->getFunctionCall());
@@ -97,6 +102,7 @@ class MessagePartTest extends TestCase
         $part = new MessagePart('');
 
         $this->assertEquals(MessagePartTypeEnum::text(), $part->getType());
+        $this->assertEquals(MessagePartChannelEnum::content(), $part->getChannel());
         $this->assertEquals('', $part->getText());
     }
 
@@ -260,8 +266,10 @@ class MessagePartTest extends TestCase
         $json = $part->toArray();
 
         $this->assertIsArray($json);
+        $this->assertArrayHasKey(MessagePart::KEY_CHANNEL, $json);
         $this->assertArrayHasKey(MessagePart::KEY_TYPE, $json);
         $this->assertArrayHasKey(MessagePart::KEY_TEXT, $json);
+        $this->assertEquals(MessagePartChannelEnum::content()->value, $json[MessagePart::KEY_CHANNEL]);
         $this->assertEquals(MessagePartTypeEnum::text()->value, $json[MessagePart::KEY_TYPE]);
         $this->assertEquals('Hello, world!', $json[MessagePart::KEY_TEXT]);
 
@@ -283,8 +291,10 @@ class MessagePartTest extends TestCase
         $json = $part->toArray();
 
         $this->assertIsArray($json);
+        $this->assertArrayHasKey(MessagePart::KEY_CHANNEL, $json);
         $this->assertArrayHasKey(MessagePart::KEY_TYPE, $json);
         $this->assertArrayHasKey(MessagePart::KEY_FILE, $json);
+        $this->assertEquals(MessagePartChannelEnum::content()->value, $json[MessagePart::KEY_CHANNEL]);
         $this->assertEquals(MessagePartTypeEnum::file()->value, $json[MessagePart::KEY_TYPE]);
         $this->assertIsArray($json[MessagePart::KEY_FILE]);
     }
@@ -297,6 +307,7 @@ class MessagePartTest extends TestCase
     public function testFromArrayWithText(): void
     {
         $json = [
+            MessagePart::KEY_CHANNEL => MessagePartChannelEnum::thought()->value,
             MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
             MessagePart::KEY_TEXT => 'Test message'
         ];
@@ -304,6 +315,7 @@ class MessagePartTest extends TestCase
         $part = MessagePart::fromArray($json);
 
         $this->assertEquals(MessagePartTypeEnum::text(), $part->getType());
+        $this->assertEquals(MessagePartChannelEnum::thought(), $part->getChannel());
         $this->assertEquals('Test message', $part->getText());
     }
 
@@ -315,6 +327,7 @@ class MessagePartTest extends TestCase
     public function testFromArrayWithFile(): void
     {
         $json = [
+            MessagePart::KEY_CHANNEL => MessagePartChannelEnum::content()->value,
             MessagePart::KEY_TYPE => MessagePartTypeEnum::file()->value,
             MessagePart::KEY_FILE => [
                 File::KEY_FILE_TYPE => FileTypeEnum::remote()->value,
@@ -326,6 +339,7 @@ class MessagePartTest extends TestCase
         $part = MessagePart::fromArray($json);
 
         $this->assertEquals(MessagePartTypeEnum::file(), $part->getType());
+        $this->assertEquals(MessagePartChannelEnum::content(), $part->getChannel());
         $this->assertInstanceOf(File::class, $part->getFile());
         $this->assertEquals('https://example.com/image.jpg', $part->getFile()->getUrl());
     }
@@ -338,10 +352,11 @@ class MessagePartTest extends TestCase
     public function testArrayRoundTrip(): void
     {
         // Test with text
-        $textPart = new MessagePart('Test text');
+        $textPart = new MessagePart('Test text', MessagePartChannelEnum::thought());
         $textJson = $textPart->toArray();
         $restoredText = MessagePart::fromArray($textJson);
         $this->assertEquals($textPart->getText(), $restoredText->getText());
+        $this->assertEquals($textPart->getChannel(), $restoredText->getChannel());
 
         // Test with file
         $file = new File('https://example.com/doc.pdf', 'application/pdf');
@@ -350,15 +365,17 @@ class MessagePartTest extends TestCase
         $restoredFile = MessagePart::fromArray($fileJson);
         $this->assertEquals($file->getUrl(), $restoredFile->getFile()->getUrl());
         $this->assertEquals($file->getMimeType(), $restoredFile->getFile()->getMimeType());
+        $this->assertEquals($filePart->getChannel(), $restoredFile->getChannel());
 
         // Test with function call
         $functionCall = new FunctionCall('id_123', 'getData', ['key' => 'value']);
-        $funcPart = new MessagePart($functionCall);
+        $funcPart = new MessagePart($functionCall, MessagePartChannelEnum::thought());
         $funcJson = $funcPart->toArray();
         $restoredFunc = MessagePart::fromArray($funcJson);
         $this->assertEquals($functionCall->getId(), $restoredFunc->getFunctionCall()->getId());
         $this->assertEquals($functionCall->getName(), $restoredFunc->getFunctionCall()->getName());
         $this->assertEquals($functionCall->getArgs(), $restoredFunc->getFunctionCall()->getArgs());
+        $this->assertEquals($funcPart->getChannel(), $restoredFunc->getChannel());
     }
 
     /**
@@ -374,5 +391,50 @@ class MessagePartTest extends TestCase
             \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
             $part
         );
+    }
+
+    /**
+     * Tests creating MessagePart with different channels.
+     *
+     * @return void
+     */
+    public function testCreateWithDifferentChannels(): void
+    {
+        // Default channel is CONTENT
+        $part1 = new MessagePart('Some content');
+        $this->assertEquals(MessagePartChannelEnum::content(), $part1->getChannel());
+        $this->assertTrue($part1->getChannel()->isContent());
+        $this->assertFalse($part1->getChannel()->isThought());
+
+        // Explicitly set CONTENT channel
+        $part2 = new MessagePart('Some content', MessagePartChannelEnum::content());
+        $this->assertEquals(MessagePartChannelEnum::content(), $part2->getChannel());
+        $this->assertTrue($part2->getChannel()->isContent());
+        $this->assertFalse($part2->getChannel()->isThought());
+
+        // Explicitly set THOUGHT channel
+        $part3 = new MessagePart('Some thought', MessagePartChannelEnum::thought());
+        $this->assertEquals(MessagePartChannelEnum::thought(), $part3->getChannel());
+        $this->assertFalse($part3->getChannel()->isContent());
+        $this->assertTrue($part3->getChannel()->isThought());
+    }
+
+    /**
+     * Tests fromArray with an invalid channel value.
+     *
+     * @return void
+     */
+    public function testFromArrayWithInvalidChannel(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid channel value: invalid_channel');
+
+        $json = [
+            MessagePart::KEY_CHANNEL => 'invalid_channel',
+            MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+            MessagePart::KEY_TEXT => 'Test message'
+        ];
+
+        MessagePart::fromArray($json);
     }
 }

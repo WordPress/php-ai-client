@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use RuntimeException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -25,6 +26,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * @phpstan-import-type FunctionResponseArrayShape from FunctionResponse
  *
  * @phpstan-type MessagePartArrayShape array{
+ *     channel: string,
  *     type: string,
  *     text?: string,
  *     file?: FileArrayShape,
@@ -36,11 +38,18 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  */
 class MessagePart extends AbstractDataTransferObject
 {
+    public const KEY_CHANNEL = 'channel';
     public const KEY_TYPE = 'type';
     public const KEY_TEXT = 'text';
     public const KEY_FILE = 'file';
     public const KEY_FUNCTION_CALL = 'functionCall';
     public const KEY_FUNCTION_RESPONSE = 'functionResponse';
+
+    /**
+     * @var MessagePartChannelEnum The channel this message part belongs to.
+     */
+    private MessagePartChannelEnum $channel;
+
     /**
      * @var MessagePartTypeEnum The type of this message part.
      */
@@ -72,10 +81,13 @@ class MessagePart extends AbstractDataTransferObject
      * @since n.e.x.t
      *
      * @param mixed $content The content of this message part.
+     * @param MessagePartChannelEnum|null $channel The channel this part belongs to. Defaults to CONTENT.
      * @throws InvalidArgumentException If an unsupported content type is provided.
      */
-    public function __construct($content)
+    public function __construct($content, ?MessagePartChannelEnum $channel = null)
     {
+        $this->channel = $channel ?? MessagePartChannelEnum::content();
+
         if (is_string($content)) {
             $this->type = MessagePartTypeEnum::text();
             $this->text = $content;
@@ -98,6 +110,18 @@ class MessagePart extends AbstractDataTransferObject
                 )
             );
         }
+    }
+
+    /**
+     * Gets the channel this message part belongs to.
+     *
+     * @since n.e.x.t
+     *
+     * @return MessagePartChannelEnum The channel.
+     */
+    public function getChannel(): MessagePartChannelEnum
+    {
+        return $this->channel;
     }
 
     /**
@@ -167,11 +191,18 @@ class MessagePart extends AbstractDataTransferObject
      */
     public static function getJsonSchema(): array
     {
+        $channelSchema = [
+            'type' => 'string',
+            'enum' => MessagePartChannelEnum::getValues(),
+            'description' => 'The channel this message part belongs to.',
+        ];
+
         return [
             'oneOf' => [
                 [
                     'type' => 'object',
                     'properties' => [
+                        self::KEY_CHANNEL => $channelSchema,
                         self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::text()->value,
@@ -187,6 +218,7 @@ class MessagePart extends AbstractDataTransferObject
                 [
                     'type' => 'object',
                     'properties' => [
+                        self::KEY_CHANNEL => $channelSchema,
                         self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::file()->value,
@@ -199,6 +231,7 @@ class MessagePart extends AbstractDataTransferObject
                 [
                     'type' => 'object',
                     'properties' => [
+                        self::KEY_CHANNEL => $channelSchema,
                         self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::functionCall()->value,
@@ -211,6 +244,7 @@ class MessagePart extends AbstractDataTransferObject
                 [
                     'type' => 'object',
                     'properties' => [
+                        self::KEY_CHANNEL => $channelSchema,
                         self::KEY_TYPE => [
                             'type' => 'string',
                             'const' => MessagePartTypeEnum::functionResponse()->value,
@@ -233,7 +267,10 @@ class MessagePart extends AbstractDataTransferObject
      */
     public function toArray(): array
     {
-        $data = [self::KEY_TYPE => $this->type->value];
+        $data = [
+            self::KEY_CHANNEL => $this->channel->value,
+            self::KEY_TYPE => $this->type->value,
+        ];
 
         if ($this->text !== null) {
             $data[self::KEY_TEXT] = $this->text;
@@ -260,15 +297,26 @@ class MessagePart extends AbstractDataTransferObject
      */
     public static function fromArray(array $array): self
     {
+        if (isset($array[self::KEY_CHANNEL])) {
+            if (!MessagePartChannelEnum::isValidValue($array[self::KEY_CHANNEL])) {
+                throw new InvalidArgumentException(
+                    sprintf('Invalid channel value: %s', $array[self::KEY_CHANNEL])
+                );
+            }
+            $channel = MessagePartChannelEnum::from($array[self::KEY_CHANNEL]);
+        } else {
+            $channel = null;
+        }
+
         // Check which properties are set to determine how to construct the MessagePart
         if (isset($array[self::KEY_TEXT])) {
-            return new self($array[self::KEY_TEXT]);
+            return new self($array[self::KEY_TEXT], $channel);
         } elseif (isset($array[self::KEY_FILE])) {
-            return new self(File::fromArray($array[self::KEY_FILE]));
+            return new self(File::fromArray($array[self::KEY_FILE]), $channel);
         } elseif (isset($array[self::KEY_FUNCTION_CALL])) {
-            return new self(FunctionCall::fromArray($array[self::KEY_FUNCTION_CALL]));
+            return new self(FunctionCall::fromArray($array[self::KEY_FUNCTION_CALL]), $channel);
         } elseif (isset($array[self::KEY_FUNCTION_RESPONSE])) {
-            return new self(FunctionResponse::fromArray($array[self::KEY_FUNCTION_RESPONSE]));
+            return new self(FunctionResponse::fromArray($array[self::KEY_FUNCTION_RESPONSE]), $channel);
         } else {
             throw new InvalidArgumentException(
                 'MessagePart requires one of: text, file, functionCall, or functionResponse.'
