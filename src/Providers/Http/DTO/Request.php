@@ -189,7 +189,7 @@ class Request extends AbstractDataTransferObject
     public function getBody(): ?string
     {
         // GET requests don't have a body
-        if ($this->method === HttpMethodEnum::GET()) {
+        if (!$this->method->hasBody()) {
             return null;
         }
 
