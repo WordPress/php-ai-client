@@ -6,6 +6,7 @@ namespace WordPress\AiClient\ProviderImplementations\OpenAi;
 
 use RuntimeException;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\AbstractOpenAiCompatibleModelMetadataDirectory;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
@@ -59,8 +60,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(ModelConfig::KEY_TOP_LOGPROBS),
             new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['text/plain', 'application/json']),
             new SupportedOption(ModelConfig::KEY_OUTPUT_SCHEMA),
-            // TODO: Where to put this as a constant?
-            new SupportedOption('functionCalling'),
+            new SupportedOption(ModelConfig::KEY_FUNCTION_DECLARATIONS),
         ];
         $gptMultimodalInputOptions = $gptOptions + [
             new SupportedOption(
@@ -88,22 +88,24 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
         $dalleImageOptions = [
             new SupportedOption(ModelConfig::KEY_CANDIDATE_COUNT),
             new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['image/png']),
-            // TODO: Where to put this as a constant?
-            new SupportedOption('outputFileType', [FileTypeEnum::inline(), FileTypeEnum::remote()]),
-            // TODO: Where to put this as a constant?
-            new SupportedOption('imageOrientation', ['square', 'landscape', 'portrait']),
-            // TODO: Where to put this as a constant?
-            new SupportedOption('imageAspectRatio', ['1:1', '7:4', '4:7']),
+            new SupportedOption(ModelConfig::KEY_OUTPUT_FILE_TYPE, [FileTypeEnum::inline(), FileTypeEnum::remote()]),
+            new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION, [
+                MediaOrientationEnum::square(),
+                MediaOrientationEnum::landscape(),
+                MediaOrientationEnum::portrait(),
+            ]),
+            new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO, ['1:1', '7:4', '4:7']),
         ];
         $gptImageOptions = [
             new SupportedOption(ModelConfig::KEY_CANDIDATE_COUNT),
             new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['image/png', 'image/jpeg', 'image/webp']),
-            // TODO: Where to put this as a constant?
-            new SupportedOption('outputFileType', [FileTypeEnum::inline()]),
-            // TODO: Where to put this as a constant?
-            new SupportedOption('imageOrientation', ['square', 'landscape', 'portrait']),
-            // TODO: Where to put this as a constant?
-            new SupportedOption('imageAspectRatio', ['1:1', '3:2', '2:3']),
+            new SupportedOption(ModelConfig::KEY_OUTPUT_FILE_TYPE, [FileTypeEnum::inline()]),
+            new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION, [
+                MediaOrientationEnum::square(),
+                MediaOrientationEnum::landscape(),
+                MediaOrientationEnum::portrait(),
+            ]),
+            new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO, ['1:1', '3:2', '2:3']),
         ];
         $ttsCapabilities = [
             CapabilityEnum::textToSpeechConversion(),
