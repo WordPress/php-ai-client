@@ -1145,10 +1145,10 @@ direction LR
 
     namespace AiClientNamespace.Providers.Models.EmbeddingGeneration.Contracts {
         class EmbeddingGenerationModelInterface {
-            +generateEmbeddingsResult(string[]|Message[] $input) EmbeddingResult
+            +generateEmbeddingsResult(Message[] $input) EmbeddingResult
         }
         class EmbeddingGenerationOperationModelInterface {
-            +generateEmbeddingsOperation(string[]|Message[] $input) EmbeddingOperation
+            +generateEmbeddingsOperation(Message[] $input) EmbeddingOperation
         }
     }
 
