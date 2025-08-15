@@ -52,8 +52,6 @@ class ProviderRegistry
             );
         }
 
-        // Get provider metadata to extract ID (using static method from interface)
-        /** @var class-string<ProviderInterface> $className */
         $metadata = $className::metadata();
 
         if (!$metadata instanceof ProviderMetadata) {
