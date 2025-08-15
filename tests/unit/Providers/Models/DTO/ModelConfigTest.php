@@ -11,7 +11,7 @@ use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
-use WordPress\AiClient\Tools\DTO\Tool;
+use WordPress\AiClient\Tools\DTO\WebSearch;
 
 /**
  * @covers \WordPress\AiClient\Providers\Models\DTO\ModelConfig
@@ -19,18 +19,27 @@ use WordPress\AiClient\Tools\DTO\Tool;
 class ModelConfigTest extends TestCase
 {
     /**
-     * Creates a sample tool for testing.
+     * Creates a sample function declaration for testing.
      *
-     * @return Tool
+     * @return FunctionDeclaration
      */
-    private function createSampleTool(): Tool
+    private function createSampleFunctionDeclaration(): FunctionDeclaration
     {
-        $function = new FunctionDeclaration(
+        return new FunctionDeclaration(
             'test_function',
             'A test function',
             ['type' => 'object', 'properties' => []]
         );
-        return new Tool([$function]);
+    }
+
+    /**
+     * Creates a sample web search for testing.
+     *
+     * @return WebSearch
+     */
+    private function createSampleWebSearch(): WebSearch
+    {
+        return new WebSearch(['example.com'], ['disallowed.com']);
     }
 
     /**
@@ -54,7 +63,8 @@ class ModelConfigTest extends TestCase
         $this->assertNull($config->getFrequencyPenalty());
         $this->assertNull($config->getLogprobs());
         $this->assertNull($config->getTopLogprobs());
-        $this->assertNull($config->getTools());
+        $this->assertNull($config->getFunctionDeclarations());
+        $this->assertNull($config->getWebSearch());
         $this->assertNull($config->getOutputFileType());
         $this->assertNull($config->getOutputMimeType());
         $this->assertNull($config->getOutputSchema());
@@ -71,7 +81,6 @@ class ModelConfigTest extends TestCase
     public function testSettersAndGetters(): void
     {
         $config = new ModelConfig();
-        $tool = $this->createSampleTool();
 
         // Test output modalities
         $modalities = [ModalityEnum::text(), ModalityEnum::image()];
@@ -124,10 +133,15 @@ class ModelConfigTest extends TestCase
         $config->setTopLogprobs(5);
         $this->assertEquals(5, $config->getTopLogprobs());
 
-        // Test tools
-        $tools = [$tool];
-        $config->setTools($tools);
-        $this->assertEquals($tools, $config->getTools());
+        // Test function declarations
+        $functionDeclarations = [$this->createSampleFunctionDeclaration()];
+        $config->setFunctionDeclarations($functionDeclarations);
+        $this->assertEquals($functionDeclarations, $config->getFunctionDeclarations());
+
+        // Test web search
+        $webSearch = $this->createSampleWebSearch();
+        $config->setWebSearch($webSearch);
+        $this->assertEquals($webSearch, $config->getWebSearch());
 
         // Test output MIME type
         $config->setOutputMimeType('application/json');
@@ -189,7 +203,8 @@ class ModelConfigTest extends TestCase
             ModelConfig::KEY_FREQUENCY_PENALTY,
             ModelConfig::KEY_LOGPROBS,
             ModelConfig::KEY_TOP_LOGPROBS,
-            ModelConfig::KEY_TOOLS,
+            ModelConfig::KEY_FUNCTION_DECLARATIONS,
+            ModelConfig::KEY_WEB_SEARCH,
             ModelConfig::KEY_OUTPUT_FILE_TYPE,
             ModelConfig::KEY_OUTPUT_MIME_TYPE,
             ModelConfig::KEY_OUTPUT_SCHEMA,
@@ -231,7 +246,6 @@ class ModelConfigTest extends TestCase
     public function testToArrayAllProperties(): void
     {
         $config = new ModelConfig();
-        $tool = $this->createSampleTool();
 
         $config->setOutputModalities([ModalityEnum::text(), ModalityEnum::audio()]);
         $config->setSystemInstruction('Test instruction');
@@ -245,7 +259,8 @@ class ModelConfigTest extends TestCase
         $config->setFrequencyPenalty(0.4);
         $config->setLogprobs(true);
         $config->setTopLogprobs(10);
-        $config->setTools([$tool]);
+        $config->setFunctionDeclarations([$this->createSampleFunctionDeclaration()]);
+        $config->setWebSearch($this->createSampleWebSearch());
         $config->setOutputFileType(FileTypeEnum::remote());
         $config->setOutputMimeType('application/json');
         $config->setOutputSchema(['type' => 'object']);
@@ -268,7 +283,8 @@ class ModelConfigTest extends TestCase
         $this->assertEquals(0.4, $array[ModelConfig::KEY_FREQUENCY_PENALTY]);
         $this->assertTrue($array[ModelConfig::KEY_LOGPROBS]);
         $this->assertEquals(10, $array[ModelConfig::KEY_TOP_LOGPROBS]);
-        $this->assertCount(1, $array[ModelConfig::KEY_TOOLS]);
+        $this->assertCount(1, $array[ModelConfig::KEY_FUNCTION_DECLARATIONS]);
+        $this->assertEquals($this->createSampleWebSearch()->toArray(), $array[ModelConfig::KEY_WEB_SEARCH]);
         $this->assertEquals('remote', $array[ModelConfig::KEY_OUTPUT_FILE_TYPE]);
         $this->assertEquals('application/json', $array[ModelConfig::KEY_OUTPUT_MIME_TYPE]);
         $this->assertEquals(['type' => 'object'], $array[ModelConfig::KEY_OUTPUT_SCHEMA]);
@@ -335,17 +351,16 @@ class ModelConfigTest extends TestCase
             ModelConfig::KEY_FREQUENCY_PENALTY => 0.1,
             ModelConfig::KEY_LOGPROBS => false,
             ModelConfig::KEY_TOP_LOGPROBS => 3,
-            ModelConfig::KEY_TOOLS => [
+            ModelConfig::KEY_FUNCTION_DECLARATIONS => [
                 [
-                    'type' => 'function_declarations',
-                    'functionDeclarations' => [
-                        [
-                            'name' => 'test_func',
-                            'description' => 'Test function',
-                            'parameters' => ['type' => 'object']
-                        ]
-                    ]
+                    'name' => 'test_func',
+                    'description' => 'Test function',
+                    'parameters' => ['type' => 'object']
                 ]
+            ],
+            ModelConfig::KEY_WEB_SEARCH => [
+                'allowedDomains' => ['example.com'],
+                'disallowedDomains' => ['disallowed.com'],
             ],
             ModelConfig::KEY_OUTPUT_MIME_TYPE => 'application/json',
             ModelConfig::KEY_OUTPUT_SCHEMA => ['type' => 'array', 'items' => ['type' => 'string']],
@@ -372,7 +387,10 @@ class ModelConfigTest extends TestCase
         $this->assertEquals(0.1, $config->getFrequencyPenalty());
         $this->assertFalse($config->getLogprobs());
         $this->assertEquals(3, $config->getTopLogprobs());
-        $this->assertCount(1, $config->getTools());
+        $this->assertCount(1, $config->getFunctionDeclarations());
+        $this->assertInstanceOf(WebSearch::class, $config->getWebSearch());
+        $this->assertEquals(['example.com'], $config->getWebSearch()->getAllowedDomains());
+        $this->assertEquals(['disallowed.com'], $config->getWebSearch()->getDisallowedDomains());
         $this->assertEquals('application/json', $config->getOutputMimeType());
         $this->assertEquals(['type' => 'array', 'items' => ['type' => 'string']], $config->getOutputSchema());
         $this->assertEquals(FileTypeEnum::inline(), $config->getOutputFileType());
@@ -526,9 +544,9 @@ class ModelConfigTest extends TestCase
             ModalityEnum::audio()
         ]);
         $config->setStopSequences(['stop1', 'stop2', 'stop3']);
-        $config->setTools([
-            $this->createSampleTool(),
-            $this->createSampleTool()
+        $config->setFunctionDeclarations([
+            $this->createSampleFunctionDeclaration(),
+            $this->createSampleFunctionDeclaration()
         ]);
 
         $array = $config->toArray();
@@ -536,7 +554,7 @@ class ModelConfigTest extends TestCase
         // Check that arrays are properly indexed from 0
         $this->assertEquals([0, 1, 2], array_keys($array['outputModalities']));
         $this->assertEquals([0, 1, 2], array_keys($array['stopSequences']));
-        $this->assertEquals([0, 1], array_keys($array['tools']));
+        $this->assertEquals([0, 1], array_keys($array['functionDeclarations']));
     }
 
     /**
