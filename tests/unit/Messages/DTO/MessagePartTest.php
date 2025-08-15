@@ -427,7 +427,9 @@ class MessagePartTest extends TestCase
     public function testFromArrayWithInvalidChannel(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid channel value: invalid_channel');
+        $this->expectExceptionMessage(
+            'invalid_channel is not a valid backing value for enum ' . MessagePartChannelEnum::class
+        );
 
         $json = [
             MessagePart::KEY_CHANNEL => 'invalid_channel',

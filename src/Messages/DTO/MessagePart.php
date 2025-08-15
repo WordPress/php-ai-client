@@ -298,11 +298,6 @@ class MessagePart extends AbstractDataTransferObject
     public static function fromArray(array $array): self
     {
         if (isset($array[self::KEY_CHANNEL])) {
-            if (!MessagePartChannelEnum::isValidValue($array[self::KEY_CHANNEL])) {
-                throw new InvalidArgumentException(
-                    sprintf('Invalid channel value: %s', $array[self::KEY_CHANNEL])
-                );
-            }
             $channel = MessagePartChannelEnum::from($array[self::KEY_CHANNEL]);
         } else {
             $channel = null;
