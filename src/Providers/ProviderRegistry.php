@@ -206,7 +206,7 @@ class ProviderRegistry
      * Gets the class name for a registered provider (handles both ID and class name input).
      *
      * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
-     * @return string The provider class name.
+     * @return class-string<ProviderInterface> The provider class name.
      * @throws InvalidArgumentException If provider is not registered.
      */
     private function resolveProviderClassName(string $idOrClassName): string
