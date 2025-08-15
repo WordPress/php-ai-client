@@ -8,8 +8,6 @@ namespace WordPress\AiClient\Tests\traits;
  * Trait for testing array transformation functionality.
  *
  * Provides common assertions for DTOs that implement WithArrayTransformationInterface.
- *
- * @since 1.0.0
  */
 trait ArrayTransformationTestTrait
 {

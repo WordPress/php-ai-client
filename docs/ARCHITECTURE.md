@@ -787,6 +787,40 @@ direction LR
     Tool "1" o-- "0..1" WebSearch
 ```
 
+## HTTP Communication Layer
+
+This section describes the HTTP communication architecture that differs from the original design. Instead of models directly using PSR-18 HTTP clients, we introduce a layer of abstraction that provides better separation of concerns and flexibility.
+
+### Design Principles
+
+1. **Custom Request/Response Objects**: Models create and receive custom Request and Response objects specific to this library
+2. **HttpTransporter**: A dedicated class that handles the translation between custom objects and PSR standards
+3. **HTTPlug Integration**: Uses HTTPlug's Discovery component for automatic detection of available HTTP clients and factories
+4. **PSR Compliance**: The transporter uses PSR-7 (HTTP messages), PSR-17 (HTTP factories), and PSR-18 (HTTP client) internally
+5. **No Direct Coupling**: The library remains decoupled from any specific HTTP client implementation
+6. **Provider Domain Location**: HTTP components are located within the Providers domain (`src/Providers/Http/`) as they are provider-specific infrastructure
+7. **Synchronous Only**: Currently supports only synchronous HTTP requests. Async support may be added in the future if needed
+
+### HTTP Communication Flow
+
+```mermaid
+sequenceDiagram
+    participant Model
+    participant HttpTransporter
+    participant PSR17Factory
+    participant PSR18Client
+    
+    Model->>HttpTransporter: send(Request)
+    HttpTransporter->>PSR17Factory: createRequest(Request)
+    PSR17Factory-->>HttpTransporter: PSR-7 Request
+    HttpTransporter->>PSR18Client: sendRequest(PSR-7 Request)
+    PSR18Client-->>HttpTransporter: PSR-7 Response
+    HttpTransporter->>PSR17Factory: parseResponse(PSR-7 Response)
+    PSR17Factory-->>HttpTransporter: Response
+    HttpTransporter-->>Model: Response
+```
+
+
 ### Details: Class diagram for AI extenders
 
 ```mermaid
