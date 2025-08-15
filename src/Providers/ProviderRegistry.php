@@ -102,7 +102,7 @@ class ProviderRegistry
      *
      * @since n.e.x.t
      *
-     * @param string | class-string<ProviderInterface> $idOrClassName The provider ID or class name.
+     * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
      * @return bool True if the provider is configured and ready to use.
      */
     public function isProviderConfigured(string $idOrClassName): bool
