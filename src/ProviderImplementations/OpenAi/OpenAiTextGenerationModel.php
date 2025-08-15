@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\ProviderImplementations\OpenAi;
 
 use WordPress\AiClient\Providers\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 use WordPress\AiClient\Providers\Models\AbstractOpenAiCompatibleTextGenerationModel;
 
 /**
@@ -17,9 +18,13 @@ class OpenAiTextGenerationModel extends AbstractOpenAiCompatibleTextGenerationMo
     /**
      * @inheritDoc
      */
-    protected function createRequest(string $path, array $params): Request
+    protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
     {
-        // Something like this.
-        return new OpenAiCompatibleRequest('https://api.openai.com/v1', $path);
+        return new Request(
+            $method,
+            OpenAiProvider::BASE_URI . '/' . ltrim($path, '/'),
+            $headers,
+            $data
+        );
     }
 }

@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Providers;
 
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
@@ -22,8 +23,7 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
     {
         $httpTransporter = $this->getHttpTransporter();
 
-        // Something like this.
-        $request = $this->createRequest('models');
+        $request = $this->createRequest(HttpMethodEnum::GET(), 'models');
         $response = $httpTransporter->send($request);
 
         $modelsMetadataList = $this->parseResponseToModelMetadataList($response);
@@ -41,10 +41,18 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
      *
      * @since n.e.x.t
      *
+     * @param HttpMethodEnum $method The HTTP method.
      * @param string $path The API endpoint path, relative to the base URI.
+     * @param array<string, string|list<string>> $headers The request headers.
+     * @param string|array<string, mixed>|null $data The request data.
      * @return Request The request object.
      */
-    abstract protected function createRequest(string $path): Request;
+    abstract protected function createRequest(
+        HttpMethodEnum $method,
+        string $path,
+        array $headers = [],
+        $data = null
+    ): Request;
 
     /**
      * Parses the response from the API endpoint to list models into a list of model metadata objects.

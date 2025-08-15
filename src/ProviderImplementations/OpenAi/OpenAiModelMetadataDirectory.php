@@ -11,6 +11,7 @@ use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\AbstractOpenAiCompatibleModelMetadataDirectory;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
@@ -26,10 +27,14 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     /**
      * @inheritDoc
      */
-    protected function createRequest(string $path): Request
+    protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
     {
-        // Something like this.
-        return new OpenAiCompatibleRequest('https://api.openai.com/v1', $path);
+        return new Request(
+            $method,
+            OpenAiProvider::BASE_URI . '/' . ltrim($path, '/'),
+            $headers,
+            $data
+        );
     }
 
     /**

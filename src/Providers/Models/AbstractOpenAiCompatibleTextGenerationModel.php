@@ -15,6 +15,7 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -39,8 +40,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
 
         $params = $this->prepareGenerateTextParams($prompt);
 
-        // Something like this.
-        $request = $this->createRequest('chat/completions', $params);
+        $request = $this->createRequest(HttpMethodEnum::POST(), 'chat/completions', [], $params);
         $response = $httpTransporter->send($request);
 
         return $this->parseResponseToGenerativeAiResult($response);
@@ -367,11 +367,18 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * @since n.e.x.t
      *
+     * @param HttpMethodEnum $method The HTTP method.
      * @param string $path The API endpoint path, relative to the base URI.
-     * @param array<string, mixed> $params The parameters for the API request.
+     * @param array<string, string|list<string>> $headers The request headers.
+     * @param string|array<string, mixed>|null $data The request data.
      * @return Request The request object.
      */
-    abstract protected function createRequest(string $path, array $params): Request;
+    abstract protected function createRequest(
+        HttpMethodEnum $method,
+        string $path,
+        array $headers = [],
+        $data = null
+    ): Request;
 
     /**
      * Parses the response from the API endpoint to a generative AI result.

@@ -21,6 +21,8 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  */
 class OpenAiProvider extends AbstractProvider
 {
+    public const BASE_URI = 'https://api.openai.com/v1';
+
     /**
      * @inheritDoc
      */
