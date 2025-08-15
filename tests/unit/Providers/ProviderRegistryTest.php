@@ -6,9 +6,9 @@ namespace WordPress\AiClient\Tests\unit\Providers;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Tests\mocks\MockProvider;
 
 /**
