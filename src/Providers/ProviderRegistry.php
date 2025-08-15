@@ -165,7 +165,6 @@ class ProviderRegistry
     ): array {
         $className = $this->resolveProviderClassName($idOrClassName);
 
-        /** @var class-string<ProviderInterface> $className */
         $modelMetadataDirectory = $className::modelMetadataDirectory();
 
         // Filter models that meet requirements
