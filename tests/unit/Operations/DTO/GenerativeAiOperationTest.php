@@ -387,8 +387,7 @@ class GenerativeAiOperationTest extends TestCase
                             Message::KEY_ROLE => MessageRoleEnum::model()->value,
                             Message::KEY_PARTS => [[MessagePart::KEY_TYPE => 'text', MessagePart::KEY_TEXT => 'Response text']]
                         ],
-                        Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
-                        Candidate::KEY_TOKEN_COUNT => 30
+                        Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value
                     ]
                 ],
                 GenerativeAiResult::KEY_TOKEN_USAGE => [

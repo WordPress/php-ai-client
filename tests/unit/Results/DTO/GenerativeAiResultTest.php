@@ -654,8 +654,7 @@ class GenerativeAiResultTest extends TestCase
                             [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Second part']
                         ]
                     ],
-                    Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
-                    Candidate::KEY_TOKEN_COUNT => 20
+                    Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value
                 ]
             ],
             GenerativeAiResult::KEY_TOKEN_USAGE => [
