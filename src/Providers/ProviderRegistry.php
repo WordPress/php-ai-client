@@ -68,7 +68,7 @@ class ProviderRegistry
      *
      * @since n.e.x.t
      *
-     * @param string | class-string<ProviderInterface> $idOrClassName The provider ID or class name to check.
+     * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name to check.
      * @return bool True if the provider is registered.
      */
     public function hasProvider(string $idOrClassName): bool
