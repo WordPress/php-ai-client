@@ -285,7 +285,7 @@ class AiClientTest extends TestCase
     }
 
     /**
-     * Tests automatic model discovery when no model is provided (would throw RuntimeException in current implementation).
+     * Tests automatic model discovery when no model is provided (throws RuntimeException in current implementation).
      */
     public function testAutoModelDiscoveryThrowsException(): void
     {
@@ -298,7 +298,7 @@ class AiClientTest extends TestCase
     }
 
     /**
-     * Tests automatic image model discovery when no model is provided (would throw RuntimeException in current implementation).
+     * Tests automatic image model discovery when no model is provided (throws RuntimeException in current implementation).
      */
     public function testAutoImageModelDiscoveryThrowsException(): void
     {
