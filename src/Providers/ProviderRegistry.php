@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers;
 
 use InvalidArgumentException;
+use RuntimeException;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
+use WordPress\AiClient\Providers\Contracts\ProviderWithOperationsHandlerInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
+use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -21,8 +26,12 @@ use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
  *
  * @since n.e.x.t
  */
-class ProviderRegistry
+class ProviderRegistry implements WithHttpTransporterInterface
 {
+    use WithHttpTransporterTrait {
+        setHttpTransporter as setHttpTransporterOriginal;
+    }
+
     /**
      * @var array<string, class-string<ProviderInterface>> Mapping of provider IDs to class names.
      */
@@ -32,7 +41,6 @@ class ProviderRegistry
      * @var array<class-string<ProviderInterface>, true> Set of registered class names for fast lookup.
      */
     private array $registeredClassNames = [];
-
 
     /**
      * Registers a provider class with the registry.
@@ -64,6 +72,14 @@ class ProviderRegistry
             throw new InvalidArgumentException(
                 sprintf('Provider must return ProviderMetadata from metadata() method: %s', $className)
             );
+        }
+
+        // If there is already a HTTP transporter instance set, hook it up to the provider as needed.
+        try {
+            $httpTransporter = $this->getHttpTransporter();
+            $this->setHttpTransporterForProvider($className, $httpTransporter);
+        } catch (RuntimeException $e) {
+            // Ignore.
         }
 
         $this->providerClassNames[$metadata->getId()] = $className;
@@ -227,5 +243,48 @@ class ProviderRegistry
 
         // @phpstan-ignore-next-line return.type (Interface implementation guaranteed by registration validation)
         return $className;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setHttpTransporter(HttpTransporterInterface $httpTransporter): void
+    {
+        $this->setHttpTransporterOriginal($httpTransporter);
+
+        // Make sure all registered providers have the HTTP transporter hooked up as needed.
+        foreach ($this->providerClassNames as $className) {
+            $this->setHttpTransporterForProvider($className, $httpTransporter);
+        }
+    }
+
+    /**
+     * Sets the HTTP transporter for a specific provider.
+     *
+     * @since n.e.x.t
+     *
+     * @param class-string<ProviderInterface> $className The provider class name.
+     * @param HttpTransporterInterface $httpTransporter The HTTP transporter instance.
+     */
+    private function setHttpTransporterForProvider(
+        string $className,
+        HttpTransporterInterface $httpTransporter
+    ): void {
+        $availability = $className::availability();
+        if ($availability instanceof WithHttpTransporterInterface) {
+            $availability->setHttpTransporter($httpTransporter);
+        }
+
+        $modelMetadataDirectory = $className::modelMetadataDirectory();
+        if ($modelMetadataDirectory instanceof WithHttpTransporterInterface) {
+            $modelMetadataDirectory->setHttpTransporter($httpTransporter);
+        }
+
+        if (is_subclass_of($className, ProviderWithOperationsHandlerInterface::class)) {
+            $operationsHandler = $className::operationsHandler();
+            if ($operationsHandler instanceof WithHttpTransporterInterface) {
+                $operationsHandler->setHttpTransporter($httpTransporter);
+            }
+        }
     }
 }

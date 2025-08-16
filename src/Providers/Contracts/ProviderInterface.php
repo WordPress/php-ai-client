@@ -33,7 +33,7 @@ interface ProviderInterface
      *
      * @since n.e.x.t
      *
-     * @param string                          $modelId     Model identifier.
+     * @param string $modelId Model identifier.
      * @param ?ModelConfig $modelConfig Model configuration.
      * @return ModelInterface Model instance.
      * @throws InvalidArgumentException If model not found or configuration invalid.

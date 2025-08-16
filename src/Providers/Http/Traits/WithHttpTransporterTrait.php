@@ -14,13 +14,22 @@ use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
  */
 trait WithHttpTransporterTrait
 {
+    /**
+     * @var HttpTransporterInterface|null The HTTP transporter instance.
+     */
     private ?HttpTransporterInterface $httpTransporter = null;
 
+    /**
+     * @inheritDoc
+     */
     public function setHttpTransporter(HttpTransporterInterface $httpTransporter): void
     {
         $this->httpTransporter = $httpTransporter;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getHttpTransporter(): HttpTransporterInterface
     {
         if ($this->httpTransporter === null) {
