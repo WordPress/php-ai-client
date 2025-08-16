@@ -123,6 +123,9 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption('voice'),
         ];
 
+        /** @var array<string, array<string, mixed>> $modelsData */
+        $modelsData = (array) $responseData['data'];
+
         return array_values(
             array_map(
                 static function (array $modelData) use (
@@ -136,6 +139,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     $ttsCapabilities,
                     $ttsOptions,
                 ): ModelMetadata {
+                    /** @var string $modelId */
                     $modelId = $modelData['id'];
                     if (
                         str_starts_with($modelId, 'dall-e-') ||
@@ -184,7 +188,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                         $modelOptions
                     );
                 },
-                (array) $responseData['data']
+                $modelsData
             )
         );
     }
