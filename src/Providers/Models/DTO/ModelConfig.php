@@ -44,6 +44,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  *     outputSchema?: array<string, mixed>,
  *     outputMediaOrientation?: string,
  *     outputMediaAspectRatio?: string,
+ *     outputSpeechVoice?: string,
  *     customOptions?: array<string, mixed>
  * }
  *
@@ -70,7 +71,15 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_OUTPUT_SCHEMA = 'outputSchema';
     public const KEY_OUTPUT_MEDIA_ORIENTATION = 'outputMediaOrientation';
     public const KEY_OUTPUT_MEDIA_ASPECT_RATIO = 'outputMediaAspectRatio';
+    public const KEY_OUTPUT_SPEECH_VOICE = 'outputSpeechVoice';
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
+
+    /*
+     * Note: This key is not an actual model config key, but specified here for convenience.
+     * It is relevant for model discovery, to determine which models support which input modalities.
+     * The actual input modalities are part of the message sent to the model, not the model config.
+     */
+    public const KEY_INPUT_MODALITIES = 'inputModalities';
 
     /**
      * @var list<ModalityEnum>|null Output modalities for the model.
@@ -166,6 +175,11 @@ class ModelConfig extends AbstractDataTransferObject
      * @var string|null Output media aspect ratio (e.g. 3:2, 16:9).
      */
     protected ?string $outputMediaAspectRatio = null;
+
+    /**
+     * @var string|null Output speech voice.
+     */
+    protected ?string $outputSpeechVoice = null;
 
     /**
      * @var array<string, mixed> Custom provider-specific options.
@@ -662,6 +676,30 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Sets the output speech voice.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $outputSpeechVoice The output speech voice.
+     */
+    public function setOutputSpeechVoice(string $outputSpeechVoice): void
+    {
+        $this->outputSpeechVoice = $outputSpeechVoice;
+    }
+
+    /**
+     * Gets the output speech voice.
+     *
+     * @since n.e.x.t
+     *
+     * @return string|null The output speech voice.
+     */
+    public function getOutputSpeechVoice(): ?string
+    {
+        return $this->outputSpeechVoice;
+    }
+
+    /**
      * Sets a single custom option.
      *
      * @since n.e.x.t
@@ -801,6 +839,10 @@ class ModelConfig extends AbstractDataTransferObject
                     'pattern' => '^\d+:\d+$',
                     'description' => 'Output media aspect ratio.',
                 ],
+                self::KEY_OUTPUT_SPEECH_VOICE => [
+                    'type' => 'string',
+                    'description' => 'Output speech voice.',
+                ],
                 self::KEY_CUSTOM_OPTIONS => [
                     'type' => 'object',
                     'additionalProperties' => true,
@@ -908,6 +950,10 @@ class ModelConfig extends AbstractDataTransferObject
             $data[self::KEY_OUTPUT_MEDIA_ASPECT_RATIO] = $this->outputMediaAspectRatio;
         }
 
+        if ($this->outputSpeechVoice !== null) {
+            $data[self::KEY_OUTPUT_SPEECH_VOICE] = $this->outputSpeechVoice;
+        }
+
         $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
 
         return $data;
@@ -1004,6 +1050,10 @@ class ModelConfig extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_OUTPUT_MEDIA_ASPECT_RATIO])) {
             $config->setOutputMediaAspectRatio($array[self::KEY_OUTPUT_MEDIA_ASPECT_RATIO]);
+        }
+
+        if (isset($array[self::KEY_OUTPUT_SPEECH_VOICE])) {
+            $config->setOutputSpeechVoice($array[self::KEY_OUTPUT_SPEECH_VOICE]);
         }
 
         if (isset($array[self::KEY_CUSTOM_OPTIONS])) {

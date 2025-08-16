@@ -71,8 +71,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
         ];
         $gptMultimodalInputOptions = $gptOptions + [
             new SupportedOption(
-                // TODO: Where to put this as a constant?
-                'inputModalities',
+                ModelConfig::KEY_INPUT_MODALITIES,
                 [
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::image()],
@@ -119,8 +118,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
         ];
         $ttsOptions = [
             new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['audio/mpeg', 'audio/ogg', 'audio/wav']),
-            // TODO: Where to put this as a constant?
-            new SupportedOption('voice'),
+            new SupportedOption(ModelConfig::KEY_OUTPUT_SPEECH_VOICE),
         ];
 
         /** @var array<string, array<string, mixed>> $modelsData */
