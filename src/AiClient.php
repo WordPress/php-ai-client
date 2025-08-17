@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient;
 
+use Generator;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
@@ -156,6 +157,37 @@ class AiClient
 
         // Generate the result using the model
         return $resolvedModel->generateTextResult($messages);
+    }
+
+    /**
+     * Streams text generation using the traditional API approach.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param ModelInterface|null $model Optional specific model to use.
+     * @return Generator<GenerativeAiResult> Generator yielding partial text generation results.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid.
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function streamGenerateTextResult($prompt, ModelInterface $model = null): Generator
+    {
+        // Convert prompt to standardized Message array format
+        $messages = self::normalizePromptToMessages($prompt);
+
+        // Get model - either provided or auto-discovered
+        $resolvedModel = $model ?? self::findSuitableTextModel();
+
+        // Ensure the model supports text generation
+        if (!$resolvedModel instanceof TextGenerationModelInterface) {
+            throw new \InvalidArgumentException(
+                'Model must implement TextGenerationModelInterface for text generation'
+            );
+        }
+
+        // Stream the results using the model
+        yield from $resolvedModel->streamGenerateTextResult($messages);
     }
 
     /**

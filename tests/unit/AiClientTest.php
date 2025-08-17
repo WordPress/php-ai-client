@@ -54,7 +54,7 @@ class AiClientTest extends TestCase
             FinishReasonEnum::stop()
         );
         $tokenUsage = new TokenUsage(10, 20, 30);
-        
+
         return new GenerativeAiResult('test-result-id', [$candidate], $tokenUsage);
     }
 
@@ -402,8 +402,66 @@ class AiClientTest extends TestCase
         $unsupportedModel = $this->createMock(ModelInterface::class);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model must implement at least one supported generation interface (TextGeneration, ImageGeneration)');
+        $this->expectExceptionMessage(
+            'Model must implement at least one supported generation interface (TextGeneration, ImageGeneration)'
+        );
 
         AiClient::generateResult($prompt, $unsupportedModel);
+    }
+
+    /**
+     * Tests streamGenerateTextResult delegates to model's streaming method.
+     */
+    public function testStreamGenerateTextResultDelegatesToModel(): void
+    {
+        $prompt = 'Stream this text';
+        $result1 = $this->createTestResult();
+        $result2 = $this->createTestResult();
+
+        // Create a generator that yields test results
+        $generator = (function () use ($result1, $result2) {
+            yield $result1;
+            yield $result2;
+        })();
+
+        $this->mockTextModel->expects($this->once())
+            ->method('streamGenerateTextResult')
+            ->willReturn($generator);
+
+        $streamResults = AiClient::streamGenerateTextResult($prompt, $this->mockTextModel);
+
+        // Convert generator to array for testing
+        $results = iterator_to_array($streamResults);
+
+        $this->assertCount(2, $results);
+        $this->assertSame($result1, $results[0]);
+        $this->assertSame($result2, $results[1]);
+    }
+
+    /**
+     * Tests streamGenerateTextResult with model auto-discovery.
+     */
+    public function testStreamGenerateTextResultWithAutoDiscovery(): void
+    {
+        $prompt = 'Auto-discover and stream';
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('No text generation models available');
+
+        iterator_to_array(AiClient::streamGenerateTextResult($prompt));
+    }
+
+    /**
+     * Tests streamGenerateTextResult throws exception when model doesn't support text generation.
+     */
+    public function testStreamGenerateTextResultThrowsExceptionForNonTextModel(): void
+    {
+        $prompt = 'Test prompt';
+        $nonTextModel = $this->createMock(ModelInterface::class);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model must implement TextGenerationModelInterface for text generation');
+
+        iterator_to_array(AiClient::streamGenerateTextResult($prompt, $nonTextModel));
     }
 }
