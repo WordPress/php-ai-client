@@ -233,7 +233,7 @@ class EmbeddingOperationTest extends TestCase
     public function testRoundTripConversion(): void
     {
         $originalOperation = new EmbeddingOperation('op-id', OperationStateEnum::succeeded(), $this->embeddingResult);
-        
+
         $array = $originalOperation->toArray();
         $reconstructedOperation = EmbeddingOperation::fromArray($array);
 

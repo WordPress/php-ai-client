@@ -33,7 +33,7 @@ class EmbeddingResultTest extends TestCase
     {
         $embeddings = [$this->embedding1, $this->embedding2];
         $metadata = ['model' => 'text-embedding-ada-002'];
-        
+
         $result = new EmbeddingResult('test-id', $embeddings, $this->tokenUsage, $metadata);
 
         $this->assertEquals('test-id', $result->getId());
@@ -48,7 +48,7 @@ class EmbeddingResultTest extends TestCase
     public function testCreateWithEmptyMetadata(): void
     {
         $embeddings = [$this->embedding1];
-        
+
         $result = new EmbeddingResult('test-id', $embeddings, $this->tokenUsage);
 
         $this->assertEquals('test-id', $result->getId());
@@ -74,7 +74,7 @@ class EmbeddingResultTest extends TestCase
     public function testCreateWithSingleEmbedding(): void
     {
         $embeddings = [$this->embedding1];
-        
+
         $result = new EmbeddingResult('test-id', $embeddings, $this->tokenUsage);
 
         $this->assertCount(1, $result->getEmbeddings());
@@ -87,7 +87,7 @@ class EmbeddingResultTest extends TestCase
     public function testCreateWithMultipleEmbeddings(): void
     {
         $embeddings = [$this->embedding1, $this->embedding2];
-        
+
         $result = new EmbeddingResult('test-id', $embeddings, $this->tokenUsage);
 
         $this->assertCount(2, $result->getEmbeddings());
@@ -102,7 +102,7 @@ class EmbeddingResultTest extends TestCase
     {
         $embeddings = [$this->embedding1, $this->embedding2];
         $metadata = ['model' => 'text-embedding-ada-002'];
-        
+
         $result = new EmbeddingResult('test-id', $embeddings, $this->tokenUsage, $metadata);
 
         $expected = [
@@ -181,13 +181,13 @@ class EmbeddingResultTest extends TestCase
 
         $this->assertArrayHasKey('type', $schema);
         $this->assertEquals('object', $schema['type']);
-        
+
         $this->assertArrayHasKey('properties', $schema);
         $this->assertArrayHasKey('id', $schema['properties']);
         $this->assertArrayHasKey('embeddings', $schema['properties']);
         $this->assertArrayHasKey('tokenUsage', $schema['properties']);
         $this->assertArrayHasKey('providerMetadata', $schema['properties']);
-        
+
         $this->assertArrayHasKey('required', $schema);
         $this->assertContains('id', $schema['required']);
         $this->assertContains('embeddings', $schema['required']);
@@ -217,7 +217,7 @@ class EmbeddingResultTest extends TestCase
             'provider' => 'openai',
             'version' => '1.0',
         ];
-        
+
         $result = new EmbeddingResult('test-id', $embeddings, $this->tokenUsage, $metadata);
 
         $this->assertEquals($metadata, $result->getProviderMetadata());

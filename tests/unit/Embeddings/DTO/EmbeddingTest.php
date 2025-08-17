@@ -115,11 +115,11 @@ class EmbeddingTest extends TestCase
 
         $this->assertArrayHasKey('type', $schema);
         $this->assertEquals('object', $schema['type']);
-        
+
         $this->assertArrayHasKey('properties', $schema);
         $this->assertArrayHasKey('vector', $schema['properties']);
         $this->assertArrayHasKey('dimension', $schema['properties']);
-        
+
         $this->assertArrayHasKey('required', $schema);
         $this->assertContains('vector', $schema['required']);
         $this->assertContains('dimension', $schema['required']);

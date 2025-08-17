@@ -11,21 +11,21 @@ use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
+use WordPress\AiClient\Operations\DTO\EmbeddingOperation;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
-use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
+use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
-use WordPress\AiClient\Operations\DTO\EmbeddingOperation;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
-use WordPress\AiClient\Tests\mocks\MockImageGenerationModel;
-use WordPress\AiClient\Tests\mocks\MockTextGenerationModel;
 use WordPress\AiClient\Tests\mocks\MockEmbeddingGenerationModel;
 use WordPress\AiClient\Tests\mocks\MockEmbeddingGenerationOperationModel;
+use WordPress\AiClient\Tests\mocks\MockImageGenerationModel;
+use WordPress\AiClient\Tests\mocks\MockTextGenerationModel;
 
 /**
  * @covers \WordPress\AiClient\AiClient
