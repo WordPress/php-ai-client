@@ -85,7 +85,10 @@ class AiClientTest extends TestCase
     public function testPromptThrowsException(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('PromptBuilder is not yet available. This method depends on PR #49.');
+        $this->expectExceptionMessage(
+            'PromptBuilder is not yet available. This method depends on PR #49. ' .
+            'All generation methods (text, image, text-to-speech, speech) are ready for integration.'
+        );
 
         AiClient::prompt('Test prompt');
     }
@@ -405,7 +408,7 @@ class AiClientTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
             'Model must implement at least one supported generation interface ' .
-            '(TextGeneration, ImageGeneration, TextToSpeechConversion)'
+            '(TextGeneration, ImageGeneration, TextToSpeechConversion, SpeechGeneration)'
         );
 
         AiClient::generateResult($prompt, $unsupportedModel);

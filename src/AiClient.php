@@ -15,6 +15,8 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationOperationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionOperationModelInterface;
@@ -83,6 +85,12 @@ class AiClient
      * Creates a new prompt builder for fluent API usage.
      *
      * This method will be implemented once PromptBuilder is available from PR #49.
+     * When available, PromptBuilder will support all generation types including:
+     * - Text generation via generateTextResult()
+     * - Image generation via generateImageResult()
+     * - Text-to-speech via convertTextToSpeechResult()
+     * - Speech generation via generateSpeechResult()
+     * - Embedding generation via generateEmbeddingsResult()
      *
      * @since n.e.x.t
      *
@@ -94,7 +102,8 @@ class AiClient
     public static function prompt($text = null)
     {
         throw new \RuntimeException(
-            'PromptBuilder is not yet available. This method depends on PR #49.'
+            'PromptBuilder is not yet available. This method depends on PR #49. ' .
+            'All generation methods (text, image, text-to-speech, speech) are ready for integration.'
         );
     }
 
@@ -129,10 +138,15 @@ class AiClient
             return self::convertTextToSpeechResult($prompt, $model);
         }
 
+        // Delegate to speech generation if model supports it
+        if ($model instanceof SpeechGenerationModelInterface) {
+            return self::generateSpeechResult($prompt, $model);
+        }
+
         // If no supported interface is found, throw an exception
         throw new \InvalidArgumentException(
             'Model must implement at least one supported generation interface ' .
-            '(TextGeneration, ImageGeneration, TextToSpeechConversion)'
+            '(TextGeneration, ImageGeneration, TextToSpeechConversion, SpeechGeneration)'
         );
     }
 
@@ -261,6 +275,37 @@ class AiClient
     }
 
     /**
+     * Generates speech using the traditional API approach.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param ModelInterface|null $model Optional specific model to use.
+     * @return GenerativeAiResult The generation result.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid.
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function generateSpeechResult($prompt, ModelInterface $model = null): GenerativeAiResult
+    {
+        // Convert prompt to standardized Message array format
+        $messages = self::normalizePromptToMessages($prompt);
+
+        // Get model - either provided or auto-discovered
+        $resolvedModel = $model ?? self::findSuitableSpeechModel();
+
+        // Ensure the model supports speech generation
+        if (!$resolvedModel instanceof SpeechGenerationModelInterface) {
+            throw new \InvalidArgumentException(
+                'Model must implement SpeechGenerationModelInterface for speech generation'
+            );
+        }
+
+        // Generate the result using the model
+        return $resolvedModel->generateSpeechResult($messages);
+    }
+
+    /**
      * Creates a generation operation for async processing.
      *
      * @since n.e.x.t
@@ -373,6 +418,38 @@ class AiClient
         // Create and return the operation (starting state, no result yet)
         return new GenerativeAiOperation(
             uniqid('tts_op_', true),
+            OperationStateEnum::starting(),
+            null
+        );
+    }
+
+    /**
+     * Creates a speech generation operation for async processing.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param ModelInterface $model The model to use for speech generation.
+     * @return GenerativeAiOperation The operation for async speech processing.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid or model doesn't support speech generation.
+     */
+    public static function generateSpeechOperation($prompt, ModelInterface $model): GenerativeAiOperation
+    {
+        // Convert prompt to standardized Message array format
+        $messages = self::normalizePromptToMessages($prompt);
+
+        // Ensure the model supports speech generation operations
+        if (!$model instanceof SpeechGenerationOperationModelInterface) {
+            throw new \InvalidArgumentException(
+                'Model must implement SpeechGenerationOperationModelInterface ' .
+                'for speech generation operations'
+            );
+        }
+
+        // Create and return the operation (starting state, no result yet)
+        return new GenerativeAiOperation(
+            uniqid('speech_op_', true),
             OperationStateEnum::starting(),
             null
         );
@@ -504,6 +581,38 @@ class AiClient
 
         if (empty($providerModelsMetadata)) {
             throw new \RuntimeException('No text-to-speech conversion models available');
+        }
+
+        // Get the first suitable provider and model
+        $providerMetadata = $providerModelsMetadata[0];
+        $models = $providerMetadata->getModels();
+
+        if (empty($models)) {
+            throw new \RuntimeException('No models available in provider');
+        }
+
+        return self::defaultRegistry()->getProviderModel(
+            $providerMetadata->getProvider()->getId(),
+            $models[0]->getId()
+        );
+    }
+
+    /**
+     * Finds a suitable speech generation model.
+     *
+     * @since n.e.x.t
+     *
+     * @return ModelInterface A suitable speech generation model.
+     *
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    private static function findSuitableSpeechModel(): ModelInterface
+    {
+        $requirements = new ModelRequirements([CapabilityEnum::speechGeneration()], []);
+        $providerModelsMetadata = self::defaultRegistry()->findModelsMetadataForSupport($requirements);
+
+        if (empty($providerModelsMetadata)) {
+            throw new \RuntimeException('No speech generation models available');
         }
 
         // Get the first suitable provider and model
