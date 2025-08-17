@@ -21,10 +21,19 @@
     },
     "require": {
         "php": ">=7.4",
-        "ext-json": "*"
+        "ext-json": "*",
+        "php-http/discovery": "^1.0",
+        "php-http/httplug": "^2.0",
+        "php-http/message-factory": "^1.0",
+        "psr/http-client": "^1.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^1.0 || ^2.0"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "guzzlehttp/psr7": "^1.0 || ^2.0",
+        "php-http/curl-client": "^2.0",
+        "php-http/mock-client": "^1.0",
         "phpstan/phpstan": "~2.1",
         "phpunit/phpunit": "^9.5 || ^10.0",
         "slevomat/coding-standard": "^8.20",
@@ -47,7 +56,8 @@
     },
     "config": {
         "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "php-http/discovery": true
         },
         "optimize-autoloader": true,
         "platform": {
@@ -62,7 +72,7 @@
         ],
         "phpcbf": "phpcbf",
         "phpcs": "phpcs",
-        "phpstan": "phpstan analyze",
+        "phpstan": "phpstan analyze --memory-limit=256M",
         "phpunit": "phpunit"
     }
 }

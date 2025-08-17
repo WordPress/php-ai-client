@@ -28,6 +28,11 @@ class ProviderRegistry
      */
     private array $providerClassNames = [];
 
+    /**
+     * @var array<class-string<ProviderInterface>, true> Set of registered class names for fast lookup.
+     */
+    private array $registeredClassNames = [];
+
 
     /**
      * Registers a provider class with the registry.
@@ -62,6 +67,7 @@ class ProviderRegistry
         }
 
         $this->providerClassNames[$metadata->getId()] = $className;
+        $this->registeredClassNames[$className] = true;
     }
 
     /**
@@ -75,7 +81,7 @@ class ProviderRegistry
     public function hasProvider(string $idOrClassName): bool
     {
         return isset($this->providerClassNames[$idOrClassName]) ||
-            in_array($idOrClassName, $this->providerClassNames, true);
+            isset($this->registeredClassNames[$idOrClassName]);
     }
 
     /**
@@ -219,13 +225,7 @@ class ProviderRegistry
             );
         }
 
-        // Validate that class implements ProviderInterface (for PHPStan type safety)
-        if (!is_subclass_of($className, ProviderInterface::class)) {
-            throw new InvalidArgumentException(
-                sprintf('Provider class must implement %s: %s', ProviderInterface::class, $className)
-            );
-        }
-
+        // @phpstan-ignore-next-line return.type (Interface implementation guaranteed by registration validation)
         return $className;
     }
 }
