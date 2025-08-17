@@ -8,11 +8,14 @@ use Generator;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
+use WordPress\AiClient\Operations\DTO\EmbeddingOperation;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationOperationModelInterface;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
@@ -21,6 +24,7 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionOperationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 
 /**
@@ -103,7 +107,7 @@ class AiClient
     {
         throw new \RuntimeException(
             'PromptBuilder is not yet available. This method depends on PR #49. ' .
-            'All generation methods (text, image, text-to-speech, speech) are ready for integration.'
+            'All generation methods (text, image, text-to-speech, speech, embeddings) are ready for integration.'
         );
     }
 
@@ -306,6 +310,43 @@ class AiClient
     }
 
     /**
+     * Generates embeddings using the traditional API approach.
+     *
+     * @since n.e.x.t
+     *
+     * @param string[]|Message[] $input The input data to generate embeddings for.
+     * @param ModelInterface|null $model Optional specific model to use.
+     * @return EmbeddingResult The generation result.
+     *
+     * @throws \InvalidArgumentException If the input format is invalid.
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function generateEmbeddingsResult($input, ModelInterface $model = null): EmbeddingResult
+    {
+        // Convert input to standardized Message array format
+        if (is_array($input) && !empty($input) && is_string($input[0])) {
+            /** @var string[] $stringArray */
+            $stringArray = $input;
+            $messages = array_map(fn(string $text) => new UserMessage([new MessagePart($text)]), $stringArray);
+        } else {
+            $messages = self::normalizePromptToMessages($input);
+        }
+
+        // Get model - either provided or auto-discovered
+        $resolvedModel = $model ?? self::findSuitableEmbeddingModel();
+
+        // Ensure the model supports embedding generation
+        if (!$resolvedModel instanceof EmbeddingGenerationModelInterface) {
+            throw new \InvalidArgumentException(
+                'Model must implement EmbeddingGenerationModelInterface for embedding generation'
+            );
+        }
+
+        // Generate the result using the model
+        return $resolvedModel->generateEmbeddingsResult($messages);
+    }
+
+    /**
      * Creates a generation operation for async processing.
      *
      * @since n.e.x.t
@@ -450,6 +491,44 @@ class AiClient
         // Create and return the operation (starting state, no result yet)
         return new GenerativeAiOperation(
             uniqid('speech_op_', true),
+            OperationStateEnum::starting(),
+            null
+        );
+    }
+
+    /**
+     * Creates an embedding generation operation for async processing.
+     *
+     * @since n.e.x.t
+     *
+     * @param string[]|Message[] $input The input data to generate embeddings for.
+     * @param ModelInterface $model The model to use for embedding generation.
+     * @return EmbeddingOperation The operation for async embedding processing.
+     *
+     * @throws \InvalidArgumentException If the input format is invalid or model doesn't support embedding generation.
+     */
+    public static function generateEmbeddingsOperation($input, ModelInterface $model): EmbeddingOperation
+    {
+        // Convert input to standardized Message array format
+        if (is_array($input) && !empty($input) && is_string($input[0])) {
+            /** @var string[] $stringArray */
+            $stringArray = $input;
+            $messages = array_map(fn(string $text) => new UserMessage([new MessagePart($text)]), $stringArray);
+        } else {
+            $messages = self::normalizePromptToMessages($input);
+        }
+
+        // Ensure the model supports embedding generation operations
+        if (!$model instanceof EmbeddingGenerationOperationModelInterface) {
+            throw new \InvalidArgumentException(
+                'Model must implement EmbeddingGenerationOperationModelInterface ' .
+                'for embedding generation operations'
+            );
+        }
+
+        // Create and return the operation (starting state, no result yet)
+        return new EmbeddingOperation(
+            uniqid('embed_op_', true),
             OperationStateEnum::starting(),
             null
         );
@@ -613,6 +692,38 @@ class AiClient
 
         if (empty($providerModelsMetadata)) {
             throw new \RuntimeException('No speech generation models available');
+        }
+
+        // Get the first suitable provider and model
+        $providerMetadata = $providerModelsMetadata[0];
+        $models = $providerMetadata->getModels();
+
+        if (empty($models)) {
+            throw new \RuntimeException('No models available in provider');
+        }
+
+        return self::defaultRegistry()->getProviderModel(
+            $providerMetadata->getProvider()->getId(),
+            $models[0]->getId()
+        );
+    }
+
+    /**
+     * Finds a suitable embedding generation model.
+     *
+     * @since n.e.x.t
+     *
+     * @return ModelInterface A suitable embedding generation model.
+     *
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    private static function findSuitableEmbeddingModel(): ModelInterface
+    {
+        $requirements = new ModelRequirements([CapabilityEnum::embeddingGeneration()], []);
+        $providerModelsMetadata = self::defaultRegistry()->findModelsMetadataForSupport($requirements);
+
+        if (empty($providerModelsMetadata)) {
+            throw new \RuntimeException('No embedding generation models available');
         }
 
         // Get the first suitable provider and model

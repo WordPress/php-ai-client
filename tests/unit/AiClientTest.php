@@ -87,7 +87,7 @@ class AiClientTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
             'PromptBuilder is not yet available. This method depends on PR #49. ' .
-            'All generation methods (text, image, text-to-speech, speech) are ready for integration.'
+            'All generation methods (text, image, text-to-speech, speech, embeddings) are ready for integration.'
         );
 
         AiClient::prompt('Test prompt');
