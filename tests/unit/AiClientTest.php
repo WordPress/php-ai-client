@@ -102,6 +102,20 @@ class AiClientTest extends TestCase
     }
 
     /**
+     * Tests message method throws exception when MessageBuilder is not available.
+     */
+    public function testMessageThrowsException(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'MessageBuilder is not yet available. This method depends on builder infrastructure. ' .
+            'Use direct generation methods (generateTextResult, generateImageResult, etc.) for now.'
+        );
+
+        AiClient::message('Test message');
+    }
+
+    /**
      * Tests generateTextResult with string prompt and provided model.
      */
     public function testGenerateTextResultWithStringAndModel(): void

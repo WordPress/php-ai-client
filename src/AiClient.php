@@ -155,6 +155,28 @@ class AiClient
     }
 
     /**
+     * Creates a new message builder for fluent API usage.
+     *
+     * This method will be implemented once MessageBuilder is available.
+     * MessageBuilder will provide a fluent interface for constructing complex
+     * messages with multiple parts, attachments, and metadata.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|null $text Optional initial message text.
+     * @return object MessageBuilder instance (type will be updated when MessageBuilder is available).
+     *
+     * @throws \RuntimeException When MessageBuilder is not yet available.
+     */
+    public static function message(?string $text = null)
+    {
+        throw new \RuntimeException(
+            'MessageBuilder is not yet available. This method depends on builder infrastructure. ' .
+            'Use direct generation methods (generateTextResult, generateImageResult, etc.) for now.'
+        );
+    }
+
+    /**
      * Generates text using the traditional API approach.
      *
      * @since n.e.x.t
