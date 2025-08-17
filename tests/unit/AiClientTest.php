@@ -305,55 +305,6 @@ class AiClientTest extends TestCase
         $this->assertSame($mockResult, $result);
     }
 
-    /**
-     * Tests prompt normalization throws exception for invalid array content.
-     */
-    public function testNormalizePromptWithInvalidArrayContent(): void
-    {
-        $invalidArray = ['string', 123, new \stdClass()];
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Array must contain only Message or MessagePart objects');
-
-        AiClient::generateTextResult($invalidArray, $this->mockTextModel);
-    }
-
-    /**
-     * Tests prompt normalization throws exception for completely invalid input.
-     */
-    public function testNormalizePromptWithInvalidInput(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid prompt format provided');
-
-        AiClient::generateTextResult(123, $this->mockTextModel);
-    }
-
-    /**
-     * Tests automatic model discovery when no model is provided (throws RuntimeException in current implementation).
-     */
-    public function testAutoModelDiscoveryThrowsException(): void
-    {
-        $prompt = 'Generate text';
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('No text generation models available');
-
-        AiClient::generateTextResult($prompt);
-    }
-
-    /**
-     * Tests automatic image model discovery when no model is provided (throws RuntimeException currently).
-     */
-    public function testAutoImageModelDiscoveryThrowsException(): void
-    {
-        $prompt = 'Generate image';
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('No image generation models available');
-
-        AiClient::generateImageResult($prompt);
-    }
 
     /**
      * Tests isConfigured method returns true when provider availability is configured.

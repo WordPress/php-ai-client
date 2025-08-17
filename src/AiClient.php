@@ -192,6 +192,8 @@ class AiClient
     {
         // Convert prompt to standardized Message array format
         $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? ModelDiscovery::findTextModel(self::defaultRegistry());
@@ -204,7 +206,7 @@ class AiClient
         }
 
         // Generate the result using the model
-        return $resolvedModel->generateTextResult($messages);
+        return $resolvedModel->generateTextResult($messageList);
     }
 
     /**
@@ -223,6 +225,8 @@ class AiClient
     {
         // Convert prompt to standardized Message array format
         $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? ModelDiscovery::findTextModel(self::defaultRegistry());
@@ -235,7 +239,7 @@ class AiClient
         }
 
         // Stream the results using the model
-        yield from $resolvedModel->streamGenerateTextResult($messages);
+        yield from $resolvedModel->streamGenerateTextResult($messageList);
     }
 
     /**
@@ -254,6 +258,8 @@ class AiClient
     {
         // Convert prompt to standardized Message array format
         $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? ModelDiscovery::findImageModel(self::defaultRegistry());
@@ -266,7 +272,7 @@ class AiClient
         }
 
         // Generate the result using the model
-        return $resolvedModel->generateImageResult($messages);
+        return $resolvedModel->generateImageResult($messageList);
     }
 
     /**
@@ -285,6 +291,8 @@ class AiClient
     {
         // Convert prompt to standardized Message array format
         $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? ModelDiscovery::findTextToSpeechModel(self::defaultRegistry());
@@ -297,7 +305,7 @@ class AiClient
         }
 
         // Generate the result using the model
-        return $resolvedModel->convertTextToSpeechResult($messages);
+        return $resolvedModel->convertTextToSpeechResult($messageList);
     }
 
     /**
@@ -316,6 +324,8 @@ class AiClient
     {
         // Convert prompt to standardized Message array format
         $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? ModelDiscovery::findSpeechModel(self::defaultRegistry());
@@ -328,7 +338,7 @@ class AiClient
         }
 
         // Generate the result using the model
-        return $resolvedModel->generateSpeechResult($messages);
+        return $resolvedModel->generateSpeechResult($messageList);
     }
 
     /**
@@ -388,6 +398,8 @@ class AiClient
     {
         // Convert prompt to standardized Message array format
         $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Create and return the operation (starting state, no result yet)
         return new GenerativeAiOperation(
@@ -412,6 +424,8 @@ class AiClient
     {
         // Convert prompt to standardized Message array format
         $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Ensure the model supports text generation
         if (!$model instanceof TextGenerationModelInterface) {
@@ -443,6 +457,8 @@ class AiClient
     {
         // Convert prompt to standardized Message array format
         $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Ensure the model supports image generation
         if (!$model instanceof ImageGenerationModelInterface) {
@@ -474,6 +490,8 @@ class AiClient
     {
         // Convert prompt to standardized Message array format
         $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Ensure the model supports text-to-speech conversion operations
         if (!$model instanceof TextToSpeechConversionOperationModelInterface) {
@@ -506,6 +524,8 @@ class AiClient
     {
         // Convert prompt to standardized Message array format
         $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Ensure the model supports speech generation operations
         if (!$model instanceof SpeechGenerationOperationModelInterface) {

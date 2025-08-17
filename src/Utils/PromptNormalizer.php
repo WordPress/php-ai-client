@@ -21,7 +21,7 @@ class PromptNormalizer
      * @since n.e.x.t
      *
      * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content in various formats.
-     * @return Message[] Array of Message objects.
+     * @return list<Message> Array of Message objects.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      */
@@ -60,7 +60,9 @@ class PromptNormalizer
                         throw new \InvalidArgumentException('Array must contain only Message or MessagePart objects');
                     }
                 }
-                return $prompt;
+                /** @var Message[] $messages */
+                $messages = $prompt;
+                return array_values($messages);
             }
 
             // Array of MessageParts
@@ -72,7 +74,9 @@ class PromptNormalizer
                     }
                 }
                 // Convert each MessagePart to a UserMessage
-                return array_map(fn(MessagePart $part) => new UserMessage([$part]), $prompt);
+                /** @var MessagePart[] $messageParts */
+                $messageParts = $prompt;
+                return array_values(array_map(fn(MessagePart $part) => new UserMessage([$part]), $messageParts));
             }
 
             // Invalid array content
