@@ -431,7 +431,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
             if (isset($authenticationSchema['required']) && is_array($authenticationSchema['required'])) {
                 /** @var list<string> $requiredProperties */
                 $requiredProperties = $authenticationSchema['required'];
-                if (array_diff_key($authenticationData, array_flip($requiredProperties))) {
+                if (array_diff_key(array_flip($requiredProperties), $authenticationData)) {
                     $authenticationClass = NullRequestAuthentication::class;
                 }
             }
