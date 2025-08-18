@@ -2,6 +2,7 @@
 .gitattributes         export-ignore
 /.github/              export-ignore
 .gitignore             export-ignore
+/cli.php               export-ignore
 /*.md                  export-ignore
 /LICENSE.md           -export-ignore
 /README.md            -export-ignore
