@@ -16,6 +16,8 @@ use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
+use WordPress\AiClient\Providers\Http\Exception\ResponseException;
+use WordPress\AiClient\Providers\Http\Util\ResponseUtil;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -45,6 +47,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         $request = $this->getRequestAuthentication()->authenticateRequest($request);
         $response = $httpTransporter->send($request);
 
+        $this->throwIfNotSuccessful($response);
         return $this->parseResponseToGenerativeAiResult($response);
     }
 
@@ -497,6 +500,19 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         array $headers = [],
         $data = null
     ): Request;
+
+    /**
+     * Throws an exception if the response is not successful.
+     *
+     * @since n.e.x.t
+     *
+     * @param Response $response The HTTP response to check.
+     * @throws ResponseException If the response is not successful.
+     */
+    protected function throwIfNotSuccessful(Response $response): void
+    {
+        ResponseUtil::throwIfNotSuccessful($response);
+    }
 
     /**
      * Parses the response from the API endpoint to a generative AI result.

@@ -7,6 +7,8 @@ namespace WordPress\AiClient\Providers;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
+use WordPress\AiClient\Providers\Http\Exception\ResponseException;
+use WordPress\AiClient\Providers\Http\Util\ResponseUtil;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
@@ -27,6 +29,7 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
         $request = $this->getRequestAuthentication()->authenticateRequest($request);
         $response = $httpTransporter->send($request);
 
+        $this->throwIfNotSuccessful($response);
         $modelsMetadataList = $this->parseResponseToModelMetadataList($response);
 
         // Parse list to map.
@@ -54,6 +57,19 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
         array $headers = [],
         $data = null
     ): Request;
+
+    /**
+     * Throws an exception if the response is not successful.
+     *
+     * @since n.e.x.t
+     *
+     * @param Response $response The HTTP response to check.
+     * @throws ResponseException If the response is not successful.
+     */
+    protected function throwIfNotSuccessful(Response $response): void
+    {
+        ResponseUtil::throwIfNotSuccessful($response);
+    }
 
     /**
      * Parses the response from the API endpoint to list models into a list of model metadata objects.
