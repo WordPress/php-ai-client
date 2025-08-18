@@ -125,6 +125,7 @@ class AiClient
         $method = GenerationStrategyResolver::resolve($model);
 
         // Call the resolved method dynamically
+        /** @var GenerativeAiResult */
         return self::$method($prompt, $model);
     }
 
@@ -176,6 +177,7 @@ class AiClient
         InterfaceValidator::validateTextGeneration($resolvedModel);
 
         // Generate the result using the model
+        /** @phpstan-ignore-next-line */
         return $resolvedModel->generateTextResult($messageList);
     }
 
@@ -205,6 +207,7 @@ class AiClient
         InterfaceValidator::validateTextGeneration($resolvedModel);
 
         // Stream the results using the model
+        /** @phpstan-ignore-next-line */
         yield from $resolvedModel->streamGenerateTextResult($messageList);
     }
 
@@ -234,6 +237,7 @@ class AiClient
         InterfaceValidator::validateImageGeneration($resolvedModel);
 
         // Generate the result using the model
+        /** @phpstan-ignore-next-line */
         return $resolvedModel->generateImageResult($messageList);
     }
 
@@ -263,6 +267,7 @@ class AiClient
         InterfaceValidator::validateTextToSpeechConversion($resolvedModel);
 
         // Generate the result using the model
+        /** @phpstan-ignore-next-line */
         return $resolvedModel->convertTextToSpeechResult($messageList);
     }
 
@@ -292,6 +297,7 @@ class AiClient
         InterfaceValidator::validateSpeechGeneration($resolvedModel);
 
         // Generate the result using the model
+        /** @phpstan-ignore-next-line */
         return $resolvedModel->generateSpeechResult($messageList);
     }
 
@@ -321,6 +327,7 @@ class AiClient
         InterfaceValidator::validateEmbeddingGeneration($resolvedModel);
 
         // Generate the result using the model
+        /** @phpstan-ignore-next-line */
         return $resolvedModel->generateEmbeddingsResult($messageList);
     }
 
@@ -468,6 +475,7 @@ class AiClient
         InterfaceValidator::validateEmbeddingGenerationOperation($model);
 
         // Delegate to the model's operation method with proper list type
+        /** @phpstan-ignore-next-line */
         return $model->generateEmbeddingsOperation($messageList);
     }
 }

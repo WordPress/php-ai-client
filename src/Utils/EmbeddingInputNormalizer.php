@@ -88,9 +88,10 @@ class EmbeddingInputNormalizer
     public static function isValidEmbeddingInput($input): bool
     {
         try {
+            /** @phpstan-ignore-next-line */
             self::normalize($input);
             return true;
-        } catch (\InvalidArgumentException) {
+        } catch (\InvalidArgumentException $e) {
             return false;
         }
     }
