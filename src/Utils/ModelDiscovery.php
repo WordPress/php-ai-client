@@ -28,8 +28,11 @@ class ModelDiscovery
      *
      * @throws \RuntimeException If no suitable model is found.
      */
-    private static function findModelByCapability(ProviderRegistry $registry, CapabilityEnum $capability, string $errorType): ModelInterface
-    {
+    private static function findModelByCapability(
+        ProviderRegistry $registry,
+        CapabilityEnum $capability,
+        string $errorType
+    ): ModelInterface {
         $requirements = new ModelRequirements([$capability], []);
         $providerModelsMetadata = $registry->findModelsMetadataForSupport($requirements);
 
@@ -93,7 +96,11 @@ class ModelDiscovery
      */
     public static function findTextToSpeechModel(ProviderRegistry $registry): ModelInterface
     {
-        return self::findModelByCapability($registry, CapabilityEnum::textToSpeechConversion(), 'text-to-speech conversion');
+        return self::findModelByCapability(
+            $registry,
+            CapabilityEnum::textToSpeechConversion(),
+            'text-to-speech conversion'
+        );
     }
 
     /**

@@ -6,10 +6,6 @@ namespace WordPress\AiClient\Tests\unit\Utils;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
-use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Tests\mocks\MockImageGenerationModel;
 use WordPress\AiClient\Tests\mocks\MockTextGenerationModel;
 use WordPress\AiClient\Utils\GenerationStrategyResolver;
@@ -58,11 +54,4 @@ class GenerationStrategyResolverTest extends TestCase
 
         GenerationStrategyResolver::resolve($model);
     }
-
-
-
-
-
-
-
 }

@@ -57,7 +57,9 @@ class PromptNormalizer
                 // Validate all elements are Messages
                 foreach ($prompt as $item) {
                     if (!$item instanceof Message) {
-                        throw new \InvalidArgumentException('Array must contain only Message, MessagePart, or string objects');
+                        throw new \InvalidArgumentException(
+                            'Array must contain only Message, MessagePart, or string objects'
+                        );
                     }
                 }
                 /** @var Message[] $messages */
@@ -70,7 +72,9 @@ class PromptNormalizer
                 // Validate all elements are MessageParts
                 foreach ($prompt as $item) {
                     if (!$item instanceof MessagePart) {
-                        throw new \InvalidArgumentException('Array must contain only Message, MessagePart, or string objects');
+                        throw new \InvalidArgumentException(
+                            'Array must contain only Message, MessagePart, or string objects'
+                        );
                     }
                 }
                 // Convert each MessagePart to a UserMessage
@@ -92,7 +96,10 @@ class PromptNormalizer
                 // Convert each string to a UserMessage
                 /** @var string[] $stringArray */
                 $stringArray = $prompt;
-                return array_values(array_map(fn(string $text) => new UserMessage([new MessagePart($text)]), $stringArray));
+                return array_values(array_map(
+                    fn(string $text) => new UserMessage([new MessagePart($text)]),
+                    $stringArray
+                ));
             }
 
             // Invalid array content

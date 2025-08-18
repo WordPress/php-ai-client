@@ -311,7 +311,8 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string[]|string|MessagePart|MessagePart[]|Message|Message[] $input The input data to generate embeddings for.
+     * @param string[]|string|MessagePart|MessagePart[]|Message|Message[] $input
+     *        The input data to generate embeddings for.
      * @param ModelInterface|null $model Optional specific model to use.
      * @return EmbeddingResult The generation result.
      *
@@ -448,7 +449,8 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string[]|string|MessagePart|MessagePart[]|Message|Message[] $input The input data to generate embeddings for.
+     * @param string[]|string|MessagePart|MessagePart[]|Message|Message[] $input
+     *        The input data to generate embeddings for.
      * @param ModelInterface $model The model to use for embedding generation.
      * @return EmbeddingOperation The operation for async embedding processing.
      *
