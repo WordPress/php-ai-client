@@ -24,6 +24,7 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
         $httpTransporter = $this->getHttpTransporter();
 
         $request = $this->createRequest(HttpMethodEnum::GET(), 'models');
+        $request = $this->getRequestAuthentication()->authenticateRequest($request);
         $response = $httpTransporter->send($request);
 
         $modelsMetadataList = $this->parseResponseToModelMetadataList($response);

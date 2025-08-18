@@ -42,6 +42,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         $params = $this->prepareGenerateTextParams($prompt);
 
         $request = $this->createRequest(HttpMethodEnum::POST(), 'chat/completions', [], $params);
+        $request = $this->getRequestAuthentication()->authenticateRequest($request);
         $response = $httpTransporter->send($request);
 
         return $this->parseResponseToGenerativeAiResult($response);
