@@ -153,6 +153,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     }
                     if (
                         isset($modelData['supportedGenerationMethods']) &&
+                        is_array($modelData['supportedGenerationMethods']) &&
                         in_array('generateContent', $modelData['supportedGenerationMethods'], true)
                     ) {
                         $modelCaps = $geminiCapabilities;
@@ -180,6 +181,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                         }
                     } elseif (
                         isset($modelData['supportedGenerationMethods']) &&
+                        is_array($modelData['supportedGenerationMethods']) &&
                         in_array('predict', $modelData['supportedGenerationMethods'], true)
                     ) {
                         $modelCaps = $imagenCapabilities;
@@ -189,9 +191,12 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                         $modelOptions = [];
                     }
 
+                    /** @var string $modelName */
+                    $modelName = $modelData['displayName'] ?? $modelId;
+
                     return new ModelMetadata(
                         $modelId,
-                        $modelData['displayName'] ?? $modelId,
+                        $modelName,
                         $modelCaps,
                         $modelOptions
                     );
