@@ -83,7 +83,7 @@ class PromptNormalizer
                 return array_values(array_map(fn(MessagePart $part) => new UserMessage([$part]), $messageParts));
             }
 
-            // Array of strings (common for embeddings)
+            // Array of strings
             if (is_string($firstElement)) {
                 // Validate all elements are strings
                 foreach ($prompt as $index => $item) {
