@@ -111,7 +111,10 @@ class PromptNormalizerTest extends TestCase
         $invalidArray = [$part, 'string', 123];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Array element at index 2 must be a string, MessagePart, Message, or structured message array, integer given');
+        $this->expectExceptionMessage(
+            'Array element at index 2 must be a string, MessagePart, Message, or ' .
+            'structured message array, integer given'
+        );
 
         PromptNormalizer::normalize($invalidArray);
     }
@@ -122,7 +125,10 @@ class PromptNormalizerTest extends TestCase
     public function testNormalizeInvalidInputThrowsException(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Array element at index 0 must be a string, MessagePart, Message, or structured message array, integer given');
+        $this->expectExceptionMessage(
+            'Array element at index 0 must be a string, MessagePart, Message, or ' .
+            'structured message array, integer given'
+        );
 
         PromptNormalizer::normalize(123);
     }
@@ -135,7 +141,9 @@ class PromptNormalizerTest extends TestCase
         $invalidArray = [new \stdClass(), new \DateTime()];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Array element at index 0 must be a string, MessagePart, Message, or structured message array, object given');
+        $this->expectExceptionMessage(
+            'Array element at index 0 must be a string, MessagePart, Message, or structured message array, object given'
+        );
 
         PromptNormalizer::normalize($invalidArray);
     }

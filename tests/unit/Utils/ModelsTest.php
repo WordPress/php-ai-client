@@ -96,7 +96,9 @@ class ModelsTest extends TestCase
     public function testValidateTextToSpeechConversionThrowsExceptionWithInvalidModel(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model must implement TextToSpeechConversionModelInterface for text-to-speech conversion');
+        $this->expectExceptionMessage(
+            'Model must implement TextToSpeechConversionModelInterface for text-to-speech conversion'
+        );
 
         Models::validateTextToSpeechConversion($this->mockModel);
     }
@@ -109,7 +111,9 @@ class ModelsTest extends TestCase
     public function testValidateSpeechGenerationThrowsExceptionWithInvalidModel(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model must implement SpeechGenerationModelInterface for speech generation');
+        $this->expectExceptionMessage(
+            'Model must implement SpeechGenerationModelInterface for speech generation'
+        );
 
         Models::validateSpeechGeneration($this->mockModel);
     }
@@ -122,7 +126,9 @@ class ModelsTest extends TestCase
     public function testValidateTextGenerationOperationThrowsExceptionWithInvalidModel(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model must implement TextGenerationModelInterface for text generation operations');
+        $this->expectExceptionMessage(
+            'Model must implement TextGenerationModelInterface for text generation operations'
+        );
 
         Models::validateTextGenerationOperation($this->mockModel);
     }
@@ -135,7 +141,9 @@ class ModelsTest extends TestCase
     public function testValidateImageGenerationOperationThrowsExceptionWithInvalidModel(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model must implement ImageGenerationModelInterface for image generation operations');
+        $this->expectExceptionMessage(
+            'Model must implement ImageGenerationModelInterface for image generation operations'
+        );
 
         Models::validateImageGenerationOperation($this->mockModel);
     }
@@ -148,7 +156,10 @@ class ModelsTest extends TestCase
     public function testValidateTextToSpeechConversionOperationThrowsExceptionWithInvalidModel(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model must implement TextToSpeechConversionOperationModelInterface for text-to-speech conversion operations');
+        $this->expectExceptionMessage(
+            'Model must implement TextToSpeechConversionOperationModelInterface ' .
+            'for text-to-speech conversion operations'
+        );
 
         Models::validateTextToSpeechConversionOperation($this->mockModel);
     }
@@ -161,7 +172,9 @@ class ModelsTest extends TestCase
     public function testValidateSpeechGenerationOperationThrowsExceptionWithInvalidModel(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model must implement SpeechGenerationOperationModelInterface for speech generation operations');
+        $this->expectExceptionMessage(
+            'Model must implement SpeechGenerationOperationModelInterface for speech generation operations'
+        );
 
         Models::validateSpeechGenerationOperation($this->mockModel);
     }
