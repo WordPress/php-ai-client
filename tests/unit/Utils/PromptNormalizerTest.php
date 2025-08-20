@@ -109,7 +109,7 @@ class PromptNormalizerTest extends TestCase
         $invalidArray = [$part, 'string', 123];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Array must contain only Message, MessagePart, or string objects');
+        $this->expectExceptionMessage('Array element at index 2 must be a string, MessagePart, or Message, integer given');
 
         PromptNormalizer::normalize($invalidArray);
     }
@@ -120,7 +120,7 @@ class PromptNormalizerTest extends TestCase
     public function testNormalizeInvalidInputThrowsException(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid prompt format provided');
+        $this->expectExceptionMessage('Array element at index 0 must be a string, MessagePart, or Message, integer given');
 
         PromptNormalizer::normalize(123);
     }
@@ -133,7 +133,7 @@ class PromptNormalizerTest extends TestCase
         $invalidArray = [new \stdClass(), new \DateTime()];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Array must contain only Message, MessagePart, or string objects');
+        $this->expectExceptionMessage('Array element at index 0 must be a string, MessagePart, or Message, object given');
 
         PromptNormalizer::normalize($invalidArray);
     }

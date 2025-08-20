@@ -20,93 +20,63 @@ class PromptNormalizer
      *
      * @since n.e.x.t
      *
-     * @param string|string[]|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content in various formats.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content in various formats.
      * @return list<Message> Array of Message objects.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      */
     public static function normalize($prompt): array
     {
-        // Handle string input
-        if (is_string($prompt)) {
-            return [new UserMessage([new MessagePart($prompt)])];
+        // Normalize to array first for consistent processing
+        if (!is_array($prompt)) {
+            $prompt = [$prompt];
         }
 
-        // Handle single MessagePart
-        if ($prompt instanceof MessagePart) {
-            return [new UserMessage([$prompt])];
+        // Empty array check
+        if (empty($prompt)) {
+            throw new \InvalidArgumentException('Prompt array cannot be empty');
         }
 
-        // Handle single Message
-        if ($prompt instanceof Message) {
-            return [$prompt];
+        // Process each item individually
+        $messages = [];
+        foreach ($prompt as $index => $item) {
+            $messages[] = self::normalizeItem($item, $index);
         }
 
-        // Handle arrays
-        if (is_array($prompt)) {
-            // Empty array
-            if (empty($prompt)) {
-                throw new \InvalidArgumentException('Prompt array cannot be empty');
-            }
+        return $messages;
+    }
 
-            // Check first element to determine array type
-            $firstElement = reset($prompt);
-
-            // Array of Messages
-            if ($firstElement instanceof Message) {
-                // Validate all elements are Messages
-                foreach ($prompt as $item) {
-                    if (!$item instanceof Message) {
-                        throw new \InvalidArgumentException(
-                            'Array must contain only Message, MessagePart, or string objects'
-                        );
-                    }
-                }
-                /** @var Message[] $messages */
-                $messages = $prompt;
-                return array_values($messages);
-            }
-
-            // Array of MessageParts
-            if ($firstElement instanceof MessagePart) {
-                // Validate all elements are MessageParts
-                foreach ($prompt as $item) {
-                    if (!$item instanceof MessagePart) {
-                        throw new \InvalidArgumentException(
-                            'Array must contain only Message, MessagePart, or string objects'
-                        );
-                    }
-                }
-                // Convert each MessagePart to a UserMessage
-                /** @var MessagePart[] $messageParts */
-                $messageParts = $prompt;
-                return array_values(array_map(fn(MessagePart $part) => new UserMessage([$part]), $messageParts));
-            }
-
-            // Array of strings
-            if (is_string($firstElement)) {
-                // Validate all elements are strings
-                foreach ($prompt as $index => $item) {
-                    if (!is_string($item)) {
-                        throw new \InvalidArgumentException(
-                            sprintf('Array element at index %d must be a string, %s given', $index, gettype($item))
-                        );
-                    }
-                }
-                // Convert each string to a UserMessage
-                /** @var string[] $stringArray */
-                $stringArray = $prompt;
-                return array_values(array_map(
-                    fn(string $text) => new UserMessage([new MessagePart($text)]),
-                    $stringArray
-                ));
-            }
-
-            // Invalid array content
-            throw new \InvalidArgumentException('Array must contain only Message, MessagePart, or string objects');
+    /**
+     * Normalizes a single prompt item to a Message.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|Message $item The prompt item to normalize.
+     * @param int $index The array index for error reporting.
+     * @return Message The normalized message.
+     *
+     * @throws \InvalidArgumentException If the item format is invalid.
+     */
+    private static function normalizeItem($item, int $index): Message
+    {
+        if (is_string($item)) {
+            return new UserMessage([new MessagePart($item)]);
         }
 
-        // Unsupported type
-        throw new \InvalidArgumentException('Invalid prompt format provided');
+        if ($item instanceof MessagePart) {
+            return new UserMessage([$item]);
+        }
+
+        if ($item instanceof Message) {
+            return $item;
+        }
+
+        throw new \InvalidArgumentException(
+            sprintf(
+                'Array element at index %d must be a string, MessagePart, or Message, %s given',
+                $index,
+                gettype($item)
+            )
+        );
     }
 }
