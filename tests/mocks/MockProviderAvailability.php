@@ -5,14 +5,24 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\mocks;
 
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
+use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
+use WordPress\AiClient\Providers\Http\Traits\WithRequestAuthenticationTrait;
 
 /**
  * Mock provider availability for testing.
  *
  * @since n.e.x.t
  */
-class MockProviderAvailability implements ProviderAvailabilityInterface
+class MockProviderAvailability implements
+    ProviderAvailabilityInterface,
+    WithHttpTransporterInterface,
+    WithRequestAuthenticationInterface
 {
+    use WithHttpTransporterTrait;
+    use WithRequestAuthenticationTrait;
+
     /**
      * @var bool Whether the provider is configured.
      */

@@ -6,6 +6,10 @@ namespace WordPress\AiClient\Tests\mocks;
 
 use InvalidArgumentException;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
+use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
+use WordPress\AiClient\Providers\Http\Traits\WithRequestAuthenticationTrait;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
@@ -13,8 +17,14 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  *
  * @since n.e.x.t
  */
-class MockModelMetadataDirectory implements ModelMetadataDirectoryInterface
+class MockModelMetadataDirectory implements
+    ModelMetadataDirectoryInterface,
+    WithHttpTransporterInterface,
+    WithRequestAuthenticationInterface
 {
+    use WithHttpTransporterTrait;
+    use WithRequestAuthenticationTrait;
+
     /**
      * @var array<string, ModelMetadata> Available models.
      */

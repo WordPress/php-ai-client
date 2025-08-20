@@ -138,6 +138,25 @@ class SupportedOptionTest extends TestCase
     }
 
     /**
+     * Tests that isSupportedValue correctly handles unordered array values.
+     *
+     * @return void
+     */
+    public function testIsSupportedValueWithUnorderedArray(): void
+    {
+        $option = new SupportedOption('colors', [['red', 'green', 'blue'], ['yellow', 'orange']]);
+
+        // Test with an array that has the same elements but in a different order
+        $this->assertTrue($option->isSupportedValue(['blue', 'red', 'green']));
+        $this->assertTrue($option->isSupportedValue(['orange', 'yellow']));
+
+        // Test with an array that has different elements or missing elements
+        $this->assertFalse($option->isSupportedValue(['red', 'green']));
+        $this->assertFalse($option->isSupportedValue(['red', 'green', 'blue', 'purple']));
+        $this->assertFalse($option->isSupportedValue(['red', 'yellow', 'blue']));
+    }
+
+    /**
      * Tests JSON schema generation.
      *
      * @return void

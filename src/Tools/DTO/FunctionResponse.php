@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 
 /**
@@ -151,7 +152,7 @@ class FunctionResponse extends AbstractDataTransferObject
 
         // Validate that at least one of id or name is provided
         if (!array_key_exists(self::KEY_ID, $array) && !array_key_exists(self::KEY_NAME, $array)) {
-            throw new \InvalidArgumentException('At least one of id or name must be provided.');
+            throw new InvalidArgumentException('At least one of id or name must be provided.');
         }
 
         return new self(
