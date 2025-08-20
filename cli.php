@@ -174,10 +174,16 @@ $modelRequirements = new ModelRequirements(
 try {
     if (!$providerId && !$modelId) {
         $providerModelsMetadata = $providerRegistry->findModelsMetadataForSupport($modelRequirements);
+        if (!isset($providerModelsMetadata[0])) {
+            logError('No provider model supports the necessary model requirements.');
+        }
         $providerId = $providerModelsMetadata[0]->getProvider()->getId();
         $modelId = $providerModelsMetadata[0]->getModels()[0]->getId();
     } elseif (!$modelId) {
         $modelsMetadata = $providerRegistry->findProviderModelsMetadataForSupport($providerId, $modelRequirements);
+        if (!isset($modelsMetadata[0])) {
+            logError('No "' . $providerId . '" model supports the necessary model requirements.');
+        }
         $modelId = $modelsMetadata[0]->getId();
     }
     $modelInstance = $providerRegistry->getProviderModel($providerId, $modelId);
