@@ -108,7 +108,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface $model The model to use for generation.
      * @return GenerativeAiResult The generation result.
      *
@@ -164,9 +164,13 @@ class AiClient
     /**
      * Template method for executing generation operations.
      *
+     * NOTE: This method currently uses PromptNormalizer directly, but will be refactored
+     * to delegate to PromptBuilder once PR #49 is merged, following the architectural
+     * pattern where traditional API methods wrap the fluent builder API.
+     *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @param string $type The generation type.
      * @return GenerativeAiResult The generation result.
@@ -176,7 +180,8 @@ class AiClient
      */
     private static function executeGeneration($prompt, ?ModelInterface $model, string $type): GenerativeAiResult
     {
-        // Convert prompt to standardized Message array format
+        // TODO: Replace with PromptBuilder delegation once PR #49 is merged
+        // This should become: return self::prompt($prompt)->usingModel($model)->generate();
         $messages = PromptNormalizer::normalize($prompt);
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
@@ -208,14 +213,14 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateTextResult($prompt, ModelInterface $model = null): GenerativeAiResult
+    public static function generateTextResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
     {
         return self::executeGeneration($prompt, $model, 'text');
     }
@@ -225,16 +230,16 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @return Generator<GenerativeAiResult> Generator yielding partial text generation results.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function streamGenerateTextResult($prompt, ModelInterface $model = null): Generator
+    public static function streamGenerateTextResult($prompt, ?ModelInterface $model = null): Generator
     {
-        // Convert prompt to standardized Message array format
+        // TODO: Replace with PromptBuilder delegation once PR #49 is merged
         $messages = PromptNormalizer::normalize($prompt);
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
@@ -254,14 +259,14 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateImageResult($prompt, ModelInterface $model = null): GenerativeAiResult
+    public static function generateImageResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
     {
         return self::executeGeneration($prompt, $model, 'image');
     }
@@ -271,16 +276,16 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function convertTextToSpeechResult($prompt, ModelInterface $model = null): GenerativeAiResult
+    public static function convertTextToSpeechResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
     {
-        // Convert prompt to standardized Message array format
+        // TODO: Replace with PromptBuilder delegation once PR #49 is merged
         $messages = PromptNormalizer::normalize($prompt);
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
@@ -300,14 +305,14 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateSpeechResult($prompt, ModelInterface $model = null): GenerativeAiResult
+    public static function generateSpeechResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
     {
         return self::executeGeneration($prompt, $model, 'speech');
     }
@@ -319,7 +324,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface $model The model to use for generation.
      * @return GenerativeAiOperation The operation for async processing.
      *
@@ -327,7 +332,7 @@ class AiClient
      */
     public static function generateOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
-        // Convert prompt to standardized Message array format
+        // TODO: Replace with PromptBuilder delegation once PR #49 is merged
         $messages = PromptNormalizer::normalize($prompt);
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
@@ -341,7 +346,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface $model The model to use for text generation.
      * @return GenerativeAiOperation The operation for async text processing.
      *
@@ -362,7 +367,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface $model The model to use for image generation.
      * @return GenerativeAiOperation The operation for async image processing.
      *
@@ -383,7 +388,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface $model The model to use for text-to-speech conversion.
      * @return GenerativeAiOperation The operation for async text-to-speech processing.
      *
@@ -404,7 +409,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
      * @param ModelInterface $model The model to use for speech generation.
      * @return GenerativeAiOperation The operation for async speech processing.
      *
