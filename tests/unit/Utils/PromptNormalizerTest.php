@@ -149,9 +149,9 @@ class PromptNormalizerTest extends TestCase
             'role' => 'system',
             'parts' => ['You are a helpful assistant.', 'Be concise.']
         ];
-        
+
         $result = PromptNormalizer::normalize($structuredMessage);
-        
+
         $this->assertCount(1, $result);
         $this->assertInstanceOf(Message::class, $result[0]);
         $this->assertTrue($result[0]->getRole()->equals(MessageRoleEnum::system()));
@@ -170,19 +170,19 @@ class PromptNormalizerTest extends TestCase
             'User message',
             new MessagePart('Part message')
         ];
-        
+
         $result = PromptNormalizer::normalize($mixed);
-        
+
         $this->assertCount(3, $result);
-        
+
         // First: structured system message
         $this->assertTrue($result[0]->getRole()->equals(MessageRoleEnum::system()));
         $this->assertEquals('System prompt', $result[0]->getParts()[0]->getText());
-        
+
         // Second: user message from string
         $this->assertInstanceOf(UserMessage::class, $result[1]);
         $this->assertEquals('User message', $result[1]->getParts()[0]->getText());
-        
+
         // Third: user message from MessagePart
         $this->assertInstanceOf(UserMessage::class, $result[2]);
         $this->assertEquals('Part message', $result[2]->getParts()[0]->getText());
@@ -197,10 +197,10 @@ class PromptNormalizerTest extends TestCase
             'role' => 'invalid_role',
             'parts' => ['Some text']
         ];
-        
+
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid role "invalid_role" at index 0');
-        
+
         PromptNormalizer::normalize($structuredMessage);
     }
 
@@ -213,10 +213,10 @@ class PromptNormalizerTest extends TestCase
             'role' => 'user'
             // Missing 'parts'
         ];
-        
+
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Structured message at index 0 is missing required "parts" field');
-        
+
         PromptNormalizer::normalize($structuredMessage);
     }
 
@@ -231,9 +231,9 @@ class PromptNormalizerTest extends TestCase
             ['role' => 'model', 'parts' => ['Model']],
             ['role' => 'assistant', 'parts' => ['Assistant']],
         ];
-        
+
         $result = PromptNormalizer::normalize($messages);
-        
+
         $this->assertCount(4, $result);
         $this->assertTrue($result[0]->getRole()->equals(MessageRoleEnum::system()));
         $this->assertTrue($result[1]->getRole()->equals(MessageRoleEnum::user()));

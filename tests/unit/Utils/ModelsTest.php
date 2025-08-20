@@ -7,7 +7,6 @@ namespace WordPress\AiClient\Tests\unit\Utils;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
-use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\ProviderRegistry;
@@ -32,10 +31,10 @@ class ModelsTest extends TestCase
     protected function setUp(): void
     {
         $this->registry = new ProviderRegistry();
-        
+
         $mockMetadata = $this->createMock(ModelMetadata::class);
         $mockConfig = $this->createMock(ModelConfig::class);
-        
+
         $this->mockTextModel = new MockTextGenerationModel();
         $this->mockImageModel = new MockImageGenerationModel();
         $this->mockModel = new MockModel($mockMetadata, $mockConfig);
@@ -61,7 +60,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Model must implement TextGenerationModelInterface for text generation');
-        
+
         Models::validateTextGeneration($this->mockModel);
     }
 
@@ -85,7 +84,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Model must implement ImageGenerationModelInterface for image generation');
-        
+
         Models::validateImageGeneration($this->mockModel);
     }
 
@@ -98,7 +97,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Model must implement TextToSpeechConversionModelInterface for text-to-speech conversion');
-        
+
         Models::validateTextToSpeechConversion($this->mockModel);
     }
 
@@ -111,7 +110,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Model must implement SpeechGenerationModelInterface for speech generation');
-        
+
         Models::validateSpeechGeneration($this->mockModel);
     }
 
@@ -124,7 +123,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Model must implement TextGenerationModelInterface for text generation operations');
-        
+
         Models::validateTextGenerationOperation($this->mockModel);
     }
 
@@ -137,7 +136,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Model must implement ImageGenerationModelInterface for image generation operations');
-        
+
         Models::validateImageGenerationOperation($this->mockModel);
     }
 
@@ -148,7 +147,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Model must implement TextToSpeechConversionOperationModelInterface for text-to-speech conversion operations');
-        
+
         Models::validateTextToSpeechConversionOperation($this->mockModel);
     }
 
@@ -159,7 +158,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Model must implement SpeechGenerationOperationModelInterface for speech generation operations');
-        
+
         Models::validateSpeechGenerationOperation($this->mockModel);
     }
 
@@ -170,7 +169,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('No text generation models available');
-        
+
         Models::findTextModel($this->registry);
     }
 
@@ -181,7 +180,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('No image generation models available');
-        
+
         Models::findImageModel($this->registry);
     }
 
@@ -192,7 +191,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('No text-to-speech conversion models available');
-        
+
         Models::findTextToSpeechModel($this->registry);
     }
 
@@ -203,7 +202,7 @@ class ModelsTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('No speech generation models available');
-        
+
         Models::findSpeechModel($this->registry);
     }
 }
