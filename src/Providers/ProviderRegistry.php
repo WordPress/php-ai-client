@@ -15,7 +15,6 @@ use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
-use WordPress\AiClient\Providers\Http\DTO\NullRequestAuthentication;
 use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
@@ -94,11 +93,16 @@ class ProviderRegistry implements WithHttpTransporterInterface
 
         // Hook up the request authentication instance, using a default if not set.
         if (!isset($this->providerAuthenticationInstances[$className])) {
-            $this->providerAuthenticationInstances[$className] = $this->createDefaultProviderRequestAuthentication(
+            $defaultProviderAuthentication = $this->createDefaultProviderRequestAuthentication(
                 $className
             );
+            if ($defaultProviderAuthentication !== null) {
+                $this->providerAuthenticationInstances[$className] = $defaultProviderAuthentication;
+            }
         }
-        $this->setRequestAuthenticationForProvider($className, $this->providerAuthenticationInstances[$className]);
+        if (isset($this->providerAuthenticationInstances[$className])) {
+            $this->setRequestAuthenticationForProvider($className, $this->providerAuthenticationInstances[$className]);
+        }
 
         $this->providerClassNames[$metadata->getId()] = $className;
         $this->registeredClassNames[$className] = true;
@@ -162,7 +166,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     }
 
     /**
-     * Finds models across all providers that support the given requirements.
+     * Finds models across all available providers that support the given requirements.
      *
      * @since n.e.x.t
      *
@@ -191,7 +195,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     }
 
     /**
-     * Finds models within a specific provider that support the given requirements.
+     * Finds models within a specific available provider that support the given requirements.
      *
      * @since n.e.x.t
      *
@@ -204,6 +208,11 @@ class ProviderRegistry implements WithHttpTransporterInterface
         ModelRequirements $modelRequirements
     ): array {
         $className = $this->resolveProviderClassName($idOrClassName);
+
+        // If the provider is not configured, there is no way to use it, so it is considered unavailable.
+        if (!$this->isProviderConfigured($className)) {
+            return [];
+        }
 
         $modelMetadataDirectory = $className::modelMetadataDirectory();
 
@@ -245,9 +254,10 @@ class ProviderRegistry implements WithHttpTransporterInterface
         }
 
         if ($modelInstance instanceof WithRequestAuthenticationInterface) {
-            $modelInstance->setRequestAuthentication(
-                $this->getProviderRequestAuthentication($className)
-            );
+            $requestAuthentication = $this->getProviderRequestAuthentication($className);
+            if ($requestAuthentication !== null) {
+                $modelInstance->setRequestAuthentication($requestAuthentication);
+            }
         }
 
         return $modelInstance;
@@ -308,16 +318,19 @@ class ProviderRegistry implements WithHttpTransporterInterface
     }
 
     /**
-     * Gets the request authentication instance for the given provider.
+     * Gets the request authentication instance for the given provider, if set.
      *
      * @since n.e.x.t
      *
      * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
-     * @return RequestAuthenticationInterface The request authentication instance.
+     * @return ?RequestAuthenticationInterface The request authentication instance, or null if not set.
      */
-    public function getProviderRequestAuthentication(string $idOrClassName): RequestAuthenticationInterface
+    public function getProviderRequestAuthentication(string $idOrClassName): ?RequestAuthenticationInterface
     {
         $className = $this->resolveProviderClassName($idOrClassName);
+        if (!isset($this->providerAuthenticationInstances[$className])) {
+            return null;
+        }
         return $this->providerAuthenticationInstances[$className];
     }
 
@@ -387,11 +400,12 @@ class ProviderRegistry implements WithHttpTransporterInterface
      * @since n.e.x.t
      *
      * @param class-string<ProviderInterface> $className The provider class name.
-     * @return RequestAuthenticationInterface The default request authentication instance.
+     * @return ?RequestAuthenticationInterface The default request authentication instance, or null if not required or
+     *                                         if no credential data can be found.
      */
     private function createDefaultProviderRequestAuthentication(
         string $className
-    ): RequestAuthenticationInterface {
+    ): ?RequestAuthenticationInterface {
         $providerId = $className::metadata()->getId();
 
         /*
@@ -439,12 +453,12 @@ class ProviderRegistry implements WithHttpTransporterInterface
                 }
             }
 
-            // If any required fields are missing, use an empty authentication instance to avoid errors.
+            // If any required fields are missing, return null to avoid immediate errors.
             if (isset($authenticationSchema['required']) && is_array($authenticationSchema['required'])) {
                 /** @var list<string> $requiredProperties */
                 $requiredProperties = $authenticationSchema['required'];
                 if (array_diff_key(array_flip($requiredProperties), $authenticationData)) {
-                    $authenticationClass = NullRequestAuthentication::class;
+                    return null;
                 }
             }
         }

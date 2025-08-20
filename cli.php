@@ -182,7 +182,11 @@ try {
     } elseif (!$modelId) {
         $modelsMetadata = $providerRegistry->findProviderModelsMetadataForSupport($providerId, $modelRequirements);
         if (!isset($modelsMetadata[0])) {
-            logError('No "' . $providerId . '" model supports the necessary model requirements.');
+            if (!$providerRegistry->isProviderConfigured($providerId)) {
+                logError('The provider "' . $providerId . '" is not configured.');
+            } else {
+                logError('No "' . $providerId . '" model supports the necessary model requirements.');
+            }
         }
         $modelId = $modelsMetadata[0]->getId();
     }

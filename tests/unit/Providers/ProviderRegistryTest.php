@@ -7,7 +7,6 @@ namespace WordPress\AiClient\Tests\unit\Providers;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
-use WordPress\AiClient\Providers\Http\DTO\NullRequestAuthentication;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
@@ -338,8 +337,8 @@ class ProviderRegistryTest extends TestCase
         $retrievedAuth = $this->registry->getProviderRequestAuthentication('mock');
 
         // By default, it should create an ApiKeyRequestAuthentication if environment variables are set.
-        // Since no env vars are set in tests, it should fall back to NullRequestAuthentication.
-        $this->assertInstanceOf(NullRequestAuthentication::class, $retrievedAuth);
+        // Since no env vars are set in tests, it should fall back to null.
+        $this->assertNull($retrievedAuth);
     }
 
     /**
@@ -402,7 +401,7 @@ class ProviderRegistryTest extends TestCase
     }
 
     /**
-     * Tests that createDefaultProviderRequestAuthentication creates NullRequestAuthentication when env var is not set.
+     * Tests that createDefaultProviderRequestAuthentication returns null when env var is not set.
      *
      * @return void
      */
@@ -418,6 +417,6 @@ class ProviderRegistryTest extends TestCase
 
         $auth = $method->invoke($this->registry, MockProvider::class);
 
-        $this->assertInstanceOf(NullRequestAuthentication::class, $auth);
+        $this->assertNull($auth);
     }
 }
