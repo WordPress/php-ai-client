@@ -187,19 +187,16 @@ class AiClient
             case 'text':
                 $resolvedModel = $model ?? ModelDiscovery::findTextModel(self::defaultRegistry());
                 InterfaceValidator::validateTextGeneration($resolvedModel);
-                /** @phpstan-ignore-next-line */
                 return $resolvedModel->generateTextResult($messageList);
 
             case 'image':
                 $resolvedModel = $model ?? ModelDiscovery::findImageModel(self::defaultRegistry());
                 InterfaceValidator::validateImageGeneration($resolvedModel);
-                /** @phpstan-ignore-next-line */
                 return $resolvedModel->generateImageResult($messageList);
 
             case 'speech':
                 $resolvedModel = $model ?? ModelDiscovery::findSpeechModel(self::defaultRegistry());
                 InterfaceValidator::validateSpeechGeneration($resolvedModel);
-                /** @phpstan-ignore-next-line */
                 return $resolvedModel->generateSpeechResult($messageList);
 
             default:
@@ -250,7 +247,6 @@ class AiClient
         InterfaceValidator::validateTextGeneration($resolvedModel);
 
         // Stream the results using the model
-        /** @phpstan-ignore-next-line */
         yield from $resolvedModel->streamGenerateTextResult($messageList);
     }
 
@@ -297,7 +293,6 @@ class AiClient
         InterfaceValidator::validateTextToSpeechConversion($resolvedModel);
 
         // Generate the result using the model
-        /** @phpstan-ignore-next-line */
         return $resolvedModel->convertTextToSpeechResult($messageList);
     }
 

@@ -11,6 +11,8 @@ use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerat
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionOperationModelInterface;
+use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationOperationModelInterface;
+use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationOperationModelInterface;
 
 /**
  * Utility class for validating model interface implementations.
@@ -29,6 +31,7 @@ class InterfaceValidator
      *
      * @param ModelInterface $model The model to validate.
      * @return void
+     * @phpstan-assert TextGenerationModelInterface $model
      *
      * @throws \InvalidArgumentException If the model doesn't implement the required interface.
      */
@@ -48,6 +51,7 @@ class InterfaceValidator
      *
      * @param ModelInterface $model The model to validate.
      * @return void
+     * @phpstan-assert ImageGenerationModelInterface $model
      *
      * @throws \InvalidArgumentException If the model doesn't implement the required interface.
      */
@@ -67,6 +71,7 @@ class InterfaceValidator
      *
      * @param ModelInterface $model The model to validate.
      * @return void
+     * @phpstan-assert TextToSpeechConversionModelInterface $model
      *
      * @throws \InvalidArgumentException If the model doesn't implement the required interface.
      */
@@ -86,6 +91,7 @@ class InterfaceValidator
      *
      * @param ModelInterface $model The model to validate.
      * @return void
+     * @phpstan-assert SpeechGenerationModelInterface $model
      *
      * @throws \InvalidArgumentException If the model doesn't implement the required interface.
      */
@@ -106,6 +112,7 @@ class InterfaceValidator
      *
      * @param ModelInterface $model The model to validate.
      * @return void
+     * @phpstan-assert TextGenerationModelInterface $model
      *
      * @throws \InvalidArgumentException If the model doesn't implement the required interface.
      */
@@ -125,6 +132,7 @@ class InterfaceValidator
      *
      * @param ModelInterface $model The model to validate.
      * @return void
+     * @phpstan-assert ImageGenerationModelInterface $model
      *
      * @throws \InvalidArgumentException If the model doesn't implement the required interface.
      */
@@ -144,6 +152,7 @@ class InterfaceValidator
      *
      * @param ModelInterface $model The model to validate.
      * @return void
+     * @phpstan-assert TextToSpeechConversionOperationModelInterface $model
      *
      * @throws \InvalidArgumentException If the model doesn't implement the required interface.
      */
@@ -164,6 +173,7 @@ class InterfaceValidator
      *
      * @param ModelInterface $model The model to validate.
      * @return void
+     * @phpstan-assert SpeechGenerationOperationModelInterface $model
      *
      * @throws \InvalidArgumentException If the model doesn't implement the required interface.
      */
