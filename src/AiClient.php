@@ -17,8 +17,7 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
-use WordPress\AiClient\Utils\InterfaceValidator;
-use WordPress\AiClient\Utils\ModelDiscovery;
+use WordPress\AiClient\Utils\Models;
 use WordPress\AiClient\Utils\PromptNormalizer;
 
 /**
@@ -185,18 +184,18 @@ class AiClient
         // Map type to specific methods
         switch ($type) {
             case 'text':
-                $resolvedModel = $model ?? ModelDiscovery::findTextModel(self::defaultRegistry());
-                InterfaceValidator::validateTextGeneration($resolvedModel);
+                $resolvedModel = $model ?? Models::findTextModel(self::defaultRegistry());
+                Models::validateTextGeneration($resolvedModel);
                 return $resolvedModel->generateTextResult($messageList);
 
             case 'image':
-                $resolvedModel = $model ?? ModelDiscovery::findImageModel(self::defaultRegistry());
-                InterfaceValidator::validateImageGeneration($resolvedModel);
+                $resolvedModel = $model ?? Models::findImageModel(self::defaultRegistry());
+                Models::validateImageGeneration($resolvedModel);
                 return $resolvedModel->generateImageResult($messageList);
 
             case 'speech':
-                $resolvedModel = $model ?? ModelDiscovery::findSpeechModel(self::defaultRegistry());
-                InterfaceValidator::validateSpeechGeneration($resolvedModel);
+                $resolvedModel = $model ?? Models::findSpeechModel(self::defaultRegistry());
+                Models::validateSpeechGeneration($resolvedModel);
                 return $resolvedModel->generateSpeechResult($messageList);
 
             default:
@@ -241,10 +240,10 @@ class AiClient
         $messageList = array_values($messages);
 
         // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? ModelDiscovery::findTextModel(self::defaultRegistry());
+        $resolvedModel = $model ?? Models::findTextModel(self::defaultRegistry());
 
         // Validate model supports text generation
-        InterfaceValidator::validateTextGeneration($resolvedModel);
+        Models::validateTextGeneration($resolvedModel);
 
         // Stream the results using the model
         yield from $resolvedModel->streamGenerateTextResult($messageList);
@@ -287,10 +286,10 @@ class AiClient
         $messageList = array_values($messages);
 
         // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? ModelDiscovery::findTextToSpeechModel(self::defaultRegistry());
+        $resolvedModel = $model ?? Models::findTextToSpeechModel(self::defaultRegistry());
 
         // Validate model supports text-to-speech conversion
-        InterfaceValidator::validateTextToSpeechConversion($resolvedModel);
+        Models::validateTextToSpeechConversion($resolvedModel);
 
         // Generate the result using the model
         return $resolvedModel->convertTextToSpeechResult($messageList);
@@ -354,7 +353,7 @@ class AiClient
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
-        InterfaceValidator::validateTextGenerationOperation($model);
+        Models::validateTextGenerationOperation($model);
         return OperationFactory::createTextOperation($messageList);
     }
 
@@ -375,7 +374,7 @@ class AiClient
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
-        InterfaceValidator::validateImageGenerationOperation($model);
+        Models::validateImageGenerationOperation($model);
         return OperationFactory::createImageOperation($messageList);
     }
 
@@ -396,7 +395,7 @@ class AiClient
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
-        InterfaceValidator::validateTextToSpeechConversionOperation($model);
+        Models::validateTextToSpeechConversionOperation($model);
         return OperationFactory::createTextToSpeechOperation($messageList);
     }
 
@@ -417,7 +416,7 @@ class AiClient
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
-        InterfaceValidator::validateSpeechGenerationOperation($model);
+        Models::validateSpeechGenerationOperation($model);
         return OperationFactory::createSpeechOperation($messageList);
     }
 }

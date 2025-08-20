@@ -5,25 +5,130 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Utils;
 
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
+use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationOperationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationOperationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationOperationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionOperationModelInterface;
-use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationOperationModelInterface;
-use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationOperationModelInterface;
+use WordPress\AiClient\Providers\ProviderRegistry;
 
 /**
- * Utility class for validating model interface implementations.
+ * Utility class for model discovery and interface validation.
  *
- * Centralizes interface validation logic to reduce code duplication
- * and provide consistent error messages across the AI Client.
+ * Combines model auto-discovery capabilities with interface validation
+ * to provide a unified model utility service.
  *
  * @since n.e.x.t
  */
-class InterfaceValidator
+class Models
 {
+    /**
+     * Generic method to find a model by capability.
+     *
+     * @since n.e.x.t
+     *
+     * @param ProviderRegistry $registry The provider registry to search.
+     * @param CapabilityEnum $capability The required capability.
+     * @param string $errorType The error description type.
+     * @return ModelInterface A suitable model.
+     *
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    private static function findModelByCapability(
+        ProviderRegistry $registry,
+        CapabilityEnum $capability,
+        string $errorType
+    ): ModelInterface {
+        $requirements = new ModelRequirements([$capability], []);
+        $providerModelsMetadata = $registry->findModelsMetadataForSupport($requirements);
+
+        if (empty($providerModelsMetadata)) {
+            throw new \RuntimeException("No {$errorType} models available");
+        }
+
+        // Get the first suitable provider and model
+        $providerMetadata = $providerModelsMetadata[0];
+        $models = $providerMetadata->getModels();
+
+        if (empty($models)) {
+            throw new \RuntimeException('No models available in provider');
+        }
+
+        return $registry->getProviderModel(
+            $providerMetadata->getProvider()->getId(),
+            $models[0]->getId()
+        );
+    }
+
+    /**
+     * Finds a suitable text generation model from the registry.
+     *
+     * @since n.e.x.t
+     *
+     * @param ProviderRegistry $registry The provider registry to search.
+     * @return ModelInterface A suitable text generation model.
+     *
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function findTextModel(ProviderRegistry $registry): ModelInterface
+    {
+        return self::findModelByCapability($registry, CapabilityEnum::textGeneration(), 'text generation');
+    }
+
+    /**
+     * Finds a suitable image generation model from the registry.
+     *
+     * @since n.e.x.t
+     *
+     * @param ProviderRegistry $registry The provider registry to search.
+     * @return ModelInterface A suitable image generation model.
+     *
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function findImageModel(ProviderRegistry $registry): ModelInterface
+    {
+        return self::findModelByCapability($registry, CapabilityEnum::imageGeneration(), 'image generation');
+    }
+
+    /**
+     * Finds a suitable text-to-speech conversion model from the registry.
+     *
+     * @since n.e.x.t
+     *
+     * @param ProviderRegistry $registry The provider registry to search.
+     * @return ModelInterface A suitable text-to-speech conversion model.
+     *
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function findTextToSpeechModel(ProviderRegistry $registry): ModelInterface
+    {
+        return self::findModelByCapability(
+            $registry,
+            CapabilityEnum::textToSpeechConversion(),
+            'text-to-speech conversion'
+        );
+    }
+
+    /**
+     * Finds a suitable speech generation model from the registry.
+     *
+     * @since n.e.x.t
+     *
+     * @param ProviderRegistry $registry The provider registry to search.
+     * @return ModelInterface A suitable speech generation model.
+     *
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function findSpeechModel(ProviderRegistry $registry): ModelInterface
+    {
+        return self::findModelByCapability($registry, CapabilityEnum::speechGeneration(), 'speech generation');
+    }
+
     /**
      * Validates that a model implements TextGenerationModelInterface.
      *
@@ -103,7 +208,6 @@ class InterfaceValidator
             );
         }
     }
-
 
     /**
      * Validates that a model implements TextGenerationModelInterface for operations.
