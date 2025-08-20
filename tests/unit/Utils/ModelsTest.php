@@ -142,6 +142,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that validateTextToSpeechConversionOperation throws exception with invalid model.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::validateTextToSpeechConversionOperation
      */
     public function testValidateTextToSpeechConversionOperationThrowsExceptionWithInvalidModel(): void
     {
@@ -153,6 +155,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that validateSpeechGenerationOperation throws exception with invalid model.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::validateSpeechGenerationOperation
      */
     public function testValidateSpeechGenerationOperationThrowsExceptionWithInvalidModel(): void
     {
@@ -164,6 +168,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that findTextModel throws exception when no models available.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::findTextModel
      */
     public function testFindTextModelThrowsExceptionWhenNoModelsAvailable(): void
     {
@@ -175,6 +181,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that findImageModel throws exception when no models available.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::findImageModel
      */
     public function testFindImageModelThrowsExceptionWhenNoModelsAvailable(): void
     {
@@ -186,6 +194,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that findTextToSpeechModel throws exception when no models available.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::findTextToSpeechModel
      */
     public function testFindTextToSpeechModelThrowsExceptionWhenNoModelsAvailable(): void
     {
@@ -197,6 +207,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that findSpeechModel throws exception when no models available.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::findSpeechModel
      */
     public function testFindSpeechModelThrowsExceptionWhenNoModelsAvailable(): void
     {
