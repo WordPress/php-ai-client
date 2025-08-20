@@ -64,7 +64,7 @@ class PromptNormalizer
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|array<string,mixed> $item The prompt item to normalize.
+     * @param mixed $item The prompt item to normalize.
      * @param int $index The array index for error reporting.
      * @return Message The normalized message.
      *
@@ -243,6 +243,7 @@ class PromptNormalizer
      *
      * @param array<mixed,mixed> $array The array to check.
      * @return bool True if the array has string keys.
+     * @phpstan-assert-if-true array<string,mixed> $array
      */
     private static function hasStringKeys(array $array): bool
     {
