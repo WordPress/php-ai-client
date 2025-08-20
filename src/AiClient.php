@@ -182,25 +182,23 @@ class AiClient
         // TODO: Replace with PromptBuilder delegation once PR #49 is merged
         // This should become: return self::prompt($prompt)->usingModel($model)->generate();
         $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
 
         // Map type to specific methods
         switch ($type) {
             case 'text':
                 $resolvedModel = $model ?? Models::findTextModel(self::defaultRegistry());
                 Models::validateTextGeneration($resolvedModel);
-                return $resolvedModel->generateTextResult($messageList);
+                return $resolvedModel->generateTextResult($messages);
 
             case 'image':
                 $resolvedModel = $model ?? Models::findImageModel(self::defaultRegistry());
                 Models::validateImageGeneration($resolvedModel);
-                return $resolvedModel->generateImageResult($messageList);
+                return $resolvedModel->generateImageResult($messages);
 
             case 'speech':
                 $resolvedModel = $model ?? Models::findSpeechModel(self::defaultRegistry());
                 Models::validateSpeechGeneration($resolvedModel);
-                return $resolvedModel->generateSpeechResult($messageList);
+                return $resolvedModel->generateSpeechResult($messages);
 
             default:
                 throw new \InvalidArgumentException("Unsupported generation type: {$type}");
@@ -275,8 +273,6 @@ class AiClient
     {
         // TODO: Replace with PromptBuilder delegation once PR #49 is merged
         $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
 
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? Models::findTextToSpeechModel(self::defaultRegistry());
@@ -285,7 +281,7 @@ class AiClient
         Models::validateTextToSpeechConversion($resolvedModel);
 
         // Generate the result using the model
-        return $resolvedModel->convertTextToSpeechResult($messageList);
+        return $resolvedModel->convertTextToSpeechResult($messages);
     }
 
     /**

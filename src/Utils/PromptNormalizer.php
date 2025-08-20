@@ -202,7 +202,7 @@ class PromptNormalizer
         }
 
         $messageParts = [];
-        foreach ($parts as $partIndex => $part) {
+        foreach ($parts as $part) {
             if (is_string($part)) {
                 $messageParts[] = new MessagePart($part);
             } elseif ($part instanceof MessagePart) {
