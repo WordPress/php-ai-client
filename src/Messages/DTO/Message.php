@@ -77,6 +77,22 @@ class Message extends AbstractDataTransferObject
     }
 
     /**
+     * Returns a new instance with the given part appended.
+     *
+     * @since n.e.x.t
+     *
+     * @param MessagePart $part The part to append.
+     * @return Message A new instance with the part appended.
+     */
+    public function withPart(MessagePart $part): Message
+    {
+        $newParts = $this->parts;
+        $newParts[] = $part;
+
+        return new Message($this->role, $newParts);
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since n.e.x.t

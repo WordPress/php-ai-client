@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Builders;
 
 use InvalidArgumentException;
+use WordPress\AiClient\Common\Utilities\Prompts;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -15,8 +16,8 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
-use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
+use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
@@ -27,18 +28,22 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * requirements based on the features used in the prompt.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type MessageArrayShape from Message
+ * @phpstan-import-type MessagePartArrayShape from MessagePart
  */
 class PromptBuilder
 {
     /**
-     * @var Message[] The messages in the conversation history.
+     * @var ProviderRegistry The provider registry for finding suitable models.
+     * @phpstan-ignore-next-line
      */
-    protected array $messages = [];
+    private ProviderRegistry $registry;
 
     /**
-     * @var MessagePart[] The parts of the current message being built.
+     * @var list<Message> The messages in the conversation.
      */
-    protected array $currentParts = [];
+    protected array $messages = [];
 
     /**
      * @var ModelInterface|null The model to use for generation.
@@ -51,11 +56,6 @@ class PromptBuilder
     protected ModelConfig $modelConfig;
 
     /**
-     * @var list<CapabilityEnum> The inferred required capabilities.
-     */
-    protected array $inferredCapabilities = [];
-
-    /**
      * @var array<string, mixed> The inferred required options.
      */
     protected array $inferredOptions = [];
@@ -65,27 +65,66 @@ class PromptBuilder
      */
     protected ?Message $systemInstruction = null;
 
+    // phpcs:disable Generic.Files.LineLength.TooLong
     /**
      * Constructor.
      *
      * @since n.e.x.t
      *
-     * @param string|Message|null $text Optional initial text or message.
+     * @param ProviderRegistry $registry The provider registry for finding suitable models.
+     * @param string|MessagePart|Message|MessageArrayShape|list<string|MessagePart|MessagePartArrayShape>|list<Message>|null $prompt
+     *     Optional initial prompt content.
      */
-    public function __construct($text = null)
+    // phpcs:enable Generic.Files.LineLength.TooLong
+    public function __construct(ProviderRegistry $registry, $prompt = null)
     {
+        $this->registry = $registry;
         $this->modelConfig = new ModelConfig();
 
-        if ($text !== null) {
-            if ($text instanceof Message) {
-                $this->messages[] = $text;
-                // Infer chat history capability if multiple messages
-                if (count($this->messages) > 0) {
-                    $this->addInferredCapability(CapabilityEnum::chatHistory());
+        if ($prompt === null) {
+            return;
+        }
+
+        // Check if it's a single Message - add to messages
+        if ($prompt instanceof Message) {
+            $this->messages[] = $prompt;
+            return;
+        }
+
+        // Check if it's a list of Messages - set as messages
+        if (Prompts::isMessagesList($prompt)) {
+            $this->messages = $prompt;
+            return;
+        }
+
+        // Check if it's a MessageArrayShape - add to messages
+        if (Prompts::isMessageArrayShape($prompt)) {
+            $this->messages[] = Message::fromArray($prompt);
+            return;
+        }
+
+        // Everything else becomes a UserMessage with parts
+        $parts = [];
+
+        if (is_string($prompt)) {
+            $parts[] = new MessagePart($prompt);
+        } elseif ($prompt instanceof MessagePart) {
+            $parts[] = $prompt;
+        } elseif (is_array($prompt)) {
+            // It's a list of strings/MessageParts/MessagePartArrayShapes
+            foreach ($prompt as $item) {
+                if (is_string($item)) {
+                    $parts[] = new MessagePart($item);
+                } elseif ($item instanceof MessagePart) {
+                    $parts[] = $item;
+                } elseif (Prompts::isMessagePartArrayShape($item)) {
+                    $parts[] = MessagePart::fromArray($item);
                 }
-            } else {
-                $this->withText($text);
             }
+        }
+
+        if (!empty($parts)) {
+            $this->messages[] = new UserMessage($parts);
         }
     }
 
@@ -99,8 +138,8 @@ class PromptBuilder
      */
     public function withText(string $text): self
     {
-        $this->currentParts[] = new MessagePart($text);
-        $this->addInferredCapability(CapabilityEnum::textGeneration());
+        $part = new MessagePart($text);
+        $this->appendPartToMessages($part);
         return $this;
     }
 
@@ -118,8 +157,8 @@ class PromptBuilder
         // Create data URI format for inline image
         $dataUri = 'data:' . $mimeType . ';base64,' . $base64Blob;
         $file = new File($dataUri, $mimeType);
-        $this->currentParts[] = new MessagePart($file);
-        $this->addMultimodalInputCapability();
+        $part = new MessagePart($file);
+        $this->appendPartToMessages($part);
         return $this;
     }
 
@@ -135,8 +174,8 @@ class PromptBuilder
     public function withRemoteImage(string $uri, string $mimeType): self
     {
         $file = new File($uri, $mimeType);
-        $this->currentParts[] = new MessagePart($file);
-        $this->addMultimodalInputCapability();
+        $part = new MessagePart($file);
+        $this->appendPartToMessages($part);
         return $this;
     }
 
@@ -150,8 +189,8 @@ class PromptBuilder
      */
     public function withImageFile(File $file): self
     {
-        $this->currentParts[] = new MessagePart($file);
-        $this->addMultimodalInputCapability();
+        $part = new MessagePart($file);
+        $this->appendPartToMessages($part);
         return $this;
     }
 
@@ -165,8 +204,8 @@ class PromptBuilder
      */
     public function withAudioFile(File $file): self
     {
-        $this->currentParts[] = new MessagePart($file);
-        $this->addMultimodalInputCapability('audio');
+        $part = new MessagePart($file);
+        $this->appendPartToMessages($part);
         return $this;
     }
 
@@ -180,8 +219,8 @@ class PromptBuilder
      */
     public function withVideoFile(File $file): self
     {
-        $this->currentParts[] = new MessagePart($file);
-        $this->addMultimodalInputCapability('video');
+        $part = new MessagePart($file);
+        $this->appendPartToMessages($part);
         return $this;
     }
 
@@ -195,7 +234,8 @@ class PromptBuilder
      */
     public function withFunctionResponse(FunctionResponse $functionResponse): self
     {
-        $this->currentParts[] = new MessagePart($functionResponse);
+        $part = new MessagePart($functionResponse);
+        $this->appendPartToMessages($part);
         return $this;
     }
 
@@ -210,11 +250,7 @@ class PromptBuilder
     public function withMessageParts(MessagePart ...$parts): self
     {
         foreach ($parts as $part) {
-            $this->currentParts[] = $part;
-            // Infer capabilities based on part type
-            if ($part->getFile() !== null) {
-                $this->addMultimodalInputCapability();
-            }
+            $this->appendPartToMessages($part);
         }
         return $this;
     }
@@ -229,17 +265,10 @@ class PromptBuilder
      */
     public function withHistory(Message ...$messages): self
     {
-        // Save current parts as a user message if any exist
-        if (!empty($this->currentParts)) {
-            $this->messages[] = new UserMessage($this->currentParts);
-            $this->currentParts = [];
-        }
-
         foreach ($messages as $message) {
             $this->messages[] = $message;
         }
 
-        $this->addInferredCapability(CapabilityEnum::chatHistory());
         return $this;
     }
 
@@ -254,6 +283,20 @@ class PromptBuilder
     public function usingModel(ModelInterface $model): self
     {
         $this->model = $model;
+        return $this;
+    }
+
+    /**
+     * Sets a different provider registry.
+     *
+     * @since n.e.x.t
+     *
+     * @param ProviderRegistry $registry The provider registry to use.
+     * @return self
+     */
+    public function usingRegistry(ProviderRegistry $registry): self
+    {
+        $this->registry = $registry;
         return $this;
     }
 
@@ -461,8 +504,9 @@ class PromptBuilder
             $requiredOptions[] = new RequiredOption($name, $value);
         }
 
+        // TODO: Derive capabilities from messages and parts
         return new ModelRequirements(
-            $this->inferredCapabilities,
+            [],
             $requiredOptions
         );
     }
@@ -496,7 +540,6 @@ class PromptBuilder
     public function generateText(): string
     {
         $this->validateModel();
-        $this->prepareMessages();
 
         // This is a placeholder - actual implementation would call the model
         throw new \RuntimeException('Not implemented yet - requires AiClient integration.');
@@ -518,50 +561,35 @@ class PromptBuilder
         }
 
         $this->validateModel();
-        $this->prepareMessages();
 
         // This is a placeholder - actual implementation would call the model
         throw new \RuntimeException('Not implemented yet - requires AiClient integration.');
     }
 
     /**
-     * Adds an inferred capability.
+     * Appends a MessagePart to the messages array.
+     *
+     * If the last message has a user role, the part is added to it.
+     * Otherwise, a new UserMessage is created with the part.
      *
      * @since n.e.x.t
      *
-     * @param CapabilityEnum $capability The capability to add.
+     * @param MessagePart $part The part to append.
      * @return void
      */
-    protected function addInferredCapability(CapabilityEnum $capability): void
+    protected function appendPartToMessages(MessagePart $part): void
     {
-        if (!in_array($capability, $this->inferredCapabilities, true)) {
-            $this->inferredCapabilities[] = $capability;
+        $lastMessage = end($this->messages);
+
+        if ($lastMessage instanceof Message && $lastMessage->getRole()->isUser()) {
+            // Replace the last message with a new one containing the appended part
+            array_pop($this->messages);
+            $this->messages[] = $lastMessage->withPart($part);
+            return;
         }
-    }
 
-    /**
-     * Adds multimodal input capability based on content type.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $type The content type (image, audio, video).
-     * @return void
-     */
-    protected function addMultimodalInputCapability(string $type = 'image'): void
-    {
-        $this->addInferredCapability(CapabilityEnum::textGeneration());
-
-        // Add input modalities requirement
-        $modalityKey = OptionEnum::inputModalities()->value;
-        $currentModalities = isset($this->inferredOptions[$modalityKey])
-            && is_array($this->inferredOptions[$modalityKey])
-            ? $this->inferredOptions[$modalityKey]
-            : ['text'];
-
-        if (!in_array($type, $currentModalities, true)) {
-            $currentModalities[] = $type;
-            $this->inferredOptions[$modalityKey] = $currentModalities;
-        }
+        // Create new UserMessage with the part
+        $this->messages[] = new UserMessage([$part]);
     }
 
     /**
@@ -575,7 +603,9 @@ class PromptBuilder
     protected function validateModel(): void
     {
         if ($this->model === null) {
-            // Model selection would happen here via registry
+            // TODO: Use $this->registry to find a suitable model based on requirements
+            // $requirements = $this->getModelRequirements();
+            // $this->model = $this->registry->findModel($requirements);
             return;
         }
 
@@ -587,27 +617,6 @@ class PromptBuilder
                     $this->model->metadata()->getId()
                 )
             );
-        }
-    }
-
-    /**
-     * Prepares the final messages array for sending to the model.
-     *
-     * @since n.e.x.t
-     *
-     * @return void
-     */
-    protected function prepareMessages(): void
-    {
-        // Add current parts as a user message if any exist
-        if (!empty($this->currentParts)) {
-            $this->messages[] = new UserMessage($this->currentParts);
-            $this->currentParts = [];
-        }
-
-        // Add system instruction if present
-        if ($this->systemInstruction !== null) {
-            array_unshift($this->messages, $this->systemInstruction);
         }
     }
 }

@@ -319,4 +319,32 @@ class MessageTest extends TestCase
             $message
         );
     }
+
+    /**
+     * Tests that withPart creates a new instance with the part appended.
+     *
+     * @since n.e.x.t
+     */
+    public function testWithPartCreatesNewInstance(): void
+    {
+        $original = new Message(
+            MessageRoleEnum::user(),
+            [new MessagePart('Original text')]
+        );
+
+        $newPart = new MessagePart('Additional text');
+        $updated = $original->withPart($newPart);
+
+        // Assert that a new instance was created
+        $this->assertNotSame($original, $updated);
+
+        // Assert original is unchanged
+        $this->assertCount(1, $original->getParts());
+        $this->assertEquals('Original text', $original->getParts()[0]->getText());
+
+        // Assert updated has both parts
+        $this->assertCount(2, $updated->getParts());
+        $this->assertEquals('Original text', $updated->getParts()[0]->getText());
+        $this->assertEquals('Additional text', $updated->getParts()[1]->getText());
+    }
 }

@@ -88,7 +88,7 @@ class Prompts
      *
      * @phpstan-assert-if-true list<Message> $value
      */
-    private static function isMessagesList($value): bool
+    public static function isMessagesList($value): bool
     {
         if (!is_array($value) || empty($value) || !array_is_list($value)) {
             return false;
@@ -114,7 +114,7 @@ class Prompts
      *
      * @phpstan-assert-if-true MessageArrayShape $value
      */
-    private static function isMessageArrayShape($value): bool
+    public static function isMessageArrayShape($value): bool
     {
         if (!is_array($value)) {
             return false;
@@ -148,7 +148,7 @@ class Prompts
      *
      * @phpstan-assert-if-true MessagePartArrayShape $value
      */
-    private static function isMessagePartArrayShape($value): bool
+    public static function isMessagePartArrayShape($value): bool
     {
         if (!is_array($value)) {
             return false;
