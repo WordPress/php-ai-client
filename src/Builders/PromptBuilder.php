@@ -55,11 +55,6 @@ class PromptBuilder
      */
     protected ModelConfig $modelConfig;
 
-    /**
-     * @var Message|null The system instruction message.
-     */
-    protected ?Message $systemInstruction = null;
-
     // phpcs:disable Generic.Files.LineLength.TooLong
     /**
      * Constructor.
@@ -80,12 +75,6 @@ class PromptBuilder
             return;
         }
 
-        // Check if it's a single Message - add to messages
-        if ($prompt instanceof Message) {
-            $this->messages[] = $prompt;
-            return;
-        }
-
         // Check if it's a list of Messages - set as messages
         if (Prompts::isMessagesList($prompt)) {
             $this->messages = $prompt;
@@ -98,29 +87,9 @@ class PromptBuilder
             return;
         }
 
-        // Everything else becomes a UserMessage with parts
-        $parts = [];
-
-        if (is_string($prompt)) {
-            $parts[] = new MessagePart($prompt);
-        } elseif ($prompt instanceof MessagePart) {
-            $parts[] = $prompt;
-        } elseif (is_array($prompt)) {
-            // It's a list of strings/MessageParts/MessagePartArrayShapes
-            foreach ($prompt as $item) {
-                if (is_string($item)) {
-                    $parts[] = new MessagePart($item);
-                } elseif ($item instanceof MessagePart) {
-                    $parts[] = $item;
-                } elseif (is_array($item) && MessagePart::isArrayShape($item)) {
-                    $parts[] = MessagePart::fromArray($item);
-                }
-            }
-        }
-
-        if (!empty($parts)) {
-            $this->messages[] = new UserMessage($parts);
-        }
+        // Parse it as a user message
+        $userMessage = $this->parseMessage($prompt, MessageRoleEnum::user());
+        $this->messages[] = $userMessage;
     }
 
     /**
@@ -295,48 +264,53 @@ class PromptBuilder
         return $this;
     }
 
+    // phpcs:disable Generic.Files.LineLength.TooLong
     /**
      * Sets the system instruction.
      *
+     * If a system message already exists at the beginning of the messages array,
+     * it will be updated. Otherwise, a new system message will be prepended.
+     *
      * @since n.e.x.t
      *
-     * @param string|MessagePart[]|Message $systemInstruction The system instruction.
+     * @param string|MessagePart|MessagePartArrayShape|list<string|MessagePart|MessagePartArrayShape>|Message $systemInstruction
+     *     The system instruction.
      * @return self
+     * @throws InvalidArgumentException If the input type is not supported.
      */
+    // phpcs:enable Generic.Files.LineLength.TooLong
     public function usingSystemInstruction($systemInstruction): self
     {
-        $systemInstructionText = '';
+        // Parse the input into a system message
+        $systemMessage = $this->parseMessage($systemInstruction, MessageRoleEnum::system());
 
-        if ($systemInstruction instanceof Message) {
-            $this->systemInstruction = $systemInstruction;
-            // Extract text from message parts for ModelConfig
-            foreach ($systemInstruction->getParts() as $part) {
-                if ($part->getText() !== null) {
-                    $systemInstructionText .= $part->getText() . ' ';
-                }
-            }
-        } elseif (is_string($systemInstruction)) {
-            $this->systemInstruction = new Message(
-                MessageRoleEnum::system(),
-                [new MessagePart($systemInstruction)]
-            );
-            $systemInstructionText = $systemInstruction;
-        } elseif (is_array($systemInstruction)) {
-            $this->systemInstruction = new Message(
-                MessageRoleEnum::system(),
-                $systemInstruction
-            );
-            // Extract text from message parts
-            foreach ($systemInstruction as $part) {
-                if ($part instanceof MessagePart && $part->getText() !== null) {
-                    $systemInstructionText .= $part->getText() . ' ';
-                }
+        // Extract text from message parts for ModelConfig
+        $systemInstructionText = '';
+        foreach ($systemMessage->getParts() as $part) {
+            if ($part->getText() !== null) {
+                $systemInstructionText .= $part->getText() . ' ';
             }
         }
 
+        // Check if the first message is a system message
+        if (!empty($this->messages) && $this->messages[0]->getRole()->isSystem()) {
+            // Update the existing system message by appending new parts
+            $existingParts = $this->messages[0]->getParts();
+            $newParts = $systemMessage->getParts();
+            $this->messages[0] = new Message(
+                MessageRoleEnum::system(),
+                array_merge($existingParts, $newParts)
+            );
+        } else {
+            // Prepend the new system message
+            array_unshift($this->messages, $systemMessage);
+        }
+
+        // Update ModelConfig with system instruction text
         if (!empty($systemInstructionText)) {
             $this->modelConfig->setSystemInstruction(trim($systemInstructionText));
         }
+
         return $this;
     }
 
@@ -684,6 +658,77 @@ class PromptBuilder
                 )
             );
         }
+    }
+
+    /**
+     * Parses various input types into a Message with the given role.
+     *
+     * @since n.e.x.t
+     *
+     * @param mixed $input The input to parse.
+     * @param MessageRoleEnum $role The role for the message.
+     * @return Message The parsed message.
+     * @throws InvalidArgumentException If the input type is not supported or results in empty message.
+     */
+    private function parseMessage($input, MessageRoleEnum $role): Message
+    {
+        // Handle Message input directly
+        if ($input instanceof Message) {
+            return $input;
+        }
+
+        // Handle single MessagePart
+        if ($input instanceof MessagePart) {
+            return new Message($role, [$input]);
+        }
+
+        // Handle string input
+        if (is_string($input)) {
+            if (trim($input) === '') {
+                throw new InvalidArgumentException('Cannot create a message from an empty string.');
+            }
+            return new Message($role, [new MessagePart($input)]);
+        }
+
+        // Handle array input
+        if (!is_array($input)) {
+            throw new InvalidArgumentException(
+                'Input must be a string, MessagePart, MessagePartArrayShape, ' .
+                'a list of string|MessagePart|MessagePartArrayShape, or a Message instance.'
+            );
+        }
+
+        // Check if it's a MessagePartArrayShape
+        if (MessagePart::isArrayShape($input)) {
+            return new Message($role, [MessagePart::fromArray($input)]);
+        }
+
+        // It should be a list of string|MessagePart|MessagePartArrayShape
+        if (!array_is_list($input)) {
+            throw new InvalidArgumentException('Array input must be a list array.');
+        }
+
+        // Empty array check
+        if (empty($input)) {
+            throw new InvalidArgumentException('Cannot create a message from an empty array.');
+        }
+
+        $parts = [];
+        foreach ($input as $item) {
+            if (is_string($item)) {
+                $parts[] = new MessagePart($item);
+            } elseif ($item instanceof MessagePart) {
+                $parts[] = $item;
+            } elseif (is_array($item) && MessagePart::isArrayShape($item)) {
+                $parts[] = MessagePart::fromArray($item);
+            } else {
+                throw new InvalidArgumentException(
+                    'Array items must be strings, MessagePart instances, or MessagePartArrayShape.'
+                );
+            }
+        }
+
+        return new Message($role, $parts);
     }
 
     /**
