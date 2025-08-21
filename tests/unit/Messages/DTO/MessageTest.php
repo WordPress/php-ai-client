@@ -20,6 +20,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
 class MessageTest extends TestCase
 {
     use ArrayTransformationTestTrait;
+
     /**
      * Tests creating Message with single text part.
      *
