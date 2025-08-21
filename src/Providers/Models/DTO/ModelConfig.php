@@ -9,6 +9,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
@@ -911,6 +912,131 @@ class ModelConfig extends AbstractDataTransferObject
         $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
 
         return $data;
+    }
+
+    /**
+     * Converts the model configuration to required options.
+     *
+     * @since n.e.x.t
+     *
+     * @return list<RequiredOption> The required options.
+     */
+    public function toRequiredOptions(): array
+    {
+        $requiredOptions = [];
+
+        // Map properties that have corresponding OptionEnum values
+        if ($this->outputModalities !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::outputModalities()->value,
+                $this->outputModalities
+            );
+        }
+
+        if ($this->systemInstruction !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::systemInstruction()->value,
+                $this->systemInstruction
+            );
+        }
+
+        if ($this->candidateCount !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::candidateCount()->value,
+                $this->candidateCount
+            );
+        }
+
+        if ($this->maxTokens !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::maxTokens()->value,
+                $this->maxTokens
+            );
+        }
+
+        if ($this->temperature !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::temperature()->value,
+                $this->temperature
+            );
+        }
+
+        if ($this->topP !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::topP()->value,
+                $this->topP
+            );
+        }
+
+        if ($this->topK !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::topK()->value,
+                $this->topK
+            );
+        }
+
+        if ($this->outputMimeType !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::outputMimeType()->value,
+                $this->outputMimeType
+            );
+        }
+
+        if ($this->outputSchema !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::outputSchema()->value,
+                true // Just indicate that schema is required
+            );
+        }
+
+        // Handle properties without OptionEnum values as custom options
+        // These would need to be handled specially by providers
+        if ($this->stopSequences !== null) {
+            $requiredOptions[] = new RequiredOption('stop_sequences', $this->stopSequences);
+        }
+
+        if ($this->presencePenalty !== null) {
+            $requiredOptions[] = new RequiredOption('presence_penalty', $this->presencePenalty);
+        }
+
+        if ($this->frequencyPenalty !== null) {
+            $requiredOptions[] = new RequiredOption('frequency_penalty', $this->frequencyPenalty);
+        }
+
+        if ($this->logprobs !== null) {
+            $requiredOptions[] = new RequiredOption('logprobs', $this->logprobs);
+        }
+
+        if ($this->topLogprobs !== null) {
+            $requiredOptions[] = new RequiredOption('top_logprobs', $this->topLogprobs);
+        }
+
+        if ($this->functionDeclarations !== null) {
+            $requiredOptions[] = new RequiredOption('function_declarations', true);
+        }
+
+        if ($this->webSearch !== null) {
+            $requiredOptions[] = new RequiredOption('web_search', true);
+        }
+
+        if ($this->outputFileType !== null) {
+            $requiredOptions[] = new RequiredOption('output_file_type', $this->outputFileType->value);
+        }
+
+        if ($this->outputMediaOrientation !== null) {
+            $requiredOptions[] = new RequiredOption('output_media_orientation', $this->outputMediaOrientation->value);
+        }
+
+        if ($this->outputMediaAspectRatio !== null) {
+            $requiredOptions[] = new RequiredOption('output_media_aspect_ratio', $this->outputMediaAspectRatio);
+        }
+
+        // Add custom options as individual RequiredOptions
+        foreach ($this->customOptions as $key => $value) {
+            $requiredOptions[] = new RequiredOption($key, $value);
+        }
+
+        return $requiredOptions;
     }
 
     /**

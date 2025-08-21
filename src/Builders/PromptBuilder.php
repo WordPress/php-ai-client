@@ -533,29 +533,14 @@ class PromptBuilder
             }
         }
 
-        // Build required options
-        $requiredOptions = [];
+        // Build required options from ModelConfig
+        $requiredOptions = $this->modelConfig->toRequiredOptions();
 
         // Add input modalities if we have non-text inputs
         if (count($inputModalities) > 0) {
             $requiredOptions[] = new RequiredOption(
                 OptionEnum::inputModalities()->value,
                 array_values($inputModalities)
-            );
-        }
-
-        // Check ModelConfig for output requirements
-        if ($this->modelConfig->getOutputMimeType() !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::outputMimeType()->value,
-                $this->modelConfig->getOutputMimeType()
-            );
-        }
-
-        if ($this->modelConfig->getOutputSchema() !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::outputSchema()->value,
-                true
             );
         }
 
