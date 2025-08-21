@@ -9,10 +9,10 @@ use WordPress\AiClient\Providers\AbstractProvider;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
-use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Tests\mocks\MockAbstractProvider;
 use WordPress\AiClient\Tests\mocks\MockModel;
 use WordPress\AiClient\Tests\mocks\MockModelMetadataDirectory;
@@ -168,17 +168,45 @@ class AbstractProviderTest extends TestCase
     {
         // Create two distinct anonymous classes extending AbstractProvider
         $mockProviderClass1 = new class extends AbstractProvider {
-            protected static function createModel(ModelMetadata $modelMetadata, ProviderMetadata $providerMetadata): ModelInterface { return new MockModel(); }
-            protected static function createProviderMetadata(): ProviderMetadata { return new ProviderMetadata('mock-provider-1', 'Mock Provider 1', ProviderTypeEnum::cloud()); }
-            protected static function createProviderAvailability(): ProviderAvailabilityInterface { return new MockProviderAvailability(); }
-            protected static function createModelMetadataDirectory(): ModelMetadataDirectoryInterface { return new MockModelMetadataDirectory(); }
+            protected static function createModel(
+                ModelMetadata $modelMetadata,
+                ProviderMetadata $providerMetadata
+            ): ModelInterface {
+                return new MockModel();
+            }
+            protected static function createProviderMetadata(): ProviderMetadata
+            {
+                return new ProviderMetadata('mock-provider-1', 'Mock Provider 1', ProviderTypeEnum::cloud());
+            }
+            protected static function createProviderAvailability(): ProviderAvailabilityInterface
+            {
+                return new MockProviderAvailability();
+            }
+            protected static function createModelMetadataDirectory(): ModelMetadataDirectoryInterface
+            {
+                return new MockModelMetadataDirectory();
+            }
         };
 
         $mockProviderClass2 = new class extends AbstractProvider {
-            protected static function createModel(ModelMetadata $modelMetadata, ProviderMetadata $providerMetadata): ModelInterface { return new MockModel(); }
-            protected static function createProviderMetadata(): ProviderMetadata { return new ProviderMetadata('mock-provider-2', 'Mock Provider 2', ProviderTypeEnum::cloud()); }
-            protected static function createProviderAvailability(): ProviderAvailabilityInterface { return new MockProviderAvailability(); }
-            protected static function createModelMetadataDirectory(): ModelMetadataDirectoryInterface { return new MockModelMetadataDirectory(); }
+            protected static function createModel(
+                ModelMetadata $modelMetadata,
+                ProviderMetadata $providerMetadata
+            ): ModelInterface {
+                return new MockModel();
+            }
+            protected static function createProviderMetadata(): ProviderMetadata
+            {
+                return new ProviderMetadata('mock-provider-2', 'Mock Provider 2', ProviderTypeEnum::cloud());
+            }
+            protected static function createProviderAvailability(): ProviderAvailabilityInterface
+            {
+                return new MockProviderAvailability();
+            }
+            protected static function createModelMetadataDirectory(): ModelMetadataDirectoryInterface
+            {
+                return new MockModelMetadataDirectory();
+            }
         };
 
         // Get metadata for the first provider
