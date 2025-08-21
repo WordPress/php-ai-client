@@ -553,7 +553,7 @@ class PromptBuilder
     public function generateText(): string
     {
         $this->validateMessages();
-        $this->validateModel();
+        $model = $this->getModel();
 
         // This is a placeholder - actual implementation would call the model
         throw new \RuntimeException('Not implemented yet - requires AiClient integration.');
@@ -575,7 +575,7 @@ class PromptBuilder
         }
 
         $this->validateMessages();
-        $this->validateModel();
+        $model = $this->getModel();
 
         // This is a placeholder - actual implementation would call the model
         throw new \RuntimeException('Not implemented yet - requires AiClient integration.');
@@ -608,56 +608,61 @@ class PromptBuilder
     }
 
     /**
-     * Validates that the selected model meets requirements.
+     * Gets the model to use for generation.
+     *
+     * If a model has been explicitly set, validates it meets requirements and returns it.
+     * Otherwise, finds a suitable model based on the prompt requirements.
      *
      * @since n.e.x.t
      *
-     * @return void
-     * @throws InvalidArgumentException If model doesn't meet requirements or no suitable model found.
+     * @param ModelRequirements|null $requirements Optional requirements to use. If not provided, will be inferred.
+     * @return ModelInterface The model to use.
+     * @throws InvalidArgumentException If no suitable model is found or set model doesn't meet requirements.
      */
-    protected function validateModel(): void
+    public function getModel(?ModelRequirements $requirements = null): ModelInterface
     {
-        $requirements = $this->getModelRequirements();
+        if ($requirements === null) {
+            $requirements = $this->getModelRequirements();
+        }
 
-        // If no model is specified, find one that meets requirements
-        if ($this->model === null) {
-            $modelsMetadata = $this->registry->findModelsMetadataForSupport($requirements);
-
-            if (empty($modelsMetadata)) {
+        // If a model has been explicitly set, validate and return it
+        if ($this->model !== null) {
+            if (!$this->model->metadata()->meetsRequirements($requirements)) {
                 throw new InvalidArgumentException(
-                    'No models found that support the required capabilities and options for this prompt. ' .
-                    'Required capabilities: ' . implode(', ', array_map(function ($cap) {
-                        return $cap->value;
-                    }, $requirements->getRequiredCapabilities())) .
-                    '. Required options: ' . implode(', ', array_map(function ($opt) {
-                        return $opt->getName() . '=' . json_encode($opt->getValue());
-                    }, $requirements->getRequiredOptions()))
+                    sprintf(
+                        'The selected model "%s" does not meet the required capabilities and options for this prompt.',
+                        $this->model->metadata()->getId()
+                    )
                 );
             }
-
-            // Get the first available model from the first provider
-            $firstProviderModels = $modelsMetadata[0];
-            $firstModelMetadata = $firstProviderModels->getModels()[0];
-
-            // Get the model instance from the provider
-            $this->model = $this->registry->getProviderModel(
-                $firstProviderModels->getProvider()->getId(),
-                $firstModelMetadata->getId(),
-                $this->modelConfig
-            );
-
-            return;
+            return $this->model;
         }
 
-        // Validate existing model meets requirements
-        if (!$this->model->metadata()->meetsRequirements($requirements)) {
+        // Find a suitable model based on requirements
+        $modelsMetadata = $this->registry->findModelsMetadataForSupport($requirements);
+
+        if (empty($modelsMetadata)) {
             throw new InvalidArgumentException(
-                sprintf(
-                    'The selected model "%s" does not meet the required capabilities and options for this prompt.',
-                    $this->model->metadata()->getId()
-                )
+                'No models found that support the required capabilities and options for this prompt. ' .
+                'Required capabilities: ' . implode(', ', array_map(function ($cap) {
+                    return $cap->value;
+                }, $requirements->getRequiredCapabilities())) .
+                '. Required options: ' . implode(', ', array_map(function ($opt) {
+                    return $opt->getName() . '=' . json_encode($opt->getValue());
+                }, $requirements->getRequiredOptions()))
             );
         }
+
+        // Get the first available model from the first provider
+        $firstProviderModels = $modelsMetadata[0];
+        $firstModelMetadata = $firstProviderModels->getModels()[0];
+
+        // Get the model instance from the provider
+        return $this->registry->getProviderModel(
+            $firstProviderModels->getProvider()->getId(),
+            $firstModelMetadata->getId(),
+            $this->modelConfig
+        );
     }
 
     /**
