@@ -56,11 +56,6 @@ class PromptBuilder
     protected ModelConfig $modelConfig;
 
     /**
-     * @var array<string, mixed> The inferred required options.
-     */
-    protected array $inferredOptions = [];
-
-    /**
      * @var Message|null The system instruction message.
      */
     protected ?Message $systemInstruction = null;
@@ -440,7 +435,6 @@ class PromptBuilder
     public function usingOutputMime(string $mimeType): self
     {
         $this->modelConfig->setOutputMimeType($mimeType);
-        $this->inferredOptions[OptionEnum::outputMimeType()->value] = $mimeType;
         return $this;
     }
 
@@ -455,7 +449,6 @@ class PromptBuilder
     public function usingOutputSchema(array $schema): self
     {
         $this->modelConfig->setOutputSchema($schema);
-        $this->inferredOptions[OptionEnum::outputSchema()->value] = true;
         return $this;
     }
 
@@ -551,9 +544,19 @@ class PromptBuilder
             );
         }
 
-        // Add other inferred options
-        foreach ($this->inferredOptions as $name => $value) {
-            $requiredOptions[] = new RequiredOption($name, $value);
+        // Check ModelConfig for output requirements
+        if ($this->modelConfig->getOutputMimeType() !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::outputMimeType()->value,
+                $this->modelConfig->getOutputMimeType()
+            );
+        }
+
+        if ($this->modelConfig->getOutputSchema() !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::outputSchema()->value,
+                true
+            );
         }
 
         return new ModelRequirements(
