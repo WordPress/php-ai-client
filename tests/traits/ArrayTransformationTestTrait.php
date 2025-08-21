@@ -83,4 +83,34 @@ trait ArrayTransformationTestTrait
             $this->assertArrayNotHasKey($key, $array, "Array should not contain key: {$key}");
         }
     }
+
+    /**
+     * Tests isArrayShape with valid and invalid arrays.
+     *
+     * @param string $className The class name to test.
+     * @param array $validArray A valid array that should pass isArrayShape.
+     * @param array[] $invalidArrays Arrays that should fail isArrayShape.
+     * @return void
+     */
+    protected function assertIsArrayShapeValidation(string $className, array $validArray, array $invalidArrays): void
+    {
+        // Test valid array
+        $this->assertTrue(
+            $className::isArrayShape($validArray),
+            'isArrayShape() should return true for valid array structure'
+        );
+
+        // Test that fromArray works with the valid array (ensures consistency)
+        $instance = $className::fromArray($validArray);
+        $this->assertInstanceOf($className, $instance);
+
+        // Test invalid arrays
+        foreach ($invalidArrays as $description => $invalidArray) {
+            $this->assertFalse(
+                $className::isArrayShape($invalidArray),
+                "isArrayShape() should return false for: {$description}"
+            );
+        }
+    }
+
 }

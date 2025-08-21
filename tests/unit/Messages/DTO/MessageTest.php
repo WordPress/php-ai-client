@@ -10,6 +10,7 @@ use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
@@ -18,6 +19,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  */
 class MessageTest extends TestCase
 {
+    use ArrayTransformationTestTrait;
     /**
      * Tests creating Message with single text part.
      *
@@ -184,6 +186,51 @@ class MessageTest extends TestCase
         $this->assertCount(100, $message->getParts());
         $this->assertEquals('Part number 0', $message->getParts()[0]->getText());
         $this->assertEquals('Part number 99', $message->getParts()[99]->getText());
+    }
+
+    /**
+     * Tests isArrayShape validation.
+     *
+     * @return void
+     */
+    public function testIsArrayShapeValidation(): void
+    {
+        $validArray = [
+            Message::KEY_ROLE => MessageRoleEnum::user()->value,
+            Message::KEY_PARTS => [
+                [
+                    MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                    MessagePart::KEY_TEXT => 'Test message'
+                ]
+            ]
+        ];
+
+        $invalidArrays = [
+            'missing role' => [
+                Message::KEY_PARTS => [
+                    [
+                        MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                        MessagePart::KEY_TEXT => 'Test message'
+                    ]
+                ]
+            ],
+            'missing parts' => [
+                Message::KEY_ROLE => MessageRoleEnum::user()->value
+            ],
+            'invalid role value' => [
+                Message::KEY_ROLE => 'invalid_role',
+                Message::KEY_PARTS => [
+                    [
+                        MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                        MessagePart::KEY_TEXT => 'Test message'
+                    ]
+                ]
+            ],
+            'empty array' => [],
+            'non-associative array' => ['user', 'parts']
+        ];
+
+        $this->assertIsArrayShapeValidation(Message::class, $validArray, $invalidArrays);
     }
 
     /**
