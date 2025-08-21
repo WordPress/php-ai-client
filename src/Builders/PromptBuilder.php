@@ -519,17 +519,15 @@ class PromptBuilder
                 }
 
                 // Check for file inputs
-                if ($part->getFile() !== null) {
-                    $mimeType = $part->getFile()->getMimeTypeObject();
-
-                    // Determine modality based on MIME type
-                    if ($mimeType->isImage()) {
+                $file = $part->getFile();
+                if ($file !== null) {
+                    if ($file->isImage()) {
                         $inputModalities[ModalityEnum::image()->value] = ModalityEnum::image();
-                    } elseif ($mimeType->isAudio()) {
+                    } elseif ($file->isAudio()) {
                         $inputModalities[ModalityEnum::audio()->value] = ModalityEnum::audio();
-                    } elseif ($mimeType->isVideo()) {
+                    } elseif ($file->isVideo()) {
                         $inputModalities[ModalityEnum::video()->value] = ModalityEnum::video();
-                    } elseif ($mimeType->isDocument() || $mimeType->isText()) {
+                    } elseif ($file->isDocument() || $file->isText()) {
                         $inputModalities[ModalityEnum::document()->value] = ModalityEnum::document();
                     }
                 }
