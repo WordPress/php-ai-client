@@ -405,4 +405,119 @@ class FileTest extends TestCase
             $file
         );
     }
+
+    /**
+     * Tests isImage passthrough method.
+     *
+     * @return void
+     */
+    public function testIsImage(): void
+    {
+        $imageFile = new File('https://example.com/test.jpg');
+        $this->assertTrue($imageFile->isImage());
+
+        $pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+        $pngFile = new File('data:image/png;base64,' . $pngBase64);
+        $this->assertTrue($pngFile->isImage());
+
+        $textFile = new File('https://example.com/test.txt', 'text/plain');
+        $this->assertFalse($textFile->isImage());
+    }
+
+    /**
+     * Tests isVideo passthrough method.
+     *
+     * @return void
+     */
+    public function testIsVideo(): void
+    {
+        $videoFile = new File('https://example.com/test.mp4');
+        $this->assertTrue($videoFile->isVideo());
+
+        $aviFile = new File('https://example.com/test.avi');
+        $this->assertTrue($aviFile->isVideo());
+
+        $imageFile = new File('https://example.com/test.jpg');
+        $this->assertFalse($imageFile->isVideo());
+    }
+
+    /**
+     * Tests isAudio passthrough method.
+     *
+     * @return void
+     */
+    public function testIsAudio(): void
+    {
+        $audioFile = new File('https://example.com/test.mp3');
+        $this->assertTrue($audioFile->isAudio());
+
+        $wavFile = new File('https://example.com/test.wav');
+        $this->assertTrue($wavFile->isAudio());
+
+        $imageFile = new File('https://example.com/test.jpg');
+        $this->assertFalse($imageFile->isAudio());
+    }
+
+    /**
+     * Tests isText passthrough method.
+     *
+     * @return void
+     */
+    public function testIsText(): void
+    {
+        $textFile = new File('https://example.com/test.txt');
+        $this->assertTrue($textFile->isText());
+
+        $csvFile = new File('https://example.com/test.csv');
+        $this->assertTrue($csvFile->isText());
+
+        $htmlFile = new File('https://example.com/test.html');
+        $this->assertTrue($htmlFile->isText());
+
+        $imageFile = new File('https://example.com/test.jpg');
+        $this->assertFalse($imageFile->isText());
+    }
+
+    /**
+     * Tests isDocument passthrough method.
+     *
+     * @return void
+     */
+    public function testIsDocument(): void
+    {
+        $pdfFile = new File('https://example.com/test.pdf');
+        $this->assertTrue($pdfFile->isDocument());
+
+        $docFile = new File('https://example.com/test.doc');
+        $this->assertTrue($docFile->isDocument());
+
+        $docxFile = new File('https://example.com/test.docx');
+        $this->assertTrue($docxFile->isDocument());
+
+        $imageFile = new File('https://example.com/test.jpg');
+        $this->assertFalse($imageFile->isDocument());
+
+        $audioFile = new File('https://example.com/test.mp3');
+        $this->assertFalse($audioFile->isDocument());
+    }
+
+    /**
+     * Tests isMimeType passthrough method.
+     *
+     * @return void
+     */
+    public function testIsMimeType(): void
+    {
+        $imageFile = new File('https://example.com/test.jpg');
+        $this->assertTrue($imageFile->isMimeType('image'));
+        $this->assertFalse($imageFile->isMimeType('video'));
+
+        $videoFile = new File('https://example.com/test.mp4');
+        $this->assertTrue($videoFile->isMimeType('video'));
+        $this->assertFalse($videoFile->isMimeType('audio'));
+
+        $textFile = new File('https://example.com/test.txt');
+        $this->assertTrue($textFile->isMimeType('text'));
+        $this->assertFalse($textFile->isMimeType('image'));
+    }
 }

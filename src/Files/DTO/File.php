@@ -287,6 +287,18 @@ class File extends AbstractDataTransferObject
     }
 
     /**
+     * Checks if the file is a document.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if the file is a document.
+     */
+    public function isDocument(): bool
+    {
+        return $this->mimeType->isDocument();
+    }
+
+    /**
      * Checks if the file is a specific MIME type.
      *
      * @since n.e.x.t
