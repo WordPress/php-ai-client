@@ -224,7 +224,7 @@ class ModelConfig extends AbstractDataTransferObject
 
         // Check if modality already exists
         foreach ($this->outputModalities as $existingModality) {
-            if ($existingModality->value === $modality->value) {
+            if ($existingModality === $modality) {
                 return; // Already included
             }
         }
