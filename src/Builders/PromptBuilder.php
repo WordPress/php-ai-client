@@ -270,53 +270,20 @@ class PromptBuilder
         return $this;
     }
 
-    // phpcs:disable Generic.Files.LineLength.TooLong
     /**
      * Sets the system instruction.
      *
-     * If a system message already exists at the beginning of the messages array,
-     * it will be updated. Otherwise, a new system message will be prepended.
+     * System instructions are stored in the model configuration and guide
+     * the AI model's behavior throughout the conversation.
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|MessagePartArrayShape|list<string|MessagePart|MessagePartArrayShape>|Message $systemInstruction
-     *     The system instruction.
+     * @param string $systemInstruction The system instruction text.
      * @return self
-     * @throws InvalidArgumentException If the input type is not supported.
      */
-    // phpcs:enable Generic.Files.LineLength.TooLong
-    public function usingSystemInstruction($systemInstruction): self
+    public function usingSystemInstruction(string $systemInstruction): self
     {
-        // Parse the input into a system message
-        $systemMessage = $this->parseMessage($systemInstruction, MessageRoleEnum::system());
-
-        // Extract text from message parts for ModelConfig
-        $systemInstructionText = '';
-        foreach ($systemMessage->getParts() as $part) {
-            if ($part->getText() !== null) {
-                $systemInstructionText .= $part->getText() . ' ';
-            }
-        }
-
-        // Check if the first message is a system message
-        if (!empty($this->messages) && $this->messages[0]->getRole()->isSystem()) {
-            // Update the existing system message by appending new parts
-            $existingParts = $this->messages[0]->getParts();
-            $newParts = $systemMessage->getParts();
-            $this->messages[0] = new Message(
-                MessageRoleEnum::system(),
-                array_merge($existingParts, $newParts)
-            );
-        } else {
-            // Prepend the new system message
-            array_unshift($this->messages, $systemMessage);
-        }
-
-        // Update ModelConfig with system instruction text
-        if (!empty($systemInstructionText)) {
-            $this->modelConfig->setSystemInstruction(trim($systemInstructionText));
-        }
-
+        $this->modelConfig->setSystemInstruction($systemInstruction);
         return $this;
     }
 
@@ -1170,7 +1137,7 @@ class PromptBuilder
      * Validates the messages array for prompt generation.
      *
      * Ensures that:
-     * - The first message is a user or system message
+     * - The first message is a user message
      * - The last message is a user message
      * - The last message has parts
      *
@@ -1188,9 +1155,9 @@ class PromptBuilder
         }
 
         $firstMessage = reset($this->messages);
-        if (!$firstMessage->getRole()->isUser() && !$firstMessage->getRole()->isSystem()) {
+        if (!$firstMessage->getRole()->isUser()) {
             throw new InvalidArgumentException(
-                'The first message must be from a user or system role, not from ' . $firstMessage->getRole()->value
+                'The first message must be from a user role, not from ' . $firstMessage->getRole()->value
             );
         }
 
