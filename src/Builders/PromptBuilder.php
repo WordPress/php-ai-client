@@ -501,17 +501,90 @@ class PromptBuilder
      *
      * @since n.e.x.t
      *
+     * @param ModalityEnum|null $intendedOutput Optional output modality to check support for.
      * @return bool True if supported, false otherwise.
      */
-    public function isSupported(): bool
+    public function isSupported(?ModalityEnum $intendedOutput = null): bool
     {
-        if ($this->model === null) {
-            // Without a model selected, we can't determine support
-            return true;
+        // If an intended output modality is specified, temporarily include it
+        $originalModalities = null;
+        if ($intendedOutput !== null) {
+            $originalModalities = $this->modelConfig->getOutputModalities();
+            $this->modelConfig->includeOutputModality($intendedOutput);
         }
 
-        $requirements = $this->getModelRequirements();
-        return $this->model->metadata()->meetsRequirements($requirements);
+        try {
+            // Try to get a configured model - this will throw if no suitable model exists
+            $this->getConfiguredModel();
+            return true;
+        } catch (InvalidArgumentException $e) {
+            return false;
+        } finally {
+            // Restore original modalities if we modified them
+            if ($originalModalities !== null) {
+                $this->modelConfig->setOutputModalities($originalModalities);
+            }
+        }
+    }
+
+    /**
+     * Checks if the prompt is supported for text generation.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if text generation is supported.
+     */
+    public function isSupportedForText(): bool
+    {
+        return $this->isSupported(ModalityEnum::text());
+    }
+
+    /**
+     * Checks if the prompt is supported for image generation.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if image generation is supported.
+     */
+    public function isSupportedForImage(): bool
+    {
+        return $this->isSupported(ModalityEnum::image());
+    }
+
+    /**
+     * Checks if the prompt is supported for audio generation.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if audio generation is supported.
+     */
+    public function isSupportedForAudio(): bool
+    {
+        return $this->isSupported(ModalityEnum::audio());
+    }
+
+    /**
+     * Checks if the prompt is supported for video generation.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if video generation is supported.
+     */
+    public function isSupportedForVideo(): bool
+    {
+        return $this->isSupported(ModalityEnum::video());
+    }
+
+    /**
+     * Checks if the prompt is supported for speech generation.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if speech generation is supported.
+     */
+    public function isSupportedForSpeech(): bool
+    {
+        return $this->isSupported(ModalityEnum::audio());
     }
 
     /**
