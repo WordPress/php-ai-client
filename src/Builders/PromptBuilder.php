@@ -6,7 +6,6 @@ namespace WordPress\AiClient\Builders;
 
 use InvalidArgumentException;
 use RuntimeException;
-use WordPress\AiClient\Common\Utilities\Prompts;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -82,7 +81,7 @@ class PromptBuilder
         }
 
         // Check if it's a list of Messages - set as messages
-        if (Prompts::isMessagesList($prompt)) {
+        if ($this->isMessagesList($prompt)) {
             $this->messages = $prompt;
             return;
         }
@@ -1173,5 +1172,31 @@ class PromptBuilder
                 'The last message must have content parts. Add content using withText() or similar methods.'
             );
         }
+    }
+
+    /**
+     * Checks if the value is a list of Message objects.
+     *
+     * @since n.e.x.t
+     *
+     * @param mixed $value The value to check.
+     * @return bool True if the value is a list of Message objects.
+     *
+     * @phpstan-assert-if-true list<Message> $value
+     */
+    private function isMessagesList($value): bool
+    {
+        if (!is_array($value) || empty($value) || !array_is_list($value)) {
+            return false;
+        }
+
+        // Check if all items are Messages
+        foreach ($value as $item) {
+            if (!($item instanceof Message)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
