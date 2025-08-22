@@ -553,7 +553,7 @@ class PromptBuilder
     public function generateText(): string
     {
         $this->validateMessages();
-        $model = $this->getModel();
+        $model = $this->getConfiguredModel();
 
         // This is a placeholder - actual implementation would call the model
         throw new \RuntimeException('Not implemented yet - requires AiClient integration.');
@@ -575,7 +575,7 @@ class PromptBuilder
         }
 
         $this->validateMessages();
-        $model = $this->getModel();
+        $model = $this->getConfiguredModel();
 
         // This is a placeholder - actual implementation would call the model
         throw new \RuntimeException('Not implemented yet - requires AiClient integration.');
@@ -619,7 +619,7 @@ class PromptBuilder
      * @return ModelInterface The model to use.
      * @throws InvalidArgumentException If no suitable model is found or set model doesn't meet requirements.
      */
-    public function getModel(?ModelRequirements $requirements = null): ModelInterface
+    public function getConfiguredModel(?ModelRequirements $requirements = null): ModelInterface
     {
         if ($requirements === null) {
             $requirements = $this->getModelRequirements();
@@ -635,6 +635,7 @@ class PromptBuilder
                     )
                 );
             }
+            $this->model->setConfig($this->modelConfig);
             return $this->model;
         }
 
