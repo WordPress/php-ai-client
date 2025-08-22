@@ -204,6 +204,36 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Includes an output modality if not already present.
+     *
+     * Adds the given modality to the output modalities list if it's not
+     * already included. If output modalities is null, initializes it with
+     * the given modality.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModalityEnum $modality The modality to include.
+     */
+    public function includeOutputModality(ModalityEnum $modality): void
+    {
+        // Initialize if null
+        if ($this->outputModalities === null) {
+            $this->outputModalities = [$modality];
+            return;
+        }
+
+        // Check if modality already exists
+        foreach ($this->outputModalities as $existingModality) {
+            if ($existingModality->value === $modality->value) {
+                return; // Already included
+            }
+        }
+
+        // Add the modality
+        $this->outputModalities[] = $modality;
+    }
+
+    /**
      * Sets the system instruction.
      *
      * @since n.e.x.t

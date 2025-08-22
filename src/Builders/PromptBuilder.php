@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Builders;
 
 use InvalidArgumentException;
+use RuntimeException;
 use WordPress\AiClient\Common\Utilities\Prompts;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -18,7 +19,12 @@ use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
+use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
@@ -543,6 +549,176 @@ class PromptBuilder
     }
 
     /**
+     * Generates a result from the prompt.
+     *
+     * This is the primary execution method that generates a result (containing
+     * potentially multiple candidates) based on the configured output modality.
+     *
+     * @since n.e.x.t
+     *
+     * @return GenerativeAiResult The generated result containing candidates.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support the configured output modality.
+     */
+    public function generateResult(): GenerativeAiResult
+    {
+        $this->validateMessages();
+        $model = $this->getConfiguredModel();
+
+        // Get the configured output modalities
+        $outputModalities = $this->modelConfig->getOutputModalities();
+
+        // Default to text if no output modality is specified
+        if ($outputModalities === null || empty($outputModalities)) {
+            $outputModalities = [ModalityEnum::text()];
+        }
+
+        // Multi-modal output (multiple modalities) uses TextGenerationModelInterface
+        if (count($outputModalities) > 1) {
+            if (!$model instanceof TextGenerationModelInterface) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Model "%s" does not support multi-modal generation.',
+                        $model->metadata()->getId()
+                    )
+                );
+            }
+            return $model->generateTextResult($this->messages);
+        }
+
+        // Single modality routing
+        $outputModality = $outputModalities[0];
+
+        // Route to the appropriate generation method based on output modality
+        if ($outputModality->isText()) {
+            if (!$model instanceof TextGenerationModelInterface) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Model "%s" does not support text generation.',
+                        $model->metadata()->getId()
+                    )
+                );
+            }
+            return $model->generateTextResult($this->messages);
+        }
+
+        if ($outputModality->isImage()) {
+            if (!$model instanceof ImageGenerationModelInterface) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Model "%s" does not support image generation.',
+                        $model->metadata()->getId()
+                    )
+                );
+            }
+            return $model->generateImageResult($this->messages);
+        }
+
+        if ($outputModality->isAudio()) {
+            if (!$model instanceof SpeechGenerationModelInterface) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Model "%s" does not support speech/audio generation.',
+                        $model->metadata()->getId()
+                    )
+                );
+            }
+            return $model->generateSpeechResult($this->messages);
+        }
+
+        // TODO: Add support for video output modality when interface is available
+        throw new RuntimeException(
+            sprintf('Output modality "%s" is not yet supported.', $outputModality->value)
+        );
+    }
+
+    /**
+     * Generates a text result from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @return GenerativeAiResult The generated result containing text candidates.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support text generation.
+     */
+    public function generateTextResult(): GenerativeAiResult
+    {
+        // Include text in output modalities
+        $this->modelConfig->includeOutputModality(ModalityEnum::text());
+
+        // Generate and return the result
+        return $this->generateResult();
+    }
+
+    /**
+     * Generates an image result from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @return GenerativeAiResult The generated result containing image candidates.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support image generation.
+     */
+    public function generateImageResult(): GenerativeAiResult
+    {
+        // Include image in output modalities
+        $this->modelConfig->includeOutputModality(ModalityEnum::image());
+
+        // Generate and return the result
+        return $this->generateResult();
+    }
+
+    /**
+     * Generates a speech result from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @return GenerativeAiResult The generated result containing speech audio candidates.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support speech generation.
+     */
+    public function generateSpeechResult(): GenerativeAiResult
+    {
+        // Include audio in output modalities
+        $this->modelConfig->includeOutputModality(ModalityEnum::audio());
+
+        // Generate and return the result
+        return $this->generateResult();
+    }
+
+    /**
+     * Converts text to speech and returns the result.
+     *
+     * @since n.e.x.t
+     *
+     * @return GenerativeAiResult The generated result containing speech audio candidates.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support text-to-speech conversion.
+     */
+    public function convertTextToSpeechResult(): GenerativeAiResult
+    {
+        // Include audio in output modalities
+        $this->modelConfig->includeOutputModality(ModalityEnum::audio());
+
+        // Get the configured model
+        $model = $this->getConfiguredModel();
+
+        // Ensure the model supports text-to-speech conversion
+        if (!$model instanceof TextToSpeechConversionModelInterface) {
+            throw new RuntimeException(
+                sprintf(
+                    'Model "%s" does not support text-to-speech conversion.',
+                    $model->metadata()->getId()
+                )
+            );
+        }
+
+        // Validate messages and convert
+        $this->validateMessages();
+        return $model->convertTextToSpeechResult($this->messages);
+    }
+
+    /**
      * Generates text from the prompt.
      *
      * @since n.e.x.t
@@ -552,11 +728,27 @@ class PromptBuilder
      */
     public function generateText(): string
     {
-        $this->validateMessages();
-        $model = $this->getConfiguredModel();
+        // Generate text result and extract text from first candidate
+        $result = $this->generateTextResult();
+        $candidates = $result->getCandidates();
 
-        // This is a placeholder - actual implementation would call the model
-        throw new \RuntimeException('Not implemented yet - requires AiClient integration.');
+        if (empty($candidates)) {
+            throw new RuntimeException('No candidates were generated.');
+        }
+
+        // Get the text from the first message part
+        $message = $candidates[0]->getMessage();
+        $parts = $message->getParts();
+        if (empty($parts)) {
+            throw new RuntimeException('Generated message contains no parts.');
+        }
+
+        $text = $parts[0]->getText();
+        if ($text === null) {
+            throw new RuntimeException('Generated message part contains no text.');
+        }
+
+        return $text;
     }
 
     /**
@@ -574,11 +766,256 @@ class PromptBuilder
             $this->usingCandidateCount($candidateCount);
         }
 
-        $this->validateMessages();
-        $model = $this->getConfiguredModel();
+        // Generate text result
+        $results = $this->generateTextResult();
+        $candidates = $results->getCandidates();
 
-        // This is a placeholder - actual implementation would call the model
-        throw new \RuntimeException('Not implemented yet - requires AiClient integration.');
+        // Extract text from each candidate
+        $texts = [];
+        foreach ($candidates as $candidate) {
+            $message = $candidate->getMessage();
+            $parts = $message->getParts();
+            if (empty($parts)) {
+                continue;
+            }
+
+            $text = $parts[0]->getText();
+            if ($text !== null) {
+                $texts[] = $text;
+            }
+        }
+
+        if (empty($texts)) {
+            throw new RuntimeException('No text was generated from any candidates.');
+        }
+
+        return $texts;
+    }
+
+    /**
+     * Generates an image from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @return File The generated image file.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no image is generated.
+     */
+    public function generateImage(): File
+    {
+        // Generate image result and extract image from first candidate
+        $result = $this->generateImageResult();
+        $candidates = $result->getCandidates();
+
+        if (empty($candidates)) {
+            throw new RuntimeException('No candidates were generated.');
+        }
+
+        // Get the image file from the first message part
+        $message = $candidates[0]->getMessage();
+        $parts = $message->getParts();
+        if (empty($parts)) {
+            throw new RuntimeException('Generated message contains no parts.');
+        }
+
+        $file = $parts[0]->getFile();
+        if ($file === null) {
+            throw new RuntimeException('Generated message part contains no image file.');
+        }
+
+        return $file;
+    }
+
+    /**
+     * Generates multiple images from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @param int|null $candidateCount The number of images to generate.
+     * @return list<File> The generated image files.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no images are generated.
+     */
+    public function generateImages(?int $candidateCount = null): array
+    {
+        if ($candidateCount !== null) {
+            $this->usingCandidateCount($candidateCount);
+        }
+
+        // Generate image result
+        $results = $this->generateImageResult();
+        $candidates = $results->getCandidates();
+
+        // Extract image files from each candidate
+        $images = [];
+        foreach ($candidates as $candidate) {
+            $message = $candidate->getMessage();
+            $parts = $message->getParts();
+            if (empty($parts)) {
+                continue;
+            }
+
+            $file = $parts[0]->getFile();
+            if ($file !== null) {
+                $images[] = $file;
+            }
+        }
+
+        if (empty($images)) {
+            throw new RuntimeException('No images were generated from any candidates.');
+        }
+
+        return $images;
+    }
+
+    /**
+     * Converts text to speech.
+     *
+     * @since n.e.x.t
+     *
+     * @return File The generated speech audio file.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no audio is generated.
+     */
+    public function convertTextToSpeech(): File
+    {
+        // Convert text to speech and extract audio from first candidate
+        $result = $this->convertTextToSpeechResult();
+        $candidates = $result->getCandidates();
+
+        if (empty($candidates)) {
+            throw new RuntimeException('No candidates were generated.');
+        }
+
+        $message = $candidates[0]->getMessage();
+        $parts = $message->getParts();
+        if (empty($parts)) {
+            throw new RuntimeException('Generated message contains no parts.');
+        }
+
+        $file = $parts[0]->getFile();
+        if ($file === null) {
+            throw new RuntimeException('Generated message part contains no audio file.');
+        }
+
+        return $file;
+    }
+
+    /**
+     * Converts text to multiple speech outputs.
+     *
+     * @since n.e.x.t
+     *
+     * @param int|null $candidateCount The number of speech outputs to generate.
+     * @return list<File> The generated speech audio files.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no audio is generated.
+     */
+    public function convertTextToSpeeches(?int $candidateCount = null): array
+    {
+        if ($candidateCount !== null) {
+            $this->usingCandidateCount($candidateCount);
+        }
+
+        // Convert text to speech
+        $result = $this->convertTextToSpeechResult();
+
+        // Extract audio files from each candidate
+        $audioFiles = [];
+        foreach ($result->getCandidates() as $candidate) {
+            $message = $candidate->getMessage();
+            $parts = $message->getParts();
+            if (empty($parts)) {
+                continue;
+            }
+
+            $file = $parts[0]->getFile();
+            if ($file !== null) {
+                $audioFiles[] = $file;
+            }
+        }
+
+        if (empty($audioFiles)) {
+            throw new RuntimeException('No audio files were generated from any candidates.');
+        }
+
+        return $audioFiles;
+    }
+
+    /**
+     * Generates speech from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @return File The generated speech audio file.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no audio is generated.
+     */
+    public function generateSpeech(): File
+    {
+        // Generate speech result and extract audio from first candidate
+        $result = $this->generateSpeechResult();
+        $candidates = $result->getCandidates();
+
+        if (empty($candidates)) {
+            throw new RuntimeException('No candidates were generated.');
+        }
+
+        // Get the audio file from the first message part
+        $message = $candidates[0]->getMessage();
+        $parts = $message->getParts();
+        if (empty($parts)) {
+            throw new RuntimeException('Generated message contains no parts.');
+        }
+
+        $file = $parts[0]->getFile();
+        if ($file === null) {
+            throw new RuntimeException('Generated message part contains no audio file.');
+        }
+
+        return $file;
+    }
+
+    /**
+     * Generates multiple speech outputs from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @param int|null $candidateCount The number of speech outputs to generate.
+     * @return list<File> The generated speech audio files.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no audio is generated.
+     */
+    public function generateSpeeches(?int $candidateCount = null): array
+    {
+        if ($candidateCount !== null) {
+            $this->usingCandidateCount($candidateCount);
+        }
+
+        // Generate speech result
+        $result = $this->generateSpeechResult();
+        $candidates = $result->getCandidates();
+
+        // Extract audio files from each candidate
+        $audioFiles = [];
+        foreach ($candidates as $candidate) {
+            $message = $candidate->getMessage();
+            $parts = $message->getParts();
+            if (empty($parts)) {
+                continue;
+            }
+
+            $file = $parts[0]->getFile();
+            if ($file !== null) {
+                $audioFiles[] = $file;
+            }
+        }
+
+        if (empty($audioFiles)) {
+            throw new RuntimeException('No audio files were generated from any candidates.');
+        }
+
+        return $audioFiles;
     }
 
     /**
@@ -625,16 +1062,8 @@ class PromptBuilder
             $requirements = $this->getModelRequirements();
         }
 
-        // If a model has been explicitly set, validate and return it
+        // If a model has been explicitly set, return it
         if ($this->model !== null) {
-            if (!$this->model->metadata()->meetsRequirements($requirements)) {
-                throw new InvalidArgumentException(
-                    sprintf(
-                        'The selected model "%s" does not meet the required capabilities and options for this prompt.',
-                        $this->model->metadata()->getId()
-                    )
-                );
-            }
             $this->model->setConfig($this->modelConfig);
             return $this->model;
         }
