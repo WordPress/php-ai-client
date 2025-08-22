@@ -654,4 +654,143 @@ class ModelConfigTest extends TestCase
         $restored = ModelConfig::fromArray($array);
         $this->assertEquals($customOptions, $restored->getCustomOptions());
     }
+
+    /**
+     * Tests includeOutputModality method.
+     *
+     * @return void
+     */
+    public function testIncludeOutputModality(): void
+    {
+        $config = new ModelConfig();
+
+        // Test adding modality to null output modalities
+        $this->assertNull($config->getOutputModalities());
+        $config->includeOutputModality(ModalityEnum::text());
+        $modalities = $config->getOutputModalities();
+        $this->assertCount(1, $modalities);
+        $this->assertTrue($modalities[0]->isText());
+
+        // Test adding a different modality
+        $config->includeOutputModality(ModalityEnum::image());
+        $modalities = $config->getOutputModalities();
+        $this->assertCount(2, $modalities);
+        $this->assertTrue($modalities[0]->isText());
+        $this->assertTrue($modalities[1]->isImage());
+
+        // Test adding a duplicate modality (should not add)
+        $config->includeOutputModality(ModalityEnum::text());
+        $modalities = $config->getOutputModalities();
+        $this->assertCount(2, $modalities);
+        $this->assertTrue($modalities[0]->isText());
+        $this->assertTrue($modalities[1]->isImage());
+
+        // Test adding another unique modality
+        $config->includeOutputModality(ModalityEnum::audio());
+        $modalities = $config->getOutputModalities();
+        $this->assertCount(3, $modalities);
+        $this->assertTrue($modalities[0]->isText());
+        $this->assertTrue($modalities[1]->isImage());
+        $this->assertTrue($modalities[2]->isAudio());
+
+        // Test that duplicate modalities are not added (different instance, same value)
+        $config->includeOutputModality(ModalityEnum::image());
+        $modalities = $config->getOutputModalities();
+        $this->assertCount(3, $modalities);
+    }
+
+    /**
+     * Tests includeOutputModality with existing modalities set via setOutputModalities.
+     *
+     * @return void
+     */
+    public function testIncludeOutputModalityWithExistingModalitiesSet(): void
+    {
+        $config = new ModelConfig();
+
+        // Set initial modalities
+        $config->setOutputModalities([ModalityEnum::text(), ModalityEnum::video()]);
+        $modalities = $config->getOutputModalities();
+        $this->assertCount(2, $modalities);
+
+        // Include a new modality
+        $config->includeOutputModality(ModalityEnum::image());
+        $modalities = $config->getOutputModalities();
+        $this->assertCount(3, $modalities);
+        $this->assertTrue($modalities[0]->isText());
+        $this->assertTrue($modalities[1]->isVideo());
+        $this->assertTrue($modalities[2]->isImage());
+
+        // Include an existing modality (should not add)
+        $config->includeOutputModality(ModalityEnum::video());
+        $modalities = $config->getOutputModalities();
+        $this->assertCount(3, $modalities);
+    }
+
+    /**
+     * Tests includeOutputModality preserves modality order.
+     *
+     * @return void
+     */
+    public function testIncludeOutputModalityPreservesOrder(): void
+    {
+        $config = new ModelConfig();
+
+        // Add modalities in specific order
+        $config->includeOutputModality(ModalityEnum::audio());
+        $config->includeOutputModality(ModalityEnum::document());
+        $config->includeOutputModality(ModalityEnum::text());
+        $config->includeOutputModality(ModalityEnum::image());
+
+        $modalities = $config->getOutputModalities();
+        $this->assertCount(4, $modalities);
+        $this->assertTrue($modalities[0]->isAudio());
+        $this->assertTrue($modalities[1]->isDocument());
+        $this->assertTrue($modalities[2]->isText());
+        $this->assertTrue($modalities[3]->isImage());
+
+        // Try to add existing modalities in different order (should not change)
+        $config->includeOutputModality(ModalityEnum::text());
+        $config->includeOutputModality(ModalityEnum::audio());
+
+        $modalities = $config->getOutputModalities();
+        $this->assertCount(4, $modalities);
+        $this->assertTrue($modalities[0]->isAudio());
+        $this->assertTrue($modalities[1]->isDocument());
+        $this->assertTrue($modalities[2]->isText());
+        $this->assertTrue($modalities[3]->isImage());
+    }
+
+    /**
+     * Tests includeOutputModality handles all modality types.
+     *
+     * @return void
+     */
+    public function testIncludeOutputModalityHandlesAllModalityTypes(): void
+    {
+        $config = new ModelConfig();
+
+        // Test all available modality types
+        $allModalities = [
+            ModalityEnum::text(),
+            ModalityEnum::image(),
+            ModalityEnum::audio(),
+            ModalityEnum::video(),
+            ModalityEnum::document()
+        ];
+
+        foreach ($allModalities as $modality) {
+            $config->includeOutputModality($modality);
+        }
+
+        $modalities = $config->getOutputModalities();
+        $this->assertCount(5, $modalities);
+
+        // Verify all modalities are present
+        $this->assertTrue($modalities[0]->isText());
+        $this->assertTrue($modalities[1]->isImage());
+        $this->assertTrue($modalities[2]->isAudio());
+        $this->assertTrue($modalities[3]->isVideo());
+        $this->assertTrue($modalities[4]->isDocument());
+    }
 }
