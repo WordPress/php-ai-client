@@ -167,13 +167,13 @@ class MessageUtilTest extends TestCase
     public function testParseMessagesFromInputWithSingleMessageArrayInput(): void
     {
         $input = [
-            'role' => 'system',
-            'parts' => [['text' => 'System prompt']],
+            'role' => 'user',
+            'parts' => [['text' => 'Test prompt']],
         ];
         $result = MessageUtil::parseMessagesFromInput($input);
         $this->assertCount(1, $result);
         $this->assertInstanceOf(Message::class, $result[0]);
-        $this->assertEquals(MessageRoleEnum::system(), $result[0]->getRole());
-        $this->assertEquals('System prompt', $result[0]->getParts()[0]->getText());
+        $this->assertEquals(MessageRoleEnum::user(), $result[0]->getRole());
+        $this->assertEquals('Test prompt', $result[0]->getParts()[0]->getText());
     }
 }

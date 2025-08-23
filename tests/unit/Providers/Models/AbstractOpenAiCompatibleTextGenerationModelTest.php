@@ -10,7 +10,6 @@ use RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
-use WordPress\AiClient\Messages\DTO\SystemMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -473,47 +472,6 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests mergeSystemInstruction() method.
-     *
-     * @return void
-     */
-    public function testMergeSystemInstruction(): void
-    {
-        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('User message')])];
-        $systemInstruction = 'You are a helpful assistant.';
-        $model = $this->createModel();
-
-        $updatedPrompt = $model->exposeMergeSystemInstruction($prompt, $systemInstruction);
-
-        $this->assertCount(2, $updatedPrompt);
-        $this->assertInstanceOf(SystemMessage::class, $updatedPrompt[0]);
-        $this->assertEquals($systemInstruction, $updatedPrompt[0]->getParts()[0]->getText());
-        $this->assertEquals(MessageRoleEnum::user(), $updatedPrompt[1]->getRole());
-    }
-
-    /**
-     * Tests mergeSystemInstruction() method with existing system message.
-     *
-     * @return void
-     */
-    public function testMergeSystemInstructionWithExistingSystemMessage(): void
-    {
-        $prompt = [
-            new SystemMessage([new MessagePart('Existing system message')]),
-            new Message(MessageRoleEnum::user(), [new MessagePart('User message')]),
-        ];
-        $systemInstruction = 'You are a helpful assistant.';
-        $model = $this->createModel();
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'The first message in the prompt cannot be a system message when using a system instruction.'
-        );
-
-        $model->exposeMergeSystemInstruction($prompt, $systemInstruction);
-    }
-
-    /**
      * Tests prepareMessagesParam() with text message.
      *
      * @return void
@@ -610,7 +568,6 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         return [
             'user' => [MessageRoleEnum::user(), 'user'],
             'model' => [MessageRoleEnum::model(), 'assistant'],
-            'system' => [MessageRoleEnum::system(), 'system'],
         ];
     }
 

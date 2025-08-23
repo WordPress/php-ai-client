@@ -9,7 +9,6 @@ use InvalidArgumentException;
 use RuntimeException;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
-use WordPress\AiClient\Messages\DTO\SystemMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -85,14 +84,9 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     {
         $config = $this->getConfig();
 
-        $systemInstruction = $config->getSystemInstruction();
-        if ($systemInstruction) {
-            $prompt = $this->mergeSystemInstruction($prompt, $systemInstruction);
-        }
-
         $params = [
             'model' => $this->metadata()->getId(),
-            'messages' => $this->prepareMessagesParam($prompt),
+            'messages' => $this->prepareMessagesParam($prompt, $config->getSystemInstruction()),
         ];
 
         $outputModalities = $config->getOutputModalities();
@@ -180,42 +174,17 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     }
 
     /**
-     * Merges the system instruction into the prompt, ensuring that it is the first message.
-     *
-     * @since n.e.x.t
-     *
-     * @param list<Message> $prompt The prompt to merge the system instruction into.
-     * @param string $systemInstruction The system instruction to merge.
-     * @return list<Message> The updated prompt with the system instruction as the first message.
-     * @throws InvalidArgumentException If the first message in the prompt is already a system message.
-     */
-    protected function mergeSystemInstruction(array $prompt, string $systemInstruction): array
-    {
-        // If the first message is a system message, throw an exception due to a conflict.
-        if (isset($prompt[0]) && $prompt[0]->getRole() === MessageRoleEnum::system()) {
-            throw new InvalidArgumentException(
-                'The first message in the prompt cannot be a system message when using a system instruction.'
-            );
-        }
-
-        $systemMessage = new SystemMessage([
-            new MessagePart($systemInstruction),
-        ]);
-        array_unshift($prompt, $systemMessage);
-        return $prompt;
-    }
-
-    /**
      * Prepares the messages parameter for the API request.
      *
      * @since n.e.x.t
      *
      * @param list<Message> $messages The messages to prepare.
+     * @param string|null $systemInstruction An optional system instruction to prepend to the messages.
      * @return list<array<string, mixed>> The prepared messages parameter.
      */
-    protected function prepareMessagesParam(array $messages): array
+    protected function prepareMessagesParam(array $messages, ?string $systemInstruction = null): array
     {
-        return array_map(
+        $messagesParam = array_map(
             function (Message $message): array {
                 // Special case: Function response.
                 $messageParts = $message->getParts();
@@ -251,6 +220,23 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             },
             $messages
         );
+
+        if ($systemInstruction) {
+            array_unshift(
+                $messagesParam,
+                [
+                    'role' => 'system',
+                    'content' => [
+                        [
+                            'type' => 'text',
+                            'text' => $systemInstruction,
+                        ],
+                    ],
+                ]
+            );
+        }
+
+        return $messagesParam;
     }
 
     /**
@@ -265,9 +251,6 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     {
         if ($role === MessageRoleEnum::model()) {
             return 'assistant';
-        }
-        if ($role === MessageRoleEnum::system()) {
-            return 'system';
         }
         return 'user';
     }
