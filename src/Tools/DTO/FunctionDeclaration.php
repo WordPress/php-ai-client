@@ -14,7 +14,11 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  *
  * @since n.e.x.t
  *
- * @phpstan-type FunctionDeclarationArrayShape array{name: string, description: string, parameters?: mixed}
+ * @phpstan-type FunctionDeclarationArrayShape array{
+ *     name: string,
+ *     description: string,
+ *     parameters?: array<string, mixed>
+ * }
  *
  * @extends AbstractDataTransferObject<FunctionDeclarationArrayShape>
  */
@@ -34,9 +38,9 @@ class FunctionDeclaration extends AbstractDataTransferObject
     private string $description;
 
     /**
-     * @var mixed|null The JSON schema for the function parameters.
+     * @var array<string, mixed>|null The JSON schema for the function parameters.
      */
-    private $parameters;
+    private ?array $parameters;
 
     /**
      * Constructor.
@@ -45,9 +49,9 @@ class FunctionDeclaration extends AbstractDataTransferObject
      *
      * @param string $name The name of the function.
      * @param string $description A description of what the function does.
-     * @param mixed $parameters The JSON schema for the function parameters.
+     * @param array<string, mixed>|null $parameters The JSON schema for the function parameters.
      */
-    public function __construct(string $name, string $description, $parameters = null)
+    public function __construct(string $name, string $description, ?array $parameters = null)
     {
         $this->name = $name;
         $this->description = $description;
@@ -83,9 +87,9 @@ class FunctionDeclaration extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return mixed|null The parameters schema.
+     * @return array<string, mixed>|null The parameters schema.
      */
-    public function getParameters()
+    public function getParameters(): ?array
     {
         return $this->parameters;
     }
@@ -109,8 +113,9 @@ class FunctionDeclaration extends AbstractDataTransferObject
                     'description' => 'A description of what the function does.',
                 ],
                 self::KEY_PARAMETERS => [
-                    'type' => ['string', 'number', 'boolean', 'object', 'array', 'null'],
+                    'type' => 'object',
                     'description' => 'The JSON schema for the function parameters.',
+                    'additionalProperties' => true,
                 ],
             ],
             'required' => [self::KEY_NAME, self::KEY_DESCRIPTION],

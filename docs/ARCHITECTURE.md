@@ -312,7 +312,7 @@ direction LR
             +withMessageParts(...MessagePart $part) self
             +withHistory(...Message $messages) self
             +usingModel(ModelInterface $model) self
-            +usingSystemInstruction(string|MessagePart[]|Message $systemInstruction) self
+            +usingSystemInstruction(string $systemInstruction) self
             +usingMaxTokens(int $maxTokens) self
             +usingTemperature(float $temperature) self
             +usingTopP(float $topP) self
@@ -475,7 +475,7 @@ direction LR
             +withMessageParts(...MessagePart $part) self
             +withHistory(...Message $messages) self
             +usingModel(ModelInterface $model) self
-            +usingSystemInstruction(string|MessagePart[]|Message $systemInstruction) self
+            +usingSystemInstruction(string $systemInstruction) self
             +usingMaxTokens(int $maxTokens) self
             +usingTemperature(float $temperature) self
             +usingTopP(float $topP) self
@@ -566,8 +566,6 @@ direction LR
         }
         class ModelMessage {
         }
-        class SystemMessage {
-        }
         class UserMessage {
         }
     }
@@ -582,7 +580,6 @@ direction LR
         class MessageRoleEnum {
             USER
             MODEL
-            SYSTEM
         }
         class ModalityEnum {
             TEXT
@@ -778,7 +775,6 @@ direction LR
     Candidate ..> FinishReasonEnum
     Message <|-- UserMessage
     Message <|-- ModelMessage
-    Message <|-- SystemMessage
     OperationInterface <|-- GenerativeAiOperation
     OperationInterface <|-- EmbeddingOperation
     ResultInterface <|-- GenerativeAiResult
@@ -944,8 +940,8 @@ direction LR
         class ModelConfig {
             +setOutputModalities(ModalityEnum[] $modalities) void
             +getOutputModalities() ModalityEnum[]
-            +setSystemInstruction(string|MessagePart|MessagePart[]|Message $systemInstruction) void
-            +getSystemInstruction() Message?
+            +setSystemInstruction(string $systemInstruction) void
+            +getSystemInstruction() string?
             +setCandidateCount(int $candidateCount) void
             +getCandidateCount() int
             +setMaxTokens(int $maxTokens) void

@@ -13,10 +13,8 @@ use WordPress\AiClient\Common\AbstractEnum;
  *
  * @method static self user() Creates an instance for USER role.
  * @method static self model() Creates an instance for MODEL role.
- * @method static self system() Creates an instance for SYSTEM role.
  * @method bool isUser() Checks if the role is USER.
  * @method bool isModel() Checks if the role is MODEL.
- * @method bool isSystem() Checks if the role is SYSTEM.
  */
 class MessageRoleEnum extends AbstractEnum
 {
@@ -29,9 +27,4 @@ class MessageRoleEnum extends AbstractEnum
      * Model role - messages from the AI model.
      */
     public const MODEL = 'model';
-
-    /**
-     * System role - system instructions.
-     */
-    public const SYSTEM = 'system';
 }

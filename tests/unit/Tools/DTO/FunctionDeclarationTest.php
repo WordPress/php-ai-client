@@ -80,12 +80,7 @@ class FunctionDeclarationTest extends TestCase
     {
         return [
             'null' => [null],
-            'string' => ['simple string parameter'],
-            'number' => [42],
-            'float' => [3.14],
-            'boolean' => [true],
             'array' => [['key' => 'value']],
-            'object' => [(object) ['property' => 'value']],
             'complex schema' => [[
                 'type' => 'object',
                 'properties' => [
@@ -127,14 +122,9 @@ class FunctionDeclarationTest extends TestCase
         $this->assertArrayHasKey('description', $schema['properties'][FunctionDeclaration::KEY_DESCRIPTION]);
 
         // Check parameters property allows multiple types
-        $paramTypes = $schema['properties'][FunctionDeclaration::KEY_PARAMETERS]['type'];
-        $this->assertIsArray($paramTypes);
-        $this->assertContains('string', $paramTypes);
-        $this->assertContains('number', $paramTypes);
-        $this->assertContains('boolean', $paramTypes);
-        $this->assertContains('object', $paramTypes);
-        $this->assertContains('array', $paramTypes);
-        $this->assertContains('null', $paramTypes);
+        // Parameters should be object type (for JSON schema)
+        $this->assertEquals('object', $schema['properties'][FunctionDeclaration::KEY_PARAMETERS]['type']);
+        $this->assertTrue($schema['properties'][FunctionDeclaration::KEY_PARAMETERS]['additionalProperties']);
 
         // Check required fields - parameters should NOT be required
         $this->assertArrayHasKey('required', $schema);

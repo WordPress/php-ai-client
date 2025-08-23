@@ -142,8 +142,8 @@ class Message extends AbstractDataTransferObject
         } elseif ($role->isModel()) {
             return new ModelMessage($parts);
         } else {
-            // System is the only remaining option
-            return new SystemMessage($parts);
+            // Only USER and MODEL roles are supported
+            throw new \InvalidArgumentException('Invalid message role: ' . $role->value);
         }
     }
 }

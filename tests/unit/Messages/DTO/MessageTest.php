@@ -63,7 +63,7 @@ class MessageTest extends TestCase
      */
     public function testCreateWithEmptyParts(): void
     {
-        $role = MessageRoleEnum::system();
+        $role = MessageRoleEnum::user();
         $message = new Message($role, []);
 
         $this->assertEquals($role, $message->getRole());
@@ -94,7 +94,6 @@ class MessageTest extends TestCase
     public function roleProvider(): array
     {
         return [
-            'system' => [MessageRoleEnum::system()],
             'user' => [MessageRoleEnum::user()],
             'model' => [MessageRoleEnum::model()],
         ];
@@ -152,7 +151,6 @@ class MessageTest extends TestCase
         $roleSchema = $schema['properties'][Message::KEY_ROLE];
         $this->assertEquals('string', $roleSchema['type']);
         $this->assertArrayHasKey('enum', $roleSchema);
-        $this->assertContains('system', $roleSchema['enum']);
         $this->assertContains('user', $roleSchema['enum']);
         $this->assertContains('model', $roleSchema['enum']);
 
@@ -264,11 +262,11 @@ class MessageTest extends TestCase
     public function testFromArray(): void
     {
         $json = [
-            Message::KEY_ROLE => MessageRoleEnum::system()->value,
+            Message::KEY_ROLE => MessageRoleEnum::user()->value,
             Message::KEY_PARTS => [
                 [
                     MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
-                    MessagePart::KEY_TEXT => 'You are a helpful assistant.'
+                    MessagePart::KEY_TEXT => 'Hello, how can you help me?'
                 ]
             ]
         ];
@@ -276,9 +274,9 @@ class MessageTest extends TestCase
         $message = Message::fromArray($json);
 
         $this->assertInstanceOf(Message::class, $message);
-        $this->assertEquals(MessageRoleEnum::system(), $message->getRole());
+        $this->assertEquals(MessageRoleEnum::user(), $message->getRole());
         $this->assertCount(1, $message->getParts());
-        $this->assertEquals('You are a helpful assistant.', $message->getParts()[0]->getText());
+        $this->assertEquals('Hello, how can you help me?', $message->getParts()[0]->getText());
     }
 
     /**
