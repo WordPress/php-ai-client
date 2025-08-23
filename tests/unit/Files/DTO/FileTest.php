@@ -520,4 +520,53 @@ class FileTest extends TestCase
         $this->assertTrue($textFile->isMimeType('text'));
         $this->assertFalse($textFile->isMimeType('image'));
     }
+
+    /**
+     * Tests isInline method for inline files.
+     *
+     * @return void
+     */
+    public function testIsInlineForInlineFiles(): void
+    {
+        // Test with base64 data
+        $base64File = new File('SGVsbG8gV29ybGQ=', 'text/plain');
+        $this->assertTrue($base64File->isInline());
+        $this->assertFalse($base64File->isRemote());
+
+        // Test with data URI
+        $dataUri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJA'
+            . 'AAADUJEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+        $dataUriFile = new File($dataUri);
+        $this->assertTrue($dataUriFile->isInline());
+        $this->assertFalse($dataUriFile->isRemote());
+
+        // Test with local file (becomes inline)
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tempFile, 'test content');
+        try {
+            $localFile = new File($tempFile, 'text/plain');
+            $this->assertTrue($localFile->isInline());
+            $this->assertFalse($localFile->isRemote());
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+    /**
+     * Tests isRemote method for remote files.
+     *
+     * @return void
+     */
+    public function testIsRemoteForRemoteFiles(): void
+    {
+        // Test with URL
+        $urlFile = new File('https://example.com/image.jpg', 'image/jpeg');
+        $this->assertTrue($urlFile->isRemote());
+        $this->assertFalse($urlFile->isInline());
+
+        // Test with URL without explicit MIME type
+        $urlFileNoMime = new File('https://example.com/document.pdf');
+        $this->assertTrue($urlFileNoMime->isRemote());
+        $this->assertFalse($urlFileNoMime->isInline());
+    }
 }
