@@ -510,7 +510,7 @@ class PromptBuilder
         $originalModalities = null;
         if ($intendedOutput !== null) {
             $originalModalities = $this->modelConfig->getOutputModalities();
-            $this->modelConfig->includeOutputModality($intendedOutput);
+            $this->includeOutputModalities($intendedOutput);
         }
 
         try {
@@ -683,7 +683,7 @@ class PromptBuilder
     public function generateTextResult(): GenerativeAiResult
     {
         // Include text in output modalities
-        $this->modelConfig->includeOutputModality(ModalityEnum::text());
+        $this->includeOutputModalities(ModalityEnum::text());
 
         // Generate and return the result
         return $this->generateResult();
@@ -701,7 +701,7 @@ class PromptBuilder
     public function generateImageResult(): GenerativeAiResult
     {
         // Include image in output modalities
-        $this->modelConfig->includeOutputModality(ModalityEnum::image());
+        $this->includeOutputModalities(ModalityEnum::image());
 
         // Generate and return the result
         return $this->generateResult();
@@ -719,7 +719,7 @@ class PromptBuilder
     public function generateSpeechResult(): GenerativeAiResult
     {
         // Include audio in output modalities
-        $this->modelConfig->includeOutputModality(ModalityEnum::audio());
+        $this->includeOutputModalities(ModalityEnum::audio());
 
         // Generate and return the result
         return $this->generateResult();
@@ -737,7 +737,7 @@ class PromptBuilder
     public function convertTextToSpeechResult(): GenerativeAiResult
     {
         // Include audio in output modalities
-        $this->modelConfig->includeOutputModality(ModalityEnum::audio());
+        $this->includeOutputModalities(ModalityEnum::audio());
 
         // Get the configured model
         $model = $this->getConfiguredModel();
@@ -1271,5 +1271,47 @@ class PromptBuilder
         }
 
         return true;
+    }
+
+    /**
+     * Includes output modalities if not already present.
+     *
+     * Adds the given modalities to the output modalities list if they're not
+     * already included. If output modalities is null, initializes it with
+     * the given modalities.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModalityEnum ...$modalities The modalities to include.
+     * @return void
+     */
+    private function includeOutputModalities(ModalityEnum ...$modalities): void
+    {
+        $existing = $this->modelConfig->getOutputModalities();
+
+        // Initialize if null
+        if ($existing === null) {
+            $this->modelConfig->setOutputModalities($modalities);
+            return;
+        }
+
+        // Build a set of existing modality values for O(1) lookup
+        $existingValues = [];
+        foreach ($existing as $existingModality) {
+            $existingValues[$existingModality->value] = true;
+        }
+
+        // Add new modalities that don't exist
+        $toAdd = [];
+        foreach ($modalities as $modality) {
+            if (!isset($existingValues[$modality->value])) {
+                $toAdd[] = $modality;
+            }
+        }
+
+        // Update if we have new modalities to add
+        if (!empty($toAdd)) {
+            $this->modelConfig->setOutputModalities(array_merge($existing, $toAdd));
+        }
     }
 }
