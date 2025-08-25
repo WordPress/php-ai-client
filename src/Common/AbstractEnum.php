@@ -51,7 +51,7 @@ abstract class AbstractEnum
     /**
      * @var array<string, array<string, string>> Cache for reflection data.
      */
-    private static array $cache = [];
+    protected static array $cache = [];
 
     /**
      * @var array<string, array<string, self>> Cache for enum instances.
@@ -138,7 +138,7 @@ abstract class AbstractEnum
      */
     final public static function tryFrom(string $value): ?self
     {
-        $constants = self::getConstants();
+        $constants = static::getConstants();
         foreach ($constants as $name => $constantValue) {
             if ($constantValue === $value) {
                 return self::getInstance($constantValue, $name);
@@ -157,7 +157,7 @@ abstract class AbstractEnum
     final public static function cases(): array
     {
         $cases = [];
-        $constants = self::getConstants();
+        $constants = static::getConstants();
         foreach ($constants as $name => $value) {
             $cases[] = self::getInstance($value, $name);
         }
@@ -203,7 +203,7 @@ abstract class AbstractEnum
      */
     final public static function getValues(): array
     {
-        return array_values(self::getConstants());
+        return array_values(static::getConstants());
     }
 
     /**
@@ -253,7 +253,7 @@ abstract class AbstractEnum
      * @return array<string, string> Map of constant names to values.
      * @throws RuntimeException If invalid constant found.
      */
-    final protected static function getConstants(): array
+    protected static function getConstants(): array
     {
         $className = static::class;
 
@@ -312,7 +312,7 @@ abstract class AbstractEnum
         // Handle is* methods
         if (strpos($name, 'is') === 0) {
             $constantName = self::camelCaseToConstant(substr($name, 2));
-            $constants = self::getConstants();
+            $constants = static::getConstants();
 
             if (isset($constants[$constantName])) {
                 return $this->value === $constants[$constantName];
@@ -337,7 +337,7 @@ abstract class AbstractEnum
     final public static function __callStatic(string $name, array $arguments): self
     {
         $constantName = self::camelCaseToConstant($name);
-        $constants = self::getConstants();
+        $constants = static::getConstants();
 
         if (isset($constants[$constantName])) {
             return self::getInstance($constants[$constantName], $constantName);
