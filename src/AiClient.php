@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace WordPress\AiClient;
 
 use Generator;
+use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
+use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
+use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
+use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
@@ -51,7 +55,13 @@ class AiClient
     public static function defaultRegistry(): ProviderRegistry
     {
         if (self::$defaultRegistry === null) {
-            self::$defaultRegistry = new ProviderRegistry();
+            $registry = new ProviderRegistry();
+            $registry->setHttpTransporter( HttpTransporterFactory::createTransporter() );
+			$registry->registerProvider( AnthropicProvider::class );
+			$registry->registerProvider( GoogleProvider::class );
+			$registry->registerProvider( OpenAiProvider::class );
+
+            self::$defaultRegistry = $registry;
         }
 
         return self::$defaultRegistry;
@@ -91,17 +101,15 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|Message|null $text Optional initial prompt text or message.
+     * @param string|MessagePart|Message|MessageArrayShape|list<string|MessagePart|MessagePartArrayShape>|list<Message>|null $prompt
+     *     Optional initial prompt content.
      * @return object PromptBuilder instance (type will be updated when PromptBuilder is available).
      *
      * @throws \RuntimeException Until PromptBuilder integration is complete.
      */
-    public static function prompt($text = null)
+    public static function prompt($prompt = null)
     {
-        throw new \RuntimeException(
-            'PromptBuilder integration pending. This method will return an actual PromptBuilder ' .
-            'instance once PR #49 is merged, enabling the fluent API pattern.'
-        );
+        return new PromptBuilder(self::$defaultRegistry, $prompt);
     }
 
     /**
