@@ -16,10 +16,13 @@ use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
@@ -40,6 +43,31 @@ class PromptBuilderTest extends TestCase
      * @var ProviderRegistry
      */
     private ProviderRegistry $registry;
+
+    /**
+     * Creates a test provider metadata instance.
+     *
+     * @return ProviderMetadata
+     */
+    private function createTestProviderMetadata(): ProviderMetadata
+    {
+        return new ProviderMetadata('test-provider', 'Test Provider', ProviderTypeEnum::cloud());
+    }
+
+    /**
+     * Creates a test model metadata instance.
+     *
+     * @return ModelMetadata
+     */
+    private function createTestModelMetadata(): ModelMetadata
+    {
+        return new ModelMetadata(
+            'test-model',
+            'Test Model',
+            [CapabilityEnum::textGeneration()],
+            []
+        );
+    }
 
     /**
      * Creates a mock model that implements both ModelInterface and TextGenerationModelInterface.
@@ -1095,7 +1123,9 @@ class PromptBuilderTest extends TestCase
                 new ModelMessage([new MessagePart(new File('data:image/png;base64,iVBORw0KGgo=', 'image/png'))]),
                 FinishReasonEnum::stop()
             )],
-            new TokenUsage(100, 50, 150)
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $metadata = $this->createMock(ModelMetadata::class);
@@ -1125,7 +1155,9 @@ class PromptBuilderTest extends TestCase
                 new ModelMessage([new MessagePart(new File('data:audio/wav;base64,UklGRigE=', 'audio/wav'))]),
                 FinishReasonEnum::stop()
             )],
-            new TokenUsage(100, 50, 150)
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $metadata = $this->createMock(ModelMetadata::class);
@@ -1152,7 +1184,9 @@ class PromptBuilderTest extends TestCase
         $result = new GenerativeAiResult(
             'test-result',
             [new Candidate(new ModelMessage([new MessagePart('Generated text')]), FinishReasonEnum::stop())],
-            new TokenUsage(100, 50, 150)
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $metadata = $this->createMock(ModelMetadata::class);
@@ -1227,7 +1261,9 @@ class PromptBuilderTest extends TestCase
         $result = new GenerativeAiResult(
             'test-result',
             [new Candidate(new ModelMessage([new MessagePart('Generated text')]), FinishReasonEnum::stop())],
-            new TokenUsage(100, 50, 150)
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $metadata = $this->createMock(ModelMetadata::class);
@@ -1267,7 +1303,9 @@ class PromptBuilderTest extends TestCase
                 new ModelMessage([new MessagePart(new File('data:image/png;base64,iVBORw0KGgo=', 'image/png'))]),
                 FinishReasonEnum::stop()
             )],
-            new TokenUsage(100, 50, 150)
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $metadata = $this->createMock(ModelMetadata::class);
@@ -1307,7 +1345,9 @@ class PromptBuilderTest extends TestCase
                 new ModelMessage([new MessagePart(new File('data:audio/wav;base64,UklGRigE=', 'audio/wav'))]),
                 FinishReasonEnum::stop()
             )],
-            new TokenUsage(100, 50, 150)
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $metadata = $this->createMock(ModelMetadata::class);
@@ -1347,7 +1387,9 @@ class PromptBuilderTest extends TestCase
                 new ModelMessage([new MessagePart(new File('data:audio/wav;base64,UklGRigE=', 'audio/wav'))]),
                 FinishReasonEnum::stop()
             )],
-            new TokenUsage(100, 50, 150)
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $metadata = $this->createMock(ModelMetadata::class);
@@ -1409,7 +1451,13 @@ class PromptBuilderTest extends TestCase
         $message = new ModelMessage([$messagePart]);
         $candidate = new Candidate($message, FinishReasonEnum::stop());
 
-        $result = new GenerativeAiResult('test-result', [$candidate], new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -1492,7 +1540,13 @@ class PromptBuilderTest extends TestCase
         $message = new ModelMessage([]);
         $candidate = new Candidate($message, FinishReasonEnum::stop());
 
-        $result = new GenerativeAiResult('test-result', [$candidate], new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -1521,7 +1575,13 @@ class PromptBuilderTest extends TestCase
         $message = new ModelMessage([$messagePart]);
         $candidate = new Candidate($message, FinishReasonEnum::stop());
 
-        $result = new GenerativeAiResult('test-result', [$candidate], new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -1560,7 +1620,13 @@ class PromptBuilderTest extends TestCase
             )
         ];
 
-        $result = new GenerativeAiResult('test-result-id', $candidates, new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result-id',
+            $candidates,
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -1656,7 +1722,13 @@ class PromptBuilderTest extends TestCase
         $message = new ModelMessage([$messagePart]);
         $candidate = new Candidate($message, FinishReasonEnum::stop());
 
-        $result = new GenerativeAiResult('test-result', [$candidate], new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -1682,7 +1754,13 @@ class PromptBuilderTest extends TestCase
         $message = new ModelMessage([$messagePart]);
         $candidate = new Candidate($message, FinishReasonEnum::stop());
 
-        $result = new GenerativeAiResult('test-result', [$candidate], new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -1719,7 +1797,13 @@ class PromptBuilderTest extends TestCase
             );
         }
 
-        $result = new GenerativeAiResult('test-result-id', $candidates, new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result-id',
+            $candidates,
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -1749,7 +1833,13 @@ class PromptBuilderTest extends TestCase
         $message = new Message(MessageRoleEnum::model(), [$messagePart]);
         $candidate = new Candidate($message, FinishReasonEnum::stop());
 
-        $result = new GenerativeAiResult('test-result', [$candidate], new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -1784,7 +1874,13 @@ class PromptBuilderTest extends TestCase
             );
         }
 
-        $result = new GenerativeAiResult('test-result-id', $candidates, new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result-id',
+            $candidates,
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -1814,7 +1910,13 @@ class PromptBuilderTest extends TestCase
         $message = new Message(MessageRoleEnum::model(), [$messagePart]);
         $candidate = new Candidate($message, FinishReasonEnum::stop());
 
-        $result = new GenerativeAiResult('test-result', [$candidate], new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -1854,7 +1956,9 @@ class PromptBuilderTest extends TestCase
         $result = new GenerativeAiResult(
             'test-result-id',
             $candidates,
-            new TokenUsage(100, 50, 150)
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $metadata = $this->createMock(ModelMetadata::class);
@@ -2060,7 +2164,9 @@ class PromptBuilderTest extends TestCase
         $result = new GenerativeAiResult(
             'test-result',
             [new Candidate(new ModelMessage([new MessagePart('Generated text')]), FinishReasonEnum::stop())],
-            new TokenUsage(100, 50, 150)
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $metadata = $this->createMock(ModelMetadata::class);
@@ -2202,7 +2308,9 @@ class PromptBuilderTest extends TestCase
                 new ModelMessage([new MessagePart(new File('data:image/png;base64,iVBORw0KGgo=', 'image/png'))]),
                 FinishReasonEnum::stop()
             )],
-            new TokenUsage(100, 50, 150)
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $metadata = $this->createMock(ModelMetadata::class);
@@ -2262,7 +2370,13 @@ class PromptBuilderTest extends TestCase
             FinishReasonEnum::stop()
         );
 
-        $result = new GenerativeAiResult('test-result', [$candidate], new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -2356,7 +2470,13 @@ class PromptBuilderTest extends TestCase
             FinishReasonEnum::stop()
         );
 
-        $result = new GenerativeAiResult('test-result', [$candidate], new TokenUsage(100, 50, 150));
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -2400,7 +2520,7 @@ class PromptBuilderTest extends TestCase
                 new ModelMessage([new MessagePart('Test')]),
                 FinishReasonEnum::stop()
             )
-        ], new TokenUsage(10, 5, 15));
+        ], new TokenUsage(10, 5, 15), $this->createTestProviderMetadata(), $this->createTestModelMetadata());
 
         $model = $this->createTextGenerationModel($metadata, $result);
 
@@ -2474,7 +2594,7 @@ class PromptBuilderTest extends TestCase
                 new ModelMessage([new MessagePart(new File('https://example.com/speech.mp3', 'audio/mp3'))]),
                 FinishReasonEnum::stop()
             )
-        ], new TokenUsage(10, 5, 15));
+        ], new TokenUsage(10, 5, 15), $this->createTestProviderMetadata(), $this->createTestModelMetadata());
 
         $model = $this->createSpeechGenerationModel($metadata, $result);
 

@@ -11,6 +11,10 @@ use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
+use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
+use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
@@ -23,6 +27,35 @@ use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 class GenerativeAiOperationTest extends TestCase
 {
     use ArrayTransformationTestTrait;
+
+    /**
+     * Creates a test provider metadata instance.
+     *
+     * @return ProviderMetadata
+     */
+    private function createTestProviderMetadata(): ProviderMetadata
+    {
+        return new ProviderMetadata(
+            'test-provider',
+            'Test Provider',
+            ProviderTypeEnum::cloud()
+        );
+    }
+
+    /**
+     * Creates a test model metadata instance.
+     *
+     * @return ModelMetadata
+     */
+    private function createTestModelMetadata(): ModelMetadata
+    {
+        return new ModelMetadata(
+            'test-model',
+            'Test Model',
+            [CapabilityEnum::textGeneration()],
+            []
+        );
+    }
 
     /**
      * Tests creating operation in starting state.
@@ -78,6 +111,8 @@ class GenerativeAiOperationTest extends TestCase
             'result_123',
             [$candidate],
             $tokenUsage,
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata(),
             ['provider' => 'test']
         );
 
@@ -200,7 +235,9 @@ class GenerativeAiOperationTest extends TestCase
         $result = new GenerativeAiResult(
             'result_transition',
             [new Candidate($modelMessage, FinishReasonEnum::stop(), 10)],
-            $tokenUsage
+            $tokenUsage,
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
         $operation2 = new GenerativeAiOperation(
             'op_transition_2',
@@ -337,7 +374,9 @@ class GenerativeAiOperationTest extends TestCase
         $result = new GenerativeAiResult(
             'result_success',
             [$candidate],
-            $tokenUsage
+            $tokenUsage,
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $operation = new GenerativeAiOperation(
@@ -408,6 +447,17 @@ class GenerativeAiOperationTest extends TestCase
                     TokenUsage::KEY_PROMPT_TOKENS => 10,
                     TokenUsage::KEY_COMPLETION_TOKENS => 30,
                     TokenUsage::KEY_TOTAL_TOKENS => 40
+                ],
+                GenerativeAiResult::KEY_PROVIDER_METADATA => [
+                    ProviderMetadata::KEY_ID => 'test-provider',
+                    ProviderMetadata::KEY_NAME => 'Test Provider',
+                    ProviderMetadata::KEY_TYPE => ProviderTypeEnum::cloud()->value
+                ],
+                GenerativeAiResult::KEY_MODEL_METADATA => [
+                    ModelMetadata::KEY_ID => 'test-model',
+                    ModelMetadata::KEY_NAME => 'Test Model',
+                    ModelMetadata::KEY_SUPPORTED_CAPABILITIES => ['text_generation'],
+                    ModelMetadata::KEY_SUPPORTED_OPTIONS => []
                 ]
             ]
         ];
@@ -460,7 +510,9 @@ class GenerativeAiOperationTest extends TestCase
         $result = new GenerativeAiResult(
             'result_roundtrip',
             [$candidate],
-            $tokenUsage
+            $tokenUsage,
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
         );
 
         $this->assertArrayRoundTrip(

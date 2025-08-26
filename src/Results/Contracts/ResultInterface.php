@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\Contracts;
 
+use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 
 /**
@@ -35,11 +37,29 @@ interface ResultInterface
     public function getTokenUsage(): TokenUsage;
 
     /**
+     * Gets the provider metadata.
+     *
+     * @since n.e.x.t
+     *
+     * @return ProviderMetadata The provider metadata.
+     */
+    public function getProviderMetadata(): ProviderMetadata;
+
+    /**
+     * Gets the model metadata.
+     *
+     * @since n.e.x.t
+     *
+     * @return ModelMetadata The model metadata.
+     */
+    public function getModelMetadata(): ModelMetadata;
+
+    /**
      * Gets provider-specific metadata.
      *
      * @since n.e.x.t
      *
      * @return array<string, mixed> Provider metadata.
      */
-    public function getProviderMetadata(): array;
+    public function getAdditionalData(): array;
 }
