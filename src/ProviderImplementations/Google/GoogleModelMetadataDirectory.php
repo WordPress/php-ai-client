@@ -127,10 +127,13 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(ModelConfig::KEY_OUTPUT_FILE_TYPE, [FileTypeEnum::inline()]),
             new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION, [
                 MediaOrientationEnum::square(),
-                MediaOrientationEnum::landscape(),
-                MediaOrientationEnum::portrait(),
+                // The following orientations are normally supported, but not when using the OpenAI compatible endpoint.
+                // MediaOrientationEnum::landscape(),
+                // MediaOrientationEnum::portrait(),
             ]),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO, ['1:1', '16:9', '4:3', '9:16', '3:4']),
+            // Aspect ratio is normally supported, but not when using the OpenAI compatible endpoint.
+            // new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO, ['1:1', '16:9', '4:3', '9:16', '3:4']),
+            new SupportedOption(ModelConfig::KEY_CUSTOM_OPTIONS),
         ];
 
         /** @var array<string, array<string, mixed>> $modelsData */
