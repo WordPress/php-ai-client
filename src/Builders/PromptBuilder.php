@@ -442,11 +442,6 @@ class PromptBuilder
      */
     private function isSupported(?CapabilityEnum $intendedCapability = null): bool
     {
-        // If a model has been explicitly set, we assume it meets the requirements
-        if ($this->model !== null) {
-            return true;
-        }
-
         // Build requirements with the intended capability if specified
         $requirements = $this->getModelRequirements();
 
@@ -470,6 +465,11 @@ class PromptBuilder
                     $requirements->getRequiredOptions()
                 );
             }
+        }
+
+        // If the model has been set, check if it meets the requirements
+        if ($this->model !== null) {
+            return $this->model->metadata()->meetsRequirements($requirements);
         }
 
         try {
