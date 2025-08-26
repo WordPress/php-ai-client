@@ -305,7 +305,7 @@ class PromptBuilder
      * @param string $mimeType The MIME type.
      * @return self
      */
-    public function usingOutputMime(string $mimeType): self
+    public function asOutputMimeType(string $mimeType): self
     {
         $this->modelConfig->setOutputMimeType($mimeType);
         return $this;
@@ -319,7 +319,7 @@ class PromptBuilder
      * @param array<string, mixed> $schema The output schema.
      * @return self
      */
-    public function usingOutputSchema(array $schema): self
+    public function asOutputSchema(array $schema): self
     {
         $this->modelConfig->setOutputSchema($schema);
         return $this;
@@ -349,9 +349,9 @@ class PromptBuilder
      */
     public function asJsonResponse(?array $schema = null): self
     {
-        $this->usingOutputMime('application/json');
+        $this->asOutputMimeType('application/json');
         if ($schema !== null) {
-            $this->usingOutputSchema($schema);
+            $this->asOutputSchema($schema);
         }
         return $this;
     }

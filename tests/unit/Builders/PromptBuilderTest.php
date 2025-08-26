@@ -773,7 +773,7 @@ class PromptBuilderTest extends TestCase
     public function testUsingOutputMime(): void
     {
         $builder = new PromptBuilder($this->registry);
-        $result = $builder->usingOutputMime('application/json');
+        $result = $builder->asOutputMimeType('application/json');
 
         $this->assertSame($builder, $result);
 
@@ -801,7 +801,7 @@ class PromptBuilderTest extends TestCase
         ];
 
         $builder = new PromptBuilder($this->registry);
-        $result = $builder->usingOutputSchema($schema);
+        $result = $builder->asOutputSchema($schema);
 
         $this->assertSame($builder, $result);
 
