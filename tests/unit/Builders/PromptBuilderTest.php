@@ -986,66 +986,6 @@ class PromptBuilderTest extends TestCase
         $this->assertTrue($hasImage);
     }
 
-    /**
-     * Tests isSupported without model.
-     *
-     * @return void
-     */
-    public function testIsSupportedWithoutModel(): void
-    {
-        // Mock registry to return models
-        $providerMetadata = $this->createMock(ProviderMetadata::class);
-        $modelMetadata = $this->createMock(ModelMetadata::class);
-        $providerModelsMetadata = $this->createMock(ProviderModelsMetadata::class);
-        $providerModelsMetadata->method('getProvider')->willReturn($providerMetadata);
-        $providerModelsMetadata->method('getModels')->willReturn([$modelMetadata]);
-        $this->registry->method('findModelsMetadataForSupport')->willReturn([$providerModelsMetadata]);
-        $this->registry->method('getProviderModel')->willReturn($this->createMock(ModelInterface::class));
-
-        $builder = new PromptBuilder($this->registry, 'Test');
-
-        // Without a model explicitly set, it should try to find one from registry
-        $this->assertTrue($builder->isSupported());
-    }
-
-    /**
-     * Tests isSupported with compatible model.
-     *
-     * @return void
-     */
-    public function testIsSupportedWithCompatibleModel(): void
-    {
-        $metadata = $this->createMock(ModelMetadata::class);
-        $metadata->method('getId')->willReturn('test-model');
-
-        $model = $this->createMock(ModelInterface::class);
-        $model->method('metadata')->willReturn($metadata);
-        $model->expects($this->once())
-            ->method('setConfig')
-            ->with($this->isInstanceOf(ModelConfig::class));
-
-        $builder = new PromptBuilder($this->registry, 'Test');
-        $builder->usingModel($model);
-
-        // With an explicitly set model, it should always return true
-        $this->assertTrue($builder->isSupported());
-    }
-
-    /**
-     * Tests isSupported with incompatible model.
-     *
-     * @return void
-     */
-    public function testIsSupportedWithIncompatibleModel(): void
-    {
-        // When no models are found in registry, it should return false
-        $this->registry->method('findModelsMetadataForSupport')->willReturn([]);
-
-        $builder = new PromptBuilder($this->registry, 'Test');
-
-        // Without any available models, it should return false
-        $this->assertFalse($builder->isSupported());
-    }
 
     /**
      * Tests validateMessages with empty messages throws exception.
@@ -2704,44 +2644,6 @@ class PromptBuilderTest extends TestCase
         $this->markTestSkipped('Complex chaining with model response methods not fully implemented yet');
     }
 
-    /**
-     * Tests isSupported with intended output modality.
-     *
-     * @return void
-     */
-    public function testIsSupportedWithIntendedOutput(): void
-    {
-        $builder = new PromptBuilder($this->registry, 'Test prompt');
-
-        // Mock registry to return no models for image generation
-        $this->registry->method('findModelsMetadataForSupport')
-            ->willReturnCallback(function ($requirements) {
-                $options = $requirements->getRequiredOptions();
-                foreach ($options as $option) {
-                    if ($option->getName()->equals(OptionEnum::outputModalities())) {
-                        $modalities = $option->getValue();
-                        foreach ($modalities as $modality) {
-                            if ($modality->isImage()) {
-                                return []; // No models support image generation
-                            }
-                        }
-                    }
-                }
-                // Return a mock model for text generation
-                $providerMetadata = $this->createMock(ProviderMetadata::class);
-                $modelMetadata = $this->createMock(ModelMetadata::class);
-                $providerModelsMetadata = $this->createMock(ProviderModelsMetadata::class);
-                $providerModelsMetadata->method('getProvider')->willReturn($providerMetadata);
-                $providerModelsMetadata->method('getModels')->willReturn([$modelMetadata]);
-                return [$providerModelsMetadata];
-            });
-
-        // Text should be supported
-        $this->assertTrue($builder->isSupported(ModalityEnum::text()));
-
-        // Image should not be supported
-        $this->assertFalse($builder->isSupported(ModalityEnum::image()));
-    }
 
     /**
      * Tests isSupportedForText convenience method.
@@ -2752,6 +2654,7 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('text-model');
+        $metadata->method('meetsRequirements')->willReturn(true);
 
         $result = new GenerativeAiResult('test-id', [
             new Candidate(
@@ -2765,15 +2668,15 @@ class PromptBuilderTest extends TestCase
         $builder = new PromptBuilder($this->registry, 'Test prompt');
         $builder->usingModel($model);
 
-        $this->assertTrue($builder->isSupportedForText());
+        $this->assertTrue($builder->isSupportedForTextGeneration());
     }
 
     /**
-     * Tests isSupportedForImage convenience method.
+     * Tests isSupportedForImageGeneration convenience method.
      *
      * @return void
      */
-    public function testIsSupportedForImage(): void
+    public function testIsSupportedForImageGeneration(): void
     {
         $builder = new PromptBuilder($this->registry, 'Generate an image');
 
@@ -2781,31 +2684,31 @@ class PromptBuilderTest extends TestCase
         $this->registry->method('findModelsMetadataForSupport')
             ->willReturn([]);
 
-        $this->assertFalse($builder->isSupportedForImage());
+        $this->assertFalse($builder->isSupportedForImageGeneration());
     }
 
     /**
-     * Tests isSupportedForAudio convenience method.
+     * Tests isSupportedForTextToSpeechConversion convenience method.
      *
      * @return void
      */
-    public function testIsSupportedForAudio(): void
+    public function testIsSupportedForTextToSpeechConversion(): void
     {
         $builder = new PromptBuilder($this->registry, 'Generate audio');
 
-        // Mock registry to return no models for audio generation
+        // Mock registry to return no models for text to speech conversion
         $this->registry->method('findModelsMetadataForSupport')
             ->willReturn([]);
 
-        $this->assertFalse($builder->isSupportedForAudio());
+        $this->assertFalse($builder->isSupportedForTextToSpeechConversion());
     }
 
     /**
-     * Tests isSupportedForVideo convenience method.
+     * Tests isSupportedForVideoGeneration convenience method.
      *
      * @return void
      */
-    public function testIsSupportedForVideo(): void
+    public function testIsSupportedForVideoGeneration(): void
     {
         $builder = new PromptBuilder($this->registry, 'Generate video');
 
@@ -2813,18 +2716,19 @@ class PromptBuilderTest extends TestCase
         $this->registry->method('findModelsMetadataForSupport')
             ->willReturn([]);
 
-        $this->assertFalse($builder->isSupportedForVideo());
+        $this->assertFalse($builder->isSupportedForVideoGeneration());
     }
 
     /**
-     * Tests isSupportedForSpeech convenience method.
+     * Tests isSupportedForSpeechGeneration convenience method.
      *
      * @return void
      */
-    public function testIsSupportedForSpeech(): void
+    public function testIsSupportedForSpeechGeneration(): void
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('speech-model');
+        $metadata->method('meetsRequirements')->willReturn(true);
 
         $result = new GenerativeAiResult('test-id', [
             new Candidate(
@@ -2838,41 +2742,6 @@ class PromptBuilderTest extends TestCase
         $builder = new PromptBuilder($this->registry, 'Generate speech');
         $builder->usingModel($model);
 
-        $this->assertTrue($builder->isSupportedForSpeech());
-    }
-
-    /**
-     * Tests isSupported restores original modalities after check.
-     *
-     * @return void
-     */
-    public function testIsSupportedRestoresOriginalModalities(): void
-    {
-        $builder = new PromptBuilder($this->registry, 'Test prompt');
-
-        // Set initial modality
-        $builder->usingOutputModalities(ModalityEnum::text());
-
-        // Mock registry to return models
-        $providerMetadata = $this->createMock(ProviderMetadata::class);
-        $modelMetadata = $this->createMock(ModelMetadata::class);
-        $providerModelsMetadata = $this->createMock(ProviderModelsMetadata::class);
-        $providerModelsMetadata->method('getProvider')->willReturn($providerMetadata);
-        $providerModelsMetadata->method('getModels')->willReturn([$modelMetadata]);
-        $this->registry->method('findModelsMetadataForSupport')->willReturn([$providerModelsMetadata]);
-        $this->registry->method('getProviderModel')->willReturn($this->createMock(ModelInterface::class));
-
-        // Check with image modality
-        $builder->isSupported(ModalityEnum::image());
-
-        // Verify original modality is restored
-        $reflection = new \ReflectionClass($builder);
-        $configProperty = $reflection->getProperty('modelConfig');
-        $configProperty->setAccessible(true);
-        $config = $configProperty->getValue($builder);
-
-        $modalities = $config->getOutputModalities();
-        $this->assertCount(1, $modalities);
-        $this->assertTrue($modalities[0]->isText());
+        $this->assertTrue($builder->isSupportedForSpeechGeneration());
     }
 }

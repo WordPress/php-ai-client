@@ -428,29 +428,47 @@ class PromptBuilder
      *
      * @since n.e.x.t
      *
-     * @param ModalityEnum|null $intendedOutput Optional output modality to check support for.
+     * @param CapabilityEnum|null $intendedCapability Optional capability to check support for.
      * @return bool True if supported, false otherwise.
      */
-    public function isSupported(?ModalityEnum $intendedOutput = null): bool
+    private function isSupported(?CapabilityEnum $intendedCapability = null): bool
     {
-        // If an intended output modality is specified, temporarily include it
-        $originalModalities = null;
-        if ($intendedOutput !== null) {
-            $originalModalities = $this->modelConfig->getOutputModalities();
-            $this->includeOutputModalities($intendedOutput);
+        // If a model has been explicitly set, we assume it meets the requirements
+        if ($this->model !== null) {
+            return true;
+        }
+
+        // Build requirements with the intended capability if specified
+        $requirements = $this->getModelRequirements();
+
+        if ($intendedCapability !== null) {
+            $capabilities = $requirements->getRequiredCapabilities();
+
+            // Check if capability is already present
+            $hasCapability = false;
+            foreach ($capabilities as $capability) {
+                if ($capability->equals($intendedCapability)) {
+                    $hasCapability = true;
+                    break;
+                }
+            }
+
+            // Add the capability if not already present
+            if (!$hasCapability) {
+                $capabilities[] = $intendedCapability;
+                $requirements = new ModelRequirements(
+                    $capabilities,
+                    $requirements->getRequiredOptions()
+                );
+            }
         }
 
         try {
-            // Try to get a configured model - this will throw if no suitable model exists
-            $this->getConfiguredModel();
-            return true;
+            // Check if any models support these requirements
+            $models = $this->registry->findModelsMetadataForSupport($requirements);
+            return !empty($models);
         } catch (InvalidArgumentException $e) {
             return false;
-        } finally {
-            // Restore original modalities if we modified them
-            if ($originalModalities !== null) {
-                $this->modelConfig->setOutputModalities($originalModalities);
-            }
         }
     }
 
@@ -461,9 +479,9 @@ class PromptBuilder
      *
      * @return bool True if text generation is supported.
      */
-    public function isSupportedForText(): bool
+    public function isSupportedForTextGeneration(): bool
     {
-        return $this->isSupported(ModalityEnum::text());
+        return $this->isSupported(CapabilityEnum::textGeneration());
     }
 
     /**
@@ -473,21 +491,21 @@ class PromptBuilder
      *
      * @return bool True if image generation is supported.
      */
-    public function isSupportedForImage(): bool
+    public function isSupportedForImageGeneration(): bool
     {
-        return $this->isSupported(ModalityEnum::image());
+        return $this->isSupported(CapabilityEnum::imageGeneration());
     }
 
     /**
-     * Checks if the prompt is supported for audio generation.
+     * Checks if the prompt is supported for text to speech conversion.
      *
      * @since n.e.x.t
      *
-     * @return bool True if audio generation is supported.
+     * @return bool True if text to speech conversion is supported.
      */
-    public function isSupportedForAudio(): bool
+    public function isSupportedForTextToSpeechConversion(): bool
     {
-        return $this->isSupported(ModalityEnum::audio());
+        return $this->isSupported(CapabilityEnum::textToSpeechConversion());
     }
 
     /**
@@ -497,9 +515,9 @@ class PromptBuilder
      *
      * @return bool True if video generation is supported.
      */
-    public function isSupportedForVideo(): bool
+    public function isSupportedForVideoGeneration(): bool
     {
-        return $this->isSupported(ModalityEnum::video());
+        return $this->isSupported(CapabilityEnum::videoGeneration());
     }
 
     /**
@@ -509,9 +527,33 @@ class PromptBuilder
      *
      * @return bool True if speech generation is supported.
      */
-    public function isSupportedForSpeech(): bool
+    public function isSupportedForSpeechGeneration(): bool
     {
-        return $this->isSupported(ModalityEnum::audio());
+        return $this->isSupported(CapabilityEnum::speechGeneration());
+    }
+
+    /**
+     * Checks if the prompt is supported for music generation.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if music generation is supported.
+     */
+    public function isSupportedForMusicGeneration(): bool
+    {
+        return $this->isSupported(CapabilityEnum::musicGeneration());
+    }
+
+    /**
+     * Checks if the prompt is supported for embedding generation.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if embedding generation is supported.
+     */
+    public function isSupportedForEmbeddingGeneration(): bool
+    {
+        return $this->isSupported(CapabilityEnum::embeddingGeneration());
     }
 
     /**
