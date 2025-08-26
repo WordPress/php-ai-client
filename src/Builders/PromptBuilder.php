@@ -762,27 +762,7 @@ class PromptBuilder
      */
     public function generateText(): string
     {
-        // Generate text result and extract text from first candidate
-        $result = $this->generateTextResult();
-        $candidates = $result->getCandidates();
-
-        if (empty($candidates)) {
-            throw new RuntimeException('No candidates were generated.');
-        }
-
-        // Get the text from the first message part
-        $message = $candidates[0]->getMessage();
-        $parts = $message->getParts();
-        if (empty($parts)) {
-            throw new RuntimeException('Generated message contains no parts.');
-        }
-
-        $text = $parts[0]->getText();
-        if ($text === null) {
-            throw new RuntimeException('Generated message part contains no text.');
-        }
-
-        return $text;
+        return $this->generateTextResult()->toText();
     }
 
     /**
@@ -801,29 +781,7 @@ class PromptBuilder
         }
 
         // Generate text result
-        $results = $this->generateTextResult();
-        $candidates = $results->getCandidates();
-
-        // Extract text from each candidate
-        $texts = [];
-        foreach ($candidates as $candidate) {
-            $message = $candidate->getMessage();
-            $parts = $message->getParts();
-            if (empty($parts)) {
-                continue;
-            }
-
-            $text = $parts[0]->getText();
-            if ($text !== null) {
-                $texts[] = $text;
-            }
-        }
-
-        if (empty($texts)) {
-            throw new RuntimeException('No text was generated from any candidates.');
-        }
-
-        return $texts;
+        return $this->generateTextResult()->toTexts();
     }
 
     /**
@@ -837,27 +795,7 @@ class PromptBuilder
      */
     public function generateImage(): File
     {
-        // Generate image result and extract image from first candidate
-        $result = $this->generateImageResult();
-        $candidates = $result->getCandidates();
-
-        if (empty($candidates)) {
-            throw new RuntimeException('No candidates were generated.');
-        }
-
-        // Get the image file from the first message part
-        $message = $candidates[0]->getMessage();
-        $parts = $message->getParts();
-        if (empty($parts)) {
-            throw new RuntimeException('Generated message contains no parts.');
-        }
-
-        $file = $parts[0]->getFile();
-        if ($file === null) {
-            throw new RuntimeException('Generated message part contains no image file.');
-        }
-
-        return $file;
+        return $this->generateImageResult()->toFile();
     }
 
     /**
@@ -876,30 +814,7 @@ class PromptBuilder
             $this->usingCandidateCount($candidateCount);
         }
 
-        // Generate image result
-        $results = $this->generateImageResult();
-        $candidates = $results->getCandidates();
-
-        // Extract image files from each candidate
-        $images = [];
-        foreach ($candidates as $candidate) {
-            $message = $candidate->getMessage();
-            $parts = $message->getParts();
-            if (empty($parts)) {
-                continue;
-            }
-
-            $file = $parts[0]->getFile();
-            if ($file !== null) {
-                $images[] = $file;
-            }
-        }
-
-        if (empty($images)) {
-            throw new RuntimeException('No images were generated from any candidates.');
-        }
-
-        return $images;
+        return $this->generateImageResult()->toFiles();
     }
 
     /**
@@ -913,26 +828,7 @@ class PromptBuilder
      */
     public function convertTextToSpeech(): File
     {
-        // Convert text to speech and extract audio from first candidate
-        $result = $this->convertTextToSpeechResult();
-        $candidates = $result->getCandidates();
-
-        if (empty($candidates)) {
-            throw new RuntimeException('No candidates were generated.');
-        }
-
-        $message = $candidates[0]->getMessage();
-        $parts = $message->getParts();
-        if (empty($parts)) {
-            throw new RuntimeException('Generated message contains no parts.');
-        }
-
-        $file = $parts[0]->getFile();
-        if ($file === null) {
-            throw new RuntimeException('Generated message part contains no audio file.');
-        }
-
-        return $file;
+        return $this->convertTextToSpeechResult()->toFile();
     }
 
     /**
@@ -951,29 +847,7 @@ class PromptBuilder
             $this->usingCandidateCount($candidateCount);
         }
 
-        // Convert text to speech
-        $result = $this->convertTextToSpeechResult();
-
-        // Extract audio files from each candidate
-        $audioFiles = [];
-        foreach ($result->getCandidates() as $candidate) {
-            $message = $candidate->getMessage();
-            $parts = $message->getParts();
-            if (empty($parts)) {
-                continue;
-            }
-
-            $file = $parts[0]->getFile();
-            if ($file !== null) {
-                $audioFiles[] = $file;
-            }
-        }
-
-        if (empty($audioFiles)) {
-            throw new RuntimeException('No audio files were generated from any candidates.');
-        }
-
-        return $audioFiles;
+        return $this->convertTextToSpeechResult()->toFiles();
     }
 
     /**
@@ -987,27 +861,7 @@ class PromptBuilder
      */
     public function generateSpeech(): File
     {
-        // Generate speech result and extract audio from first candidate
-        $result = $this->generateSpeechResult();
-        $candidates = $result->getCandidates();
-
-        if (empty($candidates)) {
-            throw new RuntimeException('No candidates were generated.');
-        }
-
-        // Get the audio file from the first message part
-        $message = $candidates[0]->getMessage();
-        $parts = $message->getParts();
-        if (empty($parts)) {
-            throw new RuntimeException('Generated message contains no parts.');
-        }
-
-        $file = $parts[0]->getFile();
-        if ($file === null) {
-            throw new RuntimeException('Generated message part contains no audio file.');
-        }
-
-        return $file;
+        return $this->generateSpeechResult()->toFile();
     }
 
     /**
@@ -1026,30 +880,7 @@ class PromptBuilder
             $this->usingCandidateCount($candidateCount);
         }
 
-        // Generate speech result
-        $result = $this->generateSpeechResult();
-        $candidates = $result->getCandidates();
-
-        // Extract audio files from each candidate
-        $audioFiles = [];
-        foreach ($candidates as $candidate) {
-            $message = $candidate->getMessage();
-            $parts = $message->getParts();
-            if (empty($parts)) {
-                continue;
-            }
-
-            $file = $parts[0]->getFile();
-            if ($file !== null) {
-                $audioFiles[] = $file;
-            }
-        }
-
-        if (empty($audioFiles)) {
-            throw new RuntimeException('No audio files were generated from any candidates.');
-        }
-
-        return $audioFiles;
+        return $this->generateSpeechResult()->toFiles();
     }
 
     /**
