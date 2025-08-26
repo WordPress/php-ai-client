@@ -15,7 +15,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  *
  * @since n.e.x.t
  *
- * @phpstan-type FunctionCallArrayShape array{id?: string, name?: string, args?: array<string, mixed>}
+ * @phpstan-type FunctionCallArrayShape array{id?: string, name?: string, args?: mixed}
  *
  * @extends AbstractDataTransferObject<FunctionCallArrayShape>
  */
@@ -35,9 +35,9 @@ class FunctionCall extends AbstractDataTransferObject
     private ?string $name;
 
     /**
-     * @var array<string, mixed> The arguments to pass to the function.
+     * @var mixed The arguments to pass to the function.
      */
-    private array $args;
+    private $args;
 
     /**
      * Constructor.
@@ -46,10 +46,10 @@ class FunctionCall extends AbstractDataTransferObject
      *
      * @param string|null $id Unique identifier for this function call.
      * @param string|null $name The name of the function to call.
-     * @param array<string, mixed> $args The arguments to pass to the function.
+     * @param mixed $args The arguments to pass to the function.
      * @throws InvalidArgumentException If neither id nor name is provided.
      */
-    public function __construct(?string $id = null, ?string $name = null, array $args = [])
+    public function __construct(?string $id = null, ?string $name = null, $args = null)
     {
         if ($id === null && $name === null) {
             throw new InvalidArgumentException('At least one of id or name must be provided.');
@@ -89,9 +89,9 @@ class FunctionCall extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed> The function arguments.
+     * @return mixed The function arguments.
      */
-    public function getArgs(): array
+    public function getArgs()
     {
         return $this->args;
     }
@@ -115,9 +115,8 @@ class FunctionCall extends AbstractDataTransferObject
                     'description' => 'The name of the function to call.',
                 ],
                 self::KEY_ARGS => [
-                    'type' => 'object',
+                    'type' => ['string', 'number', 'boolean', 'object', 'array', 'null'],
                     'description' => 'The arguments to pass to the function.',
-                    'additionalProperties' => true,
                 ],
             ],
             'oneOf' => [
@@ -150,7 +149,7 @@ class FunctionCall extends AbstractDataTransferObject
             $data[self::KEY_NAME] = $this->name;
         }
 
-        if (!empty($this->args)) {
+        if ($this->args !== null) {
             $data[self::KEY_ARGS] = $this->args;
         }
 
@@ -167,7 +166,7 @@ class FunctionCall extends AbstractDataTransferObject
         return new self(
             $array[self::KEY_ID] ?? null,
             $array[self::KEY_NAME] ?? null,
-            $array[self::KEY_ARGS] ?? []
+            $array[self::KEY_ARGS] ?? null
         );
     }
 }

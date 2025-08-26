@@ -76,7 +76,7 @@ class FunctionCallTest extends TestCase
 
         $this->assertEquals('func_123', $functionCall->getId());
         $this->assertEquals('getTime', $functionCall->getName());
-        $this->assertEquals([], $functionCall->getArgs());
+        $this->assertNull($functionCall->getArgs());
     }
 
     /**
@@ -118,9 +118,14 @@ class FunctionCallTest extends TestCase
         $this->assertEquals('string', $schema['properties'][FunctionCall::KEY_NAME]['type']);
         $this->assertArrayHasKey('description', $schema['properties'][FunctionCall::KEY_NAME]);
 
-        // Check args property
-        $this->assertEquals('object', $schema['properties'][FunctionCall::KEY_ARGS]['type']);
-        $this->assertTrue($schema['properties'][FunctionCall::KEY_ARGS]['additionalProperties']);
+        // Check args property - can be any type
+        $this->assertIsArray($schema['properties'][FunctionCall::KEY_ARGS]['type']);
+        $this->assertContains('string', $schema['properties'][FunctionCall::KEY_ARGS]['type']);
+        $this->assertContains('number', $schema['properties'][FunctionCall::KEY_ARGS]['type']);
+        $this->assertContains('boolean', $schema['properties'][FunctionCall::KEY_ARGS]['type']);
+        $this->assertContains('object', $schema['properties'][FunctionCall::KEY_ARGS]['type']);
+        $this->assertContains('array', $schema['properties'][FunctionCall::KEY_ARGS]['type']);
+        $this->assertContains('null', $schema['properties'][FunctionCall::KEY_ARGS]['type']);
 
         // Check oneOf for required fields
         $this->assertArrayHasKey('oneOf', $schema);
@@ -243,7 +248,7 @@ class FunctionCallTest extends TestCase
         $this->assertInstanceOf(FunctionCall::class, $functionCall);
         $this->assertNull($functionCall->getId());
         $this->assertEquals('minimal', $functionCall->getName());
-        $this->assertEquals([], $functionCall->getArgs());
+        $this->assertNull($functionCall->getArgs());
     }
 
     /**

@@ -35,7 +35,6 @@ class MessageRoleEnumTest extends TestCase
         return [
             'USER' => 'user',
             'MODEL' => 'model',
-            'SYSTEM' => 'system',
         ];
     }
 
@@ -49,16 +48,9 @@ class MessageRoleEnumTest extends TestCase
         $user = MessageRoleEnum::user();
         $this->assertTrue($user->isUser());
         $this->assertFalse($user->isModel());
-        $this->assertFalse($user->isSystem());
 
         $model = MessageRoleEnum::model();
         $this->assertFalse($model->isUser());
         $this->assertTrue($model->isModel());
-        $this->assertFalse($model->isSystem());
-
-        $system = MessageRoleEnum::system();
-        $this->assertFalse($system->isUser());
-        $this->assertFalse($system->isModel());
-        $this->assertTrue($system->isSystem());
     }
 }
