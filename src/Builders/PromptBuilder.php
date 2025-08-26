@@ -37,6 +37,8 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  *
  * @phpstan-import-type MessageArrayShape from Message
  * @phpstan-import-type MessagePartArrayShape from MessagePart
+ *
+ * @phpstan-type Prompt string|MessagePart|Message|MessageArrayShape|list<string|MessagePart|MessagePartArrayShape>|list<Message>|null
  */
 class PromptBuilder
 {
@@ -67,7 +69,7 @@ class PromptBuilder
      * @since n.e.x.t
      *
      * @param ProviderRegistry $registry The provider registry for finding suitable models.
-     * @param string|MessagePart|Message|MessageArrayShape|list<string|MessagePart|MessagePartArrayShape>|list<Message>|null $prompt
+     * @param Prompt $prompt
      *     Optional initial prompt content.
      */
     // phpcs:enable Generic.Files.LineLength.TooLong
