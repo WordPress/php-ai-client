@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Common;
 
 use BadMethodCallException;
 use InvalidArgumentException;
+use JsonSerializable;
 use ReflectionClass;
 use RuntimeException;
 
@@ -36,7 +37,7 @@ use RuntimeException;
  *
  * @since n.e.x.t
  */
-abstract class AbstractEnum
+abstract class AbstractEnum implements JsonSerializable
 {
     /**
      * @var string The value of the enum instance.
@@ -390,6 +391,19 @@ abstract class AbstractEnum
      * @return string The enum value.
      */
     final public function __toString(): string
+    {
+        return $this->value;
+    }
+
+    /**
+     * Converts the enum to a JSON-serializable format.
+     *
+     * @since n.e.x.t
+     *
+     * @return mixed The JSON-serializable representation.
+     */
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize()
     {
         return $this->value;
     }
