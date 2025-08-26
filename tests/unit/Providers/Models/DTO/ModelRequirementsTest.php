@@ -11,6 +11,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * @covers \WordPress\AiClient\Providers\Models\DTO\ModelRequirements
@@ -29,8 +30,8 @@ class ModelRequirementsTest extends TestCase
             CapabilityEnum::chatHistory()
         ];
         $options = [
-            new RequiredOption('temperature', 0.7),
-            new RequiredOption('max_tokens', 1000)
+            new RequiredOption(OptionEnum::temperature(), 0.7),
+            new RequiredOption(OptionEnum::maxTokens(), 1000)
         ];
 
         $requirements = new ModelRequirements($capabilities, $options);
@@ -111,8 +112,8 @@ class ModelRequirementsTest extends TestCase
         $requirements = new ModelRequirements(
             [CapabilityEnum::imageGeneration(), CapabilityEnum::textGeneration()],
             [
-                new RequiredOption('resolution', '1024x1024'),
-                new RequiredOption('style', 'realistic')
+                new RequiredOption(OptionEnum::outputSchema(), '1024x1024'),
+                new RequiredOption(OptionEnum::outputSchema(), 'realistic')
             ]
         );
 
@@ -124,9 +125,15 @@ class ModelRequirementsTest extends TestCase
             $array[ModelRequirements::KEY_REQUIRED_CAPABILITIES]
         );
         $this->assertCount(2, $array[ModelRequirements::KEY_REQUIRED_OPTIONS]);
-        $this->assertEquals('resolution', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_NAME]);
+        $this->assertEquals(
+            OptionEnum::outputSchema()->value,
+            $array[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_NAME]
+        );
         $this->assertEquals('1024x1024', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_VALUE]);
-        $this->assertEquals('style', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][1][RequiredOption::KEY_NAME]);
+        $this->assertEquals(
+            OptionEnum::outputSchema()->value,
+            $array[ModelRequirements::KEY_REQUIRED_OPTIONS][1][RequiredOption::KEY_NAME]
+        );
         $this->assertEquals('realistic', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][1][RequiredOption::KEY_VALUE]);
     }
 
@@ -141,11 +148,11 @@ class ModelRequirementsTest extends TestCase
             ModelRequirements::KEY_REQUIRED_CAPABILITIES => ['text_generation', 'chat_history', 'embedding_generation'],
             ModelRequirements::KEY_REQUIRED_OPTIONS => [
                 [
-                    RequiredOption::KEY_NAME => 'response_format',
+                    RequiredOption::KEY_NAME => OptionEnum::outputSchema()->value,
                     RequiredOption::KEY_VALUE => ['type' => 'json_object']
                 ],
                 [
-                    RequiredOption::KEY_NAME => 'temperature',
+                    RequiredOption::KEY_NAME => OptionEnum::temperature()->value,
                     RequiredOption::KEY_VALUE => 0.5
                 ]
             ]
@@ -163,9 +170,9 @@ class ModelRequirementsTest extends TestCase
 
         $options = $requirements->getRequiredOptions();
         $this->assertCount(2, $options);
-        $this->assertEquals('response_format', $options[0]->getName());
+        $this->assertEquals(OptionEnum::outputSchema()->value, $options[0]->getName());
         $this->assertEquals(['type' => 'json_object'], $options[0]->getValue());
-        $this->assertEquals('temperature', $options[1]->getName());
+        $this->assertEquals(OptionEnum::temperature()->value, $options[1]->getName());
         $this->assertEquals(0.5, $options[1]->getValue());
     }
 
@@ -183,9 +190,9 @@ class ModelRequirementsTest extends TestCase
                 CapabilityEnum::musicGeneration()
             ],
             [
-                new RequiredOption('voice', 'alloy'),
-                new RequiredOption('language', 'en-US'),
-                new RequiredOption('sample_rate', 44100)
+                new RequiredOption(OptionEnum::outputSchema(), 'alloy'),
+                new RequiredOption(OptionEnum::outputSchema(), 'en-US'),
+                new RequiredOption(OptionEnum::outputSchema(), 44100)
             ]
         );
 
@@ -217,7 +224,7 @@ class ModelRequirementsTest extends TestCase
     {
         $requirements = new ModelRequirements(
             [CapabilityEnum::embeddingGeneration()],
-            [new RequiredOption('dimensions', 1536)]
+            [new RequiredOption(OptionEnum::outputSchema(), 1536)]
         );
 
         $json = json_encode($requirements);
@@ -228,7 +235,7 @@ class ModelRequirementsTest extends TestCase
         $this->assertEquals(['embedding_generation'], $decoded[ModelRequirements::KEY_REQUIRED_CAPABILITIES]);
         $this->assertCount(1, $decoded[ModelRequirements::KEY_REQUIRED_OPTIONS]);
         $this->assertEquals(
-            'dimensions',
+            OptionEnum::outputSchema()->value,
             $decoded[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_NAME]
         );
         $this->assertEquals(1536, $decoded[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_VALUE]);
@@ -273,13 +280,13 @@ class ModelRequirementsTest extends TestCase
     public function testWithVariousOptionValueTypes(): void
     {
         $options = [
-            new RequiredOption('string_option', 'text value'),
-            new RequiredOption('int_option', 42),
-            new RequiredOption('float_option', 3.14),
-            new RequiredOption('bool_option', true),
-            new RequiredOption('null_option', null),
-            new RequiredOption('array_option', ['a', 'b', 'c']),
-            new RequiredOption('object_option', ['key' => 'value', 'nested' => ['inner' => true]])
+            new RequiredOption(OptionEnum::outputSchema(), 'text value'),
+            new RequiredOption(OptionEnum::outputSchema(), 42),
+            new RequiredOption(OptionEnum::temperature(), 3.14),
+            new RequiredOption(OptionEnum::outputSchema(), true),
+            new RequiredOption(OptionEnum::outputSchema(), null),
+            new RequiredOption(OptionEnum::outputSchema(), ['a', 'b', 'c']),
+            new RequiredOption(OptionEnum::customOptions(), ['key' => 'value', 'nested' => ['inner' => true]])
         ];
 
         $requirements = new ModelRequirements([], $options);
@@ -325,15 +332,15 @@ class ModelRequirementsTest extends TestCase
         $requirements = new ModelRequirements(
             [],
             [
-                new RequiredOption('api_key', 'secret-key'),
-                new RequiredOption('base_url', 'https://api.example.com')
+                new RequiredOption(OptionEnum::outputSchema(), 'secret-key'),
+                new RequiredOption(OptionEnum::outputSchema(), 'https://api.example.com')
             ]
         );
 
         $array = $requirements->toArray();
         $this->assertEquals([], $array['requiredCapabilities']);
         $this->assertCount(2, $array['requiredOptions']);
-        $this->assertEquals('api_key', $array['requiredOptions'][0]['name']);
+        $this->assertEquals(OptionEnum::outputSchema()->value, $array['requiredOptions'][0]['name']);
         $this->assertEquals('secret-key', $array['requiredOptions'][0]['value']);
     }
 
@@ -351,8 +358,8 @@ class ModelRequirementsTest extends TestCase
                 CapabilityEnum::embeddingGeneration()
             ],
             [
-                new RequiredOption('opt1', 'val1'),
-                new RequiredOption('opt2', 'val2')
+                new RequiredOption(OptionEnum::outputSchema(), 'val1'),
+                new RequiredOption(OptionEnum::outputSchema(), 'val2')
             ]
         );
 

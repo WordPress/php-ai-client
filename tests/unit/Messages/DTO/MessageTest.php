@@ -11,6 +11,7 @@ use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
@@ -19,6 +20,8 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  */
 class MessageTest extends TestCase
 {
+    use ArrayTransformationTestTrait;
+
     /**
      * Tests creating Message with single text part.
      *
@@ -106,28 +109,40 @@ class MessageTest extends TestCase
      */
     public function testComplexMessageWithAllPartTypes(): void
     {
-        $role = MessageRoleEnum::model();
+        // Test with user role since it can have function responses but not function calls
+        $role = MessageRoleEnum::user();
         $parts = [
-            new MessagePart('I\'ll help you with that. Let me search for the information.'),
-            new MessagePart(new FunctionCall('search_123', 'webSearch', ['query' => 'latest PHP news'])),
+            new MessagePart('I need help with searching.'),
             new MessagePart(new FunctionResponse('search_123', 'webSearch', ['results' => ['item1', 'item2']])),
-            new MessagePart('Based on my search, here are the latest PHP news:'),
+            new MessagePart('Here is additional information:'),
             new MessagePart(new File('data:text/plain;base64,SGVsbG8=', 'text/plain')),
         ];
 
         $message = new Message($role, $parts);
 
-        $this->assertCount(5, $message->getParts());
+        $this->assertCount(4, $message->getParts());
 
         // Verify each part type
         $this->assertEquals(
-            'I\'ll help you with that. Let me search for the information.',
+            'I need help with searching.',
             $message->getParts()[0]->getText()
         );
-        $this->assertInstanceOf(FunctionCall::class, $message->getParts()[1]->getFunctionCall());
-        $this->assertInstanceOf(FunctionResponse::class, $message->getParts()[2]->getFunctionResponse());
-        $this->assertEquals('Based on my search, here are the latest PHP news:', $message->getParts()[3]->getText());
-        $this->assertInstanceOf(File::class, $message->getParts()[4]->getFile());
+        $this->assertInstanceOf(FunctionResponse::class, $message->getParts()[1]->getFunctionResponse());
+        $this->assertEquals('Here is additional information:', $message->getParts()[2]->getText());
+        $this->assertInstanceOf(File::class, $message->getParts()[3]->getFile());
+
+        // Also test model role with function calls
+        $modelRole = MessageRoleEnum::model();
+        $modelParts = [
+            new MessagePart('I\'ll help you with that. Let me search for the information.'),
+            new MessagePart(new FunctionCall('search_123', 'webSearch', ['query' => 'latest PHP news'])),
+            new MessagePart('Based on my search, here are the latest PHP news:'),
+        ];
+
+        $modelMessage = new Message($modelRole, $modelParts);
+
+        $this->assertCount(3, $modelMessage->getParts());
+        $this->assertInstanceOf(FunctionCall::class, $modelMessage->getParts()[1]->getFunctionCall());
     }
 
     /**
@@ -188,6 +203,51 @@ class MessageTest extends TestCase
     }
 
     /**
+     * Tests isArrayShape validation.
+     *
+     * @return void
+     */
+    public function testIsArrayShapeValidation(): void
+    {
+        $validArray = [
+            Message::KEY_ROLE => MessageRoleEnum::user()->value,
+            Message::KEY_PARTS => [
+                [
+                    MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                    MessagePart::KEY_TEXT => 'Test message'
+                ]
+            ]
+        ];
+
+        $invalidArrays = [
+            'missing role' => [
+                Message::KEY_PARTS => [
+                    [
+                        MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                        MessagePart::KEY_TEXT => 'Test message'
+                    ]
+                ]
+            ],
+            'missing parts' => [
+                Message::KEY_ROLE => MessageRoleEnum::user()->value
+            ],
+            'invalid role value' => [
+                Message::KEY_ROLE => 'invalid_role',
+                Message::KEY_PARTS => [
+                    [
+                        MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                        MessagePart::KEY_TEXT => 'Test message'
+                    ]
+                ]
+            ],
+            'empty array' => [],
+            'non-associative array' => ['user', 'parts']
+        ];
+
+        $this->assertIsArrayShapeValidation(Message::class, $validArray, $invalidArrays);
+    }
+
+    /**
      * Tests preserving part order.
      *
      * @return void
@@ -211,13 +271,13 @@ class MessageTest extends TestCase
     }
 
     /**
-     * Tests model message with function response.
+     * Tests that user message can have function response.
      *
      * @return void
      */
-    public function testModelMessageWithFunctionResponse(): void
+    public function testUserMessageWithFunctionResponse(): void
     {
-        $role = MessageRoleEnum::model();
+        $role = MessageRoleEnum::user();
         $functionResponse = new FunctionResponse(
             'calc_123',
             'calculate',
@@ -227,7 +287,7 @@ class MessageTest extends TestCase
 
         $message = new Message($role, [$part]);
 
-        $this->assertTrue($message->getRole()->isModel());
+        $this->assertTrue($message->getRole()->isUser());
         $this->assertNotNull($message->getParts()[0]->getFunctionResponse());
     }
 
@@ -319,5 +379,134 @@ class MessageTest extends TestCase
             WithArrayTransformationInterface::class,
             $message
         );
+    }
+
+    /**
+     * Tests that withPart creates a new instance with the part appended.
+     *
+     * @since n.e.x.t
+     */
+    public function testWithPartCreatesNewInstance(): void
+    {
+        $original = new Message(
+            MessageRoleEnum::user(),
+            [new MessagePart('Original text')]
+        );
+
+        $newPart = new MessagePart('Additional text');
+        $updated = $original->withPart($newPart);
+
+        // Assert that a new instance was created
+        $this->assertNotSame($original, $updated);
+
+        // Assert original is unchanged
+        $this->assertCount(1, $original->getParts());
+        $this->assertEquals('Original text', $original->getParts()[0]->getText());
+
+        // Assert updated has both parts
+        $this->assertCount(2, $updated->getParts());
+        $this->assertEquals('Original text', $updated->getParts()[0]->getText());
+        $this->assertEquals('Additional text', $updated->getParts()[1]->getText());
+    }
+
+    /**
+     * Tests that user messages cannot contain function call parts.
+     *
+     * @return void
+     */
+    public function testUserMessageCannotContainFunctionCall(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('User messages cannot contain function calls.');
+
+        $functionCall = new FunctionCall('testFunc', 'test', ['param' => 'value']);
+        $part = new MessagePart($functionCall);
+
+        new Message(MessageRoleEnum::user(), [$part]);
+    }
+
+    /**
+     * Tests that model messages cannot contain function response parts.
+     *
+     * @return void
+     */
+    public function testModelMessageCannotContainFunctionResponse(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model messages cannot contain function responses.');
+
+        $functionResponse = new FunctionResponse('resp1', 'test', ['result' => 'value']);
+        $part = new MessagePart($functionResponse);
+
+        new Message(MessageRoleEnum::model(), [$part]);
+    }
+
+    /**
+     * Tests that user messages can contain function response parts.
+     *
+     * @return void
+     */
+    public function testUserMessageCanContainFunctionResponse(): void
+    {
+        $functionResponse = new FunctionResponse('resp1', 'test', ['result' => 'value']);
+        $part = new MessagePart($functionResponse);
+
+        $message = new Message(MessageRoleEnum::user(), [$part]);
+
+        $this->assertCount(1, $message->getParts());
+        $this->assertSame($functionResponse, $message->getParts()[0]->getFunctionResponse());
+    }
+
+    /**
+     * Tests that model messages can contain function call parts.
+     *
+     * @return void
+     */
+    public function testModelMessageCanContainFunctionCall(): void
+    {
+        $functionCall = new FunctionCall('call1', 'test', ['param' => 'value']);
+        $part = new MessagePart($functionCall);
+
+        $message = new Message(MessageRoleEnum::model(), [$part]);
+
+        $this->assertCount(1, $message->getParts());
+        $this->assertSame($functionCall, $message->getParts()[0]->getFunctionCall());
+    }
+
+    /**
+     * Tests that withPart validates the new part against the role.
+     *
+     * @return void
+     */
+    public function testWithPartValidatesAgainstRole(): void
+    {
+        $message = new Message(MessageRoleEnum::user(), [new MessagePart('Initial text')]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('User messages cannot contain function calls.');
+
+        $functionCall = new FunctionCall('call1', 'test', ['param' => 'value']);
+        $invalidPart = new MessagePart($functionCall);
+
+        $message->withPart($invalidPart);
+    }
+
+    /**
+     * Tests validation with multiple parts including invalid ones.
+     *
+     * @return void
+     */
+    public function testValidationWithMixedParts(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('User messages cannot contain function calls.');
+
+        $parts = [
+            new MessagePart('Text part'),
+            new MessagePart(new File('https://example.com/image.jpg', 'image/jpeg')),
+            new MessagePart(new FunctionCall('call1', 'test', [])), // Invalid for user role
+        ];
+
+        new Message(MessageRoleEnum::user(), $parts);
     }
 }

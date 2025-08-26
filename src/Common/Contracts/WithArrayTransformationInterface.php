@@ -31,4 +31,15 @@ interface WithArrayTransformationInterface
      * @return self<TArrayShape> The created instance.
      */
     public static function fromArray(array $array): self;
+
+    /**
+     * Checks if the array is a valid shape for this object.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<mixed> $array The array to check.
+     * @return bool True if the array is a valid shape.
+     * @phpstan-assert-if-true TArrayShape $array
+     */
+    public static function isArrayShape(array $array): bool;
 }

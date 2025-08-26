@@ -9,6 +9,8 @@ use RuntimeException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
+use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
 
 /**
@@ -21,12 +23,16 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  *
  * @phpstan-import-type CandidateArrayShape from Candidate
  * @phpstan-import-type TokenUsageArrayShape from TokenUsage
+ * @phpstan-import-type ProviderMetadataArrayShape from ProviderMetadata
+ * @phpstan-import-type ModelMetadataArrayShape from ModelMetadata
  *
  * @phpstan-type GenerativeAiResultArrayShape array{
  *     id: string,
  *     candidates: array<CandidateArrayShape>,
  *     tokenUsage: TokenUsageArrayShape,
- *     providerMetadata?: array<string, mixed>
+ *     providerMetadata: ProviderMetadataArrayShape,
+ *     modelMetadata: ModelMetadataArrayShape,
+ *     additionalData?: array<string, mixed>
  * }
  *
  * @extends AbstractDataTransferObject<GenerativeAiResultArrayShape>
@@ -37,6 +43,8 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     public const KEY_CANDIDATES = 'candidates';
     public const KEY_TOKEN_USAGE = 'tokenUsage';
     public const KEY_PROVIDER_METADATA = 'providerMetadata';
+    public const KEY_MODEL_METADATA = 'modelMetadata';
+    public const KEY_ADDITIONAL_DATA = 'additionalData';
     /**
      * @var string Unique identifier for this result.
      */
@@ -53,9 +61,19 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     private TokenUsage $tokenUsage;
 
     /**
-     * @var array<string, mixed> Provider-specific metadata.
+     * @var ProviderMetadata Provider metadata.
      */
-    private array $providerMetadata;
+    private ProviderMetadata $providerMetadata;
+
+    /**
+     * @var ModelMetadata Model metadata.
+     */
+    private ModelMetadata $modelMetadata;
+
+    /**
+     * @var array<string, mixed> Additional data.
+     */
+    private array $additionalData;
 
     /**
      * Constructor.
@@ -65,11 +83,19 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      * @param string $id Unique identifier for this result.
      * @param Candidate[] $candidates The generated candidates.
      * @param TokenUsage $tokenUsage Token usage statistics.
-     * @param array<string, mixed> $providerMetadata Provider-specific metadata.
+     * @param ProviderMetadata $providerMetadata Provider metadata.
+     * @param ModelMetadata $modelMetadata Model metadata.
+     * @param array<string, mixed> $additionalData Additional data.
      * @throws InvalidArgumentException If no candidates provided.
      */
-    public function __construct(string $id, array $candidates, TokenUsage $tokenUsage, array $providerMetadata = [])
-    {
+    public function __construct(
+        string $id,
+        array $candidates,
+        TokenUsage $tokenUsage,
+        ProviderMetadata $providerMetadata,
+        ModelMetadata $modelMetadata,
+        array $additionalData = []
+    ) {
         if (empty($candidates)) {
             throw new InvalidArgumentException('At least one candidate must be provided');
         }
@@ -78,6 +104,8 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
         $this->candidates = $candidates;
         $this->tokenUsage = $tokenUsage;
         $this->providerMetadata = $providerMetadata;
+        $this->modelMetadata = $modelMetadata;
+        $this->additionalData = $additionalData;
     }
 
     /**
@@ -113,13 +141,37 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     }
 
     /**
+     * Gets the provider metadata.
+     *
+     * @since n.e.x.t
+     *
+     * @return ProviderMetadata The provider metadata.
+     */
+    public function getProviderMetadata(): ProviderMetadata
+    {
+        return $this->providerMetadata;
+    }
+
+    /**
+     * Gets the model metadata.
+     *
+     * @since n.e.x.t
+     *
+     * @return ModelMetadata The model metadata.
+     */
+    public function getModelMetadata(): ModelMetadata
+    {
+        return $this->modelMetadata;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since n.e.x.t
      */
-    public function getProviderMetadata(): array
+    public function getAdditionalData(): array
     {
-        return $this->providerMetadata;
+        return $this->additionalData;
     }
 
     /**
@@ -268,7 +320,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return string[] Array of text content.
+     * @return list<string> Array of text content.
      */
     public function toTexts(): array
     {
@@ -291,7 +343,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return File[] Array of files.
+     * @return list<File> Array of files.
      */
     public function toFiles(): array
     {
@@ -314,7 +366,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return File[] Array of image files.
+     * @return list<File> Array of image files.
      */
     public function toImageFiles(): array
     {
@@ -329,7 +381,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return File[] Array of audio files.
+     * @return list<File> Array of audio files.
      */
     public function toAudioFiles(): array
     {
@@ -344,7 +396,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return File[] Array of video files.
+     * @return list<File> Array of video files.
      */
     public function toVideoFiles(): array
     {
@@ -359,11 +411,11 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return Message[] Array of messages.
+     * @return list<Message> Array of messages.
      */
     public function toMessages(): array
     {
-        return array_map(fn(Candidate $candidate) => $candidate->getMessage(), $this->candidates);
+        return array_values(array_map(fn(Candidate $candidate) => $candidate->getMessage(), $this->candidates));
     }
 
     /**
@@ -387,13 +439,21 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
                     'description' => 'The generated candidates.',
                 ],
                 self::KEY_TOKEN_USAGE => TokenUsage::getJsonSchema(),
-                self::KEY_PROVIDER_METADATA => [
+                self::KEY_PROVIDER_METADATA => ProviderMetadata::getJsonSchema(),
+                self::KEY_MODEL_METADATA => ModelMetadata::getJsonSchema(),
+                self::KEY_ADDITIONAL_DATA => [
                     'type' => 'object',
                     'additionalProperties' => true,
-                    'description' => 'Provider-specific metadata.',
+                    'description' => 'Additional data included in the API response.',
                 ],
             ],
-            'required' => [self::KEY_ID, self::KEY_CANDIDATES, self::KEY_TOKEN_USAGE],
+            'required' => [
+                self::KEY_ID,
+                self::KEY_CANDIDATES,
+                self::KEY_TOKEN_USAGE,
+                self::KEY_PROVIDER_METADATA,
+                self::KEY_MODEL_METADATA
+            ],
         ];
     }
 
@@ -410,7 +470,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
             self::KEY_ID => $this->id,
             self::KEY_CANDIDATES => array_map(fn(Candidate $candidate) => $candidate->toArray(), $this->candidates),
             self::KEY_TOKEN_USAGE => $this->tokenUsage->toArray(),
-            self::KEY_PROVIDER_METADATA => $this->providerMetadata,
+            self::KEY_PROVIDER_METADATA => $this->providerMetadata->toArray(),
+            self::KEY_MODEL_METADATA => $this->modelMetadata->toArray(),
+            self::KEY_ADDITIONAL_DATA => $this->additionalData,
         ];
     }
 
@@ -421,7 +483,13 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      */
     public static function fromArray(array $array): self
     {
-        static::validateFromArrayData($array, [self::KEY_ID, self::KEY_CANDIDATES, self::KEY_TOKEN_USAGE]);
+        static::validateFromArrayData($array, [
+            self::KEY_ID,
+            self::KEY_CANDIDATES,
+            self::KEY_TOKEN_USAGE,
+            self::KEY_PROVIDER_METADATA,
+            self::KEY_MODEL_METADATA
+        ]);
 
         $candidates = array_map(
             fn(array $candidateData) => Candidate::fromArray($candidateData),
@@ -432,7 +500,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
             $array[self::KEY_ID],
             $candidates,
             TokenUsage::fromArray($array[self::KEY_TOKEN_USAGE]),
-            $array[self::KEY_PROVIDER_METADATA] ?? []
+            ProviderMetadata::fromArray($array[self::KEY_PROVIDER_METADATA]),
+            ModelMetadata::fromArray($array[self::KEY_MODEL_METADATA]),
+            $array[self::KEY_ADDITIONAL_DATA] ?? []
         );
     }
 }

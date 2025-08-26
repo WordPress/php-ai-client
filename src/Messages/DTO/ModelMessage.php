@@ -12,6 +12,10 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  * This is a convenience class that automatically sets the role to MODEL.
  * Model messages contain the AI's responses.
  *
+ * Important: Do not rely on `instanceof ModelMessage` to determine the message role.
+ * This is merely a helper class for construction. Always use `$message->getRole()`
+ * to check the role of a message.
+ *
  * @since n.e.x.t
  */
 class ModelMessage extends Message

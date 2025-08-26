@@ -13,8 +13,7 @@
 
 declare(strict_types=1);
 
-use WordPress\AiClient\Files\Enums\FileTypeEnum;
-use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
+use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Messages\Util\MessageUtil;
 use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
 use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
@@ -159,87 +158,36 @@ $providerRegistry->registerProvider(OpenAiProvider::class);
 
 // --- Main logic ---
 
-$messages = MessageUtil::parseMessagesFromInput($promptInput);
+try {
+    $modelConfig = ModelConfig::fromArray($model_config_data);
 
-$modelConfig = ModelConfig::fromArray($model_config_data);
-
-if ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
-    $requiredCapabilities = [CapabilityEnum::imageGeneration()];
-} else {
-    $requiredCapabilities = [CapabilityEnum::textGeneration()];
-}
-
-$requiredOptions = [];
-foreach ($modelConfig->toArray() as $option => $value) {
-    // Manual workarounds for enum config values.
-    if ($option === ModelConfig::KEY_OUTPUT_FILE_TYPE) {
-        $value = FileTypeEnum::from($value);
-    } elseif ($option === ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION) {
-        $value = MediaOrientationEnum::from($value);
+    $promptBuilder = new PromptBuilder($providerRegistry, $promptInput, $modelConfig);
+    if ($providerId && $modelId) {
+        $providerClassName = $providerRegistry->getProviderClassName($providerId);
+        $promptBuilder = $promptBuilder->usingModel($providerClassName::model($modelId));
+    } elseif ($providerId) {
+        $promptBuilder = $promptBuilder->usingProvider($providerId);
     }
-    $requiredOptions[] = new RequiredOption($option, $value);
+} catch (InvalidArgumentException $e) {
+    logError('Invalid arguments while trying to set up prompt builder: ' . $e->getMessage());
+} catch (ResponseException $e) {
+    logError('Request failed while trying to set up prompt builder: ' . $e->getMessage());
 }
-$modelRequirements = new ModelRequirements(
-    $requiredCapabilities,
-    $requiredOptions
-);
 
 try {
-    if (!$providerId && !$modelId) {
-        $providerModelsMetadata = $providerRegistry->findModelsMetadataForSupport($modelRequirements);
-        if (!isset($providerModelsMetadata[0])) {
-            logError('No provider model supports the necessary model requirements.');
-        }
-        $providerId = $providerModelsMetadata[0]->getProvider()->getId();
-        $modelId = $providerModelsMetadata[0]->getModels()[0]->getId();
-    } elseif (!$modelId) {
-        $modelsMetadata = $providerRegistry->findProviderModelsMetadataForSupport($providerId, $modelRequirements);
-        if (!isset($modelsMetadata[0])) {
-            if (!$providerRegistry->isProviderConfigured($providerId)) {
-                logError('The provider "' . $providerId . '" is not configured.');
-            } else {
-                logError('No "' . $providerId . '" model supports the necessary model requirements.');
-            }
-        }
-        $modelId = $modelsMetadata[0]->getId();
+    if ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
+        $result = $promptBuilder->generateImageResult();
+    } else {
+        $result = $promptBuilder->generateTextResult();
     }
-    $modelInstance = $providerRegistry->getProviderModel($providerId, $modelId);
 } catch (InvalidArgumentException $e) {
-    logError('Invalid arguments while trying to set up model instance: ' . $e->getMessage());
+    logError('Invalid arguments while trying to generate text result: ' . $e->getMessage());
 } catch (ResponseException $e) {
-    logError('Request failed while trying to set up model instance: ' . $e->getMessage());
+    logError('Request failed while trying to generate text result: ' . $e->getMessage());
 }
 
-logInfo("Using provider ID: \"{$modelInstance->providerMetadata()->getId()}\"");
-logInfo("Using model ID: \"{$modelInstance->metadata()->getId()}\"");
-
-$modelInstance->setConfig($modelConfig);
-
-if ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
-    if (!($modelInstance instanceof ImageGenerationModelInterface)) {
-        logError('The model class ' . get_class($modelInstance) . ' does not support image generation.');
-    }
-
-    try {
-        $result = $modelInstance->generateImageResult($messages);
-    } catch (InvalidArgumentException $e) {
-        logError('Invalid arguments while trying to generate image result: ' . $e->getMessage());
-    } catch (ResponseException $e) {
-        logError('Request failed while trying to generate image result: ' . $e->getMessage());
-    }
-} else {
-    if (!($modelInstance instanceof TextGenerationModelInterface)) {
-        logError('The model class ' . get_class($modelInstance) . ' does not support text generation.');
-    }
-
-    try {
-        $result = $modelInstance->generateTextResult($messages);
-    } catch (InvalidArgumentException $e) {
-        logError('Invalid arguments while trying to generate text result: ' . $e->getMessage());
-    } catch (ResponseException $e) {
-        logError('Request failed while trying to generate text result: ' . $e->getMessage());
-    }
-}
+logInfo("Using provider ID: \"{$result->getProviderMetadata()->getId()}\"");
+logInfo("Using model ID: \"{$result->getModelMetadata()->getId()}\"");
 
 switch ($outputFormat) {
     case 'result-json':

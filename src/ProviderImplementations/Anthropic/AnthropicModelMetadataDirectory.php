@@ -12,10 +12,10 @@ use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
-use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * Class for the Anthropic model metadata directory.
@@ -71,31 +71,32 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
             CapabilityEnum::chatHistory(),
         ];
         $anthropicOptions = [
-            new SupportedOption(ModelConfig::KEY_SYSTEM_INSTRUCTION),
-            new SupportedOption(ModelConfig::KEY_CANDIDATE_COUNT),
-            new SupportedOption(ModelConfig::KEY_MAX_TOKENS),
-            new SupportedOption(ModelConfig::KEY_TEMPERATURE),
-            new SupportedOption(ModelConfig::KEY_TOP_P),
-            new SupportedOption(ModelConfig::KEY_STOP_SEQUENCES),
-            new SupportedOption(ModelConfig::KEY_PRESENCE_PENALTY),
-            new SupportedOption(ModelConfig::KEY_FREQUENCY_PENALTY),
-            new SupportedOption(ModelConfig::KEY_LOGPROBS),
-            new SupportedOption(ModelConfig::KEY_TOP_LOGPROBS),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['text/plain', 'application/json']),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_SCHEMA),
-            new SupportedOption(ModelConfig::KEY_FUNCTION_DECLARATIONS),
-            new SupportedOption(ModelConfig::KEY_CUSTOM_OPTIONS),
+            new SupportedOption(OptionEnum::systemInstruction()),
+            new SupportedOption(OptionEnum::candidateCount()),
+            new SupportedOption(OptionEnum::maxTokens()),
+            new SupportedOption(OptionEnum::temperature()),
+            new SupportedOption(OptionEnum::topP()),
+            new SupportedOption(OptionEnum::stopSequences()),
+            new SupportedOption(OptionEnum::presencePenalty()),
+            new SupportedOption(OptionEnum::frequencyPenalty()),
+            new SupportedOption(OptionEnum::logprobs()),
+            new SupportedOption(OptionEnum::topLogprobs()),
+            new SupportedOption(OptionEnum::outputMimeType(), ['text/plain', 'application/json']),
+            new SupportedOption(OptionEnum::outputSchema()),
+            new SupportedOption(OptionEnum::functionDeclarations()),
+            new SupportedOption(OptionEnum::customOptions()),
             new SupportedOption(
-                ModelConfig::KEY_INPUT_MODALITIES,
+                OptionEnum::inputModalities(),
                 [
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::image()],
                 ]
             ),
+            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
         ];
-        $anthropicWebSearchOptions = $anthropicOptions + [
-            new SupportedOption(ModelConfig::KEY_WEB_SEARCH),
-        ];
+        $anthropicWebSearchOptions = array_merge($anthropicOptions, [
+            new SupportedOption(OptionEnum::webSearch()),
+        ]);
 
         /** @var array<string, array<string, mixed>> $modelsData */
         $modelsData = (array) $responseData['data'];

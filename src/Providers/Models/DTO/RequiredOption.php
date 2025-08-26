@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Models\DTO;
 
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * Represents an option that the implementing code requires the model to support.
@@ -27,9 +28,9 @@ class RequiredOption extends AbstractDataTransferObject
     public const KEY_VALUE = 'value';
 
     /**
-     * @var string The option name.
+     * @var OptionEnum The option name.
      */
-    protected string $name;
+    protected OptionEnum $name;
 
     /**
      * @var mixed The value that the model must support for this option.
@@ -41,10 +42,10 @@ class RequiredOption extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @param string $name The option name.
+     * @param OptionEnum $name The option name.
      * @param mixed $value The value that the model must support for this option.
      */
-    public function __construct(string $name, $value)
+    public function __construct(OptionEnum $name, $value)
     {
         $this->name = $name;
         $this->value = $value;
@@ -55,9 +56,9 @@ class RequiredOption extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string The option name.
+     * @return OptionEnum The option name.
      */
-    public function getName(): string
+    public function getName(): OptionEnum
     {
         return $this->name;
     }
@@ -86,6 +87,7 @@ class RequiredOption extends AbstractDataTransferObject
             'properties' => [
                 self::KEY_NAME => [
                     'type' => 'string',
+                    'enum' => OptionEnum::getValues(),
                     'description' => 'The option name.',
                 ],
                 self::KEY_VALUE => [
@@ -114,7 +116,7 @@ class RequiredOption extends AbstractDataTransferObject
     public function toArray(): array
     {
         return [
-            self::KEY_NAME => $this->name,
+            self::KEY_NAME => $this->name->value,
             self::KEY_VALUE => $this->value,
         ];
     }
@@ -129,7 +131,7 @@ class RequiredOption extends AbstractDataTransferObject
         static::validateFromArrayData($array, [self::KEY_NAME, self::KEY_VALUE]);
 
         return new self(
-            $array[self::KEY_NAME],
+            OptionEnum::from($array[self::KEY_NAME]),
             $array[self::KEY_VALUE]
         );
     }

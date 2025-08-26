@@ -37,7 +37,7 @@ abstract class AbstractDataTransferObject implements
      *
      * @since n.e.x.t
      *
-     * @param TArrayShape $data The array data to validate.
+     * @param array<mixed> $data The array data to validate.
      * @param string[] $requiredKeys The keys that must be present.
      * @throws InvalidArgumentException If any required key is missing.
      */
@@ -59,6 +59,22 @@ abstract class AbstractDataTransferObject implements
                     implode(', ', $missingKeys)
                 )
             );
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function isArrayShape(array $array): bool
+    {
+        try {
+            /** @var TArrayShape $array */
+            static::fromArray($array);
+            return true;
+        } catch (InvalidArgumentException $e) {
+            return false;
         }
     }
 

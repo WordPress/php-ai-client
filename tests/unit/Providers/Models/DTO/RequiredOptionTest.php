@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * @covers \WordPress\AiClient\Providers\Models\DTO\RequiredOption
@@ -22,12 +23,12 @@ class RequiredOptionTest extends TestCase
      */
     public function testConstructorAndGettersWithStringValue(): void
     {
-        $name = 'api_key';
+        $name = OptionEnum::maxTokens();
         $value = 'secret-key-123';
 
         $option = new RequiredOption($name, $value);
 
-        $this->assertEquals($name, $option->getName());
+        $this->assertSame($name, $option->getName());
         $this->assertEquals($value, $option->getValue());
     }
 
@@ -38,9 +39,9 @@ class RequiredOptionTest extends TestCase
      */
     public function testWithIntegerValue(): void
     {
-        $option = new RequiredOption('max_tokens', 1000);
+        $option = new RequiredOption(OptionEnum::maxTokens(), 1000);
 
-        $this->assertEquals('max_tokens', $option->getName());
+        $this->assertSame(OptionEnum::maxTokens(), $option->getName());
         $this->assertEquals(1000, $option->getValue());
         $this->assertIsInt($option->getValue());
     }
@@ -52,9 +53,9 @@ class RequiredOptionTest extends TestCase
      */
     public function testWithFloatValue(): void
     {
-        $option = new RequiredOption('temperature', 0.7);
+        $option = new RequiredOption(OptionEnum::temperature(), 0.7);
 
-        $this->assertEquals('temperature', $option->getName());
+        $this->assertSame(OptionEnum::temperature(), $option->getName());
         $this->assertEquals(0.7, $option->getValue());
         $this->assertIsFloat($option->getValue());
     }
@@ -66,14 +67,14 @@ class RequiredOptionTest extends TestCase
      */
     public function testWithBooleanValue(): void
     {
-        $optionTrue = new RequiredOption('stream', true);
-        $optionFalse = new RequiredOption('logprobs', false);
+        $optionTrue = new RequiredOption(OptionEnum::webSearch(), true);
+        $optionFalse = new RequiredOption(OptionEnum::logprobs(), false);
 
-        $this->assertEquals('stream', $optionTrue->getName());
+        $this->assertSame(OptionEnum::webSearch(), $optionTrue->getName());
         $this->assertTrue($optionTrue->getValue());
         $this->assertIsBool($optionTrue->getValue());
 
-        $this->assertEquals('logprobs', $optionFalse->getName());
+        $this->assertSame(OptionEnum::logprobs(), $optionFalse->getName());
         $this->assertFalse($optionFalse->getValue());
         $this->assertIsBool($optionFalse->getValue());
     }
@@ -85,9 +86,9 @@ class RequiredOptionTest extends TestCase
      */
     public function testWithNullValue(): void
     {
-        $option = new RequiredOption('optional_field', null);
+        $option = new RequiredOption(OptionEnum::outputSchema(), null);
 
-        $this->assertEquals('optional_field', $option->getName());
+        $this->assertSame(OptionEnum::outputSchema(), $option->getName());
         $this->assertNull($option->getValue());
     }
 
@@ -99,9 +100,9 @@ class RequiredOptionTest extends TestCase
     public function testWithArrayValue(): void
     {
         $arrayValue = ['option1', 'option2', 'option3'];
-        $option = new RequiredOption('allowed_values', $arrayValue);
+        $option = new RequiredOption(OptionEnum::stopSequences(), $arrayValue);
 
-        $this->assertEquals('allowed_values', $option->getName());
+        $this->assertSame(OptionEnum::stopSequences(), $option->getName());
         $this->assertEquals($arrayValue, $option->getValue());
         $this->assertIsArray($option->getValue());
     }
@@ -123,9 +124,9 @@ class RequiredOptionTest extends TestCase
                 ]
             ]
         ];
-        $option = new RequiredOption('response_format', $objectValue);
+        $option = new RequiredOption(OptionEnum::outputSchema(), $objectValue);
 
-        $this->assertEquals('response_format', $option->getName());
+        $this->assertSame(OptionEnum::outputSchema(), $option->getName());
         $this->assertEquals($objectValue, $option->getValue());
         $this->assertIsArray($option->getValue());
     }
@@ -149,6 +150,8 @@ class RequiredOptionTest extends TestCase
 
         // Check name property
         $this->assertEquals('string', $schema['properties'][RequiredOption::KEY_NAME]['type']);
+        $this->assertArrayHasKey('enum', $schema['properties'][RequiredOption::KEY_NAME]);
+        $this->assertIsArray($schema['properties'][RequiredOption::KEY_NAME]['enum']);
         $this->assertEquals('The option name.', $schema['properties'][RequiredOption::KEY_NAME]['description']);
 
         // Check value property with oneOf
@@ -180,50 +183,50 @@ class RequiredOptionTest extends TestCase
     public function testToArrayWithDifferentValueTypes(): void
     {
         // String value
-        $stringOption = new RequiredOption('string_opt', 'value');
+        $stringOption = new RequiredOption(OptionEnum::maxTokens(), 'value');
         $this->assertEquals(
-            [RequiredOption::KEY_NAME => 'string_opt', RequiredOption::KEY_VALUE => 'value'],
+            [RequiredOption::KEY_NAME => 'maxTokens', RequiredOption::KEY_VALUE => 'value'],
             $stringOption->toArray()
         );
 
         // Number values
-        $intOption = new RequiredOption('int_opt', 42);
+        $intOption = new RequiredOption(OptionEnum::candidateCount(), 42);
         $this->assertEquals(
-            [RequiredOption::KEY_NAME => 'int_opt', RequiredOption::KEY_VALUE => 42],
+            [RequiredOption::KEY_NAME => 'candidateCount', RequiredOption::KEY_VALUE => 42],
             $intOption->toArray()
         );
 
-        $floatOption = new RequiredOption('float_opt', 3.14);
+        $floatOption = new RequiredOption(OptionEnum::temperature(), 3.14);
         $this->assertEquals(
-            [RequiredOption::KEY_NAME => 'float_opt', RequiredOption::KEY_VALUE => 3.14],
+            [RequiredOption::KEY_NAME => 'temperature', RequiredOption::KEY_VALUE => 3.14],
             $floatOption->toArray()
         );
 
         // Boolean value
-        $boolOption = new RequiredOption('bool_opt', true);
+        $boolOption = new RequiredOption(OptionEnum::webSearch(), true);
         $this->assertEquals(
-            [RequiredOption::KEY_NAME => 'bool_opt', RequiredOption::KEY_VALUE => true],
+            [RequiredOption::KEY_NAME => 'webSearch', RequiredOption::KEY_VALUE => true],
             $boolOption->toArray()
         );
 
         // Null value
-        $nullOption = new RequiredOption('null_opt', null);
+        $nullOption = new RequiredOption(OptionEnum::outputSchema(), null);
         $this->assertEquals(
-            [RequiredOption::KEY_NAME => 'null_opt', RequiredOption::KEY_VALUE => null],
+            [RequiredOption::KEY_NAME => 'outputSchema', RequiredOption::KEY_VALUE => null],
             $nullOption->toArray()
         );
 
         // Array value
-        $arrayOption = new RequiredOption('array_opt', [1, 2, 3]);
+        $arrayOption = new RequiredOption(OptionEnum::stopSequences(), [1, 2, 3]);
         $this->assertEquals(
-            [RequiredOption::KEY_NAME => 'array_opt', RequiredOption::KEY_VALUE => [1, 2, 3]],
+            [RequiredOption::KEY_NAME => 'stopSequences', RequiredOption::KEY_VALUE => [1, 2, 3]],
             $arrayOption->toArray()
         );
 
         // Object value
-        $objectOption = new RequiredOption('object_opt', ['key' => 'value']);
+        $objectOption = new RequiredOption(OptionEnum::outputSchema(), ['key' => 'value']);
         $this->assertEquals(
-            [RequiredOption::KEY_NAME => 'object_opt', RequiredOption::KEY_VALUE => ['key' => 'value']],
+            [RequiredOption::KEY_NAME => 'outputSchema', RequiredOption::KEY_VALUE => ['key' => 'value']],
             $objectOption->toArray()
         );
     }
@@ -237,51 +240,51 @@ class RequiredOptionTest extends TestCase
     {
         // String value
         $stringOption = RequiredOption::fromArray(
-            [RequiredOption::KEY_NAME => 'str', RequiredOption::KEY_VALUE => 'test']
+            [RequiredOption::KEY_NAME => 'maxTokens', RequiredOption::KEY_VALUE => 'test']
         );
-        $this->assertEquals('str', $stringOption->getName());
+        $this->assertEquals(OptionEnum::maxTokens(), $stringOption->getName());
         $this->assertEquals('test', $stringOption->getValue());
 
         // Integer value
         $intOption = RequiredOption::fromArray(
-            [RequiredOption::KEY_NAME => 'num', RequiredOption::KEY_VALUE => 100]
+            [RequiredOption::KEY_NAME => 'candidateCount', RequiredOption::KEY_VALUE => 100]
         );
-        $this->assertEquals('num', $intOption->getName());
+        $this->assertEquals(OptionEnum::candidateCount(), $intOption->getName());
         $this->assertEquals(100, $intOption->getValue());
 
         // Float value
         $floatOption = RequiredOption::fromArray(
-            [RequiredOption::KEY_NAME => 'float', RequiredOption::KEY_VALUE => 1.5]
+            [RequiredOption::KEY_NAME => 'temperature', RequiredOption::KEY_VALUE => 1.5]
         );
-        $this->assertEquals('float', $floatOption->getName());
+        $this->assertEquals(OptionEnum::temperature(), $floatOption->getName());
         $this->assertEquals(1.5, $floatOption->getValue());
 
         // Boolean value
         $boolOption = RequiredOption::fromArray(
-            [RequiredOption::KEY_NAME => 'bool', RequiredOption::KEY_VALUE => false]
+            [RequiredOption::KEY_NAME => 'logprobs', RequiredOption::KEY_VALUE => false]
         );
-        $this->assertEquals('bool', $boolOption->getName());
+        $this->assertEquals(OptionEnum::logprobs(), $boolOption->getName());
         $this->assertFalse($boolOption->getValue());
 
         // Null value
         $nullOption = RequiredOption::fromArray(
-            [RequiredOption::KEY_NAME => 'nullable', RequiredOption::KEY_VALUE => null]
+            [RequiredOption::KEY_NAME => 'outputSchema', RequiredOption::KEY_VALUE => null]
         );
-        $this->assertEquals('nullable', $nullOption->getName());
+        $this->assertEquals(OptionEnum::outputSchema(), $nullOption->getName());
         $this->assertNull($nullOption->getValue());
 
         // Array value
         $arrayOption = RequiredOption::fromArray(
-            [RequiredOption::KEY_NAME => 'arr', RequiredOption::KEY_VALUE => ['a', 'b', 'c']]
+            [RequiredOption::KEY_NAME => 'stopSequences', RequiredOption::KEY_VALUE => ['a', 'b', 'c']]
         );
-        $this->assertEquals('arr', $arrayOption->getName());
+        $this->assertEquals(OptionEnum::stopSequences(), $arrayOption->getName());
         $this->assertEquals(['a', 'b', 'c'], $arrayOption->getValue());
 
         // Object value
         $objectOption = RequiredOption::fromArray(
-            [RequiredOption::KEY_NAME => 'obj', RequiredOption::KEY_VALUE => ['nested' => ['deep' => true]]]
+            [RequiredOption::KEY_NAME => 'outputSchema', RequiredOption::KEY_VALUE => ['nested' => ['deep' => true]]]
         );
-        $this->assertEquals('obj', $objectOption->getName());
+        $this->assertEquals(OptionEnum::outputSchema(), $objectOption->getName());
         $this->assertEquals(['nested' => ['deep' => true]], $objectOption->getValue());
     }
 
@@ -293,13 +296,16 @@ class RequiredOptionTest extends TestCase
     public function testArrayRoundTrip(): void
     {
         $testCases = [
-            new RequiredOption('string', 'hello world'),
-            new RequiredOption('integer', 42),
-            new RequiredOption('float', 99.99),
-            new RequiredOption('boolean', true),
-            new RequiredOption('null', null),
-            new RequiredOption('array', ['one', 'two', 'three']),
-            new RequiredOption('object', ['type' => 'config', 'enabled' => true, 'settings' => ['a' => 1, 'b' => 2]])
+            new RequiredOption(OptionEnum::maxTokens(), 'hello world'),
+            new RequiredOption(OptionEnum::candidateCount(), 42),
+            new RequiredOption(OptionEnum::temperature(), 99.99),
+            new RequiredOption(OptionEnum::webSearch(), true),
+            new RequiredOption(OptionEnum::outputSchema(), null),
+            new RequiredOption(OptionEnum::stopSequences(), ['one', 'two', 'three']),
+            new RequiredOption(
+                OptionEnum::customOptions(),
+                ['type' => 'config', 'enabled' => true, 'settings' => ['a' => 1, 'b' => 2]]
+            )
         ];
 
         foreach ($testCases as $original) {
@@ -318,41 +324,41 @@ class RequiredOptionTest extends TestCase
      */
     public function testJsonSerialize(): void
     {
-        $option = new RequiredOption('json_test', ['enabled' => true, 'count' => 5]);
+        $option = new RequiredOption(OptionEnum::outputSchema(), ['enabled' => true, 'count' => 5]);
 
         $json = json_encode($option);
         $decoded = json_decode($json, true);
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);
-        $this->assertEquals('json_test', $decoded[RequiredOption::KEY_NAME]);
+        $this->assertEquals('outputSchema', $decoded[RequiredOption::KEY_NAME]);
         $this->assertEquals(['enabled' => true, 'count' => 5], $decoded[RequiredOption::KEY_VALUE]);
     }
 
     /**
-     * Tests with empty string name.
+     * Tests with custom options enum.
      *
      * @return void
      */
-    public function testWithEmptyStringName(): void
+    public function testWithCustomOptions(): void
     {
-        $option = new RequiredOption('', 'value');
+        $option = new RequiredOption(OptionEnum::customOptions(), ['key' => 'value']);
 
-        $this->assertEquals('', $option->getName());
-        $this->assertEquals('value', $option->getValue());
+        $this->assertEquals(OptionEnum::customOptions(), $option->getName());
+        $this->assertEquals(['key' => 'value'], $option->getValue());
     }
 
     /**
-     * Tests with special characters in name.
+     * Tests with input modalities enum.
      *
      * @return void
      */
-    public function testWithSpecialCharactersInName(): void
+    public function testWithInputModalitiesEnum(): void
     {
-        $option = new RequiredOption('option-with_special.chars', 'value');
+        $option = new RequiredOption(OptionEnum::inputModalities(), ['text', 'image']);
 
-        $this->assertEquals('option-with_special.chars', $option->getName());
-        $this->assertEquals('value', $option->getValue());
+        $this->assertEquals(OptionEnum::inputModalities(), $option->getName());
+        $this->assertEquals(['text', 'image'], $option->getValue());
     }
 
     /**
@@ -375,7 +381,7 @@ class RequiredOptionTest extends TestCase
             ]
         ];
 
-        $option = new RequiredOption('nested_config', $deeplyNested);
+        $option = new RequiredOption(OptionEnum::outputSchema(), $deeplyNested);
         $array = $option->toArray();
 
         $this->assertEquals($deeplyNested, $array['value']);
@@ -403,7 +409,7 @@ class RequiredOptionTest extends TestCase
             ['another', 'array']
         ];
 
-        $option = new RequiredOption('mixed_types', $mixedArray);
+        $option = new RequiredOption(OptionEnum::customOptions(), $mixedArray);
         $this->assertEquals($mixedArray, $option->getValue());
 
         // Verify exact types are preserved
@@ -425,7 +431,7 @@ class RequiredOptionTest extends TestCase
      */
     public function testImplementsCorrectInterfaces(): void
     {
-        $option = new RequiredOption('test', 'value');
+        $option = new RequiredOption(OptionEnum::maxTokens(), 'value');
 
         $this->assertInstanceOf(
             WithArrayTransformationInterface::class,

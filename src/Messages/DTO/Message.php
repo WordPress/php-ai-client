@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
+use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
@@ -45,11 +46,13 @@ class Message extends AbstractDataTransferObject
      *
      * @param MessageRoleEnum $role The role of the message sender.
      * @param MessagePart[] $parts The parts that make up this message.
+     * @throws InvalidArgumentException If parts contain invalid content for the role.
      */
     public function __construct(MessageRoleEnum $role, array $parts)
     {
         $this->role = $role;
         $this->parts = $parts;
+        $this->validateParts();
     }
 
     /**
@@ -74,6 +77,48 @@ class Message extends AbstractDataTransferObject
     public function getParts(): array
     {
         return $this->parts;
+    }
+
+    /**
+     * Returns a new instance with the given part appended.
+     *
+     * @since n.e.x.t
+     *
+     * @param MessagePart $part The part to append.
+     * @return Message A new instance with the part appended.
+     * @throws InvalidArgumentException If the part is invalid for the role.
+     */
+    public function withPart(MessagePart $part): Message
+    {
+        $newParts = $this->parts;
+        $newParts[] = $part;
+
+        return new Message($this->role, $newParts);
+    }
+
+    /**
+     * Validates that the message parts are appropriate for the message role.
+     *
+     * @since n.e.x.t
+     *
+     * @return void
+     * @throws InvalidArgumentException If validation fails.
+     */
+    private function validateParts(): void
+    {
+        foreach ($this->parts as $part) {
+            if ($this->role->isUser() && $part->getType()->isFunctionCall()) {
+                throw new InvalidArgumentException(
+                    'User messages cannot contain function calls.'
+                );
+            }
+
+            if ($this->role->isModel() && $part->getType()->isFunctionResponse()) {
+                throw new InvalidArgumentException(
+                    'Model messages cannot contain function responses.'
+                );
+            }
+        }
     }
 
     /**

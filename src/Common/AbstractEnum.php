@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Common;
 
 use BadMethodCallException;
 use InvalidArgumentException;
+use JsonSerializable;
 use ReflectionClass;
 use RuntimeException;
 
@@ -36,7 +37,7 @@ use RuntimeException;
  *
  * @since n.e.x.t
  */
-abstract class AbstractEnum
+abstract class AbstractEnum implements JsonSerializable
 {
     /**
      * @var string The value of the enum instance.
@@ -138,7 +139,7 @@ abstract class AbstractEnum
      */
     final public static function tryFrom(string $value): ?self
     {
-        $constants = self::getConstants();
+        $constants = static::getConstants();
         foreach ($constants as $name => $constantValue) {
             if ($constantValue === $value) {
                 return self::getInstance($constantValue, $name);
@@ -157,7 +158,7 @@ abstract class AbstractEnum
     final public static function cases(): array
     {
         $cases = [];
-        $constants = self::getConstants();
+        $constants = static::getConstants();
         foreach ($constants as $name => $value) {
             $cases[] = self::getInstance($value, $name);
         }
@@ -203,7 +204,7 @@ abstract class AbstractEnum
      */
     final public static function getValues(): array
     {
-        return array_values(self::getConstants());
+        return array_values(static::getConstants());
     }
 
     /**
@@ -258,43 +259,60 @@ abstract class AbstractEnum
         $className = static::class;
 
         if (!isset(self::$cache[$className])) {
-            $reflection = new ReflectionClass($className);
-            $constants = $reflection->getConstants();
-
-            // Validate all constants
-            $enumConstants = [];
-            foreach ($constants as $name => $value) {
-                // Check if constant name follows uppercase snake_case pattern
-                if (!preg_match('/^[A-Z][A-Z0-9_]*$/', $name)) {
-                    throw new RuntimeException(
-                        sprintf(
-                            'Invalid enum constant name "%s" in %s. Constants must be UPPER_SNAKE_CASE.',
-                            $name,
-                            $className
-                        )
-                    );
-                }
-
-                // Check if value is valid type
-                if (!is_string($value)) {
-                    throw new RuntimeException(
-                        sprintf(
-                            'Invalid enum value type for constant %s::%s. ' .
-                            'Only string values are allowed, %s given.',
-                            $className,
-                            $name,
-                            gettype($value)
-                        )
-                    );
-                }
-
-                $enumConstants[$name] = $value;
-            }
-
-            self::$cache[$className] = $enumConstants;
+            self::$cache[$className] = static::determineClassEnumerations($className);
         }
 
         return self::$cache[$className];
+    }
+
+    /**
+     * Determines the class enumerations by reflecting on class constants.
+     *
+     * This method can be overridden by subclasses to customize how
+     * enumerations are determined (e.g., to add dynamic constants).
+     *
+     * @since n.e.x.t
+     *
+     * @param class-string $className The fully qualified class name.
+     * @return array<string, string> Map of constant names to values.
+     * @throws RuntimeException If invalid constant found.
+     */
+    protected static function determineClassEnumerations(string $className): array
+    {
+        $reflection = new ReflectionClass($className);
+        $constants = $reflection->getConstants();
+
+        // Validate all constants
+        $enumConstants = [];
+        foreach ($constants as $name => $value) {
+            // Check if constant name follows uppercase snake_case pattern
+            if (!preg_match('/^[A-Z][A-Z0-9_]*$/', $name)) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Invalid enum constant name "%s" in %s. Constants must be UPPER_SNAKE_CASE.',
+                        $name,
+                        $className
+                    )
+                );
+            }
+
+            // Check if value is valid type
+            if (!is_string($value)) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Invalid enum value type for constant %s::%s. ' .
+                        'Only string values are allowed, %s given.',
+                        $className,
+                        $name,
+                        gettype($value)
+                    )
+                );
+            }
+
+            $enumConstants[$name] = $value;
+        }
+
+        return $enumConstants;
     }
 
     /**
@@ -312,7 +330,7 @@ abstract class AbstractEnum
         // Handle is* methods
         if (strpos($name, 'is') === 0) {
             $constantName = self::camelCaseToConstant(substr($name, 2));
-            $constants = self::getConstants();
+            $constants = static::getConstants();
 
             if (isset($constants[$constantName])) {
                 return $this->value === $constants[$constantName];
@@ -337,7 +355,7 @@ abstract class AbstractEnum
     final public static function __callStatic(string $name, array $arguments): self
     {
         $constantName = self::camelCaseToConstant($name);
-        $constants = self::getConstants();
+        $constants = static::getConstants();
 
         if (isset($constants[$constantName])) {
             return self::getInstance($constants[$constantName], $constantName);
@@ -373,6 +391,19 @@ abstract class AbstractEnum
      * @return string The enum value.
      */
     final public function __toString(): string
+    {
+        return $this->value;
+    }
+
+    /**
+     * Converts the enum to a JSON-serializable format.
+     *
+     * @since n.e.x.t
+     *
+     * @return mixed The JSON-serializable representation.
+     */
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize()
     {
         return $this->value;
     }

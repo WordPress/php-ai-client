@@ -13,7 +13,6 @@ use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
-use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
  * @covers ModelMessage
@@ -93,13 +92,12 @@ class ModelMessageTest extends TestCase
     {
         $file = new File('https://example.com/image.jpg', 'image/jpeg');
         $functionCall = new FunctionCall('func_123', 'search', ['q' => 'test']);
-        $functionResponse = new FunctionResponse('func_123', 'search', ['results' => []]);
 
         $parts = [
             new MessagePart('I found the following:'),
             new MessagePart($file),
             new MessagePart($functionCall),
-            new MessagePart($functionResponse),
+            new MessagePart('Here are the results based on my search.'),
         ];
 
         $message = new ModelMessage($parts);
@@ -107,7 +105,7 @@ class ModelMessageTest extends TestCase
         $this->assertEquals('I found the following:', $message->getParts()[0]->getText());
         $this->assertSame($file, $message->getParts()[1]->getFile());
         $this->assertSame($functionCall, $message->getParts()[2]->getFunctionCall());
-        $this->assertSame($functionResponse, $message->getParts()[3]->getFunctionResponse());
+        $this->assertEquals('Here are the results based on my search.', $message->getParts()[3]->getText());
     }
 
     /**
