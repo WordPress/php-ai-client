@@ -555,14 +555,16 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
 
         // Use any other data from the response as provider metadata.
-        $providerMetadata = $responseData;
-        unset($providerMetadata['id'], $providerMetadata['choices'], $providerMetadata['usage']);
+        $additionalData = $responseData;
+        unset($additionalData['id'], $additionalData['choices'], $additionalData['usage']);
 
         return new GenerativeAiResult(
             $id,
             $candidates,
             $tokenUsage,
-            $providerMetadata
+            $this->providerMetadata(),
+            $this->metadata(),
+            $additionalData
         );
     }
 

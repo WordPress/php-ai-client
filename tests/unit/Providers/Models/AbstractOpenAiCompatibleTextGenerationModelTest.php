@@ -936,7 +936,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $this->assertEquals(10, $result->getTokenUsage()->getPromptTokens());
         $this->assertEquals(20, $result->getTokenUsage()->getCompletionTokens());
         $this->assertEquals(30, $result->getTokenUsage()->getTotalTokens());
-        $this->assertEquals(['model' => 'test-model'], $result->getProviderMetadata());
+        $this->assertEquals(['model' => 'test-model'], $result->getAdditionalData());
     }
 
     /**
