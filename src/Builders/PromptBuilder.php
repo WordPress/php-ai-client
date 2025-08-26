@@ -377,6 +377,7 @@ class PromptBuilder
         }
 
         // Analyze all messages to determine required input modalities
+        $hasFunctionCallingCapability = false;
         foreach ($this->messages as $message) {
             foreach ($message->getParts() as $part) {
                 // Check for text input
@@ -402,9 +403,8 @@ class PromptBuilder
                 }
 
                 // Check for function calls/responses (these might require special capabilities)
-                if ($part->getFunctionCall() !== null || $part->getFunctionResponse() !== null) {
-                    // Function calling capability would go here if we had it in CapabilityEnum
-                    // For now, we'll just note this requires text generation
+                if ($part->getType()->isFunctionCall() || $part->getType()->isFunctionResponse()) {
+                    $hasFunctionCallingCapability = true;
                 }
             }
         }
@@ -412,8 +412,19 @@ class PromptBuilder
         // Build required options from ModelConfig
         $requiredOptions = $this->modelConfig->toRequiredOptions();
 
-        // Add input modalities if we have non-text inputs
-        $requiredOptions[] = new RequiredOption(OptionEnum::inputModalities(), $inputModalities);
+        if ($hasFunctionCallingCapability) {
+            // Add function declarations option if we have function calls/responses
+            $requiredOptions = $this->includeInRequiredOptions(
+                $requiredOptions,
+                new RequiredOption(OptionEnum::functionDeclarations(), true)
+            );
+        }
+
+        // Add input modalities if we have any inputs
+        $requiredOptions = $this->includeInRequiredOptions(
+            $requiredOptions,
+            new RequiredOption(OptionEnum::inputModalities(), $inputModalities)
+        );
 
         return new ModelRequirements(
             $capabilities,
@@ -1243,6 +1254,33 @@ class PromptBuilder
         }
 
         return true;
+    }
+
+    /**
+     * Includes a required option in the list if not already present.
+     *
+     * Checks if a RequiredOption with the same name already exists in the list.
+     * If not, adds the new option. Returns the updated list.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<RequiredOption> $options The existing list of required options.
+     * @param RequiredOption $option The option to potentially add.
+     * @return list<RequiredOption> The updated list of required options.
+     */
+    private function includeInRequiredOptions(array $options, RequiredOption $option): array
+    {
+        // Check if an option with the same name already exists
+        foreach ($options as $existingOption) {
+            if ($existingOption->getName()->equals($option->getName())) {
+                // Option already exists, return unchanged list
+                return $options;
+            }
+        }
+
+        // Add the new option
+        $options[] = $option;
+        return $options;
     }
 
     /**
