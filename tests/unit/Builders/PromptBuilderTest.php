@@ -2654,7 +2654,7 @@ class PromptBuilderTest extends TestCase
         $builder->usingProvider('test-provider');
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('No models found that support the required capabilities');
+        $this->expectExceptionMessage('No models found for test-provider that support the required capabilities');
 
         $builder->generateResult();
     }

@@ -954,13 +954,16 @@ class PromptBuilder
 
             if (empty($providerModelsMetadata)) {
                 throw new InvalidArgumentException(
-                    'No models found that support the required capabilities and options for this prompt. ' .
-                    'Required capabilities: ' . implode(', ', array_map(function ($cap) {
-                        return $cap->value;
-                    }, $requirements->getRequiredCapabilities())) .
-                    '. Required options: ' . implode(', ', array_map(function ($opt) {
-                        return $opt->getName()->value . '=' . json_encode($opt->getValue());
-                    }, $requirements->getRequiredOptions()))
+                    sprintf(
+                        'No models found that support the required capabilities and options for this prompt. ' .
+                        'Required capabilities: %s. Required options: %s',
+                        implode(', ', array_map(function ($cap) {
+                            return $cap->value;
+                        }, $requirements->getRequiredCapabilities())),
+                        implode(', ', array_map(function ($opt) {
+                            return $opt->getName()->value . '=' . json_encode($opt->getValue());
+                        }, $requirements->getRequiredOptions()))
+                    )
                 );
             }
 
@@ -975,13 +978,17 @@ class PromptBuilder
 
             if (empty($modelsMetadata)) {
                 throw new InvalidArgumentException(
-                    'No models found that support the required capabilities and options for this prompt. ' .
-                    'Required capabilities: ' . implode(', ', array_map(function ($cap) {
-                        return $cap->value;
-                    }, $requirements->getRequiredCapabilities())) .
-                    '. Required options: ' . implode(', ', array_map(function ($opt) {
-                        return $opt->getName()->value . '=' . json_encode($opt->getValue());
-                    }, $requirements->getRequiredOptions()))
+                    sprintf(
+                        'No models found for %s that support the required capabilities and options for this prompt. ' .
+                        'Required capabilities: %s. Required options: %s',
+                        $this->providerIdOrClassName,
+                        implode(', ', array_map(function ($cap) {
+                            return $cap->value;
+                        }, $requirements->getRequiredCapabilities())),
+                        implode(', ', array_map(function ($opt) {
+                            return $opt->getName()->value . '=' . json_encode($opt->getValue());
+                        }, $requirements->getRequiredOptions()))
+                    )
                 );
             }
 
