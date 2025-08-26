@@ -58,6 +58,11 @@ class PromptBuilder
     protected ?ModelInterface $model = null;
 
     /**
+     * @var string|null The provider ID or class name.
+     */
+    protected ?string $providerIdOrClassName = null;
+
+    /**
      * @var ModelConfig The model configuration.
      */
     protected ModelConfig $modelConfig;
@@ -195,6 +200,20 @@ class PromptBuilder
     public function usingModel(ModelInterface $model): self
     {
         $this->model = $model;
+        return $this;
+    }
+
+    /**
+     * Sets the provider to use for generation.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $providerIdOrClassName The provider ID or class name.
+     * @return self
+     */
+    public function usingProvider(string $providerIdOrClassName): self
+    {
+        $this->providerIdOrClassName = $providerIdOrClassName;
         return $this;
     }
 
@@ -930,28 +949,50 @@ class PromptBuilder
         }
 
         // Find a suitable model based on requirements
-        $modelsMetadata = $this->registry->findModelsMetadataForSupport($requirements);
+        if ($this->providerIdOrClassName === null) {
+            $providerModelsMetadata = $this->registry->findModelsMetadataForSupport($requirements);
 
-        if (empty($modelsMetadata)) {
-            throw new InvalidArgumentException(
-                'No models found that support the required capabilities and options for this prompt. ' .
-                'Required capabilities: ' . implode(', ', array_map(function ($cap) {
-                    return $cap->value;
-                }, $requirements->getRequiredCapabilities())) .
-                '. Required options: ' . implode(', ', array_map(function ($opt) {
-                    return $opt->getName()->value . '=' . json_encode($opt->getValue());
-                }, $requirements->getRequiredOptions()))
+            if (empty($providerModelsMetadata)) {
+                throw new InvalidArgumentException(
+                    'No models found that support the required capabilities and options for this prompt. ' .
+                    'Required capabilities: ' . implode(', ', array_map(function ($cap) {
+                        return $cap->value;
+                    }, $requirements->getRequiredCapabilities())) .
+                    '. Required options: ' . implode(', ', array_map(function ($opt) {
+                        return $opt->getName()->value . '=' . json_encode($opt->getValue());
+                    }, $requirements->getRequiredOptions()))
+                );
+            }
+
+            $firstProviderModels = $providerModelsMetadata[0];
+            $provider = $firstProviderModels->getProvider()->getId();
+            $modelMetadata = $firstProviderModels->getModels()[0];
+        } else {
+            $modelsMetadata = $this->registry->findProviderModelsMetadataForSupport(
+                $this->providerIdOrClassName,
+                $requirements
             );
-        }
 
-        // Get the first available model from the first provider
-        $firstProviderModels = $modelsMetadata[0];
-        $firstModelMetadata = $firstProviderModels->getModels()[0];
+            if (empty($modelsMetadata)) {
+                throw new InvalidArgumentException(
+                    'No models found that support the required capabilities and options for this prompt. ' .
+                    'Required capabilities: ' . implode(', ', array_map(function ($cap) {
+                        return $cap->value;
+                    }, $requirements->getRequiredCapabilities())) .
+                    '. Required options: ' . implode(', ', array_map(function ($opt) {
+                        return $opt->getName()->value . '=' . json_encode($opt->getValue());
+                    }, $requirements->getRequiredOptions()))
+                );
+            }
+
+            $provider = $this->providerIdOrClassName;
+            $modelMetadata = $modelsMetadata[0];
+        }
 
         // Get the model instance from the provider
         return $this->registry->getProviderModel(
-            $firstProviderModels->getProvider()->getId(),
-            $firstModelMetadata->getId(),
+            $provider,
+            $modelMetadata->getId(),
             $this->modelConfig
         );
     }
