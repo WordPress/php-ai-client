@@ -16,6 +16,8 @@ use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -47,16 +49,33 @@ class PromptBuilderTest extends TestCase
      * @param GenerativeAiResult $result The result to return from generation.
      * @return ModelInterface&TextGenerationModelInterface The mock model.
      */
-    private function createTextGenerationModel(ModelMetadata $metadata, GenerativeAiResult $result): ModelInterface
-    {
-        return new class ($metadata, $result) implements ModelInterface, TextGenerationModelInterface {
+    private function createTextGenerationModel(
+        ModelMetadata $metadata,
+        GenerativeAiResult $result
+    ): ModelInterface {
+        $providerMetadata = new ProviderMetadata(
+            'mock-provider',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, TextGenerationModelInterface {
             private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
             private GenerativeAiResult $result;
             private ModelConfig $config;
 
-            public function __construct(ModelMetadata $metadata, GenerativeAiResult $result)
-            {
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                GenerativeAiResult $result
+            ) {
                 $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
                 $this->result = $result;
                 $this->config = new ModelConfig();
             }
@@ -64,6 +83,11 @@ class PromptBuilderTest extends TestCase
             public function metadata(): ModelMetadata
             {
                 return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
             }
 
             public function setConfig(ModelConfig $config): void
@@ -97,14 +121,29 @@ class PromptBuilderTest extends TestCase
      */
     private function createImageGenerationModel(ModelMetadata $metadata, GenerativeAiResult $result): ModelInterface
     {
-        return new class ($metadata, $result) implements ModelInterface, ImageGenerationModelInterface {
+        $providerMetadata = new ProviderMetadata(
+            'mock-provider',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, ImageGenerationModelInterface {
             private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
             private GenerativeAiResult $result;
             private ModelConfig $config;
 
-            public function __construct(ModelMetadata $metadata, GenerativeAiResult $result)
-            {
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                GenerativeAiResult $result
+            ) {
                 $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
                 $this->result = $result;
                 $this->config = new ModelConfig();
             }
@@ -112,6 +151,11 @@ class PromptBuilderTest extends TestCase
             public function metadata(): ModelMetadata
             {
                 return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
             }
 
             public function setConfig(ModelConfig $config): void
@@ -140,14 +184,29 @@ class PromptBuilderTest extends TestCase
      */
     private function createSpeechGenerationModel(ModelMetadata $metadata, GenerativeAiResult $result): ModelInterface
     {
-        return new class ($metadata, $result) implements ModelInterface, SpeechGenerationModelInterface {
+        $providerMetadata = new ProviderMetadata(
+            'mock-provider',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, SpeechGenerationModelInterface {
             private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
             private GenerativeAiResult $result;
             private ModelConfig $config;
 
-            public function __construct(ModelMetadata $metadata, GenerativeAiResult $result)
-            {
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                GenerativeAiResult $result
+            ) {
                 $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
                 $this->result = $result;
                 $this->config = new ModelConfig();
             }
@@ -155,6 +214,11 @@ class PromptBuilderTest extends TestCase
             public function metadata(): ModelMetadata
             {
                 return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
             }
 
             public function setConfig(ModelConfig $config): void
@@ -183,14 +247,29 @@ class PromptBuilderTest extends TestCase
      */
     private function createTextToSpeechModel(ModelMetadata $metadata, GenerativeAiResult $result): ModelInterface
     {
-        return new class ($metadata, $result) implements ModelInterface, TextToSpeechConversionModelInterface {
+        $providerMetadata = new ProviderMetadata(
+            'mock-provider',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, TextToSpeechConversionModelInterface {
             private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
             private GenerativeAiResult $result;
             private ModelConfig $config;
 
-            public function __construct(ModelMetadata $metadata, GenerativeAiResult $result)
-            {
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                GenerativeAiResult $result
+            ) {
                 $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
                 $this->result = $result;
                 $this->config = new ModelConfig();
             }
@@ -198,6 +277,11 @@ class PromptBuilderTest extends TestCase
             public function metadata(): ModelMetadata
             {
                 return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
             }
 
             public function setConfig(ModelConfig $config): void
@@ -1416,19 +1500,37 @@ class PromptBuilderTest extends TestCase
         $metadata->method('getId')->willReturn('test-model');
         $metadata->method('meetsRequirements')->willReturn(true);
 
-        $model = new class ($metadata) implements ModelInterface, TextGenerationModelInterface {
+        $providerMetadata = new ProviderMetadata(
+            'mock-provider',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $model = new class (
+            $metadata,
+            $providerMetadata
+        ) implements ModelInterface, TextGenerationModelInterface {
             private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
             private ModelConfig $config;
 
-            public function __construct(ModelMetadata $metadata)
-            {
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata
+            ) {
                 $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
                 $this->config = new ModelConfig();
             }
 
             public function metadata(): ModelMetadata
             {
                 return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
             }
 
             public function setConfig(ModelConfig $config): void
@@ -1578,19 +1680,37 @@ class PromptBuilderTest extends TestCase
         $metadata->method('getId')->willReturn('test-model');
         $metadata->method('meetsRequirements')->willReturn(true);
 
-        $model = new class ($metadata) implements ModelInterface, TextGenerationModelInterface {
+        $providerMetadata = new ProviderMetadata(
+            'mock-provider',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $model = new class (
+            $metadata,
+            $providerMetadata
+        ) implements ModelInterface, TextGenerationModelInterface {
             private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
             private ModelConfig $config;
 
-            public function __construct(ModelMetadata $metadata)
-            {
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata
+            ) {
                 $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
                 $this->config = new ModelConfig();
             }
 
             public function metadata(): ModelMetadata
             {
                 return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
             }
 
             public function setConfig(ModelConfig $config): void
