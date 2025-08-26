@@ -13,6 +13,7 @@
 
 declare(strict_types=1);
 
+use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Messages\Util\MessageUtil;
 use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
 use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
@@ -156,58 +157,28 @@ $providerRegistry->registerProvider(OpenAiProvider::class);
 
 // --- Main logic ---
 
-$messages = MessageUtil::parseMessagesFromInput($promptInput);
-
-$modelConfig = ModelConfig::fromArray($model_config_data);
-
-$requiredOptions = [];
-foreach ($modelConfig->toArray() as $option => $value) {
-    $requiredOptions[] = new RequiredOption($option, $value);
-}
-$modelRequirements = new ModelRequirements(
-    [
-        CapabilityEnum::textGeneration(),
-    ],
-    $requiredOptions
-);
-
 try {
-    if (!$providerId && !$modelId) {
-        $providerModelsMetadata = $providerRegistry->findModelsMetadataForSupport($modelRequirements);
-        if (!isset($providerModelsMetadata[0])) {
-            logError('No provider model supports the necessary model requirements.');
-        }
-        $providerId = $providerModelsMetadata[0]->getProvider()->getId();
-        $modelId = $providerModelsMetadata[0]->getModels()[0]->getId();
-    } elseif (!$modelId) {
-        $modelsMetadata = $providerRegistry->findProviderModelsMetadataForSupport($providerId, $modelRequirements);
-        if (!isset($modelsMetadata[0])) {
-            if (!$providerRegistry->isProviderConfigured($providerId)) {
-                logError('The provider "' . $providerId . '" is not configured.');
-            } else {
-                logError('No "' . $providerId . '" model supports the necessary model requirements.');
-            }
-        }
-        $modelId = $modelsMetadata[0]->getId();
+    $modelConfig = ModelConfig::fromArray($model_config_data);
+
+    $promptBuilder = new PromptBuilder($providerRegistry, $promptInput, $modelConfig);
+    if ($providerId && $modelId) {
+        $providerClassName = $providerRegistry->getProviderClassName($providerId);
+        $promptBuilder = $promptBuilder->usingModel($providerClassName::model($modelId));
+    } elseif ($providerId) {
+        $promptBuilder = $promptBuilder->usingProvider($providerId);
     }
-    $modelInstance = $providerRegistry->getProviderModel($providerId, $modelId);
 } catch (InvalidArgumentException $e) {
-    logError('Invalid arguments while trying to set up model instance: ' . $e->getMessage());
+    logError('Invalid arguments while trying to set up prompt builder: ' . $e->getMessage());
 } catch (ResponseException $e) {
-    logError('Request failed while trying to set up model instance: ' . $e->getMessage());
+    logError('Request failed while trying to set up prompt builder: ' . $e->getMessage());
 }
 
-logInfo("Using provider ID: \"{$modelInstance->providerMetadata()->getId()}\"");
-logInfo("Using model ID: \"{$modelInstance->metadata()->getId()}\"");
-
-if (!($modelInstance instanceof TextGenerationModelInterface)) {
-    logError('The model class ' . get_class($modelInstance) . ' does not support text generation.');
-}
-
-$modelInstance->setConfig($modelConfig);
+// TODO: Reinstate this once the generative AI result includes model and provider metadata.
+//logInfo("Using provider ID: \"{$modelInstance->providerMetadata()->getId()}\"");
+//logInfo("Using model ID: \"{$modelInstance->metadata()->getId()}\"");
 
 try {
-    $result = $modelInstance->generateTextResult($messages);
+    $result = $promptBuilder->generateTextResult();
 } catch (InvalidArgumentException $e) {
     logError('Invalid arguments while trying to generate text result: ' . $e->getMessage());
 } catch (ResponseException $e) {
