@@ -361,15 +361,13 @@ class PromptBuilder
      *
      * @since n.e.x.t
      *
+     * @param CapabilityEnum $capability The capability the model must support.
      * @return ModelRequirements The inferred requirements.
      */
-    public function getModelRequirements(): ModelRequirements
+    private function getModelRequirements(CapabilityEnum $capability): ModelRequirements
     {
-        $capabilities = [];
+        $capabilities = [$capability];
         $inputModalities = [];
-
-        // Always need text generation capability
-        $capabilities[] = CapabilityEnum::textGeneration();
 
         // Check if we have chat history (multiple messages)
         if (count($this->messages) > 1) {
@@ -433,6 +431,49 @@ class PromptBuilder
     }
 
     /**
+     * Infers the capability from configured output modalities.
+     *
+     * @since n.e.x.t
+     *
+     * @return CapabilityEnum The inferred capability.
+     * @throws RuntimeException If the output modality is not supported.
+     */
+    private function inferCapabilityFromOutputModalities(): CapabilityEnum
+    {
+        // Get the configured output modalities
+        $outputModalities = $this->modelConfig->getOutputModalities();
+
+        // Default to text if no output modality is specified
+        if ($outputModalities === null || empty($outputModalities)) {
+            return CapabilityEnum::textGeneration();
+        }
+
+        // Multi-modal output (multiple modalities) defaults to text generation. This is temporary
+        // as a multi-modal interface will be implemented in the future.
+        if (count($outputModalities) > 1) {
+            return CapabilityEnum::textGeneration();
+        }
+
+        // Infer capability from single output modality
+        $outputModality = $outputModalities[0];
+
+        if ($outputModality->isText()) {
+            return CapabilityEnum::textGeneration();
+        } elseif ($outputModality->isImage()) {
+            return CapabilityEnum::imageGeneration();
+        } elseif ($outputModality->isAudio()) {
+            return CapabilityEnum::speechGeneration();
+        } elseif ($outputModality->isVideo()) {
+            return CapabilityEnum::videoGeneration();
+        } else {
+            // For unsupported modalities, provide a clear error message
+            throw new RuntimeException(
+                sprintf('Output modality "%s" is not yet supported.', $outputModality->value)
+            );
+        }
+    }
+
+    /**
      * Checks if the current prompt is supported by the selected model.
      *
      * @since n.e.x.t
@@ -442,30 +483,13 @@ class PromptBuilder
      */
     private function isSupported(?CapabilityEnum $intendedCapability = null): bool
     {
-        // Build requirements with the intended capability if specified
-        $requirements = $this->getModelRequirements();
-
-        if ($intendedCapability !== null) {
-            $capabilities = $requirements->getRequiredCapabilities();
-
-            // Check if capability is already present
-            $hasCapability = false;
-            foreach ($capabilities as $capability) {
-                if ($capability->equals($intendedCapability)) {
-                    $hasCapability = true;
-                    break;
-                }
-            }
-
-            // Add the capability if not already present
-            if (!$hasCapability) {
-                $capabilities[] = $intendedCapability;
-                $requirements = new ModelRequirements(
-                    $capabilities,
-                    $requirements->getRequiredOptions()
-                );
-            }
+        // If no intended capability provided, infer from output modalities
+        if ($intendedCapability === null) {
+            $intendedCapability = $this->inferCapabilityFromOutputModalities();
         }
+
+        // Build requirements with the specified capability
+        $requirements = $this->getModelRequirements($intendedCapability);
 
         // If the model has been set, check if it meets the requirements
         if ($this->model !== null) {
@@ -477,6 +501,7 @@ class PromptBuilder
             $models = $this->registry->findModelsMetadataForSupport($requirements);
             return !empty($models);
         } catch (InvalidArgumentException $e) {
+            // No models support the requirements
             return false;
         }
     }
@@ -583,42 +608,13 @@ class PromptBuilder
     public function generateResult(?CapabilityEnum $capability = null): GenerativeAiResult
     {
         $this->validateMessages();
-        $model = $this->getConfiguredModel();
 
         // If capability is not provided, infer it from output modalities
         if ($capability === null) {
-            // Get the configured output modalities
-            $outputModalities = $this->modelConfig->getOutputModalities();
-
-            // Default to text if no output modality is specified
-            if ($outputModalities === null || empty($outputModalities)) {
-                $outputModalities = [ModalityEnum::text()];
-            }
-
-            // Multi-modal output (multiple modalities) defaults to text generation. This is temporary
-            // as a multi-modal interface will be implemented in the future.
-            if (count($outputModalities) > 1) {
-                $capability = CapabilityEnum::textGeneration();
-            } else {
-                // Infer capability from single output modality
-                $outputModality = $outputModalities[0];
-
-                if ($outputModality->isText()) {
-                    $capability = CapabilityEnum::textGeneration();
-                } elseif ($outputModality->isImage()) {
-                    $capability = CapabilityEnum::imageGeneration();
-                } elseif ($outputModality->isAudio()) {
-                    $capability = CapabilityEnum::speechGeneration();
-                } elseif ($outputModality->isVideo()) {
-                    $capability = CapabilityEnum::videoGeneration();
-                } else {
-                    // For unsupported modalities, provide a clear error message
-                    throw new RuntimeException(
-                        sprintf('Output modality "%s" is not yet supported.', $outputModality->value)
-                    );
-                }
-            }
+            $capability = $this->inferCapabilityFromOutputModalities();
         }
+
+        $model = $this->getConfiguredModel($capability);
 
         // Route to the appropriate generation method based on capability
         if ($capability->isTextGeneration()) {
@@ -917,15 +913,13 @@ class PromptBuilder
      *
      * @since n.e.x.t
      *
-     * @param ModelRequirements|null $requirements Optional requirements to use. If not provided, will be inferred.
+     * @param CapabilityEnum $capability The capability the model will be using.
      * @return ModelInterface The model to use.
      * @throws InvalidArgumentException If no suitable model is found or set model doesn't meet requirements.
      */
-    public function getConfiguredModel(?ModelRequirements $requirements = null): ModelInterface
+    private function getConfiguredModel(CapabilityEnum $capability): ModelInterface
     {
-        if ($requirements === null) {
-            $requirements = $this->getModelRequirements();
-        }
+        $requirements = $this->getModelRequirements($capability);
 
         // If a model has been explicitly set, return it
         if ($this->model !== null) {

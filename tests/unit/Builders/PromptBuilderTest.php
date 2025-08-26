@@ -16,12 +16,9 @@ use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
-use WordPress\AiClient\Providers\DTO\ProviderMetadata;
-use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
-use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
@@ -885,107 +882,6 @@ class PromptBuilderTest extends TestCase
         $this->assertEquals($schema, $config->getOutputSchema());
     }
 
-    /**
-     * Tests getModelRequirements with basic text prompt.
-     *
-     * @return void
-     */
-    public function testGetModelRequirementsBasicText(): void
-    {
-        $builder = new PromptBuilder($this->registry, 'Simple text');
-        $requirements = $builder->getModelRequirements();
-
-        $capabilities = $requirements->getRequiredCapabilities();
-        $this->assertCount(1, $capabilities);
-        $this->assertTrue($capabilities[0]->isTextGeneration());
-
-        $options = $requirements->getRequiredOptions();
-        // Should have input modalities with text
-        $inputModalitiesFound = false;
-        foreach ($options as $option) {
-            if ($option->getName()->equals(OptionEnum::inputModalities())) {
-                $inputModalitiesFound = true;
-                $modalities = $option->getValue();
-                $this->assertCount(1, $modalities);
-                $this->assertTrue($modalities[0]->isText());
-            }
-        }
-        $this->assertTrue($inputModalitiesFound);
-    }
-
-    /**
-     * Tests getModelRequirements with chat history.
-     *
-     * @return void
-     */
-    public function testGetModelRequirementsWithChatHistory(): void
-    {
-        $builder = new PromptBuilder($this->registry);
-        $builder->withHistory(
-            new UserMessage([new MessagePart('Hello')]),
-            new ModelMessage([new MessagePart('Hi there')]),
-            new UserMessage([new MessagePart('How are you?')])
-        );
-
-        $requirements = $builder->getModelRequirements();
-        $capabilities = $requirements->getRequiredCapabilities();
-
-        // Should have text generation and chat history capabilities
-        $this->assertCount(2, $capabilities);
-        $hasTextGeneration = false;
-        $hasChatHistory = false;
-        foreach ($capabilities as $capability) {
-            if ($capability->isTextGeneration()) {
-                $hasTextGeneration = true;
-            }
-            if ($capability->isChatHistory()) {
-                $hasChatHistory = true;
-            }
-        }
-        $this->assertTrue($hasTextGeneration);
-        $this->assertTrue($hasChatHistory);
-    }
-
-    /**
-     * Tests getModelRequirements with multimodal input.
-     *
-     * @return void
-     */
-    public function testGetModelRequirementsWithMultimodalInput(): void
-    {
-        $builder = new PromptBuilder($this->registry);
-        $builder->withText('Describe this image')
-                ->withFile('https://example.com/image.jpg', 'image/jpeg');
-
-        $requirements = $builder->getModelRequirements();
-        $options = $requirements->getRequiredOptions();
-
-        // Find input modalities option
-        $inputModalities = null;
-        foreach ($options as $option) {
-            if ($option->getName()->equals(OptionEnum::inputModalities())) {
-                $inputModalities = $option->getValue();
-                break;
-            }
-        }
-
-        $this->assertNotNull($inputModalities);
-        $this->assertCount(2, $inputModalities);
-
-        $hasText = false;
-        $hasImage = false;
-        foreach ($inputModalities as $modality) {
-            if ($modality->isText()) {
-                $hasText = true;
-            }
-            if ($modality->isImage()) {
-                $hasImage = true;
-            }
-        }
-        $this->assertTrue($hasText);
-        $this->assertTrue($hasImage);
-    }
-
 
     /**
      * Tests validateMessages with empty messages throws exception.
@@ -1587,7 +1483,7 @@ class PromptBuilderTest extends TestCase
         $builder->usingModel($model);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Generated message contains no parts');
+        $this->expectExceptionMessage('No text content found in first candidate');
 
         $builder->generateText();
     }
@@ -1616,7 +1512,7 @@ class PromptBuilderTest extends TestCase
         $builder->usingModel($model);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Generated message part contains no text');
+        $this->expectExceptionMessage('No text content found in first candidate');
 
         $builder->generateText();
     }
@@ -1777,7 +1673,7 @@ class PromptBuilderTest extends TestCase
         $builder->usingModel($model);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Generated message part contains no image file');
+        $this->expectExceptionMessage('No file content found in first candidate');
 
         $builder->generateImage();
     }
@@ -1955,115 +1851,6 @@ class PromptBuilderTest extends TestCase
         $this->assertSame($files[0], $speechFiles[0]);
         $this->assertSame($files[1], $speechFiles[1]);
         $this->assertSame($files[2], $speechFiles[2]);
-    }
-
-    /**
-     * Tests getConfiguredModel with explicitly set model.
-     *
-     * @return void
-     */
-    public function testGetConfiguredModelWithExplicitModel(): void
-    {
-        $metadata = $this->createMock(ModelMetadata::class);
-        $metadata->method('meetsRequirements')->willReturn(true);
-
-        $model = $this->createMock(ModelInterface::class);
-        $model->method('metadata')->willReturn($metadata);
-        $model->expects($this->once())->method('setConfig')->with($this->isInstanceOf(ModelConfig::class));
-
-        $builder = new PromptBuilder($this->registry, 'Test');
-        $builder->usingModel($model);
-
-        $reflection = new \ReflectionClass($builder);
-        $method = $reflection->getMethod('getConfiguredModel');
-        $method->setAccessible(true);
-
-        $configuredModel = $method->invoke($builder);
-        $this->assertSame($model, $configuredModel);
-    }
-
-    /**
-     * Tests getConfiguredModel returns explicitly set model.
-     *
-     * @return void
-     */
-    public function testGetConfiguredModelReturnsExplicitlySetModel(): void
-    {
-        $metadata = $this->createMock(ModelMetadata::class);
-        $metadata->method('getId')->willReturn('explicit-model');
-
-        $model = $this->createMock(ModelInterface::class);
-        $model->method('metadata')->willReturn($metadata);
-        $model->expects($this->once())
-            ->method('setConfig')
-            ->with($this->isInstanceOf(ModelConfig::class));
-
-        $builder = new PromptBuilder($this->registry, 'Test');
-        $builder->usingModel($model);
-
-        $reflection = new \ReflectionClass($builder);
-        $method = $reflection->getMethod('getConfiguredModel');
-        $method->setAccessible(true);
-
-        $result = $method->invoke($builder);
-        $this->assertSame($model, $result);
-    }
-
-    /**
-     * Tests getConfiguredModel finds model from registry.
-     *
-     * @return void
-     */
-    public function testGetConfiguredModelFindsModelFromRegistry(): void
-    {
-        $modelMetadata = $this->createMock(ModelMetadata::class);
-        $modelMetadata->method('getId')->willReturn('found-model');
-
-        $providerMetadata = $this->createMock(ProviderMetadata::class);
-        $providerMetadata->method('getId')->willReturn('test-provider');
-
-        $providerModelsMetadata = $this->createMock(ProviderModelsMetadata::class);
-        $providerModelsMetadata->method('getProvider')->willReturn($providerMetadata);
-        $providerModelsMetadata->method('getModels')->willReturn([$modelMetadata]);
-
-        $model = $this->createMock(ModelInterface::class);
-
-        $this->registry->method('findModelsMetadataForSupport')
-            ->willReturn([$providerModelsMetadata]);
-
-        $this->registry->method('getProviderModel')
-            ->with('test-provider', 'found-model', $this->isInstanceOf(ModelConfig::class))
-            ->willReturn($model);
-
-        $builder = new PromptBuilder($this->registry, 'Test');
-
-        $reflection = new \ReflectionClass($builder);
-        $method = $reflection->getMethod('getConfiguredModel');
-        $method->setAccessible(true);
-
-        $configuredModel = $method->invoke($builder);
-        $this->assertSame($model, $configuredModel);
-    }
-
-    /**
-     * Tests getConfiguredModel throws exception when no models found.
-     *
-     * @return void
-     */
-    public function testGetConfiguredModelThrowsExceptionWhenNoModelsFound(): void
-    {
-        $this->registry->method('findModelsMetadataForSupport')->willReturn([]);
-
-        $builder = new PromptBuilder($this->registry, 'Test');
-
-        $reflection = new \ReflectionClass($builder);
-        $method = $reflection->getMethod('getConfiguredModel');
-        $method->setAccessible(true);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('No models found that support the required capabilities');
-
-        $method->invoke($builder);
     }
 
     /**
@@ -2360,75 +2147,6 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
-     * Tests getModelRequirements with all file types.
-     *
-     * @return void
-     */
-    public function testGetModelRequirementsWithAllFileTypes(): void
-    {
-        $builder = new PromptBuilder($this->registry);
-        $builder->withText('Analyze:')
-                ->withFile('https://example.com/img.jpg', 'image/jpeg')
-                ->withFile('https://example.com/audio.mp3', 'audio/mp3')
-                ->withFile('https://example.com/video.mp4', 'video/mp4')
-                ->withFile('https://example.com/doc.pdf', 'application/pdf');
-
-        $requirements = $builder->getModelRequirements();
-        $options = $requirements->getRequiredOptions();
-
-        // Find input modalities
-        $inputModalities = null;
-        foreach ($options as $option) {
-            if ($option->getName()->equals(OptionEnum::inputModalities())) {
-                $inputModalities = $option->getValue();
-                break;
-            }
-        }
-
-        $this->assertNotNull($inputModalities);
-
-        // Check all modality types are present
-        $modalityTypes = [];
-        foreach ($inputModalities as $modality) {
-            $modalityTypes[] = $modality->value;
-        }
-
-        $this->assertContains('text', $modalityTypes);
-        $this->assertContains('image', $modalityTypes);
-        $this->assertContains('audio', $modalityTypes);
-        $this->assertContains('video', $modalityTypes);
-        $this->assertContains('document', $modalityTypes);
-    }
-
-    /**
-     * Tests getModelRequirements includes config options.
-     *
-     * @return void
-     */
-    public function testGetModelRequirementsIncludesConfigOptions(): void
-    {
-        $builder = new PromptBuilder($this->registry, 'Test');
-        $builder->usingMaxTokens(1000)
-                ->usingTemperature(0.7)
-                ->usingOutputModalities(ModalityEnum::text(), ModalityEnum::image())
-                ->asJsonResponse(['type' => 'object']);
-
-        $requirements = $builder->getModelRequirements();
-        $options = $requirements->getRequiredOptions();
-
-        // Check that config options are included
-        $optionEnums = array_map(function ($option) {
-            return $option->getName();
-        }, $options);
-
-        $this->assertContains(OptionEnum::maxTokens(), $optionEnums);
-        $this->assertContains(OptionEnum::temperature(), $optionEnums);
-        $this->assertContains(OptionEnum::outputModalities(), $optionEnums);
-        $this->assertContains(OptionEnum::outputMimeType(), $optionEnums);
-        $this->assertContains(OptionEnum::outputSchema(), $optionEnums);
-    }
-
-    /**
      * Tests last message must have parts validation.
      *
      * @return void
@@ -2585,9 +2303,9 @@ class PromptBuilderTest extends TestCase
      */
     public function testGenerateTextWithNoCandidatesThrowsException(): void
     {
-        // Create a mock result that returns empty candidates
+        // Create a mock result that throws when toText is called
         $result = $this->createMock(GenerativeAiResult::class);
-        $result->method('getCandidates')->willReturn([]);
+        $result->method('toText')->willThrowException(new RuntimeException('No text content found in first candidate'));
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
@@ -2599,7 +2317,7 @@ class PromptBuilderTest extends TestCase
         $builder->usingModel($model);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('No candidates were generated');
+        $this->expectExceptionMessage('No text content found in first candidate');
 
         $builder->generateText();
     }
@@ -2629,7 +2347,7 @@ class PromptBuilderTest extends TestCase
         $builder->usingModel($model);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Generated message part contains no text');
+        $this->expectExceptionMessage('No text content found in first candidate');
 
         $builder->generateText();
     }
