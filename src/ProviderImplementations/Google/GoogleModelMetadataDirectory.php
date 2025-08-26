@@ -14,10 +14,10 @@ use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
-use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * Class for the Google model metadata directory.
@@ -81,24 +81,24 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             CapabilityEnum::chatHistory(),
         ];
         $geminiLegacyOptions = [
-            new SupportedOption(ModelConfig::KEY_SYSTEM_INSTRUCTION),
-            new SupportedOption(ModelConfig::KEY_CANDIDATE_COUNT),
-            new SupportedOption(ModelConfig::KEY_MAX_TOKENS),
-            new SupportedOption(ModelConfig::KEY_TEMPERATURE),
-            new SupportedOption(ModelConfig::KEY_TOP_P),
-            new SupportedOption(ModelConfig::KEY_STOP_SEQUENCES),
-            new SupportedOption(ModelConfig::KEY_PRESENCE_PENALTY),
-            new SupportedOption(ModelConfig::KEY_FREQUENCY_PENALTY),
-            new SupportedOption(ModelConfig::KEY_LOGPROBS),
-            new SupportedOption(ModelConfig::KEY_TOP_LOGPROBS),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['text/plain', 'application/json']),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_SCHEMA),
-            new SupportedOption(ModelConfig::KEY_FUNCTION_DECLARATIONS),
-            new SupportedOption(ModelConfig::KEY_CUSTOM_OPTIONS),
+            new SupportedOption(OptionEnum::systemInstruction()),
+            new SupportedOption(OptionEnum::candidateCount()),
+            new SupportedOption(OptionEnum::maxTokens()),
+            new SupportedOption(OptionEnum::temperature()),
+            new SupportedOption(OptionEnum::topP()),
+            new SupportedOption(OptionEnum::stopSequences()),
+            new SupportedOption(OptionEnum::presencePenalty()),
+            new SupportedOption(OptionEnum::frequencyPenalty()),
+            new SupportedOption(OptionEnum::logprobs()),
+            new SupportedOption(OptionEnum::topLogprobs()),
+            new SupportedOption(OptionEnum::outputMimeType(), ['text/plain', 'application/json']),
+            new SupportedOption(OptionEnum::outputSchema()),
+            new SupportedOption(OptionEnum::functionDeclarations()),
+            new SupportedOption(OptionEnum::customOptions()),
         ];
         $geminiOptions = $geminiLegacyOptions + [
             new SupportedOption(
-                ModelConfig::KEY_INPUT_MODALITIES,
+                OptionEnum::inputModalities(),
                 [
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::image()],
@@ -107,11 +107,11 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             ),
         ];
         $geminiWebSearchOptions = $geminiOptions + [
-            new SupportedOption(ModelConfig::KEY_WEB_SEARCH),
+            new SupportedOption(OptionEnum::webSearch()),
         ];
         $geminiMultimodalImageOutputOptions = $geminiOptions + [
             new SupportedOption(
-                ModelConfig::KEY_OUTPUT_MODALITIES,
+                OptionEnum::outputModalities(),
                 [
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::image()],
@@ -122,15 +122,15 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             CapabilityEnum::imageGeneration(),
         ];
         $imagenOptions = [
-            new SupportedOption(ModelConfig::KEY_CANDIDATE_COUNT),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['image/png', 'image/jpeg', 'image/webp']),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_FILE_TYPE, [FileTypeEnum::inline()]),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION, [
+            new SupportedOption(OptionEnum::candidateCount()),
+            new SupportedOption(OptionEnum::outputMimeType(), ['image/png', 'image/jpeg', 'image/webp']),
+            new SupportedOption(OptionEnum::outputFileType(), [FileTypeEnum::inline()]),
+            new SupportedOption(OptionEnum::outputMediaOrientation(), [
                 MediaOrientationEnum::square(),
                 MediaOrientationEnum::landscape(),
                 MediaOrientationEnum::portrait(),
             ]),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO, ['1:1', '16:9', '4:3', '9:16', '3:4']),
+            new SupportedOption(OptionEnum::outputMediaAspectRatio(), ['1:1', '16:9', '4:3', '9:16', '3:4']),
         ];
 
         /** @var array<string, array<string, mixed>> $modelsData */

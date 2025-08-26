@@ -12,10 +12,10 @@ use WordPress\AiClient\Providers\AbstractOpenAiCompatibleModelMetadataDirectory;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
-use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * Class for the OpenAI model metadata directory.
@@ -55,24 +55,24 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             CapabilityEnum::chatHistory(),
         ];
         $gptOptions = [
-            new SupportedOption(ModelConfig::KEY_SYSTEM_INSTRUCTION),
-            new SupportedOption(ModelConfig::KEY_CANDIDATE_COUNT),
-            new SupportedOption(ModelConfig::KEY_MAX_TOKENS),
-            new SupportedOption(ModelConfig::KEY_TEMPERATURE),
-            new SupportedOption(ModelConfig::KEY_TOP_P),
-            new SupportedOption(ModelConfig::KEY_STOP_SEQUENCES),
-            new SupportedOption(ModelConfig::KEY_PRESENCE_PENALTY),
-            new SupportedOption(ModelConfig::KEY_FREQUENCY_PENALTY),
-            new SupportedOption(ModelConfig::KEY_LOGPROBS),
-            new SupportedOption(ModelConfig::KEY_TOP_LOGPROBS),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['text/plain', 'application/json']),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_SCHEMA),
-            new SupportedOption(ModelConfig::KEY_FUNCTION_DECLARATIONS),
-            new SupportedOption(ModelConfig::KEY_CUSTOM_OPTIONS),
+            new SupportedOption(OptionEnum::systemInstruction()),
+            new SupportedOption(OptionEnum::candidateCount()),
+            new SupportedOption(OptionEnum::maxTokens()),
+            new SupportedOption(OptionEnum::temperature()),
+            new SupportedOption(OptionEnum::topP()),
+            new SupportedOption(OptionEnum::stopSequences()),
+            new SupportedOption(OptionEnum::presencePenalty()),
+            new SupportedOption(OptionEnum::frequencyPenalty()),
+            new SupportedOption(OptionEnum::logprobs()),
+            new SupportedOption(OptionEnum::topLogprobs()),
+            new SupportedOption(OptionEnum::outputMimeType(), ['text/plain', 'application/json']),
+            new SupportedOption(OptionEnum::outputSchema()),
+            new SupportedOption(OptionEnum::functionDeclarations()),
+            new SupportedOption(OptionEnum::customOptions()),
         ];
         $gptMultimodalInputOptions = $gptOptions + [
             new SupportedOption(
-                ModelConfig::KEY_INPUT_MODALITIES,
+                OptionEnum::inputModalities(),
                 [
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::image()],
@@ -82,7 +82,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
         ];
         $gptMultimodalSpeechOutputOptions = $gptMultimodalInputOptions + [
             new SupportedOption(
-                ModelConfig::KEY_OUTPUT_MODALITIES,
+                OptionEnum::outputModalities(),
                 [
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::audio()],
@@ -93,33 +93,33 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             CapabilityEnum::imageGeneration(),
         ];
         $dalleImageOptions = [
-            new SupportedOption(ModelConfig::KEY_CANDIDATE_COUNT),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['image/png']),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_FILE_TYPE, [FileTypeEnum::inline(), FileTypeEnum::remote()]),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION, [
+            new SupportedOption(OptionEnum::candidateCount()),
+            new SupportedOption(OptionEnum::outputMimeType(), ['image/png']),
+            new SupportedOption(OptionEnum::outputFileType(), [FileTypeEnum::inline(), FileTypeEnum::remote()]),
+            new SupportedOption(OptionEnum::outputMediaOrientation(), [
                 MediaOrientationEnum::square(),
                 MediaOrientationEnum::landscape(),
                 MediaOrientationEnum::portrait(),
             ]),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO, ['1:1', '7:4', '4:7']),
+            new SupportedOption(OptionEnum::outputMediaAspectRatio(), ['1:1', '7:4', '4:7']),
         ];
         $gptImageOptions = [
-            new SupportedOption(ModelConfig::KEY_CANDIDATE_COUNT),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['image/png', 'image/jpeg', 'image/webp']),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_FILE_TYPE, [FileTypeEnum::inline()]),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION, [
+            new SupportedOption(OptionEnum::candidateCount()),
+            new SupportedOption(OptionEnum::outputMimeType(), ['image/png', 'image/jpeg', 'image/webp']),
+            new SupportedOption(OptionEnum::outputFileType(), [FileTypeEnum::inline()]),
+            new SupportedOption(OptionEnum::outputMediaOrientation(), [
                 MediaOrientationEnum::square(),
                 MediaOrientationEnum::landscape(),
                 MediaOrientationEnum::portrait(),
             ]),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO, ['1:1', '3:2', '2:3']),
+            new SupportedOption(OptionEnum::outputMediaAspectRatio(), ['1:1', '3:2', '2:3']),
         ];
         $ttsCapabilities = [
             CapabilityEnum::textToSpeechConversion(),
         ];
         $ttsOptions = [
-            new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['audio/mpeg', 'audio/ogg', 'audio/wav']),
-            new SupportedOption(ModelConfig::KEY_OUTPUT_SPEECH_VOICE),
+            new SupportedOption(OptionEnum::outputMimeType(), ['audio/mpeg', 'audio/ogg', 'audio/wav']),
+            new SupportedOption(OptionEnum::outputSpeechVoice()),
         ];
 
         /** @var array<string, array<string, mixed>> $modelsData */
