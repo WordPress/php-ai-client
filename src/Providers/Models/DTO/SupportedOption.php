@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Providers\Models\DTO;
 
 use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * Represents a supported configuration option for an AI model.
@@ -28,9 +29,9 @@ class SupportedOption extends AbstractDataTransferObject
     public const KEY_SUPPORTED_VALUES = 'supportedValues';
 
     /**
-     * @var string The option name.
+     * @var OptionEnum The option name.
      */
-    protected string $name;
+    protected OptionEnum $name;
 
     /**
      * @var list<mixed>|null The supported values for this option.
@@ -42,12 +43,12 @@ class SupportedOption extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @param string $name The option name.
+     * @param OptionEnum $name The option name.
      * @param list<mixed>|null $supportedValues The supported values for this option, or null if any value is supported.
      *
      * @throws InvalidArgumentException If supportedValues is not null and not a list.
      */
-    public function __construct(string $name, ?array $supportedValues = null)
+    public function __construct(OptionEnum $name, ?array $supportedValues = null)
     {
         if ($supportedValues !== null && !array_is_list($supportedValues)) {
             throw new InvalidArgumentException('Supported values must be a list array.');
@@ -62,9 +63,9 @@ class SupportedOption extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string The option name.
+     * @return OptionEnum The option name.
      */
-    public function getName(): string
+    public function getName(): OptionEnum
     {
         return $this->name;
     }
@@ -126,6 +127,7 @@ class SupportedOption extends AbstractDataTransferObject
             'properties' => [
                 self::KEY_NAME => [
                     'type' => 'string',
+                    'enum' => OptionEnum::getValues(),
                     'description' => 'The option name.',
                 ],
                 self::KEY_SUPPORTED_VALUES => [
@@ -157,7 +159,7 @@ class SupportedOption extends AbstractDataTransferObject
     public function toArray(): array
     {
         $data = [
-            self::KEY_NAME => $this->name,
+            self::KEY_NAME => $this->name->value,
         ];
 
         if ($this->supportedValues !== null) {
@@ -179,7 +181,7 @@ class SupportedOption extends AbstractDataTransferObject
         static::validateFromArrayData($array, [self::KEY_NAME]);
 
         return new self(
-            $array[self::KEY_NAME],
+            OptionEnum::from($array[self::KEY_NAME]),
             $array[self::KEY_SUPPORTED_VALUES] ?? null
         );
     }

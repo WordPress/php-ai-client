@@ -268,7 +268,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return string[] Array of text content.
+     * @return list<string> Array of text content.
      */
     public function toTexts(): array
     {
@@ -291,7 +291,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return File[] Array of files.
+     * @return list<File> Array of files.
      */
     public function toFiles(): array
     {
@@ -314,7 +314,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return File[] Array of image files.
+     * @return list<File> Array of image files.
      */
     public function toImageFiles(): array
     {
@@ -329,7 +329,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return File[] Array of audio files.
+     * @return list<File> Array of audio files.
      */
     public function toAudioFiles(): array
     {
@@ -344,7 +344,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return File[] Array of video files.
+     * @return list<File> Array of video files.
      */
     public function toVideoFiles(): array
     {
@@ -359,11 +359,11 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since n.e.x.t
      *
-     * @return Message[] Array of messages.
+     * @return list<Message> Array of messages.
      */
     public function toMessages(): array
     {
-        return array_map(fn(Candidate $candidate) => $candidate->getMessage(), $this->candidates);
+        return array_values(array_map(fn(Candidate $candidate) => $candidate->getMessage(), $this->candidates));
     }
 
     /**
