@@ -377,7 +377,7 @@ class PromptBuilder
         }
 
         // Analyze all messages to determine required input modalities
-        $hasFunctionCallingCapability = false;
+        $hasFunctionMessageParts = false;
         foreach ($this->messages as $message) {
             foreach ($message->getParts() as $part) {
                 // Check for text input
@@ -404,7 +404,7 @@ class PromptBuilder
 
                 // Check for function calls/responses (these might require special capabilities)
                 if ($part->getType()->isFunctionCall() || $part->getType()->isFunctionResponse()) {
-                    $hasFunctionCallingCapability = true;
+                    $hasFunctionMessageParts = true;
                 }
             }
         }
@@ -412,7 +412,7 @@ class PromptBuilder
         // Build required options from ModelConfig
         $requiredOptions = $this->modelConfig->toRequiredOptions();
 
-        if ($hasFunctionCallingCapability) {
+        if ($hasFunctionMessageParts) {
             // Add function declarations option if we have function calls/responses
             $requiredOptions = $this->includeInRequiredOptions(
                 $requiredOptions,
