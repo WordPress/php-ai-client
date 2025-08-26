@@ -98,7 +98,7 @@ class ModelMetadata extends AbstractDataTransferObject
 
         // Build options map for efficient lookups
         foreach ($supportedOptions as $option) {
-            $this->optionsMap[$option->getName()] = $option;
+            $this->optionsMap[$option->getName()->value] = $option;
         }
     }
 
@@ -229,11 +229,11 @@ class ModelMetadata extends AbstractDataTransferObject
         // Check if all required options are supported with the specified values
         foreach ($requirements->getRequiredOptions() as $requiredOption) {
             // Use map lookup instead of linear search
-            if (!isset($this->optionsMap[$requiredOption->getName()])) {
+            if (!isset($this->optionsMap[$requiredOption->getName()->value])) {
                 return false;
             }
 
-            $supportedOption = $this->optionsMap[$requiredOption->getName()];
+            $supportedOption = $this->optionsMap[$requiredOption->getName()->value];
 
             // Check if the required value is supported by this option
             if (!$supportedOption->isSupportedValue($requiredOption->getValue())) {

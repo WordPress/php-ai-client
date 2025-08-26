@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Messages\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
@@ -309,5 +310,24 @@ class UserMessageTest extends TestCase
     {
         $message = new UserMessage([new MessagePart('test')]);
         $this->assertImplementsArrayTransformation($message);
+    }
+
+    /**
+     * Tests that withPart returns a new Message with user role.
+     *
+     * @since n.e.x.t
+     */
+    public function testWithPartReturnsNewMessage(): void
+    {
+        $original = new UserMessage([new MessagePart('User text')]);
+        $updated = $original->withPart(new MessagePart('More text'));
+
+        $this->assertInstanceOf(Message::class, $updated);
+        $this->assertNotSame($original, $updated);
+        $this->assertCount(2, $updated->getParts());
+        $this->assertEquals(MessageRoleEnum::user(), $updated->getRole());
+        $this->assertTrue($updated->getRole()->isUser());
+        $this->assertEquals('User text', $updated->getParts()[0]->getText());
+        $this->assertEquals('More text', $updated->getParts()[1]->getText());
     }
 }

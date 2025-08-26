@@ -175,6 +175,30 @@ class File extends AbstractDataTransferObject
     }
 
     /**
+     * Checks if the file is an inline file.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if the file is inline (base64/data URI).
+     */
+    public function isInline(): bool
+    {
+        return $this->fileType->isInline();
+    }
+
+    /**
+     * Checks if the file is a remote file.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if the file is remote (URL).
+     */
+    public function isRemote(): bool
+    {
+        return $this->fileType->isRemote();
+    }
+
+    /**
      * Gets the URL for remote files.
      *
      * @since n.e.x.t
@@ -284,6 +308,18 @@ class File extends AbstractDataTransferObject
     public function isText(): bool
     {
         return $this->mimeType->isText();
+    }
+
+    /**
+     * Checks if the file is a document.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if the file is a document.
+     */
+    public function isDocument(): bool
+    {
+        return $this->mimeType->isDocument();
     }
 
     /**
