@@ -87,6 +87,9 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
         $outputFileType = $config->getOutputFileType();
         if ($outputFileType !== null) {
             $params['response_format'] = $outputFileType->isRemote() ? 'url' : 'b64_json';
+        } else {
+            // The 'response_format' parameter is required, so we default to 'b64_json' if not set.
+            $params['response_format'] = 'b64_json';
         }
 
         $outputMimeType = $config->getOutputMimeType();
