@@ -661,7 +661,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $this->assertEquals(5, $result->getTokenUsage()->getPromptTokens());
         $this->assertEquals(0, $result->getTokenUsage()->getCompletionTokens());
         $this->assertEquals(5, $result->getTokenUsage()->getTotalTokens());
-        $this->assertEquals(['created' => 1678886400], $result->getProviderMetadata());
+        $this->assertEquals(['created' => 1678886400], $result->getAdditionalData());
     }
 
     /**

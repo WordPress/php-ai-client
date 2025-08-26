@@ -317,6 +317,8 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
             $id,
             $candidates,
             $tokenUsage,
+            $this->providerMetadata(),
+            $this->metadata(),
             $providerMetadata
         );
     }
