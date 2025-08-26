@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
- * @covers \WordPress\AiClient\Providers\AbstractApiBasedModelMetadataDirectory
+ * @covers \WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModelMetadataDirectory
  */
 class AbstractApiBasedModelMetadataDirectoryTest extends TestCase
 {

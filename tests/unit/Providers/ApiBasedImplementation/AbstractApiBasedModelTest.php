@@ -10,7 +10,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
- * @covers \WordPress\AiClient\Providers\Models\AbstractApiBasedModel
+ * @covers \WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModel
  */
 class AbstractApiBasedModelTest extends TestCase
 {

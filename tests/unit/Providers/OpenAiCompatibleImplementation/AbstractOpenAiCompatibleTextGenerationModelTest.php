@@ -28,7 +28,7 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
- * @covers \WordPress\AiClient\Providers\Models\AbstractOpenAiCompatibleTextGenerationModel
+ * @covers \WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCompatibleTextGenerationModel
  */
 class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 {

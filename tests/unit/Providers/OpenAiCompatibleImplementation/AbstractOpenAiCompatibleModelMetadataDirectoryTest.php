@@ -12,7 +12,7 @@ use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
- * @covers \WordPress\AiClient\Providers\AbstractOpenAiCompatibleModelMetadataDirectory
+ * @covers \WordPress\AiClient\Providers\ApiBasedImplementation\AbstractOpenAiCompatibleModelMetadataDirectory
  */
 class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
 {
