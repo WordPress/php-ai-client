@@ -73,7 +73,7 @@ class OptionEnum extends AbstractEnum
     public const INPUT_MODALITIES = 'input_modalities';
 
     /**
-     * Gets the constants for this enum.
+     * Determines the class enumerations by reflecting on class constants.
      *
      * Overrides the parent method to dynamically add constants from ModelConfig
      * that are prefixed with KEY_. These are transformed to remove the KEY_ prefix
@@ -81,18 +81,13 @@ class OptionEnum extends AbstractEnum
      *
      * @since n.e.x.t
      *
+     * @param class-string $className The fully qualified class name.
      * @return array<string, string> The enum constants.
      */
-    protected static function getConstants(): array
+    protected static function determineClassEnumerations(string $className): array
     {
-        // Check if we already have cached constants for this class
-        $className = static::class;
-        if (isset(self::$cache[$className])) {
-            return self::$cache[$className];
-        }
-
-        // Start with the constants defined in this class
-        $constants = parent::getConstants();
+        // Start with the constants defined in this class using parent method
+        $constants = parent::determineClassEnumerations($className);
 
         // Use reflection to get all constants from ModelConfig
         $modelConfigReflection = new ReflectionClass(ModelConfig::class);
@@ -111,9 +106,6 @@ class OptionEnum extends AbstractEnum
                 }
             }
         }
-
-        // Cache the combined constants
-        self::$cache[$className] = $constants;
 
         return $constants;
     }

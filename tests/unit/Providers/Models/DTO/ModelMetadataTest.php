@@ -150,12 +150,18 @@ class ModelMetadataTest extends TestCase
         $this->assertEquals('Claude 2', $array[ModelMetadata::KEY_NAME]);
         $this->assertEquals(['text_generation', 'chat_history'], $array[ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);
         $this->assertCount(2, $array[ModelMetadata::KEY_SUPPORTED_OPTIONS]);
-        $this->assertEquals(OptionEnum::maxTokens()->value, $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_NAME]);
+        $this->assertEquals(
+            OptionEnum::maxTokens()->value,
+            $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_NAME]
+        );
         $this->assertEquals(
             [100, 1000, 10000],
             $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_SUPPORTED_VALUES]
         );
-        $this->assertEquals(OptionEnum::temperature()->value, $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][1][SupportedOption::KEY_NAME]);
+        $this->assertEquals(
+            OptionEnum::temperature()->value,
+            $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][1][SupportedOption::KEY_NAME]
+        );
         $this->assertEquals(
             [0.0, 1.0],
             $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][1][SupportedOption::KEY_SUPPORTED_VALUES]
@@ -271,7 +277,10 @@ class ModelMetadataTest extends TestCase
         $this->assertEquals('JSON Test Model', $decoded[ModelMetadata::KEY_NAME]);
         $this->assertEquals(['embedding_generation'], $decoded[ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);
         $this->assertCount(1, $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS]);
-        $this->assertEquals(OptionEnum::outputSchema()->value, $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_NAME]);
+        $this->assertEquals(
+            OptionEnum::outputSchema()->value,
+            $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_NAME]
+        );
         $this->assertEquals(
             [256, 512, 1024],
             $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_SUPPORTED_VALUES]

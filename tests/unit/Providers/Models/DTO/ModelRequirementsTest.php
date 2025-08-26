@@ -123,9 +123,15 @@ class ModelRequirementsTest extends TestCase
             $array[ModelRequirements::KEY_REQUIRED_CAPABILITIES]
         );
         $this->assertCount(2, $array[ModelRequirements::KEY_REQUIRED_OPTIONS]);
-        $this->assertEquals(OptionEnum::outputSchema()->value, $array[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_NAME]);
+        $this->assertEquals(
+            OptionEnum::outputSchema()->value,
+            $array[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_NAME]
+        );
         $this->assertEquals('1024x1024', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][0][RequiredOption::KEY_VALUE]);
-        $this->assertEquals(OptionEnum::outputSchema()->value, $array[ModelRequirements::KEY_REQUIRED_OPTIONS][1][RequiredOption::KEY_NAME]);
+        $this->assertEquals(
+            OptionEnum::outputSchema()->value,
+            $array[ModelRequirements::KEY_REQUIRED_OPTIONS][1][RequiredOption::KEY_NAME]
+        );
         $this->assertEquals('realistic', $array[ModelRequirements::KEY_REQUIRED_OPTIONS][1][RequiredOption::KEY_VALUE]);
     }
 

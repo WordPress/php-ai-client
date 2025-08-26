@@ -51,7 +51,7 @@ abstract class AbstractEnum
     /**
      * @var array<string, array<string, string>> Cache for reflection data.
      */
-    protected static array $cache = [];
+    private static array $cache = [];
 
     /**
      * @var array<string, array<string, self>> Cache for enum instances.
@@ -253,48 +253,65 @@ abstract class AbstractEnum
      * @return array<string, string> Map of constant names to values.
      * @throws RuntimeException If invalid constant found.
      */
-    protected static function getConstants(): array
+    final protected static function getConstants(): array
     {
         $className = static::class;
 
         if (!isset(self::$cache[$className])) {
-            $reflection = new ReflectionClass($className);
-            $constants = $reflection->getConstants();
-
-            // Validate all constants
-            $enumConstants = [];
-            foreach ($constants as $name => $value) {
-                // Check if constant name follows uppercase snake_case pattern
-                if (!preg_match('/^[A-Z][A-Z0-9_]*$/', $name)) {
-                    throw new RuntimeException(
-                        sprintf(
-                            'Invalid enum constant name "%s" in %s. Constants must be UPPER_SNAKE_CASE.',
-                            $name,
-                            $className
-                        )
-                    );
-                }
-
-                // Check if value is valid type
-                if (!is_string($value)) {
-                    throw new RuntimeException(
-                        sprintf(
-                            'Invalid enum value type for constant %s::%s. ' .
-                            'Only string values are allowed, %s given.',
-                            $className,
-                            $name,
-                            gettype($value)
-                        )
-                    );
-                }
-
-                $enumConstants[$name] = $value;
-            }
-
-            self::$cache[$className] = $enumConstants;
+            self::$cache[$className] = static::determineClassEnumerations($className);
         }
 
         return self::$cache[$className];
+    }
+
+    /**
+     * Determines the class enumerations by reflecting on class constants.
+     *
+     * This method can be overridden by subclasses to customize how
+     * enumerations are determined (e.g., to add dynamic constants).
+     *
+     * @since n.e.x.t
+     *
+     * @param class-string $className The fully qualified class name.
+     * @return array<string, string> Map of constant names to values.
+     * @throws RuntimeException If invalid constant found.
+     */
+    protected static function determineClassEnumerations(string $className): array
+    {
+        $reflection = new ReflectionClass($className);
+        $constants = $reflection->getConstants();
+
+        // Validate all constants
+        $enumConstants = [];
+        foreach ($constants as $name => $value) {
+            // Check if constant name follows uppercase snake_case pattern
+            if (!preg_match('/^[A-Z][A-Z0-9_]*$/', $name)) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Invalid enum constant name "%s" in %s. Constants must be UPPER_SNAKE_CASE.',
+                        $name,
+                        $className
+                    )
+                );
+            }
+
+            // Check if value is valid type
+            if (!is_string($value)) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Invalid enum value type for constant %s::%s. ' .
+                        'Only string values are allowed, %s given.',
+                        $className,
+                        $name,
+                        gettype($value)
+                    )
+                );
+            }
+
+            $enumConstants[$name] = $value;
+        }
+
+        return $enumConstants;
     }
 
     /**

@@ -300,7 +300,10 @@ class RequiredOptionTest extends TestCase
             new RequiredOption(OptionEnum::webSearch(), true),
             new RequiredOption(OptionEnum::outputSchema(), null),
             new RequiredOption(OptionEnum::stopSequences(), ['one', 'two', 'three']),
-            new RequiredOption(OptionEnum::customOptions(), ['type' => 'config', 'enabled' => true, 'settings' => ['a' => 1, 'b' => 2]])
+            new RequiredOption(
+                OptionEnum::customOptions(),
+                ['type' => 'config', 'enabled' => true, 'settings' => ['a' => 1, 'b' => 2]]
+            )
         ];
 
         foreach ($testCases as $original) {

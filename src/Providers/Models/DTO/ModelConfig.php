@@ -1024,11 +1024,17 @@ class ModelConfig extends AbstractDataTransferObject
         }
 
         if ($this->outputMediaOrientation !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::outputMediaOrientation(), $this->outputMediaOrientation->value);
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::outputMediaOrientation(),
+                $this->outputMediaOrientation->value
+            );
         }
 
         if ($this->outputMediaAspectRatio !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::outputMediaAspectRatio(), $this->outputMediaAspectRatio);
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::outputMediaAspectRatio(),
+                $this->outputMediaAspectRatio
+            );
         }
 
         // Add custom options as individual RequiredOptions
