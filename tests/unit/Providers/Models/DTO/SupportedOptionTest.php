@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * @covers \WordPress\AiClient\Providers\Models\DTO\SupportedOption
@@ -20,12 +21,12 @@ class SupportedOptionTest extends TestCase
      */
     public function testConstructorAndGettersWithStringValues(): void
     {
-        $name = 'model';
-        $values = ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'];
+        $name = OptionEnum::outputModalities();
+        $values = ['text', 'image', 'audio'];
 
         $option = new SupportedOption($name, $values);
 
-        $this->assertEquals($name, $option->getName());
+        $this->assertSame($name, $option->getName());
         $this->assertEquals($values, $option->getSupportedValues());
     }
 
@@ -36,7 +37,7 @@ class SupportedOptionTest extends TestCase
      */
     public function testIsSupportedValue(): void
     {
-        $option = new SupportedOption('temperature', [0.0, 0.5, 1.0, 1.5, 2.0]);
+        $option = new SupportedOption(OptionEnum::temperature(), [0.0, 0.5, 1.0, 1.5, 2.0]);
 
         $this->assertTrue($option->isSupportedValue(0.0));
         $this->assertTrue($option->isSupportedValue(0.5));
@@ -57,9 +58,9 @@ class SupportedOptionTest extends TestCase
      */
     public function testWithIntegerValues(): void
     {
-        $option = new SupportedOption('max_tokens', [100, 500, 1000, 2000, 4000]);
+        $option = new SupportedOption(OptionEnum::maxTokens(), [100, 500, 1000, 2000, 4000]);
 
-        $this->assertEquals('max_tokens', $option->getName());
+        $this->assertSame(OptionEnum::maxTokens(), $option->getName());
         $this->assertEquals([100, 500, 1000, 2000, 4000], $option->getSupportedValues());
 
         $this->assertTrue($option->isSupportedValue(100));
@@ -75,9 +76,9 @@ class SupportedOptionTest extends TestCase
      */
     public function testWithBooleanValues(): void
     {
-        $option = new SupportedOption('stream', [true, false]);
+        $option = new SupportedOption(OptionEnum::webSearch(), [true, false]);
 
-        $this->assertEquals('stream', $option->getName());
+        $this->assertSame(OptionEnum::webSearch(), $option->getName());
         $this->assertEquals([true, false], $option->getSupportedValues());
 
         $this->assertTrue($option->isSupportedValue(true));
@@ -93,7 +94,7 @@ class SupportedOptionTest extends TestCase
      */
     public function testWithNullValue(): void
     {
-        $option = new SupportedOption('optional_param', ['value1', 'value2', null]);
+        $option = new SupportedOption(OptionEnum::outputSchema(), ['value1', 'value2', null]);
 
         $this->assertTrue($option->isSupportedValue('value1'));
         $this->assertTrue($option->isSupportedValue('value2'));
@@ -108,9 +109,9 @@ class SupportedOptionTest extends TestCase
      */
     public function testWithArrayValues(): void
     {
-        $option = new SupportedOption('dimensions', [[256, 256], [512, 512], [1024, 1024]]);
+        $option = new SupportedOption(OptionEnum::outputMediaAspectRatio(), [[256, 256], [512, 512], [1024, 1024]]);
 
-        $this->assertEquals('dimensions', $option->getName());
+        $this->assertSame(OptionEnum::outputMediaAspectRatio(), $option->getName());
         $supportedValues = $option->getSupportedValues();
         $this->assertCount(3, $supportedValues);
 
@@ -129,7 +130,7 @@ class SupportedOptionTest extends TestCase
     {
         $format1 = ['type' => 'json_object'];
         $format2 = ['type' => 'text'];
-        $option = new SupportedOption('response_format', [$format1, $format2]);
+        $option = new SupportedOption(OptionEnum::outputSchema(), [$format1, $format2]);
 
         $this->assertTrue($option->isSupportedValue(['type' => 'json_object']));
         $this->assertTrue($option->isSupportedValue(['type' => 'text']));
@@ -186,11 +187,11 @@ class SupportedOptionTest extends TestCase
      */
     public function testToArray(): void
     {
-        $option = new SupportedOption('style', ['realistic', 'artistic', 'cartoon', 'abstract']);
+        $option = new SupportedOption(OptionEnum::outputFileType(), ['realistic', 'artistic', 'cartoon', 'abstract']);
         $array = $option->toArray();
 
         $this->assertIsArray($array);
-        $this->assertEquals('style', $array[SupportedOption::KEY_NAME]);
+        $this->assertEquals(OptionEnum::outputFileType()->value, $array[SupportedOption::KEY_NAME]);
         $this->assertEquals(
             ['realistic', 'artistic', 'cartoon', 'abstract'],
             $array[SupportedOption::KEY_SUPPORTED_VALUES]
@@ -206,14 +207,14 @@ class SupportedOptionTest extends TestCase
     public function testFromArray(): void
     {
         $data = [
-            SupportedOption::KEY_NAME => 'voice',
+            SupportedOption::KEY_NAME => OptionEnum::outputFileType()->value,
             SupportedOption::KEY_SUPPORTED_VALUES => ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
         ];
 
         $option = SupportedOption::fromArray($data);
 
         $this->assertInstanceOf(SupportedOption::class, $option);
-        $this->assertEquals('voice', $option->getName());
+        $this->assertEquals(OptionEnum::outputFileType()->value, $option->getName()->value);
         $this->assertEquals(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'], $option->getSupportedValues());
     }
 
@@ -225,7 +226,7 @@ class SupportedOptionTest extends TestCase
     public function testArrayRoundTrip(): void
     {
         $original = new SupportedOption(
-            'complex_option',
+            OptionEnum::customOptions(),
             [
                 'string',
                 123,
@@ -241,7 +242,7 @@ class SupportedOptionTest extends TestCase
         $array = $original->toArray();
         $restored = SupportedOption::fromArray($array);
 
-        $this->assertEquals($original->getName(), $restored->getName());
+        $this->assertSame($original->getName(), $restored->getName());
         $this->assertEquals($original->getSupportedValues(), $restored->getSupportedValues());
 
         // Verify each value type is preserved
@@ -263,14 +264,14 @@ class SupportedOptionTest extends TestCase
      */
     public function testJsonSerialize(): void
     {
-        $option = new SupportedOption('quality', ['low', 'medium', 'high', 'ultra']);
+        $option = new SupportedOption(OptionEnum::candidateCount(), ['low', 'medium', 'high', 'ultra']);
 
         $json = json_encode($option);
         $decoded = json_decode($json, true);
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);
-        $this->assertEquals('quality', $decoded[SupportedOption::KEY_NAME]);
+        $this->assertEquals(OptionEnum::candidateCount()->value, $decoded[SupportedOption::KEY_NAME]);
         $this->assertEquals(['low', 'medium', 'high', 'ultra'], $decoded[SupportedOption::KEY_SUPPORTED_VALUES]);
     }
 
@@ -281,9 +282,9 @@ class SupportedOptionTest extends TestCase
      */
     public function testWithEmptySupportedValues(): void
     {
-        $option = new SupportedOption('empty_option', []);
+        $option = new SupportedOption(OptionEnum::stopSequences(), []);
 
-        $this->assertEquals('empty_option', $option->getName());
+        $this->assertSame(OptionEnum::stopSequences(), $option->getName());
         $this->assertEquals([], $option->getSupportedValues());
         $this->assertFalse($option->isSupportedValue('anything'));
         $this->assertFalse($option->isSupportedValue(null));
@@ -296,7 +297,7 @@ class SupportedOptionTest extends TestCase
      */
     public function testWithDuplicateValues(): void
     {
-        $option = new SupportedOption('duplicates', ['a', 'b', 'a', 'c', 'b']);
+        $option = new SupportedOption(OptionEnum::stopSequences(), ['a', 'b', 'a', 'c', 'b']);
 
         $this->assertEquals(['a', 'b', 'a', 'c', 'b'], $option->getSupportedValues());
         $this->assertTrue($option->isSupportedValue('a'));
@@ -311,11 +312,11 @@ class SupportedOptionTest extends TestCase
      */
     public function testWithSpecialCharactersInName(): void
     {
-        $option = new SupportedOption('option-with_special.chars:test', ['value1', 'value2']);
+        $option = new SupportedOption(OptionEnum::customOptions(), ['value1', 'value2']);
 
-        $this->assertEquals('option-with_special.chars:test', $option->getName());
+        $this->assertSame(OptionEnum::customOptions(), $option->getName());
         $array = $option->toArray();
-        $this->assertEquals('option-with_special.chars:test', $array[SupportedOption::KEY_NAME]);
+        $this->assertEquals(OptionEnum::customOptions()->value, $array[SupportedOption::KEY_NAME]);
     }
 
     /**
@@ -325,7 +326,7 @@ class SupportedOptionTest extends TestCase
      */
     public function testStrictTypeCheckingInIsSupportedValue(): void
     {
-        $option = new SupportedOption('mixed', [0, '0', false, '', null]);
+        $option = new SupportedOption(OptionEnum::customOptions(), [0, '0', false, '', null]);
 
         // Each value should only match itself exactly
         $this->assertTrue($option->isSupportedValue(0));
@@ -347,7 +348,7 @@ class SupportedOptionTest extends TestCase
      */
     public function testArrayValuesProperlyIndexed(): void
     {
-        $option = new SupportedOption('indexed', ['first', 'second', 'third']);
+        $option = new SupportedOption(OptionEnum::stopSequences(), ['first', 'second', 'third']);
         $array = $option->toArray();
 
         // Ensure supportedValues array has numeric keys starting from 0
@@ -378,7 +379,7 @@ class SupportedOptionTest extends TestCase
             ]
         ];
 
-        $option = new SupportedOption('nested_configs', $deeplyNested);
+        $option = new SupportedOption(OptionEnum::outputSchema(), $deeplyNested);
 
         $this->assertTrue($option->isSupportedValue($deeplyNested[0]));
         $this->assertTrue($option->isSupportedValue($deeplyNested[1]));
@@ -396,7 +397,7 @@ class SupportedOptionTest extends TestCase
      */
     public function testImplementsCorrectInterfaces(): void
     {
-        $option = new SupportedOption('test', ['value']);
+        $option = new SupportedOption(OptionEnum::maxTokens(), ['value']);
 
         $this->assertInstanceOf(
             \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
@@ -419,9 +420,9 @@ class SupportedOptionTest extends TestCase
      */
     public function testWithNullSupportedValues(): void
     {
-        $option = new SupportedOption('any_value_option');
+        $option = new SupportedOption(OptionEnum::temperature());
 
-        $this->assertEquals('any_value_option', $option->getName());
+        $this->assertSame(OptionEnum::temperature(), $option->getName());
         $this->assertNull($option->getSupportedValues());
 
         // Any value should be supported when supportedValues is null
@@ -443,11 +444,11 @@ class SupportedOptionTest extends TestCase
      */
     public function testToArrayWithNullSupportedValues(): void
     {
-        $option = new SupportedOption('flexible_option');
+        $option = new SupportedOption(OptionEnum::topP());
         $array = $option->toArray();
 
         $this->assertIsArray($array);
-        $this->assertEquals('flexible_option', $array[SupportedOption::KEY_NAME]);
+        $this->assertEquals(OptionEnum::topP()->value, $array[SupportedOption::KEY_NAME]);
         $this->assertArrayNotHasKey(SupportedOption::KEY_SUPPORTED_VALUES, $array);
         $this->assertCount(1, $array);
     }
@@ -460,13 +461,13 @@ class SupportedOptionTest extends TestCase
     public function testFromArrayWithMissingSupportedValues(): void
     {
         $data = [
-            SupportedOption::KEY_NAME => 'open_option'
+            SupportedOption::KEY_NAME => OptionEnum::temperature()->value
         ];
 
         $option = SupportedOption::fromArray($data);
 
         $this->assertInstanceOf(SupportedOption::class, $option);
-        $this->assertEquals('open_option', $option->getName());
+        $this->assertEquals(OptionEnum::temperature()->value, $option->getName()->value);
         $this->assertNull($option->getSupportedValues());
         $this->assertTrue($option->isSupportedValue('anything'));
     }
@@ -478,12 +479,12 @@ class SupportedOptionTest extends TestCase
      */
     public function testRoundTripWithNullSupportedValues(): void
     {
-        $original = new SupportedOption('unrestricted');
+        $original = new SupportedOption(OptionEnum::topK());
 
         $array = $original->toArray();
         $restored = SupportedOption::fromArray($array);
 
-        $this->assertEquals($original->getName(), $restored->getName());
+        $this->assertSame($original->getName(), $restored->getName());
         $this->assertEquals($original->getSupportedValues(), $restored->getSupportedValues());
         $this->assertNull($restored->getSupportedValues());
     }
@@ -495,14 +496,14 @@ class SupportedOptionTest extends TestCase
      */
     public function testJsonSerializationWithNullSupportedValues(): void
     {
-        $option = new SupportedOption('json_option');
+        $option = new SupportedOption(OptionEnum::customOptions());
 
         $json = json_encode($option);
         $decoded = json_decode($json, true);
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);
-        $this->assertEquals('json_option', $decoded[SupportedOption::KEY_NAME]);
+        $this->assertEquals(OptionEnum::customOptions()->value, $decoded[SupportedOption::KEY_NAME]);
         $this->assertArrayNotHasKey(SupportedOption::KEY_SUPPORTED_VALUES, $decoded);
     }
 

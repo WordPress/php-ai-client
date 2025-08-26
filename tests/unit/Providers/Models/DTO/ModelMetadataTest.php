@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * @covers \WordPress\AiClient\Providers\Models\DTO\ModelMetadata
@@ -22,7 +23,7 @@ class ModelMetadataTest extends TestCase
      */
     private function createSampleOption(): SupportedOption
     {
-        return new SupportedOption('temperature', [0.0, 0.5, 1.0, 1.5, 2.0]);
+        return new SupportedOption(OptionEnum::temperature(), [0.0, 0.5, 1.0, 1.5, 2.0]);
     }
 
     /**
@@ -40,8 +41,8 @@ class ModelMetadataTest extends TestCase
             CapabilityEnum::textGeneration()
         ];
         $options = [
-            new SupportedOption('temperature', [0.0, 0.7, 1.0, 2.0]),
-            new SupportedOption('max_tokens', [100, 1000, 4000])
+            new SupportedOption(OptionEnum::temperature(), [0.0, 0.7, 1.0, 2.0]),
+            new SupportedOption(OptionEnum::maxTokens(), [100, 1000, 4000])
         ];
 
         $metadata = new ModelMetadata($id, $name, $capabilities, $options);
@@ -137,8 +138,8 @@ class ModelMetadataTest extends TestCase
             'Claude 2',
             [CapabilityEnum::textGeneration(), CapabilityEnum::chatHistory()],
             [
-                new SupportedOption('max_tokens', [100, 1000, 10000]),
-                new SupportedOption('temperature', [0.0, 1.0])
+                new SupportedOption(OptionEnum::maxTokens(), [100, 1000, 10000]),
+                new SupportedOption(OptionEnum::temperature(), [0.0, 1.0])
             ]
         );
 
@@ -149,12 +150,12 @@ class ModelMetadataTest extends TestCase
         $this->assertEquals('Claude 2', $array[ModelMetadata::KEY_NAME]);
         $this->assertEquals(['text_generation', 'chat_history'], $array[ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);
         $this->assertCount(2, $array[ModelMetadata::KEY_SUPPORTED_OPTIONS]);
-        $this->assertEquals('max_tokens', $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_NAME]);
+        $this->assertEquals(OptionEnum::maxTokens()->value, $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_NAME]);
         $this->assertEquals(
             [100, 1000, 10000],
             $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_SUPPORTED_VALUES]
         );
-        $this->assertEquals('temperature', $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][1][SupportedOption::KEY_NAME]);
+        $this->assertEquals(OptionEnum::temperature()->value, $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][1][SupportedOption::KEY_NAME]);
         $this->assertEquals(
             [0.0, 1.0],
             $array[ModelMetadata::KEY_SUPPORTED_OPTIONS][1][SupportedOption::KEY_SUPPORTED_VALUES]
@@ -174,11 +175,11 @@ class ModelMetadataTest extends TestCase
             ModelMetadata::KEY_SUPPORTED_CAPABILITIES => ['text_generation', 'chat_history', 'embedding_generation'],
             ModelMetadata::KEY_SUPPORTED_OPTIONS => [
                 [
-                    SupportedOption::KEY_NAME => 'temperature',
+                    SupportedOption::KEY_NAME => OptionEnum::temperature()->value,
                     SupportedOption::KEY_SUPPORTED_VALUES => [0.1, 0.5, 0.9]
                 ],
                 [
-                    SupportedOption::KEY_NAME => 'top_p',
+                    SupportedOption::KEY_NAME => OptionEnum::topP()->value,
                     SupportedOption::KEY_SUPPORTED_VALUES => [0.5, 0.9, 0.95]
                 ]
             ]
@@ -198,9 +199,9 @@ class ModelMetadataTest extends TestCase
 
         $options = $metadata->getSupportedOptions();
         $this->assertCount(2, $options);
-        $this->assertEquals('temperature', $options[0]->getName());
+        $this->assertEquals(OptionEnum::temperature()->value, $options[0]->getName());
         $this->assertEquals([0.1, 0.5, 0.9], $options[0]->getSupportedValues());
-        $this->assertEquals('top_p', $options[1]->getName());
+        $this->assertEquals(OptionEnum::topP()->value, $options[1]->getName());
         $this->assertEquals([0.5, 0.9, 0.95], $options[1]->getSupportedValues());
     }
 
@@ -220,8 +221,8 @@ class ModelMetadataTest extends TestCase
                 CapabilityEnum::textToSpeechConversion()
             ],
             [
-                new SupportedOption('resolution', ['256x256', '512x512', '1024x1024']),
-                new SupportedOption('voice', ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'])
+                new SupportedOption(OptionEnum::outputSchema(), ['256x256', '512x512', '1024x1024']),
+                new SupportedOption(OptionEnum::outputSchema(), ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'])
             ]
         );
 
@@ -258,7 +259,7 @@ class ModelMetadataTest extends TestCase
             'json-model',
             'JSON Test Model',
             [CapabilityEnum::embeddingGeneration()],
-            [new SupportedOption('dimensions', [256, 512, 1024])]
+            [new SupportedOption(OptionEnum::outputSchema(), [256, 512, 1024])]
         );
 
         $json = json_encode($metadata);
@@ -270,7 +271,7 @@ class ModelMetadataTest extends TestCase
         $this->assertEquals('JSON Test Model', $decoded[ModelMetadata::KEY_NAME]);
         $this->assertEquals(['embedding_generation'], $decoded[ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);
         $this->assertCount(1, $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS]);
-        $this->assertEquals('dimensions', $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_NAME]);
+        $this->assertEquals(OptionEnum::outputSchema()->value, $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_NAME]);
         $this->assertEquals(
             [256, 512, 1024],
             $decoded[ModelMetadata::KEY_SUPPORTED_OPTIONS][0][SupportedOption::KEY_SUPPORTED_VALUES]
@@ -322,13 +323,13 @@ class ModelMetadataTest extends TestCase
     public function testWithComplexSupportedOptions(): void
     {
         $options = [
-            new SupportedOption('string_values', ['option1', 'option2', 'option3']),
-            new SupportedOption('numeric_values', [1, 2, 3, 4, 5]),
-            new SupportedOption('float_values', [0.1, 0.5, 0.9]),
-            new SupportedOption('boolean_values', [true, false]),
-            new SupportedOption('mixed_values', ['text', 123, true, null]),
-            new SupportedOption('nested_arrays', [['a', 'b'], ['c', 'd']]),
-            new SupportedOption('objects', [['key' => 'value'], ['another' => 'object']])
+            new SupportedOption(OptionEnum::outputSchema(), ['option1', 'option2', 'option3']),
+            new SupportedOption(OptionEnum::outputSchema(), [1, 2, 3, 4, 5]),
+            new SupportedOption(OptionEnum::temperature(), [0.1, 0.5, 0.9]),
+            new SupportedOption(OptionEnum::outputSchema(), [true, false]),
+            new SupportedOption(OptionEnum::outputSchema(), ['text', 123, true, null]),
+            new SupportedOption(OptionEnum::outputSchema(), [['a', 'b'], ['c', 'd']]),
+            new SupportedOption(OptionEnum::customOptions(), [['key' => 'value'], ['another' => 'object']])
         ];
 
         $metadata = new ModelMetadata('complex-model', 'Complex Model', [], $options);
@@ -378,7 +379,7 @@ class ModelMetadataTest extends TestCase
             'special-model-123',
             'Model with "quotes" & special <chars>',
             [CapabilityEnum::textGeneration()],
-            [new SupportedOption('option_with_underscore', ['value'])]
+            [new SupportedOption(OptionEnum::outputSchema(), ['value'])]
         );
 
         $array = $metadata->toArray();
@@ -404,8 +405,8 @@ class ModelMetadataTest extends TestCase
                 CapabilityEnum::embeddingGeneration()
             ],
             [
-                new SupportedOption('opt1', [1, 2, 3]),
-                new SupportedOption('opt2', ['a', 'b', 'c'])
+                new SupportedOption(OptionEnum::maxTokens(), [1, 2, 3]),
+                new SupportedOption(OptionEnum::outputSchema(), ['a', 'b', 'c'])
             ]
         );
 

@@ -903,7 +903,7 @@ class PromptBuilderTest extends TestCase
         // Should have input modalities with text
         $inputModalitiesFound = false;
         foreach ($options as $option) {
-            if ($option->getName() === OptionEnum::inputModalities()->value) {
+            if ($option->getName()->equals(OptionEnum::inputModalities())) {
                 $inputModalitiesFound = true;
                 $modalities = $option->getValue();
                 $this->assertCount(1, $modalities);
@@ -963,7 +963,7 @@ class PromptBuilderTest extends TestCase
         // Find input modalities option
         $inputModalities = null;
         foreach ($options as $option) {
-            if ($option->getName() === OptionEnum::inputModalities()->value) {
+            if ($option->getName()->equals(OptionEnum::inputModalities())) {
                 $inputModalities = $option->getValue();
                 break;
             }
@@ -2439,7 +2439,7 @@ class PromptBuilderTest extends TestCase
         // Find input modalities
         $inputModalities = null;
         foreach ($options as $option) {
-            if ($option->getName() === OptionEnum::inputModalities()->value) {
+            if ($option->getName()->equals(OptionEnum::inputModalities())) {
                 $inputModalities = $option->getValue();
                 break;
             }
@@ -2477,15 +2477,15 @@ class PromptBuilderTest extends TestCase
         $options = $requirements->getRequiredOptions();
 
         // Check that config options are included
-        $optionNames = array_map(function ($option) {
+        $optionEnums = array_map(function ($option) {
             return $option->getName();
         }, $options);
 
-        $this->assertContains(OptionEnum::maxTokens()->value, $optionNames);
-        $this->assertContains(OptionEnum::temperature()->value, $optionNames);
-        $this->assertContains(OptionEnum::outputModalities()->value, $optionNames);
-        $this->assertContains(OptionEnum::outputMimeType()->value, $optionNames);
-        $this->assertContains(OptionEnum::outputSchema()->value, $optionNames);
+        $this->assertContains(OptionEnum::maxTokens(), $optionEnums);
+        $this->assertContains(OptionEnum::temperature(), $optionEnums);
+        $this->assertContains(OptionEnum::outputModalities(), $optionEnums);
+        $this->assertContains(OptionEnum::outputMimeType(), $optionEnums);
+        $this->assertContains(OptionEnum::outputSchema(), $optionEnums);
     }
 
     /**
@@ -2718,7 +2718,7 @@ class PromptBuilderTest extends TestCase
             ->willReturnCallback(function ($requirements) {
                 $options = $requirements->getRequiredOptions();
                 foreach ($options as $option) {
-                    if ($option->getName() === OptionEnum::outputModalities()->value) {
+                    if ($option->getName()->equals(OptionEnum::outputModalities())) {
                         $modalities = $option->getValue();
                         foreach ($modalities as $modality) {
                             if ($modality->isImage()) {

@@ -412,7 +412,7 @@ class PromptBuilder
         // Add input modalities if we have non-text inputs
         if (count($inputModalities) > 0) {
             $requiredOptions[] = new RequiredOption(
-                OptionEnum::inputModalities()->value,
+                OptionEnum::inputModalities(),
                 array_values($inputModalities)
             );
         }
@@ -1044,7 +1044,7 @@ class PromptBuilder
                     return $cap->value;
                 }, $requirements->getRequiredCapabilities())) .
                 '. Required options: ' . implode(', ', array_map(function ($opt) {
-                    return $opt->getName() . '=' . json_encode($opt->getValue());
+                    return $opt->getName()->value . '=' . json_encode($opt->getValue());
                 }, $requirements->getRequiredOptions()))
             );
         }

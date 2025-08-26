@@ -12,6 +12,7 @@ use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * @covers \WordPress\AiClient\Providers\DTO\ProviderModelsMetadata
@@ -41,7 +42,7 @@ class ProviderModelsMetadataTest extends TestCase
             $id,
             $name,
             [CapabilityEnum::textGeneration(), CapabilityEnum::chatHistory()],
-            [new SupportedOption('temperature', [0.0, 0.5, 1.0, 1.5, 2.0])]
+            [new SupportedOption(OptionEnum::temperature(), [0.0, 0.5, 1.0, 1.5, 2.0])]
         );
     }
 
@@ -178,7 +179,7 @@ class ProviderModelsMetadataTest extends TestCase
                     ModelMetadata::KEY_SUPPORTED_CAPABILITIES => ['text_generation', 'chat_history'],
                     ModelMetadata::KEY_SUPPORTED_OPTIONS => [
                         [
-                            SupportedOption::KEY_NAME => 'max_tokens',
+                            SupportedOption::KEY_NAME => OptionEnum::maxTokens()->value,
                             SupportedOption::KEY_SUPPORTED_VALUES => [100, 1000, 10000]
                         ]
                     ]
@@ -295,15 +296,15 @@ class ProviderModelsMetadataTest extends TestCase
                     CapabilityEnum::chatHistory()
                 ],
                 [
-                    new SupportedOption('resolution', ['256x256', '512x512', '1024x1024']),
-                    new SupportedOption('style', ['realistic', 'artistic', 'cartoon'])
+                    new SupportedOption(OptionEnum::outputSchema(), ['256x256', '512x512', '1024x1024']),
+                    new SupportedOption(OptionEnum::outputSchema(), ['realistic', 'artistic', 'cartoon'])
                 ]
             ),
             new ModelMetadata(
                 'embedding',
                 'Embedding Model',
                 [CapabilityEnum::embeddingGeneration()],
-                [new SupportedOption('dimensions', [256, 512, 1024])]
+                [new SupportedOption(OptionEnum::outputSchema(), [256, 512, 1024])]
             )
         ];
 
