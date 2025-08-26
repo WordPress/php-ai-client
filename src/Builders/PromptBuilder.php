@@ -335,7 +335,7 @@ class PromptBuilder
      * @param ModalityEnum ...$modalities The output modalities.
      * @return self
      */
-    public function usingOutputModalities(ModalityEnum ...$modalities): self
+    public function asOutputModalities(ModalityEnum ...$modalities): self
     {
         $this->modelConfig->setOutputModalities($modalities);
         return $this;

@@ -819,7 +819,7 @@ class PromptBuilderTest extends TestCase
     public function testUsingOutputModalities(): void
     {
         $builder = new PromptBuilder($this->registry);
-        $result = $builder->usingOutputModalities(
+        $result = $builder->asOutputModalities(
             ModalityEnum::text(),
             ModalityEnum::image()
         );
@@ -1085,7 +1085,7 @@ class PromptBuilderTest extends TestCase
 
         $builder = new PromptBuilder($this->registry, 'Generate an image');
         $builder->usingModel($model);
-        $builder->usingOutputModalities(ModalityEnum::image());
+        $builder->asOutputModalities(ModalityEnum::image());
 
         $actualResult = $builder->generateResult();
         $this->assertSame($result, $actualResult);
@@ -1115,7 +1115,7 @@ class PromptBuilderTest extends TestCase
 
         $builder = new PromptBuilder($this->registry, 'Generate speech');
         $builder->usingModel($model);
-        $builder->usingOutputModalities(ModalityEnum::audio());
+        $builder->asOutputModalities(ModalityEnum::audio());
 
         $actualResult = $builder->generateResult();
         $this->assertSame($result, $actualResult);
@@ -1142,7 +1142,7 @@ class PromptBuilderTest extends TestCase
 
         $builder = new PromptBuilder($this->registry, 'Generate multimodal');
         $builder->usingModel($model);
-        $builder->usingOutputModalities(ModalityEnum::text(), ModalityEnum::image());
+        $builder->asOutputModalities(ModalityEnum::text(), ModalityEnum::image());
 
         $actualResult = $builder->generateResult();
         $this->assertSame($result, $actualResult);
@@ -1188,7 +1188,7 @@ class PromptBuilderTest extends TestCase
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
         $builder->usingModel($model);
-        $builder->usingOutputModalities(ModalityEnum::video());
+        $builder->asOutputModalities(ModalityEnum::video());
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Output modality "video" is not yet supported');
@@ -2052,7 +2052,7 @@ class PromptBuilderTest extends TestCase
         $builder->usingModel($model);
 
         // Set initial modality
-        $builder->usingOutputModalities(ModalityEnum::audio());
+        $builder->asOutputModalities(ModalityEnum::audio());
 
         // Generate text should add text modality, not replace audio
         $builder->generateTextResult();
