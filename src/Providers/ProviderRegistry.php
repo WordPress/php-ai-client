@@ -88,7 +88,12 @@ class ProviderRegistry implements WithHttpTransporterInterface
             $httpTransporter = $this->getHttpTransporter();
             $this->setHttpTransporterForProvider($className, $httpTransporter);
         } catch (RuntimeException $e) {
-            // Ignore.
+            /*
+             * If this fails, it's okay. There is no defined sequence between setting the HTTP transporter in the
+             * registry and registering providers in it, so it might be that the transporter is set later. It will be
+             * hooked up then.
+             * Therefore we can simply ignore this exception.
+             */
         }
 
         // Hook up the request authentication instance, using a default if not set.
