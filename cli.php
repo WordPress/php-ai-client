@@ -14,7 +14,6 @@
 declare(strict_types=1);
 
 use WordPress\AiClient\Builders\PromptBuilder;
-use WordPress\AiClient\Messages\Util\MessageUtil;
 use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
 use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
 use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
