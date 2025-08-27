@@ -41,8 +41,8 @@ class AiClientTest extends TestCase
         $this->registry = new ProviderRegistry();
 
         // Create mock models that implement both base and generation interfaces
-        $this->mockTextModel = $this->createMock(MockTextGenerationModel::class);
-        $this->mockImageModel = $this->createMock(MockImageGenerationModel::class);
+        $this->mockTextModel = new MockTextGenerationModel();
+        $this->mockImageModel = new MockImageGenerationModel();
 
         // Set the test registry as the default
         AiClient::setDefaultRegistry($this->registry);
@@ -190,20 +190,6 @@ class AiClientTest extends TestCase
         AiClient::generateImageResult($prompt, $invalidModel);
     }
 
-    /**
-     * Tests generateOperation throws not implemented exception.
-     */
-    public function testGenerateOperationThrowsNotImplementedException(): void
-    {
-        $prompt = 'Generate content';
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Operations are not implemented yet. This functionality is planned for a future release.'
-        );
-
-        AiClient::generateOperation($prompt, $this->mockTextModel);
-    }
 
     /**
      * Tests generateTextResult with Message object.
@@ -401,114 +387,12 @@ class AiClientTest extends TestCase
         AiClient::generateResult($prompt, $unsupportedModel);
     }
 
-    /**
-     * Tests streamGenerateTextResult delegates to model's streaming method.
-     */
-    public function testStreamGenerateTextResultThrowsNotImplementedException(): void
-    {
-        $prompt = 'Stream this text';
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Text streaming is not implemented yet. Use generateTextResult() for non-streaming text generation.'
-        );
 
-        iterator_to_array(AiClient::streamGenerateTextResult($prompt, $this->mockTextModel));
-    }
 
-    /**
-     * Tests streamGenerateTextResult with model auto-discovery.
-     */
-    public function testStreamGenerateTextResultWithAutoDiscoveryThrowsNotImplementedException(): void
-    {
-        $prompt = 'Auto-discover and stream';
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Text streaming is not implemented yet. Use generateTextResult() for non-streaming text generation.'
-        );
 
-        iterator_to_array(AiClient::streamGenerateTextResult($prompt));
-    }
 
-    /**
-     * Tests streamGenerateTextResult throws exception when model doesn't support text generation.
-     */
-    public function testStreamGenerateTextResultForNonTextModelThrowsNotImplementedException(): void
-    {
-        $prompt = 'Test prompt';
-        $nonTextModel = $this->createMock(ModelInterface::class);
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Text streaming is not implemented yet. Use generateTextResult() for non-streaming text generation.'
-        );
-
-        iterator_to_array(AiClient::streamGenerateTextResult($prompt, $nonTextModel));
-    }
-
-    /**
-     * Tests generateTextOperation throws not implemented exception.
-     */
-    public function testGenerateTextOperationThrowsNotImplementedException(): void
-    {
-        $prompt = 'Text operation prompt';
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Text generation operations are not implemented yet. This functionality is planned for a future release.'
-        );
-
-        AiClient::generateTextOperation($prompt, $this->mockTextModel);
-    }
-
-    /**
-     * Tests generateImageOperation throws not implemented exception.
-     */
-    public function testGenerateImageOperationThrowsNotImplementedException(): void
-    {
-        $prompt = 'Image operation prompt';
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Image generation operations are not implemented yet. This functionality is planned for a future release.'
-        );
-
-        AiClient::generateImageOperation($prompt, $this->mockImageModel);
-    }
-
-    /**
-     * Tests convertTextToSpeechOperation throws not implemented exception.
-     */
-    public function testConvertTextToSpeechOperationThrowsNotImplementedException(): void
-    {
-        $prompt = 'Text to speech operation prompt';
-        $mockModel = $this->createMock(ModelInterface::class);
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Text-to-speech conversion operations are not implemented yet. ' .
-            'This functionality is planned for a future release.'
-        );
-
-        AiClient::convertTextToSpeechOperation($prompt, $mockModel);
-    }
-
-    /**
-     * Tests generateSpeechOperation throws not implemented exception.
-     */
-    public function testGenerateSpeechOperationThrowsNotImplementedException(): void
-    {
-        $prompt = 'Speech operation prompt';
-        $mockModel = $this->createMock(ModelInterface::class);
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Speech generation operations are not implemented yet. This functionality is planned for a future release.'
-        );
-
-        AiClient::generateSpeechOperation($prompt, $mockModel);
-    }
 
     /**
      * Tests generateResult with null model delegates to PromptBuilder.

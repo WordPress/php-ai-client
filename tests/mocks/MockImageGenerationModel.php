@@ -4,12 +4,20 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\mocks;
 
+use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\DTO\ModelMessage;
+use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
+use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Results\DTO\TokenUsage;
+use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
 /**
  * Mock image generation model for testing.
@@ -74,7 +82,30 @@ class MockImageGenerationModel implements ModelInterface, ImageGenerationModelIn
      */
     public function generateImageResult(array $prompt): GenerativeAiResult
     {
-        // Return a mock result
-        throw new \RuntimeException('Mock implementation - should be mocked in tests');
+        $mockImageFile = new File(
+            'data:image/png;base64,' .
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+            'image/png'
+        );
+
+        $candidate = new Candidate(
+            new ModelMessage([new MessagePart($mockImageFile)]),
+            FinishReasonEnum::stop()
+        );
+        $tokenUsage = new TokenUsage(3, 8, 11);
+
+        $providerMetadata = new ProviderMetadata(
+            'mock-image-provider',
+            'Mock Image Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new GenerativeAiResult(
+            'mock-image-result-id',
+            [$candidate],
+            $tokenUsage,
+            $providerMetadata,
+            $this->metadata
+        );
     }
 }

@@ -5,12 +5,19 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\mocks;
 
 use Generator;
+use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\DTO\ModelMessage;
+use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
+use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Results\DTO\TokenUsage;
+use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
 /**
  * Mock text generation model for testing.
@@ -75,8 +82,25 @@ class MockTextGenerationModel implements ModelInterface, TextGenerationModelInte
      */
     public function generateTextResult(array $prompt): GenerativeAiResult
     {
-        // Return a mock result
-        throw new \RuntimeException('Mock implementation - should be mocked in tests');
+        $candidate = new Candidate(
+            new ModelMessage([new MessagePart('Mock text generation result')]),
+            FinishReasonEnum::stop()
+        );
+        $tokenUsage = new TokenUsage(5, 15, 20);
+
+        $providerMetadata = new ProviderMetadata(
+            'mock-text-provider',
+            'Mock Text Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new GenerativeAiResult(
+            'mock-text-result-id',
+            [$candidate],
+            $tokenUsage,
+            $providerMetadata,
+            $this->metadata
+        );
     }
 
     /**
@@ -84,7 +108,7 @@ class MockTextGenerationModel implements ModelInterface, TextGenerationModelInte
      */
     public function streamGenerateTextResult(array $prompt): Generator
     {
-        // Return a mock generator
-        throw new \RuntimeException('Mock implementation - should be mocked in tests');
+        // Return a simple mock generator that yields one result
+        yield $this->generateTextResult($prompt);
     }
 }
