@@ -30,6 +30,35 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
  * Base class for a text generation model for an OpenAI compatible provider.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type ToolCallData array{
+ *     type?: string,
+ *     id?: string,
+ *     function?: array{
+ *         name?: string,
+ *         arguments: string|array<string, mixed>
+ *     }
+ * }
+ * @phpstan-type MessageData array{
+ *     role?: string,
+ *     reasoning_content?: string,
+ *     content?: string,
+ *     tool_calls?: list<ToolCallData>
+ * }
+ * @phpstan-type ChoiceData array{
+ *     message?: MessageData,
+ *     finish_reason?: string
+ * }
+ * @phpstan-type UsageData array{
+ *     prompt_tokens?: int,
+ *     completion_tokens?: int,
+ *     total_tokens?: int
+ * }
+ * @phpstan-type ResponseData array{
+ *     id?: string,
+ *     choices?: list<ChoiceData>,
+ *     usage?: UsageData
+ * }
  */
 abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBasedModel implements
     TextGenerationModelInterface
@@ -520,6 +549,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      */
     protected function parseResponseToGenerativeAiResult(Response $response): GenerativeAiResult
     {
+        /** @var ResponseData $responseData */
         $responseData = $response->getData();
         if (!isset($responseData['choices']) || !$responseData['choices']) {
             throw new RuntimeException(
@@ -540,14 +570,12 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 );
             }
 
-            /** @var array<string, mixed> $choiceData */
             $candidates[] = $this->parseResponseChoiceToCandidate($choiceData);
         }
 
         $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
 
         if (isset($responseData['usage']) && is_array($responseData['usage'])) {
-            /** @var array<string, int> $usage */
             $usage = $responseData['usage'];
 
             $tokenUsage = new TokenUsage(
@@ -578,7 +606,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed> $choiceData The choice data from the API response.
+     * @param ChoiceData $choiceData The choice data from the API response.
      * @return Candidate The parsed candidate.
      * @throws RuntimeException If the choice data is invalid.
      */
@@ -600,7 +628,6 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             );
         }
 
-        /** @var array<string, mixed> $messageData */
         $messageData = $choiceData['message'];
         $message = $this->parseResponseChoiceMessage($messageData);
 
@@ -634,7 +661,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed> $messageData The message data from the API response.
+     * @param MessageData $messageData The message data from the API response.
      * @return Message The parsed message.
      */
     protected function parseResponseChoiceMessage(array $messageData): Message
@@ -653,7 +680,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed> $messageData The message data from the API response.
+     * @param MessageData $messageData The message data from the API response.
      * @return MessagePart[] The parsed message parts.
      */
     protected function parseResponseChoiceMessageParts(array $messageData): array
@@ -670,7 +697,6 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
 
         if (isset($messageData['tool_calls']) && is_array($messageData['tool_calls'])) {
             foreach ($messageData['tool_calls'] as $toolCallData) {
-                /** @var array<string, mixed> $toolCallData */
                 $toolCallPart = $this->parseResponseChoiceMessageToolCallPart($toolCallData);
                 if (!$toolCallPart) {
                     throw new RuntimeException(
@@ -689,7 +715,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed> $toolCallData The tool call data from the API response.
+     * @param ToolCallData $toolCallData The tool call data from the API response.
      * @return MessagePart|null The parsed message part for the tool call, or null if not applicable.
      */
     protected function parseResponseChoiceMessageToolCallPart(array $toolCallData): ?MessagePart
@@ -707,7 +733,6 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             return null;
         }
 
-        /** @var array<string, mixed> $functionArguments */
         $functionArguments = is_string($toolCallData['function']['arguments'])
             ? json_decode($toolCallData['function']['arguments'], true)
             : $toolCallData['function']['arguments'];
