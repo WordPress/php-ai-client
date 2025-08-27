@@ -49,7 +49,7 @@ class AiClient
         if (self::$defaultRegistry === null) {
             $registry = new ProviderRegistry();
 
-            // TODO: Uncomment this once provider implementation PR is merged.
+            // TODO: Uncomment this once provider implementation PR #39 is merged.
             //$registry->setHttpTransporter(HttpTransporterFactory::createTransporter());
             //$registry->registerProvider(AnthropicProvider::class);
             //$registry->registerProvider(GoogleProvider::class);
@@ -164,7 +164,6 @@ class AiClient
         );
     }
 
-
     /**
      * Generates text using the traditional API approach.
      *
@@ -266,8 +265,6 @@ class AiClient
         }
         return $builder->generateSpeechResult();
     }
-
-
 
     /**
      * Creates a generation operation for async processing.

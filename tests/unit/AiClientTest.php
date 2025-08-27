@@ -309,7 +309,6 @@ class AiClientTest extends TestCase
         $this->assertSame($mockResult, $result);
     }
 
-
     /**
      * Tests isConfigured method returns true when provider availability is configured.
      */
@@ -451,7 +450,6 @@ class AiClientTest extends TestCase
 
         AiClient::generateTextOperation($prompt, $this->mockTextModel);
     }
-
 
     /**
      * Tests generateImageOperation throws not implemented exception.
