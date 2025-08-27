@@ -909,7 +909,9 @@ class ModelConfig extends AbstractDataTransferObject
             $data[self::KEY_OUTPUT_MEDIA_ASPECT_RATIO] = $this->outputMediaAspectRatio;
         }
 
-        $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
+        if (!empty($this->customOptions)) {
+            $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
+        }
 
         return $data;
     }
