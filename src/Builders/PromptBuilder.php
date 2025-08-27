@@ -219,10 +219,10 @@ class PromptBuilder
         // Convert both configs to arrays
         $builderConfigArray = $this->modelConfig->toArray();
         $providedConfigArray = $config->toArray();
-        
+
         // Merge arrays with builder config taking precedence
         $mergedArray = array_merge($providedConfigArray, $builderConfigArray);
-        
+
         // Create new config from merged array
         $this->modelConfig = ModelConfig::fromArray($mergedArray);
 

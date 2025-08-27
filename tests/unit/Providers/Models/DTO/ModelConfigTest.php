@@ -340,16 +340,16 @@ class ModelConfigTest extends TestCase
         // Test with empty custom options (default)
         $config = new ModelConfig();
         $config->setTemperature(0.7);
-        
+
         $array = $config->toArray();
         $this->assertArrayNotHasKey(ModelConfig::KEY_CUSTOM_OPTIONS, $array);
-        
+
         // Test with non-empty custom options
         $config->setCustomOption('key1', 'value1');
         $array = $config->toArray();
         $this->assertArrayHasKey(ModelConfig::KEY_CUSTOM_OPTIONS, $array);
         $this->assertEquals(['key1' => 'value1'], $array[ModelConfig::KEY_CUSTOM_OPTIONS]);
-        
+
         // Test with multiple custom options
         $config->setCustomOption('key2', ['nested' => 'value']);
         $array = $config->toArray();
@@ -358,7 +358,7 @@ class ModelConfigTest extends TestCase
             'key1' => 'value1',
             'key2' => ['nested' => 'value']
         ], $array[ModelConfig::KEY_CUSTOM_OPTIONS]);
-        
+
         // Test resetting custom options to empty
         $config->setCustomOptions([]);
         $array = $config->toArray();
