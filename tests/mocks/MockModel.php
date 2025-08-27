@@ -58,8 +58,8 @@ class MockModel implements ModelInterface, WithHttpTransporterInterface, WithReq
      */
     public function providerMetadata(): ProviderMetadata
     {
-        // This mock doesn't need to return actual provider metadata for its tests.
-        return $this->createMock(ProviderMetadata::class);
+        // Return the MockProvider's metadata
+        return MockProvider::metadata();
     }
 
     /**

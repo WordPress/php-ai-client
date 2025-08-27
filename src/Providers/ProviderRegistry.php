@@ -245,9 +245,27 @@ class ProviderRegistry implements WithHttpTransporterInterface
     ): ModelInterface {
         $className = $this->resolveProviderClassName($idOrClassName);
 
-        // Use static method from ProviderInterface
-        /** @var class-string<ProviderInterface> $className */
         $modelInstance = $className::model($modelId, $modelConfig);
+
+        $this->bindModelDependencies($modelInstance);
+
+        return $modelInstance;
+    }
+
+    /**
+     * Binds dependencies to a model instance.
+     *
+     * This method injects required dependencies such as HTTP transporter
+     * and authentication into model instances that need them.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $modelInstance The model instance to bind dependencies to.
+     * @return void
+     */
+    public function bindModelDependencies(ModelInterface $modelInstance): void
+    {
+        $className = $this->resolveProviderClassName($modelInstance->providerMetadata()->getId());
 
         if ($modelInstance instanceof WithHttpTransporterInterface) {
             $modelInstance->setHttpTransporter($this->getHttpTransporter());
@@ -259,8 +277,6 @@ class ProviderRegistry implements WithHttpTransporterInterface
                 $modelInstance->setRequestAuthentication($requestAuthentication);
             }
         }
-
-        return $modelInstance;
     }
 
     /**
