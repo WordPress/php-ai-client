@@ -643,6 +643,99 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests usingModelConfig method.
+     *
+     * @return void
+     */
+    public function testUsingModelConfig(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        // Set some initial config values on the builder
+        $builder->usingSystemInstruction('Builder instruction')
+                ->usingMaxTokens(500)
+                ->usingTemperature(0.5);
+
+        // Create a config to merge
+        $config = new ModelConfig();
+        $config->setSystemInstruction('Config instruction');
+        $config->setMaxTokens(1000);
+        $config->setTopP(0.9);
+        $config->setTopK(40);
+
+        $result = $builder->usingModelConfig($config);
+
+        // Assert fluent interface
+        $this->assertSame($builder, $result);
+
+        // Get the merged config
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+
+        /** @var ModelConfig $mergedConfig */
+        $mergedConfig = $configProperty->getValue($builder);
+
+        // Assert builder values take precedence
+        $this->assertEquals('Builder instruction', $mergedConfig->getSystemInstruction());
+        $this->assertEquals(500, $mergedConfig->getMaxTokens());
+        $this->assertEquals(0.5, $mergedConfig->getTemperature());
+
+        // Assert config values are used when builder doesn't have them
+        $this->assertEquals(0.9, $mergedConfig->getTopP());
+        $this->assertEquals(40, $mergedConfig->getTopK());
+    }
+
+    /**
+     * Tests usingModelConfig with custom options.
+     *
+     * @return void
+     */
+    public function testUsingModelConfigWithCustomOptions(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        // Create a config with custom options
+        $config = new ModelConfig();
+        $config->setCustomOption('stopSequences', ['CONFIG_STOP']);
+        $config->setCustomOption('otherOption', 'value');
+
+        $builder->usingModelConfig($config);
+
+        // Get the merged config
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+
+        /** @var ModelConfig $mergedConfig */
+        $mergedConfig = $configProperty->getValue($builder);
+        $customOptions = $mergedConfig->getCustomOptions();
+
+        // Assert config custom options are preserved
+        $this->assertArrayHasKey('stopSequences', $customOptions);
+        $this->assertIsArray($customOptions['stopSequences']);
+        $this->assertEquals(['CONFIG_STOP'], $customOptions['stopSequences']);
+        $this->assertArrayHasKey('otherOption', $customOptions);
+        $this->assertEquals('value', $customOptions['otherOption']);
+
+        // Now set a builder value that overrides one of the custom options
+        $builder->usingStopSequences('STOP');
+
+        // Get the config again
+        $mergedConfig = $configProperty->getValue($builder);
+        $customOptions = $mergedConfig->getCustomOptions();
+
+        // Assert builder's stop sequences override the config's
+        $this->assertArrayHasKey('stopSequences', $customOptions);
+        $this->assertIsArray($customOptions['stopSequences']);
+        $this->assertEquals(['STOP'], $customOptions['stopSequences']);
+
+        // Assert other custom options are still preserved
+        $this->assertArrayHasKey('otherOption', $customOptions);
+        $this->assertEquals('value', $customOptions['otherOption']);
+    }
+
+    /**
      * Tests usingProvider method.
      *
      * @return void

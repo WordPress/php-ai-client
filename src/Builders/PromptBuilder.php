@@ -204,6 +204,32 @@ class PromptBuilder
     }
 
     /**
+     * Sets the model configuration.
+     *
+     * Merges the provided configuration with the builder's configuration,
+     * with builder configuration taking precedence.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelConfig $config The model configuration to merge.
+     * @return self
+     */
+    public function usingModelConfig(ModelConfig $config): self
+    {
+        // Convert both configs to arrays
+        $builderConfigArray = $this->modelConfig->toArray();
+        $providedConfigArray = $config->toArray();
+
+        // Merge arrays with builder config taking precedence
+        $mergedArray = array_merge($providedConfigArray, $builderConfigArray);
+
+        // Create new config from merged array
+        $this->modelConfig = ModelConfig::fromArray($mergedArray);
+
+        return $this;
+    }
+
+    /**
      * Sets the provider to use for generation.
      *
      * @since n.e.x.t
