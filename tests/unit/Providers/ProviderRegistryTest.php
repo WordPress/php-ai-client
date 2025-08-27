@@ -419,4 +419,142 @@ class ProviderRegistryTest extends TestCase
 
         $this->assertNull($auth);
     }
+
+    /**
+     * Tests bindModelDependencies with HTTP transporter.
+     *
+     * @return void
+     */
+    public function testBindModelDependenciesWithHttpTransporter(): void
+    {
+        // Register provider and set HTTP transporter
+        $this->registry->registerProvider(MockProvider::class);
+        $httpTransporter = new MockHttpTransporter();
+        $this->registry->setHttpTransporter($httpTransporter);
+
+        // Create a mock model
+        $modelMetadata = new ModelMetadata(
+            'test-model',
+            'Test Model',
+            [CapabilityEnum::textGeneration()],
+            []
+        );
+        $modelConfig = new ModelConfig();
+
+        // Create a mock model instance that implements WithHttpTransporterInterface
+        $modelInstance = $this->createMock(MockModel::class);
+        $modelInstance->expects($this->once())
+            ->method('providerMetadata')
+            ->willReturn(MockProvider::metadata());
+
+        $modelInstance->expects($this->once())
+            ->method('setHttpTransporter')
+            ->with($httpTransporter);
+
+        // Call bindModelDependencies
+        $this->registry->bindModelDependencies($modelInstance);
+    }
+
+    /**
+     * Tests bindModelDependencies with request authentication.
+     *
+     * @return void
+     */
+    public function testBindModelDependenciesWithRequestAuthentication(): void
+    {
+        // Register provider and set authentication
+        $this->registry->registerProvider(MockProvider::class);
+        $authentication = new MockRequestAuthentication('test-api-key');
+        $this->registry->setProviderRequestAuthentication('mock', $authentication);
+
+        // Set HTTP transporter (required by registry)
+        $httpTransporter = new MockHttpTransporter();
+        $this->registry->setHttpTransporter($httpTransporter);
+
+        // Create a mock model instance that implements WithRequestAuthenticationInterface
+        $modelInstance = $this->createMock(MockModel::class);
+        $modelInstance->expects($this->once())
+            ->method('providerMetadata')
+            ->willReturn(MockProvider::metadata());
+
+        $modelInstance->expects($this->once())
+            ->method('setHttpTransporter')
+            ->with($httpTransporter);
+
+        $modelInstance->expects($this->once())
+            ->method('setRequestAuthentication')
+            ->with($authentication);
+
+        // Call bindModelDependencies
+        $this->registry->bindModelDependencies($modelInstance);
+    }
+
+    /**
+     * Tests bindModelDependencies with model that doesn't need dependencies.
+     *
+     * @return void
+     */
+    public function testBindModelDependenciesWithSimpleModel(): void
+    {
+        // Register provider
+        $this->registry->registerProvider(MockProvider::class);
+
+        // Create a mock model that doesn't implement dependency interfaces
+        $modelInstance = $this->createMock(\WordPress\AiClient\Providers\Models\Contracts\ModelInterface::class);
+        $modelInstance->expects($this->once())
+            ->method('providerMetadata')
+            ->willReturn(MockProvider::metadata());
+
+        // Call bindModelDependencies - should not throw any errors
+        $this->registry->bindModelDependencies($modelInstance);
+
+        // Test passes if no exceptions are thrown
+        $this->assertTrue(true);
+    }
+
+    /**
+     * Tests bindModelDependencies with unregistered provider.
+     *
+     * @return void
+     */
+    public function testBindModelDependenciesWithUnregisteredProvider(): void
+    {
+        // Create a mock model with a provider that's not registered
+        $providerMetadata = $this->createMock(\WordPress\AiClient\Providers\DTO\ProviderMetadata::class);
+        $providerMetadata->method('getId')->willReturn('unregistered-provider');
+
+        $modelInstance = $this->createMock(\WordPress\AiClient\Providers\Models\Contracts\ModelInterface::class);
+        $modelInstance->expects($this->once())
+            ->method('providerMetadata')
+            ->willReturn($providerMetadata);
+
+        // Expect exception when trying to bind dependencies for unregistered provider
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Provider not registered: unregistered-provider');
+
+        $this->registry->bindModelDependencies($modelInstance);
+    }
+
+    /**
+     * Tests bindModelDependencies without HTTP transporter when model needs it.
+     *
+     * @return void
+     */
+    public function testBindModelDependenciesWithoutHttpTransporter(): void
+    {
+        // Register provider but don't set HTTP transporter
+        $this->registry->registerProvider(MockProvider::class);
+
+        // Create a mock model instance that implements WithHttpTransporterInterface
+        $modelInstance = $this->createMock(MockModel::class);
+        $modelInstance->expects($this->once())
+            ->method('providerMetadata')
+            ->willReturn(MockProvider::metadata());
+
+        // Expect runtime exception when trying to get HTTP transporter that isn't set
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('HttpTransporterInterface instance not set');
+
+        $this->registry->bindModelDependencies($modelInstance);
+    }
 }

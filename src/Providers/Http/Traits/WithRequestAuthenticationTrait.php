@@ -20,7 +20,9 @@ trait WithRequestAuthenticationTrait
     private ?RequestAuthenticationInterface $requestAuthentication = null;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function setRequestAuthentication(RequestAuthenticationInterface $requestAuthentication): void
     {
@@ -28,7 +30,9 @@ trait WithRequestAuthenticationTrait
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {

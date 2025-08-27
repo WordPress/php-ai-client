@@ -44,7 +44,7 @@ class AbstractApiBasedModelTest extends TestCase
         $this->assertSame($this->modelMetadata, $model->metadata());
         $this->assertSame($this->providerMetadata, $model->providerMetadata());
         $this->assertInstanceOf(ModelConfig::class, $model->getConfig());
-        $this->assertEquals(['customOptions' => []], $model->getConfig()->toArray());
+        $this->assertEquals([], $model->getConfig()->toArray());
     }
 
     /**
@@ -84,6 +84,6 @@ class AbstractApiBasedModelTest extends TestCase
 
         $this->assertSame($newConfig, $model->getConfig());
         $this->assertNotSame($initialConfig, $model->getConfig());
-        $this->assertEquals(['temperature' => 0.7, 'customOptions' => []], $model->getConfig()->toArray());
+        $this->assertEquals(['temperature' => 0.7], $model->getConfig()->toArray());
     }
 }

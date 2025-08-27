@@ -43,7 +43,9 @@ class GenerateTextApiBasedProviderAvailability implements ProviderAvailabilityIn
     }
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function isConfigured(): bool
     {

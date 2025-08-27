@@ -24,7 +24,9 @@ class MockHttpTransporter implements HttpTransporterInterface
     private ?Response $responseToReturn = null;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function send(Request $request): Response
     {

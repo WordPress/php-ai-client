@@ -31,7 +31,9 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     private ?array $modelMetadataMap = null;
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public function listModelMetadata(): array
     {
@@ -40,20 +42,20 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     }
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public function hasModelMetadata(string $modelId): bool
     {
-        try {
-            $this->getModelMetadata($modelId);
-        } catch (InvalidArgumentException $e) {
-            return false;
-        }
-        return true;
+        $modelsMetadata = $this->getModelMetadataMap();
+        return isset($modelsMetadata[$modelId]);
     }
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public function getModelMetadata(string $modelId): ModelMetadata
     {

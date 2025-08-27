@@ -18,7 +18,9 @@ use WordPress\AiClient\Providers\Http\DTO\Request;
 class GoogleApiKeyRequestAuthentication extends ApiKeyRequestAuthentication
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function authenticateRequest(Request $request): Request
     {

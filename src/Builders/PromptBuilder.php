@@ -75,13 +75,12 @@ class PromptBuilder
      *
      * @param ProviderRegistry $registry The provider registry for finding suitable models.
      * @param Prompt $prompt Optional initial prompt content.
-     * @param ModelConfig|null $modelConfig Optional initial model configuration.
      */
     // phpcs:enable Generic.Files.LineLength.TooLong
-    public function __construct(ProviderRegistry $registry, $prompt = null, ?ModelConfig $modelConfig = null)
+    public function __construct(ProviderRegistry $registry, $prompt = null)
     {
         $this->registry = $registry;
-        $this->modelConfig = $modelConfig ?? new ModelConfig();
+        $this->modelConfig = new ModelConfig();
 
         if ($prompt === null) {
             return;
@@ -192,6 +191,9 @@ class PromptBuilder
     /**
      * Sets the model to use for generation.
      *
+     * The model's configuration will be merged with the builder's configuration,
+     * with the builder's configuration taking precedence for any overlapping settings.
+     *
      * @since n.e.x.t
      *
      * @param ModelInterface $model The model to use.
@@ -200,6 +202,40 @@ class PromptBuilder
     public function usingModel(ModelInterface $model): self
     {
         $this->model = $model;
+
+        // Merge model's config with builder's config, with builder's config taking precedence
+        $modelConfigArray = $model->getConfig()->toArray();
+        $builderConfigArray = $this->modelConfig->toArray();
+        $mergedConfigArray = array_merge($modelConfigArray, $builderConfigArray);
+
+        $this->modelConfig = ModelConfig::fromArray($mergedConfigArray);
+
+        return $this;
+    }
+
+    /**
+     * Sets the model configuration.
+     *
+     * Merges the provided configuration with the builder's configuration,
+     * with builder configuration taking precedence.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelConfig $config The model configuration to merge.
+     * @return self
+     */
+    public function usingModelConfig(ModelConfig $config): self
+    {
+        // Convert both configs to arrays
+        $builderConfigArray = $this->modelConfig->toArray();
+        $providedConfigArray = $config->toArray();
+
+        // Merge arrays with builder config taking precedence
+        $mergedArray = array_merge($providedConfigArray, $builderConfigArray);
+
+        // Create new config from merged array
+        $this->modelConfig = ModelConfig::fromArray($mergedArray);
+
         return $this;
     }
 

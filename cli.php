@@ -14,7 +14,6 @@
 declare(strict_types=1);
 
 use WordPress\AiClient\Builders\PromptBuilder;
-use WordPress\AiClient\Messages\Util\MessageUtil;
 use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
 use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
 use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
@@ -161,7 +160,8 @@ $providerRegistry->registerProvider(OpenAiProvider::class);
 try {
     $modelConfig = ModelConfig::fromArray($model_config_data);
 
-    $promptBuilder = new PromptBuilder($providerRegistry, $promptInput, $modelConfig);
+    $promptBuilder = new PromptBuilder($providerRegistry, $promptInput);
+    $promptBuilder = $promptBuilder->usingModelConfig($modelConfig);
     if ($providerId && $modelId) {
         $providerClassName = $providerRegistry->getProviderClassName($providerId);
         $promptBuilder = $promptBuilder->usingModel($providerClassName::model($modelId));

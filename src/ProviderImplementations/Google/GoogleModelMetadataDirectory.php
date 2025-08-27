@@ -23,11 +23,22 @@ use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCo
  * Class for the Google model metadata directory.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type ModelsResponseData array{
+ *     models: list<array{
+ *         baseModelId?: string,
+ *         name: string,
+ *         supportedGenerationMethods?: list<string>,
+ *         displayName?: string
+ *     }>
+ * }
  */
 class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadataDirectory
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {
@@ -43,7 +54,9 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
     {
@@ -65,10 +78,13 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function parseResponseToModelMetadataList(Response $response): array
     {
+        /** @var ModelsResponseData $responseData */
         $responseData = $response->getData();
         if (!isset($responseData['models']) || !$responseData['models']) {
             throw new RuntimeException(
@@ -151,7 +167,6 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(OptionEnum::customOptions()),
         ];
 
-        /** @var array<string, array<string, mixed>> $modelsData */
         $modelsData = (array) $responseData['models'];
 
         return array_values(
@@ -165,7 +180,6 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     $imagenCapabilities,
                     $imagenOptions,
                 ): ModelMetadata {
-                    /** @var string $modelId */
                     $modelId = $modelData['baseModelId'] ?? $modelData['name'];
                     if (str_starts_with($modelId, 'models/')) {
                         $modelId = substr($modelId, 7);
@@ -210,7 +224,6 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                         $modelOptions = [];
                     }
 
-                    /** @var string $modelName */
                     $modelName = $modelData['displayName'] ?? $modelId;
 
                     return new ModelMetadata(

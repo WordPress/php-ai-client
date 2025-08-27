@@ -20,7 +20,9 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractApiBasedModelMetadataDirectory
 {
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function sendListModelsRequest(): array
     {
@@ -69,6 +71,10 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
      */
     protected function throwIfNotSuccessful(Response $response): void
     {
+        /*
+         * While this method only calls the utility method, it's important to have it here as a protected method so
+         * that child classes can override it if needed.
+         */
         ResponseUtil::throwIfNotSuccessful($response);
     }
 

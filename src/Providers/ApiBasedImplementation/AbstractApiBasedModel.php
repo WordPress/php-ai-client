@@ -60,7 +60,9 @@ abstract class AbstractApiBasedModel implements
     }
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public function metadata(): ModelMetadata
     {
@@ -68,7 +70,9 @@ abstract class AbstractApiBasedModel implements
     }
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public function providerMetadata(): ProviderMetadata
     {
@@ -76,7 +80,9 @@ abstract class AbstractApiBasedModel implements
     }
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public function setConfig(ModelConfig $config): void
     {
@@ -84,7 +90,9 @@ abstract class AbstractApiBasedModel implements
     }
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public function getConfig(): ModelConfig
     {

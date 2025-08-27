@@ -17,7 +17,9 @@ class AnthropicApiKeyRequestAuthentication extends ApiKeyRequestAuthentication
     public const ANTHROPIC_API_VERSION = '2023-06-01';
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function authenticateRequest(Request $request): Request
     {

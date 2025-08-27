@@ -21,11 +21,17 @@ use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCo
  * Class for the OpenAI model metadata directory.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type ModelsResponseData array{
+ *     data: list<array{id: string}>
+ * }
  */
 class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadataDirectory
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
     {
@@ -38,10 +44,13 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function parseResponseToModelMetadataList(Response $response): array
     {
+        /** @var ModelsResponseData $responseData */
         $responseData = $response->getData();
         if (!isset($responseData['data']) || !$responseData['data']) {
             throw new RuntimeException(
@@ -144,7 +153,6 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(OptionEnum::customOptions()),
         ];
 
-        /** @var array<string, array<string, mixed>> $modelsData */
         $modelsData = (array) $responseData['data'];
 
         return array_values(
@@ -160,7 +168,6 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     $ttsCapabilities,
                     $ttsOptions,
                 ): ModelMetadata {
-                    /** @var string $modelId */
                     $modelId = $modelData['id'];
                     if (
                         str_starts_with($modelId, 'dall-e-') ||

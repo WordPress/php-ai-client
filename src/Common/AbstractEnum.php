@@ -400,7 +400,7 @@ abstract class AbstractEnum implements JsonSerializable
      *
      * @since n.e.x.t
      *
-     * @return mixed The JSON-serializable representation.
+     * @return string The enum value.
      */
     #[\ReturnTypeWillChange]
     public function jsonSerialize()

@@ -88,7 +88,12 @@ class ProviderRegistry implements WithHttpTransporterInterface
             $httpTransporter = $this->getHttpTransporter();
             $this->setHttpTransporterForProvider($className, $httpTransporter);
         } catch (RuntimeException $e) {
-            // Ignore.
+            /*
+             * If this fails, it's okay. There is no defined sequence between setting the HTTP transporter in the
+             * registry and registering providers in it, so it might be that the transporter is set later. It will be
+             * hooked up then.
+             * Therefore we can simply ignore this exception.
+             */
         }
 
         // Hook up the request authentication instance, using a default if not set.
@@ -245,9 +250,27 @@ class ProviderRegistry implements WithHttpTransporterInterface
     ): ModelInterface {
         $className = $this->resolveProviderClassName($idOrClassName);
 
-        // Use static method from ProviderInterface
-        /** @var class-string<ProviderInterface> $className */
         $modelInstance = $className::model($modelId, $modelConfig);
+
+        $this->bindModelDependencies($modelInstance);
+
+        return $modelInstance;
+    }
+
+    /**
+     * Binds dependencies to a model instance.
+     *
+     * This method injects required dependencies such as HTTP transporter
+     * and authentication into model instances that need them.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $modelInstance The model instance to bind dependencies to.
+     * @return void
+     */
+    public function bindModelDependencies(ModelInterface $modelInstance): void
+    {
+        $className = $this->resolveProviderClassName($modelInstance->providerMetadata()->getId());
 
         if ($modelInstance instanceof WithHttpTransporterInterface) {
             $modelInstance->setHttpTransporter($this->getHttpTransporter());
@@ -259,8 +282,6 @@ class ProviderRegistry implements WithHttpTransporterInterface
                 $modelInstance->setRequestAuthentication($requestAuthentication);
             }
         }
-
-        return $modelInstance;
     }
 
     /**
@@ -286,7 +307,9 @@ class ProviderRegistry implements WithHttpTransporterInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function setHttpTransporter(HttpTransporterInterface $httpTransporter): void
     {

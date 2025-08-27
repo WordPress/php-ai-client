@@ -955,7 +955,9 @@ class ModelConfig extends AbstractDataTransferObject
             $data[self::KEY_OUTPUT_SPEECH_VOICE] = $this->outputSpeechVoice;
         }
 
-        $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
+        if (!empty($this->customOptions)) {
+            $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
+        }
 
         return $data;
     }

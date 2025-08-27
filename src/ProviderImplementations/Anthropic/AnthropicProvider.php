@@ -24,7 +24,9 @@ class AnthropicProvider extends AbstractProvider
     public const BASE_URI = 'https://api.anthropic.com/v1';
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createModel(
         ModelMetadata $modelMetadata,
@@ -43,7 +45,9 @@ class AnthropicProvider extends AbstractProvider
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createProviderMetadata(): ProviderMetadata
     {
@@ -55,7 +59,9 @@ class AnthropicProvider extends AbstractProvider
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createProviderAvailability(): ProviderAvailabilityInterface
     {
@@ -66,7 +72,9 @@ class AnthropicProvider extends AbstractProvider
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createModelMetadataDirectory(): ModelMetadataDirectoryInterface
     {

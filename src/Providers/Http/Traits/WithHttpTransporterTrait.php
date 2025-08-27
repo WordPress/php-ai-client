@@ -20,7 +20,9 @@ trait WithHttpTransporterTrait
     private ?HttpTransporterInterface $httpTransporter = null;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function setHttpTransporter(HttpTransporterInterface $httpTransporter): void
     {
@@ -28,7 +30,9 @@ trait WithHttpTransporterTrait
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function getHttpTransporter(): HttpTransporterInterface
     {

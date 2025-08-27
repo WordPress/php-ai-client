@@ -21,11 +21,17 @@ use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCo
  * Class for the Anthropic model metadata directory.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type ModelsResponseData array{
+ *     data: list<array{id: string, display_name?: string}>
+ * }
  */
 class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadataDirectory
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {
@@ -41,7 +47,9 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
     {
@@ -54,10 +62,13 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function parseResponseToModelMetadataList(Response $response): array
     {
+        /** @var ModelsResponseData $responseData */
         $responseData = $response->getData();
         if (!isset($responseData['data']) || !$responseData['data']) {
             throw new RuntimeException(
@@ -98,7 +109,6 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
             new SupportedOption(OptionEnum::webSearch()),
         ]);
 
-        /** @var array<string, array<string, mixed>> $modelsData */
         $modelsData = (array) $responseData['data'];
 
         return array_values(
@@ -108,7 +118,6 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
                     $anthropicOptions,
                     $anthropicWebSearchOptions,
                 ): ModelMetadata {
-                    /** @var string $modelId */
                     $modelId = $modelData['id'];
                     $modelCaps = $anthropicCapabilities;
                     if (!preg_match('/^claude-3-[a-z]+/', $modelId)) {
@@ -118,7 +127,6 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
                         $modelOptions = $anthropicOptions;
                     }
 
-                    /** @var string $modelName */
                     $modelName = $modelData['display_name'] ?? $modelId;
 
                     return new ModelMetadata(

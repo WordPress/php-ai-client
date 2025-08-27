@@ -35,7 +35,9 @@ abstract class AbstractProvider implements ProviderInterface
     private static array $modelMetadataDirectoryCache = [];
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public static function metadata(): ProviderMetadata
     {
@@ -47,7 +49,9 @@ abstract class AbstractProvider implements ProviderInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public static function model(string $modelId, ?ModelConfig $modelConfig = null): ModelInterface
     {
@@ -62,7 +66,9 @@ abstract class AbstractProvider implements ProviderInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public static function availability(): ProviderAvailabilityInterface
     {
@@ -74,7 +80,9 @@ abstract class AbstractProvider implements ProviderInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public static function modelMetadataDirectory(): ModelMetadataDirectoryInterface
     {

@@ -40,7 +40,9 @@ class ApiKeyRequestAuthentication extends AbstractDataTransferObject implements 
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function authenticateRequest(Request $request): Request
     {
@@ -61,7 +63,9 @@ class ApiKeyRequestAuthentication extends AbstractDataTransferObject implements 
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      *
      * @since n.e.x.t
      *
@@ -75,7 +79,9 @@ class ApiKeyRequestAuthentication extends AbstractDataTransferObject implements 
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      *
      * @since n.e.x.t
      */
@@ -87,7 +93,9 @@ class ApiKeyRequestAuthentication extends AbstractDataTransferObject implements 
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public static function getJsonSchema(): array
     {
