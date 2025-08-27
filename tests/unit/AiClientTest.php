@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
@@ -126,7 +127,8 @@ class AiClientTest extends TestCase
             ->with($this->callback(function ($messages) {
                 return is_array($messages) &&
                     count($messages) === 1 &&
-                    $messages[0] instanceof UserMessage;
+                    $messages[0] instanceof Message &&
+                    $messages[0]->getRole()->isUser();
             }))
             ->willReturn($mockResult);
 
@@ -143,8 +145,8 @@ class AiClientTest extends TestCase
         $prompt = 'Generate text';
         $invalidModel = $this->createMock(ModelInterface::class);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model must implement TextGenerationModelInterface for text generation');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Model "" does not support text generation.');
 
         AiClient::generateTextResult($prompt, $invalidModel);
     }
@@ -163,7 +165,8 @@ class AiClientTest extends TestCase
             ->with($this->callback(function ($messages) {
                 return is_array($messages) &&
                     count($messages) === 1 &&
-                    $messages[0] instanceof UserMessage;
+                    $messages[0] instanceof Message &&
+                    $messages[0]->getRole()->isUser();
             }))
             ->willReturn($mockResult);
 
@@ -180,8 +183,8 @@ class AiClientTest extends TestCase
         $prompt = 'Generate image';
         $invalidModel = $this->createMock(ModelInterface::class);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model must implement ImageGenerationModelInterface for image generation');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Model "" does not support image generation.');
 
         AiClient::generateImageResult($prompt, $invalidModel);
     }
@@ -239,7 +242,8 @@ class AiClientTest extends TestCase
             ->with($this->callback(function ($messages) {
                 return is_array($messages) &&
                     count($messages) === 1 &&
-                    $messages[0] instanceof UserMessage;
+                    $messages[0] instanceof Message &&
+                    $messages[0]->getRole()->isUser();
             }))
             ->willReturn($mockResult);
 
@@ -294,7 +298,8 @@ class AiClientTest extends TestCase
             ->with($this->callback(function ($messages) {
                 return is_array($messages) &&
                     count($messages) === 1 &&
-                    $messages[0] instanceof UserMessage &&
+                    $messages[0] instanceof Message &&
+                    $messages[0]->getRole()->isUser() &&
                     count($messages[0]->getParts()) === 2;
             }))
             ->willReturn($mockResult);

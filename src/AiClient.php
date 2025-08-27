@@ -6,8 +6,6 @@ namespace WordPress\AiClient;
 
 use Generator;
 use WordPress\AiClient\Builders\PromptBuilder;
-use WordPress\AiClient\Messages\DTO\Message;
-use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
@@ -17,8 +15,6 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
-use WordPress\AiClient\Utils\Models;
-use WordPress\AiClient\Utils\PromptNormalizer;
 
 /**
  * Main AI Client class providing both fluent and traditional APIs for AI operations.
@@ -30,7 +26,6 @@ use WordPress\AiClient\Utils\PromptNormalizer;
  *
  * @since n.e.x.t
  *
- * @phpstan-import-type MessageArrayShape from Message
  * @phpstan-import-type Prompt from PromptBuilder
  *
  * phpcs:ignore Generic.Files.LineLength.TooLong
@@ -101,11 +96,9 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt Optional initial prompt content.
-     * @return object PromptBuilder instance (type will be updated when PromptBuilder is available).
-     *
-     * @throws \RuntimeException Until PromptBuilder integration is complete.
+     * @return PromptBuilder The prompt builder instance.
      */
-    public static function prompt($prompt = null)
+    public static function prompt($prompt = null): PromptBuilder
     {
         return new PromptBuilder(self::defaultRegistry(), $prompt);
     }
@@ -114,7 +107,7 @@ class AiClient
      * Generates content using a unified API that automatically detects model capabilities.
      *
      * This method uses simple type checking to route to the appropriate generation method.
-     * In the future, this will be refactored to delegate to PromptBuilder when PR #49 is merged.
+     * Traditional API methods now properly delegate to PromptBuilder for consistent behavior.
      *
      * @since n.e.x.t
      *
@@ -171,60 +164,6 @@ class AiClient
         );
     }
 
-    /**
-     * Template method for executing generation operations.
-     *
-     * NOTE: This method currently uses PromptNormalizer directly, but will be refactored
-     * to delegate to PromptBuilder once PR #49 is merged, following the architectural
-     * pattern where traditional API methods wrap the fluent builder API.
-     *
-     * @since n.e.x.t
-     *
-     * @param Prompt $prompt The prompt content.
-     * @param ModelInterface|null $model Optional specific model to use.
-     * @param string $type The generation type.
-     * @return GenerativeAiResult The generation result.
-     *
-     * @throws \InvalidArgumentException If the prompt format is invalid.
-     * @throws \RuntimeException If no suitable model is found.
-     */
-    private static function executeGeneration($prompt, ?ModelInterface $model, string $type): GenerativeAiResult
-    {
-        // TODO: Replace with PromptBuilder delegation once PR #49 is merged
-        // This should become: return self::prompt($prompt)->usingModel($model)->generate();
-
-        // Check if it's already a list of Messages
-        if (PromptNormalizer::isMessagesList($prompt)) {
-            $messages = $prompt;
-        } else {
-            // Otherwise normalize to a single Message and wrap in array
-            // PHPStan needs help narrowing the type after isMessagesList() check
-            /** @var string|MessagePart|Message|MessageArrayShape|list<string|MessagePart> $prompt */
-            $message = PromptNormalizer::normalize($prompt);
-            $messages = [$message];
-        }
-
-        // Map type to specific methods
-        switch ($type) {
-            case 'text':
-                $resolvedModel = $model ?? Models::findTextModel(self::defaultRegistry());
-                Models::validateTextGeneration($resolvedModel);
-                return $resolvedModel->generateTextResult($messages);
-
-            case 'image':
-                $resolvedModel = $model ?? Models::findImageModel(self::defaultRegistry());
-                Models::validateImageGeneration($resolvedModel);
-                return $resolvedModel->generateImageResult($messages);
-
-            case 'speech':
-                $resolvedModel = $model ?? Models::findSpeechModel(self::defaultRegistry());
-                Models::validateSpeechGeneration($resolvedModel);
-                return $resolvedModel->generateSpeechResult($messages);
-
-            default:
-                throw new \InvalidArgumentException("Unsupported generation type: {$type}");
-        }
-    }
 
     /**
      * Generates text using the traditional API approach.
@@ -240,7 +179,11 @@ class AiClient
      */
     public static function generateTextResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
     {
-        return self::executeGeneration($prompt, $model, 'text');
+        $builder = self::prompt($prompt);
+        if ($model !== null) {
+            $builder->usingModel($model);
+        }
+        return $builder->generateTextResult();
     }
 
     /**
@@ -275,7 +218,11 @@ class AiClient
      */
     public static function generateImageResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
     {
-        return self::executeGeneration($prompt, $model, 'image');
+        $builder = self::prompt($prompt);
+        if ($model !== null) {
+            $builder->usingModel($model);
+        }
+        return $builder->generateImageResult();
     }
 
     /**
@@ -292,27 +239,11 @@ class AiClient
      */
     public static function convertTextToSpeechResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
     {
-        // TODO: Replace with PromptBuilder delegation once PR #49 is merged
-
-        // Check if it's already a list of Messages
-        if (PromptNormalizer::isMessagesList($prompt)) {
-            $messages = $prompt;
-        } else {
-            // Otherwise normalize to a single Message and wrap in array
-            // PHPStan needs help narrowing the type after isMessagesList() check
-            /** @var string|MessagePart|Message|MessageArrayShape|list<string|MessagePart> $prompt */
-            $message = PromptNormalizer::normalize($prompt);
-            $messages = [$message];
+        $builder = self::prompt($prompt);
+        if ($model !== null) {
+            $builder->usingModel($model);
         }
-
-        // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? Models::findTextToSpeechModel(self::defaultRegistry());
-
-        // Validate model supports text-to-speech conversion
-        Models::validateTextToSpeechConversion($resolvedModel);
-
-        // Generate the result using the model
-        return $resolvedModel->convertTextToSpeechResult($messages);
+        return $builder->convertTextToSpeechResult();
     }
 
     /**
@@ -329,7 +260,11 @@ class AiClient
      */
     public static function generateSpeechResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
     {
-        return self::executeGeneration($prompt, $model, 'speech');
+        $builder = self::prompt($prompt);
+        if ($model !== null) {
+            $builder->usingModel($model);
+        }
+        return $builder->generateSpeechResult();
     }
 
 
