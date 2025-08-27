@@ -159,7 +159,8 @@ $providerRegistry->registerProvider(OpenAiProvider::class);
 try {
     $modelConfig = ModelConfig::fromArray($model_config_data);
 
-    $promptBuilder = new PromptBuilder($providerRegistry, $promptInput, $modelConfig);
+    $promptBuilder = new PromptBuilder($providerRegistry, $promptInput);
+    $promptBuilder = $promptBuilder->usingModelConfig($modelConfig);
     if ($providerId && $modelId) {
         $providerClassName = $providerRegistry->getProviderClassName($providerId);
         $promptBuilder = $promptBuilder->usingModel($providerClassName::model($modelId));
