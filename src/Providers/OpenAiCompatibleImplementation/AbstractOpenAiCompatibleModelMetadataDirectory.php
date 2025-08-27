@@ -20,7 +20,9 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractApiBasedModelMetadataDirectory
 {
     /**
-     * @inheritdoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function sendListModelsRequest(): array
     {
