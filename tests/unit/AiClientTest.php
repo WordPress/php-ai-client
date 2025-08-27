@@ -12,7 +12,10 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
+use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
+use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -54,7 +57,25 @@ class AiClientTest extends TestCase
         );
         $tokenUsage = new TokenUsage(10, 20, 30);
 
-        return new GenerativeAiResult('test-result-id', [$candidate], $tokenUsage);
+        $providerMetadata = new ProviderMetadata(
+            'mock-provider',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+        $modelMetadata = new ModelMetadata(
+            'mock-model',
+            'Mock Model',
+            [],
+            []
+        );
+
+        return new GenerativeAiResult(
+            'test-result-id',
+            [$candidate],
+            $tokenUsage,
+            $providerMetadata,
+            $modelMetadata
+        );
     }
 
     protected function tearDown(): void
@@ -75,20 +96,6 @@ class AiClientTest extends TestCase
         AiClient::setDefaultRegistry($newRegistry);
 
         $this->assertSame($newRegistry, AiClient::defaultRegistry());
-    }
-
-    /**
-     * Tests prompt method throws exception when PromptBuilder is not available.
-     */
-    public function testPromptThrowsException(): void
-    {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'PromptBuilder integration pending. This method will return an actual PromptBuilder ' .
-            'instance once PR #49 is merged, enabling the fluent API pattern.'
-        );
-
-        AiClient::prompt('Test prompt');
     }
 
     /**

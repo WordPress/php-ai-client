@@ -9,9 +9,6 @@ use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
-use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
-use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
-use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
@@ -34,9 +31,9 @@ use WordPress\AiClient\Utils\PromptNormalizer;
  * @since n.e.x.t
  *
  * @phpstan-import-type MessageArrayShape from Message
+ * @phpstan-import-type Prompt from PromptBuilder
  *
  * phpcs:ignore Generic.Files.LineLength.TooLong
- * @phpstan-type Prompt string|MessagePart|Message|MessageArrayShape|list<string|MessagePart|MessageArrayShape>|list<Message>
  */
 class AiClient
 {
@@ -56,10 +53,12 @@ class AiClient
     {
         if (self::$defaultRegistry === null) {
             $registry = new ProviderRegistry();
-            $registry->setHttpTransporter( HttpTransporterFactory::createTransporter() );
-			$registry->registerProvider( AnthropicProvider::class );
-			$registry->registerProvider( GoogleProvider::class );
-			$registry->registerProvider( OpenAiProvider::class );
+
+            // TODO: Uncomment this once provider implementation PR is merged.
+            //$registry->setHttpTransporter(HttpTransporterFactory::createTransporter());
+            //$registry->registerProvider(AnthropicProvider::class);
+            //$registry->registerProvider(GoogleProvider::class);
+            //$registry->registerProvider(OpenAiProvider::class);
 
             self::$defaultRegistry = $registry;
         }
@@ -101,15 +100,14 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|MessageArrayShape|list<string|MessagePart|MessagePartArrayShape>|list<Message>|null $prompt
-     *     Optional initial prompt content.
+     * @param Prompt $prompt Optional initial prompt content.
      * @return object PromptBuilder instance (type will be updated when PromptBuilder is available).
      *
      * @throws \RuntimeException Until PromptBuilder integration is complete.
      */
     public static function prompt($prompt = null)
     {
-        return new PromptBuilder(self::$defaultRegistry, $prompt);
+        return new PromptBuilder(self::defaultRegistry(), $prompt);
     }
 
     /**

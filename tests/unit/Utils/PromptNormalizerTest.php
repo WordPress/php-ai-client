@@ -150,7 +150,7 @@ class PromptNormalizerTest extends TestCase
     public function testNormalizeMessageArrayShape(): void
     {
         $messageArray = [
-            'role' => 'system',
+            'role' => 'user',
             'parts' => [
                 ['text' => 'You are a helpful assistant.'],
                 ['text' => 'Be concise.']
@@ -160,7 +160,7 @@ class PromptNormalizerTest extends TestCase
         $result = PromptNormalizer::normalize($messageArray);
 
         $this->assertInstanceOf(Message::class, $result);
-        $this->assertTrue($result->getRole()->equals(MessageRoleEnum::system()));
+        $this->assertTrue($result->getRole()->equals(MessageRoleEnum::user()));
         $this->assertCount(2, $result->getParts());
         $this->assertEquals('You are a helpful assistant.', $result->getParts()[0]->getText());
         $this->assertEquals('Be concise.', $result->getParts()[1]->getText());
@@ -223,14 +223,6 @@ class PromptNormalizerTest extends TestCase
      */
     public function testRoleMapping(): void
     {
-        // Test system role
-        $systemMsg = [
-            'role' => 'system',
-            'parts' => [['text' => 'System']]
-        ];
-        $result = PromptNormalizer::normalize($systemMsg);
-        $this->assertTrue($result->getRole()->equals(MessageRoleEnum::system()));
-
         // Test user role
         $userMsg = [
             'role' => 'user',

@@ -74,8 +74,7 @@ class PromptBuilder
      * @since n.e.x.t
      *
      * @param ProviderRegistry $registry The provider registry for finding suitable models.
-     * @param Prompt $prompt
-     *     Optional initial prompt content.
+     * @param Prompt $prompt Optional initial prompt content.
      */
     // phpcs:enable Generic.Files.LineLength.TooLong
     public function __construct(ProviderRegistry $registry, $prompt = null)
