@@ -15,9 +15,7 @@ use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
-use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
-use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
@@ -25,6 +23,7 @@ use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToS
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
+use WordPress\AiClient\Utils\RequirementsUtil;
 
 /**
  * Fluent builder for constructing AI prompts.
@@ -387,68 +386,7 @@ class PromptBuilder
      */
     private function getModelRequirements(CapabilityEnum $capability): ModelRequirements
     {
-        $capabilities = [$capability];
-        $inputModalities = [];
-
-        // Check if we have chat history (multiple messages)
-        if (count($this->messages) > 1) {
-            $capabilities[] = CapabilityEnum::chatHistory();
-        }
-
-        // Analyze all messages to determine required input modalities
-        $hasFunctionMessageParts = false;
-        foreach ($this->messages as $message) {
-            foreach ($message->getParts() as $part) {
-                // Check for text input
-                if ($part->getType()->isText()) {
-                    $inputModalities[] = ModalityEnum::text();
-                }
-
-                // Check for file inputs
-                if ($part->getType()->isFile()) {
-                    $file = $part->getFile();
-
-                    if ($file !== null) {
-                        if ($file->isImage()) {
-                            $inputModalities[] = ModalityEnum::image();
-                        } elseif ($file->isAudio()) {
-                            $inputModalities[] = ModalityEnum::audio();
-                        } elseif ($file->isVideo()) {
-                            $inputModalities[] = ModalityEnum::video();
-                        } elseif ($file->isDocument() || $file->isText()) {
-                            $inputModalities[] = ModalityEnum::document();
-                        }
-                    }
-                }
-
-                // Check for function calls/responses (these might require special capabilities)
-                if ($part->getType()->isFunctionCall() || $part->getType()->isFunctionResponse()) {
-                    $hasFunctionMessageParts = true;
-                }
-            }
-        }
-
-        // Build required options from ModelConfig
-        $requiredOptions = $this->modelConfig->toRequiredOptions();
-
-        if ($hasFunctionMessageParts) {
-            // Add function declarations option if we have function calls/responses
-            $requiredOptions = $this->includeInRequiredOptions(
-                $requiredOptions,
-                new RequiredOption(OptionEnum::functionDeclarations(), true)
-            );
-        }
-
-        // Add input modalities if we have any inputs
-        $requiredOptions = $this->includeInRequiredOptions(
-            $requiredOptions,
-            new RequiredOption(OptionEnum::inputModalities(), $inputModalities)
-        );
-
-        return new ModelRequirements(
-            $capabilities,
-            $requiredOptions
-        );
+        return RequirementsUtil::fromMessages($this->messages, $capability, $this->modelConfig);
     }
 
     /**
@@ -1148,32 +1086,6 @@ class PromptBuilder
         return true;
     }
 
-    /**
-     * Includes a required option in the list if not already present.
-     *
-     * Checks if a RequiredOption with the same name already exists in the list.
-     * If not, adds the new option. Returns the updated list.
-     *
-     * @since n.e.x.t
-     *
-     * @param list<RequiredOption> $options The existing list of required options.
-     * @param RequiredOption $option The option to potentially add.
-     * @return list<RequiredOption> The updated list of required options.
-     */
-    private function includeInRequiredOptions(array $options, RequiredOption $option): array
-    {
-        // Check if an option with the same name already exists
-        foreach ($options as $existingOption) {
-            if ($existingOption->getName()->equals($option->getName())) {
-                // Option already exists, return unchanged list
-                return $options;
-            }
-        }
-
-        // Add the new option
-        $options[] = $option;
-        return $options;
-    }
 
     /**
      * Includes output modalities if not already present.
