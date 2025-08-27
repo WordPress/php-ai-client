@@ -14,10 +14,11 @@ if (!function_exists('array_is_list')) {
      *
      * An array is considered a list if its keys consist of consecutive numbers from 0 to count($array)-1.
      *
-     * @param array<mixed> $array The array to check.
-     * @return bool True if the array is a list, false otherwise.
-     *
      * @since n.e.x.t
+     *
+     * @param array<mixed> $array The array to check.
+     *
+     * @return bool True if the array is a list, false otherwise.
      */
     function array_is_list(array $array): bool
     {
