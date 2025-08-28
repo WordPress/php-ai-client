@@ -7,7 +7,7 @@ namespace WordPress\AiClient;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
-use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
@@ -22,20 +22,56 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  * - Fluent API for easy-to-read chained method calls
  * - Traditional API for array-based configuration (WordPress style)
  * - Integration with provider registry for model discovery
+ * - Support for three model specification approaches
  *
  * All model requirements analysis and capability matching is handled
  * automatically by the PromptBuilder, which provides intelligent model
  * discovery based on prompt content and configuration.
  *
- * Example usage:
+ * ## Model Specification Approaches
+ *
+ * ### 1. Specific Model Instance
+ * Use a specific ModelInterface instance when you know exactly which model to use:
+ * ```php
+ * $model = $registry->getProvider('openai')->getModel('gpt-4');
+ * $result = AiClient::generateTextResult('What is PHP?', $model);
+ * ```
+ *
+ * ### 2. ModelConfig for Auto-Discovery
+ * Use ModelConfig to specify requirements and let the system discover the best model:
+ * ```php
+ * $config = new ModelConfig();
+ * $config->setTemperature(0.7);
+ * $config->setMaxTokens(150);
+ *
+ * $result = AiClient::generateTextResult('What is PHP?', $config);
+ * ```
+ *
+ * ### 3. Automatic Discovery (Default)
+ * Pass null or omit the parameter for intelligent model discovery based on prompt content:
+ * ```php
+ * // System analyzes prompt and selects appropriate model automatically
+ * $result = AiClient::generateTextResult('What is PHP?');
+ * $imageResult = AiClient::generateImageResult('A sunset over mountains');
+ * ```
+ *
+ * ## Fluent API Examples
  * ```php
  * // Fluent API with automatic model discovery
  * $result = AiClient::prompt('Generate an image of a sunset')
  *     ->usingTemperature(0.7)
  *     ->generateImageResult();
  *
- * // Traditional API
- * $result = AiClient::generateTextResult('What is PHP?');
+ * // Fluent API with specific model
+ * $result = AiClient::prompt('What is PHP?')
+ *     ->usingModel($specificModel)
+ *     ->usingTemperature(0.5)
+ *     ->generateTextResult();
+ *
+ * // Fluent API with model configuration
+ * $result = AiClient::prompt('Explain quantum physics')
+ *     ->usingModelConfig($config)
+ *     ->generateTextResult();
  * ```
  *
  * @since n.e.x.t
@@ -52,6 +88,49 @@ class AiClient
     private static ?ProviderRegistry $defaultRegistry = null;
 
     /**
+     * Validates that parameter is ModelInterface, ModelConfig, or null.
+     *
+     * @param mixed $modelOrConfig The parameter to validate.
+     * @return void
+     * @throws \InvalidArgumentException If parameter is invalid type.
+     */
+    private static function validateModelOrConfigParameter($modelOrConfig): void
+    {
+        if (
+            $modelOrConfig !== null
+            && !$modelOrConfig instanceof ModelInterface
+            && !$modelOrConfig instanceof ModelConfig
+        ) {
+            throw new \InvalidArgumentException(
+                'Parameter must be a ModelInterface instance (specific model), ' .
+                'ModelConfig instance (for auto-discovery), or null (default auto-discovery). ' .
+                sprintf('Received: %s', is_object($modelOrConfig) ? get_class($modelOrConfig) : gettype($modelOrConfig))
+            );
+        }
+    }
+
+    /**
+     * Configures PromptBuilder based on model/config parameter type.
+     *
+     * @param Prompt $prompt The prompt content.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig The model or config parameter.
+     * @return PromptBuilder Configured prompt builder.
+     */
+    private static function configurePromptBuilder($prompt, $modelOrConfig): PromptBuilder
+    {
+        $builder = self::prompt($prompt);
+
+        if ($modelOrConfig instanceof ModelInterface) {
+            $builder->usingModel($modelOrConfig);
+        } elseif ($modelOrConfig instanceof ModelConfig) {
+            $builder->usingModelConfig($modelOrConfig);
+        }
+        // null case: use default model discovery
+
+        return $builder;
+    }
+
+    /**
      * Gets the default provider registry instance.
      *
      * @since n.e.x.t
@@ -63,7 +142,8 @@ class AiClient
         if (self::$defaultRegistry === null) {
             $registry = new ProviderRegistry();
 
-            // TODO: Uncomment this once provider implementation PR #39 is merged.
+            // Provider registration will be enabled once concrete provider implementations are available.
+            // This follows the pattern established in the provider registry architecture.
             //$registry->setHttpTransporter(HttpTransporterFactory::createTransporter());
             //$registry->registerProvider(AnthropicProvider::class);
             //$registry->registerProvider(GoogleProvider::class);
@@ -127,34 +207,39 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface|null $model Optional specific model to use.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the provided model doesn't support any known generation type.
      * @throws \RuntimeException If no suitable model can be found for the prompt.
      */
-    public static function generateResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
+    public static function generateResult($prompt, $modelOrConfig = null): GenerativeAiResult
     {
-        // If no model provided, use PromptBuilder's intelligent model discovery
-        if ($model === null) {
-            return self::prompt($prompt)->generateResult();
+        self::validateModelOrConfigParameter($modelOrConfig);
+
+        // Route to PromptBuilder for ModelConfig and null cases
+        if ($modelOrConfig instanceof ModelConfig || $modelOrConfig === null) {
+            return self::configurePromptBuilder($prompt, $modelOrConfig)->generateResult();
         }
 
-        // Infer capability from model interface (priority order matters)
+        // Specific model provided: Infer capability from model interfaces and delegate
+        $model = $modelOrConfig;
         if ($model instanceof TextGenerationModelInterface) {
-            return self::generateResultWithCapability($prompt, CapabilityEnum::textGeneration(), $model);
+            return self::generateTextResult($prompt, $model);
         }
 
         if ($model instanceof ImageGenerationModelInterface) {
-            return self::generateResultWithCapability($prompt, CapabilityEnum::imageGeneration(), $model);
+            return self::generateImageResult($prompt, $model);
         }
 
         if ($model instanceof TextToSpeechConversionModelInterface) {
-            return self::generateResultWithCapability($prompt, CapabilityEnum::textToSpeechConversion(), $model);
+            return self::convertTextToSpeechResult($prompt, $model);
         }
 
         if ($model instanceof SpeechGenerationModelInterface) {
-            return self::generateResultWithCapability($prompt, CapabilityEnum::speechGeneration(), $model);
+            return self::generateSpeechResult($prompt, $model);
         }
 
         throw new \InvalidArgumentException(
@@ -166,74 +251,6 @@ class AiClient
         );
     }
 
-    /**
-     * Generates content using a unified API with explicit capability selection.
-     *
-     * This method allows explicit capability selection for models that implement
-     * multiple generation interfaces. If the model doesn't support the specified
-     * capability, an exception is thrown.
-     *
-     * @since n.e.x.t
-     *
-     * @param Prompt $prompt The prompt content.
-     * @param CapabilityEnum $capability The desired generation capability.
-     * @param ModelInterface|null $model Optional specific model to use.
-     * @return GenerativeAiResult The generation result.
-     *
-     * @throws \InvalidArgumentException If the model doesn't support the specified capability.
-     * @throws \RuntimeException If no suitable model can be found for the prompt and capability.
-     */
-    public static function generateResultWithCapability(
-        $prompt,
-        CapabilityEnum $capability,
-        ?ModelInterface $model = null
-    ): GenerativeAiResult {
-        // If no model provided, use PromptBuilder with explicit capability
-        if ($model === null) {
-            return self::prompt($prompt)->generateResult($capability);
-        }
-
-        // Validate that the model supports the requested capability
-        $supportedCapabilities = $model->metadata()->getSupportedCapabilities();
-        $supportsCapability = false;
-        foreach ($supportedCapabilities as $supportedCapability) {
-            if ($supportedCapability->equals($capability)) {
-                $supportsCapability = true;
-                break;
-            }
-        }
-
-        if (!$supportsCapability) {
-            throw new \InvalidArgumentException(
-                sprintf(
-                    'Model "%s" does not support the "%s" capability',
-                    $model->metadata()->getId(),
-                    $capability->value
-                )
-            );
-        }
-
-        // Route to the appropriate method based on capability
-        if ($capability->isTextGeneration()) {
-            return self::generateTextResult($prompt, $model);
-        }
-
-        if ($capability->isImageGeneration()) {
-            return self::generateImageResult($prompt, $model);
-        }
-
-        if ($capability->isTextToSpeechConversion()) {
-            return self::convertTextToSpeechResult($prompt, $model);
-        }
-
-        if ($capability->isSpeechGeneration()) {
-            return self::generateSpeechResult($prompt, $model);
-        }
-
-        throw new \InvalidArgumentException(
-            sprintf('Capability "%s" is not yet supported for generation', $capability->value)
-        );
-    }
 
     /**
      * Creates a new message builder for fluent API usage.
@@ -263,19 +280,18 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface|null $model Optional specific model to use.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateTextResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
+    public static function generateTextResult($prompt, $modelOrConfig = null): GenerativeAiResult
     {
-        $builder = self::prompt($prompt);
-        if ($model !== null) {
-            $builder->usingModel($model);
-        }
-        return $builder->generateTextResult();
+        self::validateModelOrConfigParameter($modelOrConfig);
+        return self::configurePromptBuilder($prompt, $modelOrConfig)->generateTextResult();
     }
 
 
@@ -285,19 +301,18 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface|null $model Optional specific model to use.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateImageResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
+    public static function generateImageResult($prompt, $modelOrConfig = null): GenerativeAiResult
     {
-        $builder = self::prompt($prompt);
-        if ($model !== null) {
-            $builder->usingModel($model);
-        }
-        return $builder->generateImageResult();
+        self::validateModelOrConfigParameter($modelOrConfig);
+        return self::configurePromptBuilder($prompt, $modelOrConfig)->generateImageResult();
     }
 
     /**
@@ -306,19 +321,18 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface|null $model Optional specific model to use.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function convertTextToSpeechResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
+    public static function convertTextToSpeechResult($prompt, $modelOrConfig = null): GenerativeAiResult
     {
-        $builder = self::prompt($prompt);
-        if ($model !== null) {
-            $builder->usingModel($model);
-        }
-        return $builder->convertTextToSpeechResult();
+        self::validateModelOrConfigParameter($modelOrConfig);
+        return self::configurePromptBuilder($prompt, $modelOrConfig)->convertTextToSpeechResult();
     }
 
     /**
@@ -327,47 +341,17 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface|null $model Optional specific model to use.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateSpeechResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
+    public static function generateSpeechResult($prompt, $modelOrConfig = null): GenerativeAiResult
     {
-        $builder = self::prompt($prompt);
-        if ($model !== null) {
-            $builder->usingModel($model);
-        }
-        return $builder->generateSpeechResult();
-    }
-
-
-    /**
-     * Convenience method for text generation.
-     *
-     * @since n.e.x.t
-     *
-     * @param Prompt $prompt The prompt content.
-     * @param ModelInterface|null $model Optional specific model to use.
-     * @return string The generated text.
-     */
-    public static function generateText($prompt, ?ModelInterface $model = null): string
-    {
-        return self::generateTextResult($prompt, $model)->toText();
-    }
-
-    /**
-     * Convenience method for image generation.
-     *
-     * @since n.e.x.t
-     *
-     * @param Prompt $prompt The prompt content.
-     * @param ModelInterface|null $model Optional specific model to use.
-     * @return \WordPress\AiClient\Files\DTO\File The generated image file.
-     */
-    public static function generateImage($prompt, ?ModelInterface $model = null)
-    {
-        return self::generateImageResult($prompt, $model)->toFile();
+        self::validateModelOrConfigParameter($modelOrConfig);
+        return self::configurePromptBuilder($prompt, $modelOrConfig)->generateSpeechResult();
     }
 }

@@ -4,71 +4,31 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit;
 
-use Generator;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Messages\DTO\MessagePart;
-use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
-use WordPress\AiClient\Providers\DTO\ProviderMetadata;
-use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
-use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
-use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
-use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
-use WordPress\AiClient\Results\DTO\Candidate;
-use WordPress\AiClient\Results\DTO\GenerativeAiResult;
-use WordPress\AiClient\Results\DTO\TokenUsage;
-use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
 /**
  * @covers \WordPress\AiClient\AiClient
  */
 class AiClientTest extends TestCase
 {
+    use MockModelCreationTrait;
+
     protected function setUp(): void
     {
         // Set a clean registry for each test
         AiClient::setDefaultRegistry(new ProviderRegistry());
     }
 
-    /**
-     * Creates a test GenerativeAiResult for testing purposes.
-     */
-    private function createTestResult(): GenerativeAiResult
-    {
-        $candidate = new Candidate(
-            new ModelMessage([new MessagePart('Test response')]),
-            FinishReasonEnum::stop()
-        );
-        $tokenUsage = new TokenUsage(10, 20, 30);
-
-        $providerMetadata = new ProviderMetadata(
-            'mock-provider',
-            'Mock Provider',
-            ProviderTypeEnum::cloud()
-        );
-        $modelMetadata = new ModelMetadata(
-            'mock-model',
-            'Mock Model',
-            [],
-            []
-        );
-
-        return new GenerativeAiResult(
-            'test-result-id',
-            [$candidate],
-            $tokenUsage,
-            $providerMetadata,
-            $modelMetadata
-        );
-    }
 
     protected function tearDown(): void
     {
@@ -76,134 +36,20 @@ class AiClientTest extends TestCase
         AiClient::setDefaultRegistry(new ProviderRegistry());
     }
 
-
     /**
-     * Creates a test model metadata instance for text generation.
+     * Creates a mock registry that returns empty results for model discovery.
      *
-     * @return ModelMetadata
+     * @return ProviderRegistry The mock registry.
      */
-    private function createTestTextModelMetadata(): ModelMetadata
+    private function createMockEmptyRegistry(): ProviderRegistry
     {
-        return new ModelMetadata(
-            'test-text-model',
-            'Test Text Model',
-            [CapabilityEnum::textGeneration()],
-            []
-        );
-    }
+        $mockRegistry = $this->createMock(ProviderRegistry::class);
+        $mockRegistry
+            ->expects($this->any())
+            ->method('findModelsMetadataForSupport')
+            ->willReturn([]);
 
-    /**
-     * Creates a test model metadata instance for image generation.
-     *
-     * @return ModelMetadata
-     */
-    private function createTestImageModelMetadata(): ModelMetadata
-    {
-        return new ModelMetadata(
-            'test-image-model',
-            'Test Image Model',
-            [CapabilityEnum::imageGeneration()],
-            []
-        );
-    }
-
-    /**
-     * Creates a mock text generation model using anonymous class.
-     *
-     * @param GenerativeAiResult $result The result to return from generation.
-     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
-     * @return ModelInterface&TextGenerationModelInterface The mock model.
-     */
-    private function createMockTextGenerationModel(
-        GenerativeAiResult $result,
-        ?ModelMetadata $metadata = null
-    ): ModelInterface {
-        $metadata = $metadata ?? $this->createTestTextModelMetadata();
-
-        return new class ($metadata, $result) implements ModelInterface, TextGenerationModelInterface {
-            private ModelMetadata $metadata;
-            private GenerativeAiResult $result;
-            private ModelConfig $config;
-
-            public function __construct(ModelMetadata $metadata, GenerativeAiResult $result)
-            {
-                $this->metadata = $metadata;
-                $this->result = $result;
-                $this->config = new ModelConfig();
-            }
-
-            public function metadata(): ModelMetadata
-            {
-                return $this->metadata;
-            }
-
-            public function setConfig(ModelConfig $config): void
-            {
-                $this->config = $config;
-            }
-
-            public function getConfig(): ModelConfig
-            {
-                return $this->config;
-            }
-
-            public function generateTextResult(array $prompt): GenerativeAiResult
-            {
-                return $this->result;
-            }
-
-            public function streamGenerateTextResult(array $prompt): Generator
-            {
-                yield $this->result;
-            }
-        };
-    }
-
-    /**
-     * Creates a mock image generation model using anonymous class.
-     *
-     * @param GenerativeAiResult $result The result to return from generation.
-     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
-     * @return ModelInterface&ImageGenerationModelInterface The mock model.
-     */
-    private function createMockImageGenerationModel(
-        GenerativeAiResult $result,
-        ?ModelMetadata $metadata = null
-    ): ModelInterface {
-        $metadata = $metadata ?? $this->createTestImageModelMetadata();
-
-        return new class ($metadata, $result) implements ModelInterface, ImageGenerationModelInterface {
-            private ModelMetadata $metadata;
-            private GenerativeAiResult $result;
-            private ModelConfig $config;
-
-            public function __construct(ModelMetadata $metadata, GenerativeAiResult $result)
-            {
-                $this->metadata = $metadata;
-                $this->result = $result;
-                $this->config = new ModelConfig();
-            }
-
-            public function metadata(): ModelMetadata
-            {
-                return $this->metadata;
-            }
-
-            public function setConfig(ModelConfig $config): void
-            {
-                $this->config = $config;
-            }
-
-            public function getConfig(): ModelConfig
-            {
-                return $this->config;
-            }
-
-            public function generateImageResult(array $prompt): GenerativeAiResult
-            {
-                return $this->result;
-            }
-        };
+        return $mockRegistry;
     }
 
     /**
@@ -211,13 +57,31 @@ class AiClientTest extends TestCase
      */
     public function testDefaultRegistry(): void
     {
+        // Test that default registry is created as ProviderRegistry instance
         $registry = AiClient::defaultRegistry();
-        $this->assertInstanceOf(ProviderRegistry::class, $registry);
+        $this->assertInstanceOf(
+            ProviderRegistry::class,
+            $registry,
+            'Default registry should be a ProviderRegistry instance'
+        );
 
+        // Test that the same instance is returned on subsequent calls
+        $sameRegistry = AiClient::defaultRegistry();
+        $this->assertSame(
+            $registry,
+            $sameRegistry,
+            'Default registry should return the same instance (singleton pattern)'
+        );
+
+        // Test that setting a new registry works
         $newRegistry = new ProviderRegistry();
         AiClient::setDefaultRegistry($newRegistry);
 
-        $this->assertSame($newRegistry, AiClient::defaultRegistry());
+        $this->assertSame(
+            $newRegistry,
+            AiClient::defaultRegistry(),
+            'After setting new registry, it should be returned by defaultRegistry()'
+        );
     }
 
     /**
@@ -254,10 +118,10 @@ class AiClientTest extends TestCase
     public function testGenerateTextResultWithInvalidModel(): void
     {
         $prompt = 'Generate text';
-        $invalidModel = $this->createMock(ModelInterface::class);
+        $invalidModel = $this->createMockUnsupportedModel('invalid-text-model');
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Model "" does not support text generation.');
+        $this->expectExceptionMessage('Model "invalid-text-model" does not support text generation.');
 
         AiClient::generateTextResult($prompt, $invalidModel);
     }
@@ -282,10 +146,10 @@ class AiClientTest extends TestCase
     public function testGenerateImageResultWithInvalidModel(): void
     {
         $prompt = 'Generate image';
-        $invalidModel = $this->createMock(ModelInterface::class);
+        $invalidModel = $this->createMockUnsupportedModel('invalid-image-model');
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Model "" does not support image generation.');
+        $this->expectExceptionMessage('Model "invalid-image-model" does not support image generation.');
 
         AiClient::generateImageResult($prompt, $invalidModel);
     }
@@ -420,17 +284,7 @@ class AiClientTest extends TestCase
     public function testGenerateResultThrowsExceptionForUnsupportedModel(): void
     {
         $prompt = 'Test prompt';
-        $unsupportedModel = $this->createMock(ModelInterface::class);
-
-        // Mock the metadata to return an ID
-        $mockMetadata = $this->createMock(\WordPress\AiClient\Providers\Models\DTO\ModelMetadata::class);
-        $mockMetadata->expects($this->once())
-            ->method('getId')
-            ->willReturn('unsupported-model');
-
-        $unsupportedModel->expects($this->once())
-            ->method('metadata')
-            ->willReturn($mockMetadata);
+        $unsupportedModel = $this->createMockUnsupportedModel('unsupported-model');
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
@@ -455,15 +309,8 @@ class AiClientTest extends TestCase
     {
         $prompt = 'Test prompt for auto-discovery';
 
-        // Create a mock registry that returns empty results
-        $mockRegistry = $this->createMock(ProviderRegistry::class);
-        $mockRegistry
-            ->expects($this->once())
-            ->method('findModelsMetadataForSupport')
-            ->willReturn([]);
-
         // Set the mock registry as default
-        AiClient::setDefaultRegistry($mockRegistry);
+        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
 
         // This should delegate to PromptBuilder's intelligent discovery
         $this->expectException(\InvalidArgumentException::class);
@@ -525,75 +372,362 @@ class AiClientTest extends TestCase
         AiClient::generateResult($prompt, $invalidModel);
     }
 
-    /**
-     * Tests generateResultWithCapability with null model delegates to PromptBuilder.
-     */
-    public function testGenerateResultWithCapabilityNullModelDelegatesToPromptBuilder(): void
-    {
-        $prompt = 'Test prompt';
-        $capability = CapabilityEnum::textGeneration();
 
-        // Create a mock registry that returns empty results
-        $mockRegistry = $this->createMock(ProviderRegistry::class);
-        $mockRegistry
-            ->expects($this->once())
-            ->method('findModelsMetadataForSupport')
-            ->willReturn([]);
+    /**
+     * Tests that generateResult accepts ModelConfig and delegates to PromptBuilder.
+     */
+    public function testGenerateResultWithModelConfigDelegatesToPromptBuilder(): void
+    {
+        $prompt = 'Test prompt with config';
+        $config = new ModelConfig();
+        $config->setTemperature(0.8);
+        $config->setMaxTokens(100);
 
         // Set the mock registry as default
-        AiClient::setDefaultRegistry($mockRegistry);
+        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('No models found that support the required capabilities');
 
-        AiClient::generateResultWithCapability($prompt, $capability);
+        AiClient::generateResult($prompt, $config);
+    }
+
+
+    /**
+     * Tests that traditional API methods accept ModelConfig.
+     */
+    public function testTraditionalMethodsAcceptModelConfig(): void
+    {
+        $prompt = 'Test prompt';
+        $config = new ModelConfig();
+        $config->setTemperature(0.5);
+
+        // Set the mock registry as default
+        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
+
+        // Test all traditional methods accept ModelConfig
+        $methods = [
+            'generateTextResult',
+            'generateImageResult',
+            'convertTextToSpeechResult',
+            'generateSpeechResult'
+        ];
+
+        foreach ($methods as $method) {
+            try {
+                AiClient::$method($prompt, $config);
+                $this->fail("Expected InvalidArgumentException for $method");
+            } catch (\InvalidArgumentException $e) {
+                $this->assertStringContainsString('No models found that support', $e->getMessage());
+            }
+        }
     }
 
     /**
-     * Tests generateResultWithCapability with valid model and capability.
+     * Tests that invalid parameter types are rejected with proper error message.
      */
-    public function testGenerateResultWithCapabilityValidModelAndCapability(): void
+    public function testInvalidParameterTypeThrowsException(): void
     {
-        $prompt = 'Generate text';
-        $capability = CapabilityEnum::textGeneration();
-        $expectedResult = $this->createTestResult();
-
-        $customMetadata = new ModelMetadata(
-            'test-text-model',
-            'Test Text Model',
-            [$capability],
-            []
-        );
-        $mockModel = $this->createMockTextGenerationModel($expectedResult, $customMetadata);
-
-        $result = AiClient::generateResultWithCapability($prompt, $capability, $mockModel);
-
-        $this->assertSame($expectedResult, $result);
-    }
-
-    /**
-     * Tests generateResultWithCapability with model that doesn't support capability.
-     */
-    public function testGenerateResultWithCapabilityUnsupportedCapability(): void
-    {
-        $prompt = 'Generate content';
-        $capability = CapabilityEnum::imageGeneration();
-        $expectedResult = $this->createTestResult();
-
-        // Create metadata with only text generation capability
-        $customMetadata = new ModelMetadata(
-            'text-only-model',
-            'Text Only Model',
-            [CapabilityEnum::textGeneration()], // Only supports text, not image
-            []
-        );
-        $mockModel = $this->createMockTextGenerationModel($expectedResult, $customMetadata);
+        $prompt = 'Test prompt';
+        $invalidParam = 'invalid_string_parameter';
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'Model "text-only-model" does not support the "image_generation" capability'
-        );
+        $this->expectExceptionMessageMatches('/Parameter must be a ModelInterface instance \(specific model\)/');
+        $this->expectExceptionMessageMatches('/Received: string/');
 
-        AiClient::generateResultWithCapability($prompt, $capability, $mockModel);
+        AiClient::generateResult($prompt, $invalidParam);
+    }
+
+    /**
+     * Data provider for invalid parameter types.
+     *
+     * @return array<string, array{mixed, string}>
+     */
+    public function invalidParameterTypesProvider(): array
+    {
+        return [
+            'string parameter' => ['invalid_string', 'string'],
+            'integer parameter' => [123, 'integer'],
+            'array parameter' => [['invalid_array'], 'array'],
+            'object parameter' => [new \stdClass(), 'stdClass'],
+            'boolean parameter' => [true, 'boolean'],
+        ];
+    }
+
+    /**
+     * Data provider for AiClient methods that accept model/config parameters.
+     *
+     * @return array<string, array{string}>
+     */
+    public function aiClientMethodsProvider(): array
+    {
+        return [
+            'generateResult' => ['generateResult'],
+            'generateTextResult' => ['generateTextResult'],
+            'generateImageResult' => ['generateImageResult'],
+            'convertTextToSpeechResult' => ['convertTextToSpeechResult'],
+            'generateSpeechResult' => ['generateSpeechResult'],
+        ];
+    }
+
+    /**
+     * Tests that all methods reject invalid parameter types consistently.
+     *
+     * @dataProvider invalidParameterTypesProvider
+     * @param mixed $invalidParam
+     */
+    public function testAllMethodsRejectInvalidParameterTypes($invalidParam, string $expectedType): void
+    {
+        $prompt = 'Test prompt';
+        $methods = $this->aiClientMethodsProvider();
+
+        foreach ($methods as [$method]) {
+            try {
+                AiClient::$method($prompt, $invalidParam);
+                $this->fail("Expected InvalidArgumentException for $method with $expectedType");
+            } catch (\InvalidArgumentException $e) {
+                $this->assertStringContainsString(
+                    'Parameter must be a ModelInterface instance (specific model)',
+                    $e->getMessage(),
+                    "Method $method should reject invalid parameter type: $expectedType"
+                );
+                $this->assertStringContainsString(
+                    "Received: $expectedType",
+                    $e->getMessage(),
+                    "Method $method should include received type in error message"
+                );
+            }
+        }
+    }
+
+    /**
+     * Tests that all methods accept null parameter (default auto-discovery).
+     *
+     * @dataProvider aiClientMethodsProvider
+     */
+    public function testAllMethodsAcceptNullParameter(string $method): void
+    {
+        $prompt = 'Test prompt for null parameter';
+
+        // Set the mock registry as default
+        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
+
+        try {
+            AiClient::$method($prompt, null);
+            $this->fail("Expected InvalidArgumentException for $method with null (no providers)");
+        } catch (\InvalidArgumentException $e) {
+            // Should delegate to PromptBuilder and fail due to no providers
+            $this->assertStringContainsString(
+                'No models found that support',
+                $e->getMessage(),
+                "Method $method should accept null and delegate to PromptBuilder"
+            );
+        }
+    }
+
+    /**
+     * Tests ModelConfig with various parameter combinations.
+     */
+    public function testModelConfigWithVariousParameters(): void
+    {
+        // Set the mock registry as default
+        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
+
+        // Test different ModelConfig configurations
+        $configurations = [
+            // Basic temperature setting
+            function () {
+                $config = new ModelConfig();
+                $config->setTemperature(0.7);
+                return $config;
+            },
+            // Max tokens setting
+            function () {
+                $config = new ModelConfig();
+                $config->setMaxTokens(500);
+                return $config;
+            },
+            // Combined settings
+            function () {
+                $config = new ModelConfig();
+                $config->setTemperature(0.5);
+                $config->setMaxTokens(200);
+                return $config;
+            },
+        ];
+
+        $prompt = 'Test prompt with various configs';
+
+        foreach ($configurations as $index => $configFunction) {
+            $config = $configFunction();
+
+            try {
+                AiClient::generateResult($prompt, $config);
+                $this->fail("Expected InvalidArgumentException for configuration $index");
+            } catch (\InvalidArgumentException $e) {
+                $this->assertStringContainsString(
+                    'No models found that support the required capabilities',
+                    $e->getMessage(),
+                    "Configuration $index should delegate to PromptBuilder properly"
+                );
+            }
+        }
+    }
+
+    /**
+     * Tests empty ModelConfig parameter.
+     */
+    public function testEmptyModelConfig(): void
+    {
+        $prompt = 'Test with empty config';
+        $emptyConfig = new ModelConfig();
+
+        // Set the mock registry as default
+        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('No models found that support the required capabilities');
+
+        AiClient::generateResult($prompt, $emptyConfig);
+    }
+
+    /**
+     * Tests that ModelConfig is properly passed to PromptBuilder methods.
+     */
+    public function testModelConfigPassedToAllMethods(): void
+    {
+        $prompt = 'Test prompt';
+        $config = new ModelConfig();
+        $config->setTemperature(0.8);
+
+        // Set the mock registry as default
+        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
+
+        $methods = [
+            'generateResult',
+            'generateTextResult',
+            'generateImageResult',
+            'convertTextToSpeechResult',
+            'generateSpeechResult'
+        ];
+
+        foreach ($methods as $method) {
+            try {
+                AiClient::$method($prompt, $config);
+                $this->fail("Expected InvalidArgumentException for $method with ModelConfig");
+            } catch (\InvalidArgumentException $e) {
+                $this->assertStringContainsString(
+                    'No models found that support',
+                    $e->getMessage(),
+                    "Method $method should accept ModelConfig and delegate to PromptBuilder"
+                );
+            }
+        }
+    }
+
+    /**
+     * Tests validateModelOrConfigParameter helper method via reflection.
+     */
+    public function testValidateModelOrConfigParameterHelper(): void
+    {
+        $reflection = new \ReflectionClass(AiClient::class);
+        $method = $reflection->getMethod('validateModelOrConfigParameter');
+        $method->setAccessible(true);
+
+        // Test valid parameters (should not throw)
+        $validParams = [
+            null,
+            $this->createMockTextGenerationModel($this->createTestResult()),
+            new ModelConfig(),
+        ];
+
+        foreach ($validParams as $param) {
+            // Valid parameters should not throw exceptions
+            $method->invoke(null, $param);
+            // If we reach here, no exception was thrown (which is what we expect)
+            $this->assertTrue(true, 'Valid parameter should not throw exception');
+        }
+
+        // Test invalid parameters (should throw)
+        $invalidParams = [
+            'string',
+            123,
+            [],
+            new \stdClass(),
+            true,
+        ];
+
+        foreach ($invalidParams as $param) {
+            try {
+                $method->invoke(null, $param);
+                $this->fail('Invalid parameter should throw exception');
+            } catch (\InvalidArgumentException $e) {
+                $this->assertStringContainsString(
+                    'Parameter must be a ModelInterface instance (specific model)',
+                    $e->getMessage()
+                );
+            }
+        }
+    }
+
+    /**
+     * Tests configurePromptBuilder helper method via reflection.
+     */
+    public function testConfigurePromptBuilderHelper(): void
+    {
+        $reflection = new \ReflectionClass(AiClient::class);
+        $method = $reflection->getMethod('configurePromptBuilder');
+        $method->setAccessible(true);
+
+        $prompt = 'Test prompt';
+
+        // Test with null model (default discovery)
+        $builder = $method->invoke(null, $prompt, null);
+        $this->assertInstanceOf(\WordPress\AiClient\Builders\PromptBuilder::class, $builder);
+
+        // Test with ModelConfig
+        $config = new ModelConfig();
+        $config->setTemperature(0.8);
+
+        $builderWithConfig = $method->invoke(null, $prompt, $config);
+        $this->assertInstanceOf(\WordPress\AiClient\Builders\PromptBuilder::class, $builderWithConfig);
+
+        // Test with ModelInterface
+        $model = $this->createMockTextGenerationModel($this->createTestResult());
+
+        $builderWithModel = $method->invoke(null, $prompt, $model);
+        $this->assertInstanceOf(\WordPress\AiClient\Builders\PromptBuilder::class, $builderWithModel);
+    }
+
+    /**
+     * Tests that validation helper is properly integrated in public methods.
+     */
+    public function testValidationHelperIntegration(): void
+    {
+        $prompt = 'Integration test prompt';
+
+        // Test that validation is called for invalid parameters
+        try {
+            $invalidParam = 'invalid';
+            AiClient::generateResult($prompt, $invalidParam);
+            $this->fail('Should have thrown InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('Parameter must be a ModelInterface', $e->getMessage());
+        }
+    }
+
+    /**
+     * Tests that configurePromptBuilder helper is properly integrated.
+     */
+    public function testConfigurePromptBuilderHelperIntegration(): void
+    {
+        $prompt = 'Integration test prompt';
+
+        // Test that configurePromptBuilder is called with null
+        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/No models found that support/');
+        AiClient::generateResult($prompt, null);
     }
 }
