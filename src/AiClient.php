@@ -88,53 +88,6 @@ class AiClient
     private static ?ProviderRegistry $defaultRegistry = null;
 
     /**
-     * Validates that parameter is ModelInterface, ModelConfig, or null.
-     *
-     * @param mixed $modelOrConfig The parameter to validate.
-     * @return void
-     * @throws \InvalidArgumentException If parameter is invalid type.
-     */
-    private static function validateModelOrConfigParameter($modelOrConfig): void
-    {
-        if (
-            $modelOrConfig !== null
-            && !$modelOrConfig instanceof ModelInterface
-            && !$modelOrConfig instanceof ModelConfig
-        ) {
-            throw new \InvalidArgumentException(
-                'Parameter must be a ModelInterface instance (specific model), ' .
-                'ModelConfig instance (for auto-discovery), or null (default auto-discovery). ' .
-                sprintf('Received: %s', is_object($modelOrConfig) ? get_class($modelOrConfig) : gettype($modelOrConfig))
-            );
-        }
-    }
-
-    /**
-     * Configures PromptBuilder based on model/config parameter type.
-     *
-     * @param Prompt $prompt The prompt content.
-     * @param ModelInterface|ModelConfig|null $modelOrConfig The model or config parameter.
-     * @param ProviderRegistry|null $registry Optional custom registry to use.
-     * @return PromptBuilder Configured prompt builder.
-     */
-    private static function configurePromptBuilder(
-        $prompt,
-        $modelOrConfig,
-        ?ProviderRegistry $registry = null
-    ): PromptBuilder {
-        $builder = self::prompt($prompt, $registry);
-
-        if ($modelOrConfig instanceof ModelInterface) {
-            $builder->usingModel($modelOrConfig);
-        } elseif ($modelOrConfig instanceof ModelConfig) {
-            $builder->usingModelConfig($modelOrConfig);
-        }
-        // null case: use default model discovery
-
-        return $builder;
-    }
-
-    /**
      * Gets the default provider registry instance.
      *
      * @since n.e.x.t
@@ -218,7 +171,7 @@ class AiClient
 
         // Route to PromptBuilder for ModelConfig and null cases
         if ($modelOrConfig instanceof ModelConfig || $modelOrConfig === null) {
-            return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateResult();
+            return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateResult();
         }
 
         // Specific model provided: Infer capability from model interfaces and delegate
@@ -292,7 +245,7 @@ class AiClient
         ?ProviderRegistry $registry = null
     ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateTextResult();
+        return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateTextResult();
     }
 
 
@@ -317,7 +270,7 @@ class AiClient
         ?ProviderRegistry $registry = null
     ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateImageResult();
+        return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateImageResult();
     }
 
     /**
@@ -341,7 +294,7 @@ class AiClient
         ?ProviderRegistry $registry = null
     ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->convertTextToSpeechResult();
+        return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->convertTextToSpeechResult();
     }
 
     /**
@@ -365,6 +318,53 @@ class AiClient
         ?ProviderRegistry $registry = null
     ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateSpeechResult();
+        return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateSpeechResult();
+    }
+
+    /**
+     * Validates that parameter is ModelInterface, ModelConfig, or null.
+     *
+     * @param mixed $modelOrConfig The parameter to validate.
+     * @return void
+     * @throws \InvalidArgumentException If parameter is invalid type.
+     */
+    private static function validateModelOrConfigParameter($modelOrConfig): void
+    {
+        if (
+            $modelOrConfig !== null
+            && !$modelOrConfig instanceof ModelInterface
+            && !$modelOrConfig instanceof ModelConfig
+        ) {
+            throw new \InvalidArgumentException(
+                'Parameter must be a ModelInterface instance (specific model), ' .
+                'ModelConfig instance (for auto-discovery), or null (default auto-discovery). ' .
+                sprintf('Received: %s', is_object($modelOrConfig) ? get_class($modelOrConfig) : gettype($modelOrConfig))
+            );
+        }
+    }
+
+    /**
+     * Configures PromptBuilder based on model/config parameter type.
+     *
+     * @param Prompt $prompt The prompt content.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig The model or config parameter.
+     * @param ProviderRegistry|null $registry Optional custom registry to use.
+     * @return PromptBuilder Configured prompt builder.
+     */
+    private static function getConfiguredPromptBuilder(
+        $prompt,
+        $modelOrConfig,
+        ?ProviderRegistry $registry = null
+    ): PromptBuilder {
+        $builder = self::prompt($prompt, $registry);
+
+        if ($modelOrConfig instanceof ModelInterface) {
+            $builder->usingModel($modelOrConfig);
+        } elseif ($modelOrConfig instanceof ModelConfig) {
+            $builder->usingModelConfig($modelOrConfig);
+        }
+        // null case: use default model discovery
+
+        return $builder;
     }
 }
