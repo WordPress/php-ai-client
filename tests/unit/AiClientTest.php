@@ -645,35 +645,6 @@ class AiClientTest extends TestCase
     }
 
     /**
-     * Tests configurePromptBuilder helper method via reflection.
-     */
-    public function testConfigurePromptBuilderHelper(): void
-    {
-        $reflection = new \ReflectionClass(AiClient::class);
-        $method = $reflection->getMethod('configurePromptBuilder');
-        $method->setAccessible(true);
-
-        $prompt = 'Test prompt';
-
-        // Test with null model (default discovery)
-        $builder = $method->invoke(null, $prompt, null);
-        $this->assertInstanceOf(\WordPress\AiClient\Builders\PromptBuilder::class, $builder);
-
-        // Test with ModelConfig
-        $config = new ModelConfig();
-        $config->setTemperature(0.8);
-
-        $builderWithConfig = $method->invoke(null, $prompt, $config);
-        $this->assertInstanceOf(\WordPress\AiClient\Builders\PromptBuilder::class, $builderWithConfig);
-
-        // Test with ModelInterface
-        $model = $this->createMockTextGenerationModel($this->createTestResult());
-
-        $builderWithModel = $method->invoke(null, $prompt, $model);
-        $this->assertInstanceOf(\WordPress\AiClient\Builders\PromptBuilder::class, $builderWithModel);
-    }
-
-    /**
      * Tests that validation helper is properly integrated in public methods.
      */
     public function testValidationHelperIntegration(): void
@@ -691,13 +662,13 @@ class AiClientTest extends TestCase
     }
 
     /**
-     * Tests that configurePromptBuilder helper is properly integrated.
+     * Tests that getConfiguredPromptBuilder helper is properly integrated.
      */
-    public function testConfigurePromptBuilderHelperIntegration(): void
+    public function testGetConfiguredPromptBuilderHelperIntegration(): void
     {
         $prompt = 'Integration test prompt';
 
-        // Test that configurePromptBuilder is called with null
+        // Test that getConfiguredPromptBuilder is called with null
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/No models found that support/');
         AiClient::generateResult($prompt, null, $this->createMockEmptyRegistry());
