@@ -531,6 +531,34 @@ class PromptBuilder
     }
 
     /**
+     * Infers the capability from a model's implemented interfaces.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $model The model to infer capability from.
+     * @return CapabilityEnum|null The inferred capability, or null if none can be inferred.
+     */
+    private function inferCapabilityFromModelInterfaces(ModelInterface $model): ?CapabilityEnum
+    {
+        // Check model interfaces in order of preference
+        if ($model instanceof TextGenerationModelInterface) {
+            return CapabilityEnum::textGeneration();
+        }
+        if ($model instanceof ImageGenerationModelInterface) {
+            return CapabilityEnum::imageGeneration();
+        }
+        if ($model instanceof TextToSpeechConversionModelInterface) {
+            return CapabilityEnum::textToSpeechConversion();
+        }
+        if ($model instanceof SpeechGenerationModelInterface) {
+            return CapabilityEnum::speechGeneration();
+        }
+
+        // No supported interface found
+        return null;
+    }
+
+    /**
      * Checks if the current prompt is supported by the selected model.
      *
      * @since n.e.x.t
@@ -666,9 +694,20 @@ class PromptBuilder
     {
         $this->validateMessages();
 
-        // If capability is not provided, infer it from output modalities
+        // If capability is not provided, infer it
         if ($capability === null) {
-            $capability = $this->inferCapabilityFromOutputModalities();
+            // First try to infer from a specific model if one is set
+            if ($this->model !== null) {
+                $inferredCapability = $this->inferCapabilityFromModelInterfaces($this->model);
+                if ($inferredCapability !== null) {
+                    $capability = $inferredCapability;
+                }
+            }
+
+            // If still no capability, infer from output modalities
+            if ($capability === null) {
+                $capability = $this->inferCapabilityFromOutputModalities();
+            }
         }
 
         $model = $this->getConfiguredModel($capability);
