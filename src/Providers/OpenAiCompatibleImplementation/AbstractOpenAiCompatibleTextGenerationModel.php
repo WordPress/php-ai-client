@@ -311,7 +311,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                     'The file typed message part must contain a file.'
                 );
             }
-            if ($file->getFileType()->isRemote()) {
+            if ($file->isRemote()) {
                 if ($file->isImage()) {
                     return [
                         'type' => 'image_url',
