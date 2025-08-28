@@ -8,10 +8,6 @@ use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
-use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 
@@ -153,9 +149,8 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
-     *                                                        or model configuration for auto-discovery,
-     *                                                        or null for defaults.
+     * @param ModelInterface|ModelConfig $modelOrConfig Specific model to use, or model configuration
+     *                                                  for auto-discovery.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return GenerativeAiResult The generation result.
      *
@@ -164,64 +159,11 @@ class AiClient
      */
     public static function generateResult(
         $prompt,
-        $modelOrConfig = null,
+        $modelOrConfig,
         ?ProviderRegistry $registry = null
     ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
-
-        // Route to PromptBuilder for ModelConfig and null cases
-        if ($modelOrConfig instanceof ModelConfig || $modelOrConfig === null) {
-            return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateResult();
-        }
-
-        // Specific model provided: Infer capability from model interfaces and delegate
-        $model = $modelOrConfig;
-        if ($model instanceof TextGenerationModelInterface) {
-            return self::generateTextResult($prompt, $model, $registry);
-        }
-
-        if ($model instanceof ImageGenerationModelInterface) {
-            return self::generateImageResult($prompt, $model, $registry);
-        }
-
-        if ($model instanceof TextToSpeechConversionModelInterface) {
-            return self::convertTextToSpeechResult($prompt, $model, $registry);
-        }
-
-        if ($model instanceof SpeechGenerationModelInterface) {
-            return self::generateSpeechResult($prompt, $model, $registry);
-        }
-
-        throw new \InvalidArgumentException(
-            sprintf(
-                'Model "%s" must implement at least one supported generation interface ' .
-                '(TextGeneration, ImageGeneration, TextToSpeechConversion, SpeechGeneration)',
-                $model->metadata()->getId()
-            )
-        );
-    }
-
-
-    /**
-     * Creates a new message builder for fluent API usage.
-     *
-     * This method will be implemented once MessageBuilder is available.
-     * MessageBuilder will provide a fluent interface for constructing complex
-     * messages with multiple parts, attachments, and metadata.
-     *
-     * @since n.e.x.t
-     *
-     * @param string|null $text Optional initial message text.
-     * @return object MessageBuilder instance (type will be updated when MessageBuilder is available).
-     *
-     * @throws \RuntimeException When MessageBuilder is not yet available.
-     */
-    public static function message(?string $text = null)
-    {
-        throw new \RuntimeException(
-            'MessageBuilder is not yet available. This method depends on builder infrastructure. ' .
-            'Use direct generation methods (generateTextResult, generateImageResult, etc.) for now.'
-        );
+        return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateResult();
     }
 
     /**
@@ -319,6 +261,28 @@ class AiClient
     ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
         return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateSpeechResult();
+    }
+
+    /**
+     * Creates a new message builder for fluent API usage.
+     *
+     * This method will be implemented once MessageBuilder is available.
+     * MessageBuilder will provide a fluent interface for constructing complex
+     * messages with multiple parts, attachments, and metadata.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|null $text Optional initial message text.
+     * @return object MessageBuilder instance (type will be updated when MessageBuilder is available).
+     *
+     * @throws \RuntimeException When MessageBuilder is not yet available.
+     */
+    public static function message(?string $text = null)
+    {
+        throw new \RuntimeException(
+            'MessageBuilder is not yet available. This method depends on builder infrastructure. ' .
+            'Use direct generation methods (generateTextResult, generateImageResult, etc.) for now.'
+        );
     }
 
     /**

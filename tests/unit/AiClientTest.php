@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
-use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
@@ -269,30 +267,6 @@ class AiClientTest extends TestCase
     }
 
     /**
-     * Tests generateResult throws exception when model doesn't support any generation interface.
-     */
-    public function testGenerateResultThrowsExceptionForUnsupportedModel(): void
-    {
-        $prompt = 'Test prompt';
-        $unsupportedModel = $this->createMockUnsupportedModel('unsupported-model');
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'Model "unsupported-model" must implement at least one supported generation interface ' .
-            '(TextGeneration, ImageGeneration, TextToSpeechConversion, SpeechGeneration)'
-        );
-
-        AiClient::generateResult($prompt, $unsupportedModel);
-    }
-
-
-
-
-
-
-
-
-    /**
      * Tests generateResult with null model delegates to PromptBuilder.
      */
     public function testGenerateResultWithNullModelDelegatesToPromptBuilder(): void
@@ -335,32 +309,6 @@ class AiClientTest extends TestCase
     }
 
     /**
-     * Tests generateResult with invalid model throws exception with model ID.
-     */
-    public function testGenerateResultWithInvalidModelThrowsExceptionWithModelId(): void
-    {
-        $prompt = 'Test prompt';
-        $invalidModel = $this->createMock(ModelInterface::class);
-
-        $mockMetadata = $this->createMock(\WordPress\AiClient\Providers\Models\DTO\ModelMetadata::class);
-        $mockMetadata->expects($this->once())
-            ->method('getId')
-            ->willReturn('invalid-model-id');
-
-        $invalidModel->expects($this->once())
-            ->method('metadata')
-            ->willReturn($mockMetadata);
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'Model "invalid-model-id" must implement at least one supported generation interface'
-        );
-
-        AiClient::generateResult($prompt, $invalidModel);
-    }
-
-
-    /**
      * Tests that generateResult accepts ModelConfig and delegates to PromptBuilder.
      */
     public function testGenerateResultWithModelConfigDelegatesToPromptBuilder(): void
@@ -375,7 +323,6 @@ class AiClientTest extends TestCase
 
         AiClient::generateResult($prompt, $config, $this->createMockEmptyRegistry());
     }
-
 
     /**
      * Tests that traditional API methods accept ModelConfig.
