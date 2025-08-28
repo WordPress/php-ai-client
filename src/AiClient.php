@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace WordPress\AiClient;
 
 use WordPress\AiClient\Builders\PromptBuilder;
+use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
+use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
+use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
+use WordPress\AiClient\Providers\Http\HttpTransporterFactory;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
@@ -95,12 +99,11 @@ class AiClient
         if (self::$defaultRegistry === null) {
             $registry = new ProviderRegistry();
 
-            // Provider registration will be enabled once concrete provider implementations are available.
-            // This follows the pattern established in the provider registry architecture.
-            //$registry->setHttpTransporter(HttpTransporterFactory::createTransporter());
-            //$registry->registerProvider(AnthropicProvider::class);
-            //$registry->registerProvider(GoogleProvider::class);
-            //$registry->registerProvider(OpenAiProvider::class);
+            // Set up default HTTP transporter and register built-in providers.
+            $registry->setHttpTransporter(HttpTransporterFactory::createTransporter());
+            $registry->registerProvider(AnthropicProvider::class);
+            $registry->registerProvider(GoogleProvider::class);
+            $registry->registerProvider(OpenAiProvider::class);
 
             self::$defaultRegistry = $registry;
         }
