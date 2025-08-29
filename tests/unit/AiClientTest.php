@@ -94,8 +94,9 @@ class AiClientTest extends TestCase
         $prompt = 'Generate text';
         $expectedResult = $this->createTestResult();
         $mockModel = $this->createMockTextGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
 
-        $result = AiClient::generateTextResult($prompt, $mockModel);
+        $result = AiClient::generateTextResult($prompt, $mockModel, $registry);
 
         $this->assertSame($expectedResult, $result);
     }
@@ -107,11 +108,12 @@ class AiClientTest extends TestCase
     {
         $prompt = 'Generate text';
         $invalidModel = $this->createMockUnsupportedModel('invalid-text-model');
+        $registry = $this->createRegistryWithMockProvider();
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Model "invalid-text-model" does not support text generation.');
 
-        AiClient::generateTextResult($prompt, $invalidModel);
+        AiClient::generateTextResult($prompt, $invalidModel, $registry);
     }
 
     /**
@@ -122,8 +124,9 @@ class AiClientTest extends TestCase
         $prompt = 'Generate image';
         $expectedResult = $this->createTestResult();
         $mockModel = $this->createMockImageGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
 
-        $result = AiClient::generateImageResult($prompt, $mockModel);
+        $result = AiClient::generateImageResult($prompt, $mockModel, $registry);
 
         $this->assertSame($expectedResult, $result);
     }
@@ -135,11 +138,12 @@ class AiClientTest extends TestCase
     {
         $prompt = 'Generate image';
         $invalidModel = $this->createMockUnsupportedModel('invalid-image-model');
+        $registry = $this->createRegistryWithMockProvider();
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Model "invalid-image-model" does not support image generation.');
 
-        AiClient::generateImageResult($prompt, $invalidModel);
+        AiClient::generateImageResult($prompt, $invalidModel, $registry);
     }
 
 
@@ -152,8 +156,9 @@ class AiClientTest extends TestCase
         $message = new UserMessage([$messagePart]);
         $expectedResult = $this->createTestResult();
         $mockModel = $this->createMockTextGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
 
-        $result = AiClient::generateTextResult($message, $mockModel);
+        $result = AiClient::generateTextResult($message, $mockModel, $registry);
 
         $this->assertSame($expectedResult, $result);
     }
@@ -166,8 +171,9 @@ class AiClientTest extends TestCase
         $messagePart = new MessagePart('Test message part');
         $expectedResult = $this->createTestResult();
         $mockModel = $this->createMockTextGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
 
-        $result = AiClient::generateTextResult($messagePart, $mockModel);
+        $result = AiClient::generateTextResult($messagePart, $mockModel, $registry);
 
         $this->assertSame($expectedResult, $result);
     }
@@ -185,8 +191,9 @@ class AiClientTest extends TestCase
 
         $expectedResult = $this->createTestResult();
         $mockModel = $this->createMockTextGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
 
-        $result = AiClient::generateTextResult($messages, $mockModel);
+        $result = AiClient::generateTextResult($messages, $mockModel, $registry);
 
         $this->assertSame($expectedResult, $result);
     }
@@ -202,8 +209,9 @@ class AiClientTest extends TestCase
 
         $expectedResult = $this->createTestResult();
         $mockModel = $this->createMockTextGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
 
-        $result = AiClient::generateTextResult($messageParts, $mockModel);
+        $result = AiClient::generateTextResult($messageParts, $mockModel, $registry);
 
         $this->assertSame($expectedResult, $result);
     }
@@ -246,8 +254,9 @@ class AiClientTest extends TestCase
         $prompt = 'Test prompt';
         $expectedResult = $this->createTestResult();
         $mockModel = $this->createMockTextGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
 
-        $result = AiClient::generateResult($prompt, $mockModel);
+        $result = AiClient::generateResult($prompt, $mockModel, $registry);
 
         $this->assertSame($expectedResult, $result);
     }
@@ -260,8 +269,9 @@ class AiClientTest extends TestCase
         $prompt = 'Generate image prompt';
         $expectedResult = $this->createTestResult();
         $mockModel = $this->createMockImageGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
 
-        $result = AiClient::generateResult($prompt, $mockModel);
+        $result = AiClient::generateResult($prompt, $mockModel, $registry);
 
         $this->assertSame($expectedResult, $result);
     }
@@ -288,8 +298,9 @@ class AiClientTest extends TestCase
         $prompt = 'Generate text content';
         $expectedResult = $this->createTestResult();
         $mockModel = $this->createMockTextGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
 
-        $result = AiClient::generateResult($prompt, $mockModel);
+        $result = AiClient::generateResult($prompt, $mockModel, $registry);
 
         $this->assertSame($expectedResult, $result);
     }
@@ -302,8 +313,9 @@ class AiClientTest extends TestCase
         $prompt = 'Generate an image';
         $expectedResult = $this->createTestResult();
         $mockModel = $this->createMockImageGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
 
-        $result = AiClient::generateResult($prompt, $mockModel);
+        $result = AiClient::generateResult($prompt, $mockModel, $registry);
 
         $this->assertSame($expectedResult, $result);
     }

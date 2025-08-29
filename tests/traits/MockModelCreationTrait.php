@@ -15,10 +15,12 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
+use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tests\mocks\MockProvider;
 
 /**
  * Trait providing shared mock model creation methods for testing.
@@ -30,6 +32,19 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  */
 trait MockModelCreationTrait
 {
+    /**
+     * Creates a provider registry with the mock provider registered.
+     *
+     * @since n.e.x.t
+     *
+     * @return ProviderRegistry The registry with mock provider.
+     */
+    protected function createRegistryWithMockProvider(): ProviderRegistry
+    {
+        $registry = new ProviderRegistry();
+        $registry->registerProvider(MockProvider::class);
+        return $registry;
+    }
     /**
      * Creates a test GenerativeAiResult for testing purposes.
      *
@@ -45,7 +60,7 @@ trait MockModelCreationTrait
         $tokenUsage = new TokenUsage(10, 20, 30);
 
         $providerMetadata = new ProviderMetadata(
-            'mock-provider',
+            'mock',
             'Mock Provider',
             ProviderTypeEnum::cloud()
         );
@@ -117,7 +132,7 @@ trait MockModelCreationTrait
         $metadata = $metadata ?? $this->createTestTextModelMetadata();
 
         $providerMetadata = new ProviderMetadata(
-            'mock-provider',
+            'mock',
             'Mock Provider',
             ProviderTypeEnum::cloud()
         );
@@ -189,7 +204,7 @@ trait MockModelCreationTrait
         $metadata = $metadata ?? $this->createTestImageModelMetadata();
 
         $providerMetadata = new ProviderMetadata(
-            'mock-provider',
+            'mock',
             'Mock Provider',
             ProviderTypeEnum::cloud()
         );
@@ -252,6 +267,11 @@ trait MockModelCreationTrait
     {
         $mockModel = $this->createMock(ModelInterface::class);
         $mockMetadata = $this->createMock(ModelMetadata::class);
+        $mockProviderMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
 
         $mockMetadata->expects($this->any())
             ->method('getId')
@@ -260,6 +280,14 @@ trait MockModelCreationTrait
         $mockModel->expects($this->any())
             ->method('metadata')
             ->willReturn($mockMetadata);
+
+        $mockModel->expects($this->any())
+            ->method('providerMetadata')
+            ->willReturn($mockProviderMetadata);
+
+        $mockModel->expects($this->any())
+            ->method('getConfig')
+            ->willReturn(new ModelConfig());
 
         return $mockModel;
     }
