@@ -236,7 +236,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
         // Filter models that meet requirements
         $matchingModels = [];
         foreach ($modelMetadataDirectory->listModelMetadata() as $modelMetadata) {
-            if ($modelMetadata->meetsRequirements($modelRequirements)) {
+            if ($modelRequirements->areMetBy($modelMetadata)) {
                 $matchingModels[] = $modelMetadata;
             }
         }

@@ -6,7 +6,10 @@ namespace WordPress\AiClient\Providers\Models\DTO;
 
 use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Messages\DTO\Message;
+use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * Represents requirements that implementing code has for AI model selection.
@@ -86,6 +89,192 @@ class ModelRequirements extends AbstractDataTransferObject
     public function getRequiredOptions(): array
     {
         return $this->requiredOptions;
+    }
+
+    /**
+     * Checks whether the given model metadata meets these requirements.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelMetadata $metadata The model metadata to check against.
+     * @return bool True if the model meets all requirements, false otherwise.
+     */
+    public function areMetBy(ModelMetadata $metadata): bool
+    {
+        // Check if all required capabilities are supported
+        foreach ($this->requiredCapabilities as $requiredCapability) {
+            $supported = false;
+            foreach ($metadata->getSupportedCapabilities() as $supportedCapability) {
+                if ($supportedCapability->equals($requiredCapability)) {
+                    $supported = true;
+                    break;
+                }
+            }
+            if (!$supported) {
+                return false;
+            }
+        }
+
+        // Check if all required options are supported with the specified values
+        foreach ($this->requiredOptions as $requiredOption) {
+            $optionSupported = false;
+            $supportedOptions = $metadata->getSupportedOptions();
+
+            foreach ($supportedOptions as $supportedOption) {
+                if ($supportedOption->getName()->equals($requiredOption->getName())) {
+                    // Check if the required value is supported by this option
+                    if ($supportedOption->isSupportedValue($requiredOption->getValue())) {
+                        $optionSupported = true;
+                        break;
+                    }
+                }
+            }
+
+            // If no supported options at all, this is only OK if we have no required options
+            if (!$optionSupported) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Creates ModelRequirements from prompt data and model configuration.
+     *
+     * @since n.e.x.t
+     *
+     * @param CapabilityEnum $capability The capability the model must support.
+     * @param list<Message> $messages The messages in the conversation.
+     * @param ModelConfig $modelConfig The model configuration.
+     * @return self The created requirements.
+     */
+    public static function fromPromptData(CapabilityEnum $capability, array $messages, ModelConfig $modelConfig): self
+    {
+        // Start with base capability
+        $capabilities = [$capability];
+        $inputModalities = [];
+
+        // Check if we have chat history (multiple messages)
+        if (count($messages) > 1) {
+            $capabilities[] = CapabilityEnum::chatHistory();
+        }
+
+        // Analyze all messages to determine required input modalities
+        $hasFunctionMessageParts = false;
+        foreach ($messages as $message) {
+            foreach ($message->getParts() as $part) {
+                // Check for text input
+                if ($part->getType()->isText()) {
+                    $inputModalities[] = ModalityEnum::text();
+                }
+
+                // Check for file inputs
+                if ($part->getType()->isFile()) {
+                    $file = $part->getFile();
+
+                    if ($file !== null) {
+                        if ($file->isImage()) {
+                            $inputModalities[] = ModalityEnum::image();
+                        } elseif ($file->isAudio()) {
+                            $inputModalities[] = ModalityEnum::audio();
+                        } elseif ($file->isVideo()) {
+                            $inputModalities[] = ModalityEnum::video();
+                        } elseif ($file->isDocument() || $file->isText()) {
+                            $inputModalities[] = ModalityEnum::document();
+                        }
+                    }
+                }
+
+                // Check for function calls/responses (these might require special capabilities)
+                if ($part->getType()->isFunctionCall() || $part->getType()->isFunctionResponse()) {
+                    $hasFunctionMessageParts = true;
+                }
+            }
+        }
+
+        //
+        // Convert ModelConfig to RequiredOptions (moved from ModelConfig::toRequiredOptions)
+        $requiredOptions = [];
+
+        // Map properties that have corresponding OptionEnum values
+        if ($modelConfig->getOutputModalities() !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::outputModalities(),
+                $modelConfig->getOutputModalities()
+            );
+        }
+
+        if ($modelConfig->getSystemInstruction() !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::systemInstruction(),
+                $modelConfig->getSystemInstruction()
+            );
+        }
+
+        if ($modelConfig->getCandidateCount() !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::candidateCount(),
+                $modelConfig->getCandidateCount()
+            );
+        }
+
+        if ($modelConfig->getMaxTokens() !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::maxTokens(),
+                $modelConfig->getMaxTokens()
+            );
+        }
+
+        if ($modelConfig->getTemperature() !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::temperature(),
+                $modelConfig->getTemperature()
+            );
+        }
+
+        if ($modelConfig->getTopP() !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::topP(),
+                $modelConfig->getTopP()
+            );
+        }
+
+        if ($modelConfig->getTopK() !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::topK(),
+                $modelConfig->getTopK()
+            );
+        }
+
+        if ($modelConfig->getOutputMimeType() !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::outputMimeType(),
+                $modelConfig->getOutputMimeType()
+            );
+        }
+
+        if ($modelConfig->getOutputSchema() !== null) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::outputSchema(),
+                $modelConfig->getOutputSchema()
+            );
+        }
+
+        // Step 5: Add additional options based on message analysis
+        if ($hasFunctionMessageParts) {
+            $requiredOptions[] = new RequiredOption(OptionEnum::functionDeclarations(), true);
+        }
+
+        // Add input modalities if we have any inputs
+        if (!empty($inputModalities)) {
+            // Remove duplicates
+            $inputModalities = array_unique($inputModalities, SORT_REGULAR);
+            $requiredOptions[] = new RequiredOption(OptionEnum::inputModalities(), array_values($inputModalities));
+        }
+
+        // Step 6: Return new ModelRequirements
+        return new self($capabilities, $requiredOptions);
     }
 
     /**
