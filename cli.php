@@ -90,7 +90,7 @@ if (empty($positional_args[0])) {
 
 // Prompt input. Allow complex input as a JSON string.
 $promptInput = $positional_args[0];
-if (strpos($promptInput, '{') === 0 || strpos($promptInput, '[') === 0) {
+if (str_starts_with($promptInput, '{') || str_starts_with($promptInput, '[')) {
     $decodedInput = json_decode($promptInput, true);
     if ($decodedInput) {
         $promptInput = $decodedInput;
@@ -156,7 +156,11 @@ try {
 }
 
 try {
-    $result = $promptBuilder->generateTextResult();
+    if ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
+        $result = $promptBuilder->generateImageResult();
+    } else {
+        $result = $promptBuilder->generateTextResult();
+    }
 } catch (InvalidArgumentException $e) {
     logError('Invalid arguments while trying to generate text result: ' . $e->getMessage());
 } catch (ResponseException $e) {
@@ -172,6 +176,12 @@ switch ($outputFormat) {
         break;
     case 'candidates-json':
         $output = json_encode($result->getCandidates(), JSON_PRETTY_PRINT);
+        break;
+    case 'image-json':
+        $output = json_encode($result->toFile(), JSON_PRETTY_PRINT);
+        break;
+    case 'image-base64':
+        $output = $result->toFile()->getBase64Data();
         break;
     case 'message-text':
     default:

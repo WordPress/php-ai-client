@@ -38,10 +38,7 @@ class GoogleProvider extends AbstractProvider
                 return new GoogleTextGenerationModel($modelMetadata, $providerMetadata);
             }
             if ($capability->isImageGeneration()) {
-                // TODO: Implement GoogleImageGenerationModel.
-                throw new RuntimeException(
-                    'Google image generation model class is not yet implemented.'
-                );
+                return new GoogleImageGenerationModel($modelMetadata, $providerMetadata);
             }
         }
 

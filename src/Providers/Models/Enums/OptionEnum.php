@@ -97,7 +97,7 @@ class OptionEnum extends AbstractEnum
 
         // Add ModelConfig constants that start with KEY_
         foreach ($modelConfigConstants as $constantName => $constantValue) {
-            if (strpos($constantName, 'KEY_') === 0) {
+            if (str_starts_with($constantName, 'KEY_')) {
                 // Remove KEY_ prefix to get the enum constant name
                 $enumConstantName = substr($constantName, 4);
 

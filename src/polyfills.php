@@ -17,7 +17,6 @@ if (!function_exists('array_is_list')) {
      * @since n.e.x.t
      *
      * @param array<mixed> $array The array to check.
-     *
      * @return bool True if the array is a list, false otherwise.
      */
     function array_is_list(array $array): bool
@@ -35,5 +34,47 @@ if (!function_exists('array_is_list')) {
         }
 
         return true;
+    }
+}
+
+if (!function_exists('str_starts_with')) {
+    /**
+     * Checks if a string starts with a given substring.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $haystack The string to search in.
+     * @param string $needle The substring to search for.
+     * @return bool True if $haystack starts with $needle, false otherwise.
+     */
+    function str_starts_with(string $haystack, string $needle): bool
+    {
+        if ('' === $needle) {
+            return true;
+        }
+
+        return 0 === strpos($haystack, $needle);
+    }
+}
+
+if (!function_exists('str_ends_with')) {
+    /**
+     * Checks if a string ends with a given substring.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $haystack The string to search in.
+     * @param string $needle The substring to search for.
+     * @return bool True if $haystack ends with $needle, false otherwise.
+     */
+    function str_ends_with(string $haystack, string $needle): bool
+    {
+        if ('' === $haystack) {
+            return '' === $needle;
+        }
+
+        $len = strlen($needle);
+
+        return substr($haystack, -$len, $len) === $needle;
     }
 }

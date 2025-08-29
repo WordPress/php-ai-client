@@ -126,6 +126,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                 MediaOrientationEnum::portrait(),
             ]),
             new SupportedOption(OptionEnum::outputMediaAspectRatio(), ['1:1', '7:4', '4:7']),
+            new SupportedOption(OptionEnum::customOptions()),
         ];
         $gptImageOptions = [
             new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
@@ -139,6 +140,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                 MediaOrientationEnum::portrait(),
             ]),
             new SupportedOption(OptionEnum::outputMediaAspectRatio(), ['1:1', '3:2', '2:3']),
+            new SupportedOption(OptionEnum::customOptions()),
         ];
         $ttsCapabilities = [
             CapabilityEnum::textToSpeechConversion(),
@@ -154,6 +156,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                 'audio/aac',
             ]),
             new SupportedOption(OptionEnum::outputSpeechVoice()),
+            new SupportedOption(OptionEnum::customOptions()),
         ];
 
         $modelsData = (array) $responseData['data'];

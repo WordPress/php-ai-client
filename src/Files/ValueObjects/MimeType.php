@@ -204,7 +204,7 @@ final class MimeType
      */
     public function isType(string $mimeType): bool
     {
-        return strpos($this->value, strtolower($mimeType) . '/') === 0;
+        return str_starts_with($this->value, strtolower($mimeType) . '/');
     }
 
     /**

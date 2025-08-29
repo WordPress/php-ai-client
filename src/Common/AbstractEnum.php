@@ -328,7 +328,7 @@ abstract class AbstractEnum implements JsonSerializable
     final public function __call(string $name, array $arguments): bool
     {
         // Handle is* methods
-        if (strpos($name, 'is') === 0) {
+        if (str_starts_with($name, 'is')) {
             $constantName = self::camelCaseToConstant(substr($name, 2));
             $constants = static::getConstants();
 

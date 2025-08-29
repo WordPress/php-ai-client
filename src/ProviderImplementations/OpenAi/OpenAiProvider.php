@@ -38,10 +38,7 @@ class OpenAiProvider extends AbstractProvider
                 return new OpenAiTextGenerationModel($modelMetadata, $providerMetadata);
             }
             if ($capability->isImageGeneration()) {
-                // TODO: Implement OpenAiImageGenerationModel.
-                throw new RuntimeException(
-                    'OpenAI image generation model class is not yet implemented.'
-                );
+                return new OpenAiImageGenerationModel($modelMetadata, $providerMetadata);
             }
             if ($capability->isTextToSpeechConversion()) {
                 // TODO: Implement OpenAiTextToSpeechConversionModel.
