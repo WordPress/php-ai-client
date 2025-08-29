@@ -1068,13 +1068,13 @@ class ModelConfig extends AbstractDataTransferObject
         }
 
         if ($this->outputFileType !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::outputFileType(), $this->outputFileType->value);
+            $requiredOptions[] = new RequiredOption(OptionEnum::outputFileType(), $this->outputFileType);
         }
 
         if ($this->outputMediaOrientation !== null) {
             $requiredOptions[] = new RequiredOption(
                 OptionEnum::outputMediaOrientation(),
-                $this->outputMediaOrientation->value
+                $this->outputMediaOrientation
             );
         }
 
