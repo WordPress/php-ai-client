@@ -72,6 +72,7 @@ final class MimeType
         'ogg' => 'audio/ogg',
         'flac' => 'audio/flac',
         'm4a' => 'audio/m4a',
+        'aac' => 'audio/aac',
 
         // Video
         'mp4' => 'video/mp4',
