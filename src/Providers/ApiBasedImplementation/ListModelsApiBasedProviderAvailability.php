@@ -11,6 +11,10 @@ use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 /**
  * Class to check availability for an API-based provider via a test request to the endpoint to list models.
  *
+ * This class should be used for cloud-based providers that offer a model listing endpoint which requires
+ * authentication. A request to this endpoint is used to determine if the provider is properly configured
+ * with valid credentials.
+ *
  * @since n.e.x.t
  */
 class ListModelsApiBasedProviderAvailability implements ProviderAvailabilityInterface

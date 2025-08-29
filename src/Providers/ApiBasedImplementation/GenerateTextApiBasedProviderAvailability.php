@@ -16,6 +16,10 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 /**
  * Class to check availability for an API-based provider via a test request to the endpoint to generate text.
  *
+ * This class should be used for cloud-based providers that do not offer a model listing endpoint, but do offer a
+ * text generation endpoint which requires authentication. A minimal request to this endpoint is used to determine
+ * if the provider is properly configured with valid credentials.
+ *
  * @since n.e.x.t
  */
 class GenerateTextApiBasedProviderAvailability implements ProviderAvailabilityInterface
