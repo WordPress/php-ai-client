@@ -27,6 +27,21 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  * Base class for an image generation model for an OpenAI compatible provider.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type ChoiceData array{
+ *     url?: string,
+ *     b64_json?: string
+ * }
+ * @phpstan-type UsageData array{
+ *     input_tokens?: int,
+ *     output_tokens?: int,
+ *     total_tokens?: int
+ * }
+ * @phpstan-type ResponseData array{
+ *     id?: string,
+ *     data?: list<ChoiceData>,
+ *     usage?: UsageData
+ * }
  */
 abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiBasedModel implements
     ImageGenerationModelInterface
@@ -275,6 +290,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
         Response $response,
         string $expectedMimeType = 'image/png'
     ): GenerativeAiResult {
+        /** @var ResponseData $responseData */
         $responseData = $response->getData();
         if (!isset($responseData['data']) || !$responseData['data']) {
             throw new RuntimeException(
@@ -295,14 +311,12 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
                 );
             }
 
-            /** @var array<string, mixed> $choiceData */
             $candidates[] = $this->parseResponseChoiceToCandidate($choiceData, $expectedMimeType);
         }
 
         $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
 
         if (isset($responseData['usage']) && is_array($responseData['usage'])) {
-            /** @var array<string, int> $usage */
             $usage = $responseData['usage'];
 
             $tokenUsage = new TokenUsage(
