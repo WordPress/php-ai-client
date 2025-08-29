@@ -347,7 +347,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed> $choiceData The choice data from the API response.
+     * @param ChoiceData $choiceData The choice data from the API response.
      * @param string   $expectedMimeType The expected MIME type the response is in.
      * @return Candidate The parsed candidate.
      * @throws RuntimeException If the choice data is invalid.
