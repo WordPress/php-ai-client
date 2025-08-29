@@ -87,11 +87,11 @@ class SupportedOption extends AbstractDataTransferObject
 
         // If the value is an array, consider it a set (i.e. order doesn't matter).
         if (is_array($value)) {
+            sort($value);
             foreach ($this->supportedValues as $supportedValue) {
                 if (!is_array($supportedValue)) {
                     continue;
                 }
-                sort($value);
                 sort($supportedValue);
                 if ($value === $supportedValue) {
                     return true;
