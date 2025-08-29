@@ -255,6 +255,10 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
      */
     protected function throwIfNotSuccessful(Response $response): void
     {
+        /*
+         * While this method only calls the utility method, it's important to have it here as a protected method so
+         * that child classes can override it if needed.
+         */
         ResponseUtil::throwIfNotSuccessful($response);
     }
 
