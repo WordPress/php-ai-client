@@ -255,6 +255,10 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             array_unshift(
                 $messagesParam,
                 [
+                    /*
+                     * TODO: Replace this with 'developer' in the future.
+                     * See https://platform.openai.com/docs/api-reference/chat/create#chat_create-messages
+                     */
                     'role' => 'system',
                     'content' => [
                         [
