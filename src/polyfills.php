@@ -61,7 +61,7 @@ if (!function_exists('str_contains')) {
     /**
      * Checks if a string contains a given substring.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $haystack The string to search in.
      * @param string $needle The substring to search for.
