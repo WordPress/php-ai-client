@@ -19,7 +19,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * Messages can contain multiple parts of different types, such as text, files,
  * function calls, etc. This DTO encapsulates one such part.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type FileArrayShape from File
  * @phpstan-import-type FunctionCallArrayShape from FunctionCall
@@ -78,7 +78,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Constructor that accepts various content types and infers the message part type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param mixed $content The content of this message part.
      * @param MessagePartChannelEnum|null $channel The channel this part belongs to. Defaults to CONTENT.
@@ -115,7 +115,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the channel this message part belongs to.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MessagePartChannelEnum The channel.
      */
@@ -127,7 +127,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the type of this message part.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MessagePartTypeEnum The type.
      */
@@ -139,7 +139,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the text content.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The text content or null if not a text part.
      */
@@ -151,7 +151,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the file.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File|null The file or null if not a file part.
      */
@@ -163,7 +163,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the function call.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FunctionCall|null The function call or null if not a function call part.
      */
@@ -175,7 +175,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the function response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FunctionResponse|null The function response or null if not a function response part.
      */
@@ -187,7 +187,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -261,7 +261,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MessagePartArrayShape
      */
@@ -293,7 +293,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

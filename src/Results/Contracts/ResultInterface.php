@@ -14,14 +14,14 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
  * Results contain the output from AI operations along with metadata
  * such as token usage and provider-specific information.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface ResultInterface
 {
     /**
      * Gets the result ID.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The unique result identifier.
      */
@@ -30,7 +30,7 @@ interface ResultInterface
     /**
      * Gets token usage information.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return TokenUsage Token usage statistics.
      */
@@ -39,7 +39,7 @@ interface ResultInterface
     /**
      * Gets the provider metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderMetadata The provider metadata.
      */
@@ -48,7 +48,7 @@ interface ResultInterface
     /**
      * Gets the model metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ModelMetadata The model metadata.
      */
@@ -57,7 +57,7 @@ interface ResultInterface
     /**
      * Gets provider-specific metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, mixed> Provider metadata.
      */

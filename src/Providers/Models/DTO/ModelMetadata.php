@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  * This class contains information about a specific AI model, including
  * its identifier, display name, supported capabilities, and configuration options.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type SupportedOptionArrayShape from SupportedOption
  *
@@ -67,7 +67,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $id The model's unique identifier.
      * @param string $name The model's display name.
@@ -105,7 +105,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * Gets the model's unique identifier.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The model ID.
      */
@@ -117,7 +117,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * Gets the model's display name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The model name.
      */
@@ -129,7 +129,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * Gets the model's supported capabilities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<CapabilityEnum> The supported capabilities.
      */
@@ -141,7 +141,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * Gets the model's supported configuration options.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<SupportedOption> The supported options.
      */
@@ -153,7 +153,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -189,7 +189,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ModelMetadataArrayShape
      */
@@ -212,7 +212,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * Checks whether this model meets the specified requirements.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelRequirements $requirements The requirements to check against.
      * @return bool True if the model meets all requirements, false otherwise.
@@ -248,7 +248,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

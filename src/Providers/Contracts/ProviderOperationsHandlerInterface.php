@@ -14,14 +14,14 @@ use WordPress\AiClient\Operations\Contracts\OperationInterface;
  * across all models within a provider. Operations are tracked at the
  * provider level rather than per-model.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface ProviderOperationsHandlerInterface
 {
     /**
      * Gets an operation by ID.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $operationId Operation identifier.
      * @return OperationInterface The operation.

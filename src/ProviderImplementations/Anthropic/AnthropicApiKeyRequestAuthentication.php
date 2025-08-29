@@ -10,7 +10,7 @@ use WordPress\AiClient\Providers\Http\DTO\Request;
 /**
  * Class for HTTP request authentication using an API key in a Anthropic API compliant way.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class AnthropicApiKeyRequestAuthentication extends ApiKeyRequestAuthentication
 {
@@ -19,7 +19,7 @@ class AnthropicApiKeyRequestAuthentication extends ApiKeyRequestAuthentication
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function authenticateRequest(Request $request): Request
     {

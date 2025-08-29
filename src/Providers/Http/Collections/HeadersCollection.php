@@ -10,7 +10,7 @@ namespace WordPress\AiClient\Providers\Http\Collections;
  * This class stores HTTP headers while preserving their original casing
  * and provides efficient case-insensitive lookups.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class HeadersCollection
 {
@@ -27,7 +27,7 @@ class HeadersCollection
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<string, string|list<string>> $headers Initial headers.
      */
@@ -41,7 +41,7 @@ class HeadersCollection
     /**
      * Gets a specific header value.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name (case-insensitive).
      * @return list<string>|null The header value(s) or null if not found.
@@ -60,7 +60,7 @@ class HeadersCollection
     /**
      * Gets all headers.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, list<string>> All headers with their original casing.
      */
@@ -72,7 +72,7 @@ class HeadersCollection
     /**
      * Gets header values as a comma-separated string.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name (case-insensitive).
      * @return string|null The header values as a comma-separated string or null if not found.
@@ -86,7 +86,7 @@ class HeadersCollection
     /**
      * Checks if a header exists.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name (case-insensitive).
      * @return bool True if the header exists, false otherwise.
@@ -99,7 +99,7 @@ class HeadersCollection
     /**
      * Sets a header value, replacing any existing value.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name.
      * @param string|list<string> $value The header value(s).
@@ -131,7 +131,7 @@ class HeadersCollection
     /**
      * Returns a new instance with the specified header.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name.
      * @param string|list<string> $value The header value(s).

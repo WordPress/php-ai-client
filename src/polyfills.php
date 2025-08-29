@@ -3,7 +3,7 @@
 /**
  * Polyfills for PHP functions that may not be available in older versions.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 
 declare(strict_types=1);
@@ -14,7 +14,7 @@ if (!function_exists('array_is_list')) {
      *
      * An array is considered a list if its keys consist of consecutive numbers from 0 to count($array)-1.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<mixed> $array The array to check.
      * @return bool True if the array is a list, false otherwise.
@@ -41,7 +41,7 @@ if (!function_exists('str_starts_with')) {
     /**
      * Checks if a string starts with a given substring.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $haystack The string to search in.
      * @param string $needle The substring to search for.
@@ -61,7 +61,7 @@ if (!function_exists('str_ends_with')) {
     /**
      * Checks if a string ends with a given substring.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $haystack The string to search in.
      * @param string $needle The substring to search for.

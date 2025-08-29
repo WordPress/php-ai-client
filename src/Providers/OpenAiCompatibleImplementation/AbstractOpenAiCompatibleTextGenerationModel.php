@@ -29,7 +29,7 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 /**
  * Base class for a text generation model for an OpenAI compatible provider.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type ToolCallData array{
  *     type?: string,
@@ -66,7 +66,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     final public function generateTextResult(array $prompt): GenerativeAiResult
     {
@@ -93,7 +93,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     final public function streamGenerateTextResult(array $prompt): Generator
     {
@@ -108,7 +108,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Prepares the given prompt and the model configuration into parameters for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<Message> $prompt The prompt to generate text for. Either a single message or a list of messages
      *                              from a chat.
@@ -210,7 +210,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Prepares the messages parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<Message> $messages The messages to prepare.
      * @param string|null $systemInstruction An optional system instruction to prepend to the messages.
@@ -276,7 +276,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Returns the OpenAI API specific role string for the given message role.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessageRoleEnum $role The message role.
      * @return string The role for the API request.
@@ -292,7 +292,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Returns the OpenAI API specific content data for a message part.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessagePart $part The message part to get the data for.
      * @return ?array<string, mixed> The data for the message content part, or null if not applicable.
@@ -377,7 +377,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Returns the OpenAI API specific tool calls data for a message part.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessagePart $part The message part to get the data for.
      * @return ?array<string, mixed> The data for the message tool call part, or null if not applicable.
@@ -410,7 +410,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Validates that the given output modalities to ensure that at least one output modality is text.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<ModalityEnum> $outputModalities The output modalities to validate.
      * @throws InvalidArgumentException If no text output modality is present.
@@ -436,7 +436,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Prepares the output modalities parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<ModalityEnum> $modalities The modalities to prepare.
      * @return list<string> The prepared modalities parameter.
@@ -466,7 +466,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Prepares the tools parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<FunctionDeclaration> $functionDeclarations The function declarations.
      * @return list<array<string, mixed>> The prepared tools parameter.
@@ -489,7 +489,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * This is only called if the output MIME type is `application/json`.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<string, mixed>|null $outputSchema The output schema.
      * @return array<string, mixed> The prepared response format parameter.
@@ -511,7 +511,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Creates a request object for the provider's API.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param HttpMethodEnum $method The HTTP method.
      * @param string $path The API endpoint path, relative to the base URI.
@@ -529,7 +529,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Throws an exception if the response is not successful.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Response $response The HTTP response to check.
      * @throws ResponseException If the response is not successful.
@@ -546,7 +546,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Parses the response from the API endpoint to a generative AI result.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Response $response The response from the API endpoint.
      * @return GenerativeAiResult The parsed generative AI result.
@@ -608,7 +608,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Parses a single choice from the API response into a Candidate object.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ChoiceData $choiceData The choice data from the API response.
      * @return Candidate The parsed candidate.
@@ -663,7 +663,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Parses the message from a choice in the API response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessageData $messageData The message data from the API response.
      * @return Message The parsed message.
@@ -682,7 +682,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Parses the message parts from a choice in the API response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessageData $messageData The message data from the API response.
      * @return MessagePart[] The parsed message parts.
@@ -717,7 +717,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Parses a tool call part from the API response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ToolCallData $toolCallData The tool call data from the API response.
      * @return MessagePart|null The parsed message part for the tool call, or null if not applicable.

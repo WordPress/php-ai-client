@@ -35,7 +35,7 @@ use RuntimeException;
  * @property-read string $value The value of the enum instance.
  * @property-read string $name The name of the enum constant.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 abstract class AbstractEnum implements JsonSerializable
 {
@@ -62,7 +62,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Constructor is private to ensure instances are created through static methods.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $value The enum value.
      * @param string $name The constant name.
@@ -76,7 +76,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Provides read-only access to properties.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $property The property name.
      * @return mixed The property value.
@@ -96,7 +96,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Prevents property modification.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $property The property name.
      * @param mixed $value The value to set.
@@ -112,7 +112,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Creates an enum instance from a value, throws exception if invalid.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $value The enum value.
      * @return static The enum instance.
@@ -132,7 +132,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Tries to create an enum instance from a value, returns null if invalid.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $value The enum value.
      * @return static|null The enum instance or null.
@@ -151,7 +151,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Gets all enum cases.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return static[] Array of all enum instances.
      */
@@ -168,7 +168,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Checks if this enum has the same value as the given value.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|self $other The value or enum to compare.
      * @return bool True if values are equal.
@@ -185,7 +185,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Checks if this enum is the same instance type and value as another enum.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param self $other The other enum to compare.
      * @return bool True if enums are identical.
@@ -198,7 +198,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Gets all valid values for this enum.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string[] List of all enum values.
      */
@@ -210,7 +210,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Checks if a value is valid for this enum.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $value The value to check.
      * @return bool True if value is valid.
@@ -223,7 +223,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Gets or creates a singleton instance for the given value and name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $value The enum value.
      * @param string $name The constant name.
@@ -249,7 +249,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Gets all constants for this enum class.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, string> Map of constant names to values.
      * @throws RuntimeException If invalid constant found.
@@ -271,7 +271,7 @@ abstract class AbstractEnum implements JsonSerializable
      * This method can be overridden by subclasses to customize how
      * enumerations are determined (e.g., to add dynamic constants).
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param class-string $className The fully qualified class name.
      * @return array<string, string> Map of constant names to values.
@@ -318,7 +318,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Handles dynamic method calls for enum checking.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The method name.
      * @param array<mixed> $arguments The method arguments.
@@ -345,7 +345,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Handles static method calls for enum creation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The method name.
      * @param array<mixed> $arguments The method arguments.
@@ -369,7 +369,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Converts camelCase to CONSTANT_CASE.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $camelCase The camelCase string.
      * @return string The CONSTANT_CASE version.
@@ -386,7 +386,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Returns string representation of the enum.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The enum value.
      */
@@ -398,7 +398,7 @@ abstract class AbstractEnum implements JsonSerializable
     /**
      * Converts the enum to a JSON-serializable format.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The enum value.
      */

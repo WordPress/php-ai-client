@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  * This class combines provider information with the models that
  * the provider offers, facilitating model discovery and selection.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type ProviderMetadataArrayShape from ProviderMetadata
  * @phpstan-import-type ModelMetadataArrayShape from ModelMetadata
@@ -44,7 +44,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ProviderMetadata $provider The provider metadata.
      * @param list<ModelMetadata> $models The available models.
@@ -64,7 +64,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     /**
      * Gets the provider metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderMetadata The provider metadata.
      */
@@ -76,7 +76,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     /**
      * Gets the available models.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<ModelMetadata> The available models.
      */
@@ -88,7 +88,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -109,7 +109,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderModelsMetadataArrayShape
      */
@@ -127,7 +127,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

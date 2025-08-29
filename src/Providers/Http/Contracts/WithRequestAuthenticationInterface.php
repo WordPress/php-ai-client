@@ -7,14 +7,14 @@ namespace WordPress\AiClient\Providers\Http\Contracts;
 /**
  * Interface for models that support request authentication.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface WithRequestAuthenticationInterface
 {
     /**
      * Sets the request authentication.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param RequestAuthenticationInterface $authentication The authentication instance.
      * @return void
@@ -24,7 +24,7 @@ interface WithRequestAuthenticationInterface
     /**
      * Returns the request authentication.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return RequestAuthenticationInterface The authentication instance.
      */

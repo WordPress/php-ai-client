@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  * This class defines the capabilities and options that a model must support
  * in order to be considered suitable for the implementing code's needs.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type RequiredOptionArrayShape from RequiredOption
  *
@@ -43,7 +43,7 @@ class ModelRequirements extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<CapabilityEnum> $requiredCapabilities The capabilities that the model must support.
      * @param list<RequiredOption> $requiredOptions The options that the model must support with specific values.
@@ -67,7 +67,7 @@ class ModelRequirements extends AbstractDataTransferObject
     /**
      * Gets the capabilities that the model must support.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<CapabilityEnum> The required capabilities.
      */
@@ -79,7 +79,7 @@ class ModelRequirements extends AbstractDataTransferObject
     /**
      * Gets the options that the model must support with specific values.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<RequiredOption> The required options.
      */
@@ -91,7 +91,7 @@ class ModelRequirements extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -119,7 +119,7 @@ class ModelRequirements extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ModelRequirementsArrayShape
      */
@@ -140,7 +140,7 @@ class ModelRequirements extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

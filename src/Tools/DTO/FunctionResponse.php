@@ -13,7 +13,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * This DTO encapsulates the result of executing a function that was
  * requested by the AI model through a FunctionCall.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type FunctionResponseArrayShape array{id: string, name: string, response: mixed}
  *
@@ -42,7 +42,7 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $id The ID of the function call this is responding to.
      * @param string $name The name of the function that was called.
@@ -58,7 +58,7 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * Gets the function call ID.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The function call ID.
      */
@@ -70,7 +70,7 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * Gets the function name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The function name.
      */
@@ -82,7 +82,7 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * Gets the function response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return mixed The response data.
      */
@@ -94,7 +94,7 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -128,7 +128,7 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FunctionResponseArrayShape
      */
@@ -144,7 +144,7 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

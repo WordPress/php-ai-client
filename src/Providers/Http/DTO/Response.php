@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Http\Collections\HeadersCollection;
  * This class encapsulates HTTP response data that has been converted
  * from PSR-7 responses by the HTTP transporter.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type ResponseArrayShape array{
  *     statusCode: int,
@@ -48,7 +48,7 @@ class Response extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $statusCode The HTTP status code.
      * @param array<string, string|list<string>> $headers The response headers.
@@ -70,7 +70,7 @@ class Response extends AbstractDataTransferObject
     /**
      * Gets the HTTP status code.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int The status code.
      */
@@ -82,7 +82,7 @@ class Response extends AbstractDataTransferObject
     /**
      * Gets the response headers.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, list<string>> The headers.
      */
@@ -94,7 +94,7 @@ class Response extends AbstractDataTransferObject
     /**
      * Gets a specific header value.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name (case-insensitive).
      * @return list<string>|null The header value(s) or null if not found.
@@ -107,7 +107,7 @@ class Response extends AbstractDataTransferObject
     /**
      * Gets header values as a comma-separated string.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name (case-insensitive).
      * @return string|null The header values as a comma-separated string or null if not found.
@@ -120,7 +120,7 @@ class Response extends AbstractDataTransferObject
     /**
      * Gets the response body.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The body.
      */
@@ -132,7 +132,7 @@ class Response extends AbstractDataTransferObject
     /**
      * Checks if the response has a header.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name.
      * @return bool True if the header exists, false otherwise.
@@ -145,7 +145,7 @@ class Response extends AbstractDataTransferObject
     /**
      * Checks if the response indicates success.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if status code is 2xx, false otherwise.
      */
@@ -161,7 +161,7 @@ class Response extends AbstractDataTransferObject
      * Attempts to decode the body as JSON. Returns null if the body
      * is empty or not valid JSON.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, mixed>|null The decoded data or null.
      */
@@ -184,7 +184,7 @@ class Response extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -217,7 +217,7 @@ class Response extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ResponseArrayShape
      */
@@ -238,7 +238,7 @@ class Response extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

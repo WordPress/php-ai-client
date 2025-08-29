@@ -12,14 +12,14 @@ use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
  *
  * Provides methods for initiating long-running text-to-speech conversion tasks.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface TextToSpeechConversionOperationModelInterface
 {
     /**
      * Creates a text-to-speech conversion operation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<Message> $prompt Array of messages containing the text to convert to speech.
      * @return GenerativeAiOperation The initiated text-to-speech conversion operation.

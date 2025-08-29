@@ -15,14 +15,14 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * Providers represent AI services (Google, OpenAI, Anthropic, etc.)
  * and provide access to models, metadata, and availability information.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface ProviderInterface
 {
     /**
      * Gets provider metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderMetadata Provider metadata.
      */
@@ -31,7 +31,7 @@ interface ProviderInterface
     /**
      * Creates a model instance.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $modelId Model identifier.
      * @param ?ModelConfig $modelConfig Model configuration.
@@ -43,7 +43,7 @@ interface ProviderInterface
     /**
      * Gets provider availability checker.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderAvailabilityInterface Provider availability checker.
      */
@@ -52,7 +52,7 @@ interface ProviderInterface
     /**
      * Gets model metadata directory.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ModelMetadataDirectoryInterface Model metadata directory.
      */

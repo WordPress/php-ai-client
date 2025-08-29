@@ -19,7 +19,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  * While this class contains no abstract methods, it is still abstract to ensure that each model class can actually
  * perform generative AI tasks by implementing the corresponding interfaces.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 abstract class AbstractApiBasedModel implements
     ModelInterface,
@@ -47,7 +47,7 @@ abstract class AbstractApiBasedModel implements
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelMetadata $metadata The metadata for the model.
      * @param ProviderMetadata $providerMetadata The metadata for the model's provider.
@@ -62,7 +62,7 @@ abstract class AbstractApiBasedModel implements
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     final public function metadata(): ModelMetadata
     {
@@ -72,7 +72,7 @@ abstract class AbstractApiBasedModel implements
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     final public function providerMetadata(): ProviderMetadata
     {
@@ -82,7 +82,7 @@ abstract class AbstractApiBasedModel implements
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     final public function setConfig(ModelConfig $config): void
     {
@@ -92,7 +92,7 @@ abstract class AbstractApiBasedModel implements
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     final public function getConfig(): ModelConfig
     {

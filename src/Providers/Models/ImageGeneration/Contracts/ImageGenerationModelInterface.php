@@ -12,14 +12,14 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *
  * Provides synchronous methods for generating images from text prompts.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface ImageGenerationModelInterface
 {
     /**
      * Generates images from a prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<Message> $prompt Array of messages containing the image generation prompt.
      * @return GenerativeAiResult Result containing generated images.

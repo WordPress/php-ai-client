@@ -13,14 +13,14 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  * Provides methods to list, check, and retrieve model metadata
  * for all models supported by a provider.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface ModelMetadataDirectoryInterface
 {
     /**
      * Lists all available model metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<ModelMetadata> Array of model metadata.
      */
@@ -29,7 +29,7 @@ interface ModelMetadataDirectoryInterface
     /**
      * Checks if metadata exists for a specific model.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $modelId Model identifier.
      * @return bool True if metadata exists, false otherwise.
@@ -39,7 +39,7 @@ interface ModelMetadataDirectoryInterface
     /**
      * Gets metadata for a specific model.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $modelId Model identifier.
      * @return ModelMetadata Model metadata.

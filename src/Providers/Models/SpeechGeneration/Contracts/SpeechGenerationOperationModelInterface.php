@@ -12,14 +12,14 @@ use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
  *
  * Provides methods for initiating long-running speech generation tasks.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface SpeechGenerationOperationModelInterface
 {
     /**
      * Creates a speech generation operation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<Message> $prompt Array of messages containing the speech generation prompt.
      * @return GenerativeAiOperation The initiated speech generation operation.

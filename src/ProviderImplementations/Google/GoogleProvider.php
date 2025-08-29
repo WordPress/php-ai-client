@@ -17,7 +17,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 /**
  * Class for the Google provider.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class GoogleProvider extends AbstractProvider
 {
@@ -26,7 +26,7 @@ class GoogleProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createModel(
         ModelMetadata $modelMetadata,
@@ -50,7 +50,7 @@ class GoogleProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createProviderMetadata(): ProviderMetadata
     {
@@ -64,7 +64,7 @@ class GoogleProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createProviderAvailability(): ProviderAvailabilityInterface
     {
@@ -77,7 +77,7 @@ class GoogleProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createModelMetadataDirectory(): ModelMetadataDirectoryInterface
     {

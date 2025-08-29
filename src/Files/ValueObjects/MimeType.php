@@ -12,7 +12,7 @@ use InvalidArgumentException;
  * This immutable value object encapsulates MIME type validation and
  * provides convenient methods for checking MIME type categories.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 final class MimeType
 {
@@ -115,7 +115,7 @@ final class MimeType
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $value The MIME type value.
      * @throws InvalidArgumentException If the MIME type is invalid.
@@ -134,7 +134,7 @@ final class MimeType
     /**
      * Gets the primary known file extension for this MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The file extension (without the dot).
      * @throws InvalidArgumentException If no known extension exists for this MIME type.
@@ -155,7 +155,7 @@ final class MimeType
     /**
      * Creates a MimeType from a file extension.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $extension The file extension (without the dot).
      * @return self The MimeType instance.
@@ -177,7 +177,7 @@ final class MimeType
     /**
      * Checks if a MIME type string is valid.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $mimeType The MIME type to validate.
      * @return bool True if valid.
@@ -197,7 +197,7 @@ final class MimeType
      * This method returns true when the stored MIME type begins with the
      * given prefix. For example, `"audio"` matches `"audio/mpeg"`.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $mimeType The MIME type prefix to check (e.g., "audio", "image").
      * @return bool True if this MIME type is of the specified type.
@@ -210,7 +210,7 @@ final class MimeType
     /**
      * Checks if this is an image MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if this is an image type.
      */
@@ -222,7 +222,7 @@ final class MimeType
     /**
      * Checks if this is an audio MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if this is an audio type.
      */
@@ -234,7 +234,7 @@ final class MimeType
     /**
      * Checks if this is a video MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if this is a video type.
      */
@@ -246,7 +246,7 @@ final class MimeType
     /**
      * Checks if this is a text MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if this is a text type.
      */
@@ -258,7 +258,7 @@ final class MimeType
     /**
      * Checks if this is a document MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if this is a document type.
      */
@@ -270,7 +270,7 @@ final class MimeType
     /**
      * Checks if this MIME type equals another.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param self|string $other The other MIME type to compare.
      * @return bool True if equal.
@@ -293,7 +293,7 @@ final class MimeType
     /**
      * Gets the string representation of the MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The MIME type value.
      */

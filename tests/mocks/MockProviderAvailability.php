@@ -12,8 +12,6 @@ use WordPress\AiClient\Providers\Http\Traits\WithRequestAuthenticationTrait;
 
 /**
  * Mock provider availability for testing.
- *
- * @since n.e.x.t
  */
 class MockProviderAvailability implements
     ProviderAvailabilityInterface,

@@ -9,7 +9,7 @@ use Exception;
 /**
  * Exception class for HTTP response errors.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class ResponseException extends Exception
 {

@@ -13,7 +13,7 @@ use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
  * This class contains information about an AI provider, including its
  * unique identifier, display name, and type (cloud, server, or client).
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type ProviderMetadataArrayShape array{
  *     id: string,
@@ -47,7 +47,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $id The provider's unique identifier.
      * @param string $name The provider's display name.
@@ -63,7 +63,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     /**
      * Gets the provider's unique identifier.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The provider ID.
      */
@@ -75,7 +75,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     /**
      * Gets the provider's display name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The provider name.
      */
@@ -87,7 +87,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     /**
      * Gets the provider type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderTypeEnum The provider type.
      */
@@ -99,7 +99,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -127,7 +127,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderMetadataArrayShape
      */
@@ -143,7 +143,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

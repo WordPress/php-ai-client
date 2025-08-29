@@ -13,14 +13,14 @@ use WordPress\AiClient\Providers\Http\DTO\Request;
  * This is only relevant when calling the primary Google Gemini API endpoints. It is not relevant when calling the
  * OpenAI-compatible endpoints.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class GoogleApiKeyRequestAuthentication extends ApiKeyRequestAuthentication
 {
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function authenticateRequest(Request $request): Request
     {

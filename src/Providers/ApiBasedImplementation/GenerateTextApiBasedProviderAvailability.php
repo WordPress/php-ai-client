@@ -20,7 +20,7 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
  * text generation endpoint which requires authentication. A minimal request to this endpoint is used to determine
  * if the provider is properly configured with valid credentials.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class GenerateTextApiBasedProviderAvailability implements ProviderAvailabilityInterface
 {
@@ -32,7 +32,7 @@ class GenerateTextApiBasedProviderAvailability implements ProviderAvailabilityIn
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelInterface $model The model to use for checking availability.
      */
@@ -49,7 +49,7 @@ class GenerateTextApiBasedProviderAvailability implements ProviderAvailabilityIn
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function isConfigured(): bool
     {

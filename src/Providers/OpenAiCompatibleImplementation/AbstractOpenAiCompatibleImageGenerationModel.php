@@ -26,7 +26,7 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 /**
  * Base class for an image generation model for an OpenAI compatible provider.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type ChoiceData array{
  *     url?: string,
@@ -79,7 +79,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
     /**
      * Prepares the given prompt and the model configuration into parameters for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<Message> $prompt The prompt to generate an image for. Either a single message or a list of messages
      *                              from a chat. However as of today, OpenAI compatible image generation endpoints only
@@ -142,7 +142,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
     /**
      * Prepares the prompt parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<Message> $messages The messages to prepare. However as of today, OpenAI compatible image generation
      *                                endpoints only support a single user message.
@@ -182,7 +182,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
     /**
      * Prepares the size parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MediaOrientationEnum|null $orientation The desired media orientation.
      * @param string|null $aspectRatio The desired media aspect ratio.
@@ -245,7 +245,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
     /**
      * Creates a request object for the provider's API.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param HttpMethodEnum $method The HTTP method.
      * @param string $path The API endpoint path, relative to the base URI.
@@ -263,7 +263,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
     /**
      * Throws an exception if the response is not successful.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Response $response The HTTP response to check.
      * @throws ResponseException If the response is not successful.
@@ -280,7 +280,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
     /**
      * Parses the response from the API endpoint to a generative AI result.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Response $response The response from the API endpoint.
      * @param string   $expectedMimeType The expected MIME type the response is in.
@@ -345,7 +345,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
     /**
      * Parses a single choice from the API response into a Candidate object.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ChoiceData $choiceData The choice data from the API response.
      * @param string   $expectedMimeType The expected MIME type the response is in.

@@ -11,7 +11,7 @@ use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCo
 /**
  * Class for a Google image generation model.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class GoogleImageGenerationModel extends AbstractOpenAiCompatibleImageGenerationModel
 {

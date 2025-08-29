@@ -14,7 +14,7 @@ use WordPress\AiClient\Common\AbstractEnum;
  * @method bool isInline() Checks if this is an inline file type.
  * @method bool isRemote() Checks if this is a remote file type.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class FileTypeEnum extends AbstractEnum
 {

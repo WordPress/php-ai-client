@@ -10,14 +10,14 @@ namespace WordPress\AiClient\Common\Contracts;
  * This interface is implemented by DTOs to provide a consistent way to retrieve
  * their JSON schema for validation and serialization purposes.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface WithJsonSchemaInterface
 {
     /**
      * Gets the JSON schema representation of the object.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, mixed> The JSON schema as an associative array.
      */

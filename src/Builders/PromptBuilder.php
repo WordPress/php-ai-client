@@ -33,7 +33,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * content types and model configurations. It automatically infers model
  * requirements based on the features used in the prompt.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type MessageArrayShape from Message
  * @phpstan-import-type MessagePartArrayShape from MessagePart
@@ -71,7 +71,7 @@ class PromptBuilder
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ProviderRegistry $registry The provider registry for finding suitable models.
      * @param Prompt $prompt Optional initial prompt content.
@@ -100,7 +100,7 @@ class PromptBuilder
     /**
      * Adds text to the current message.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $text The text to add.
      * @return self
@@ -122,7 +122,7 @@ class PromptBuilder
      * - Data URI string (data:mime/type;base64,data)
      * - Local file path string
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|File $file The file (File object or string representation).
      * @param string|null $mimeType The MIME type (optional, ignored if File object provided).
@@ -141,7 +141,7 @@ class PromptBuilder
     /**
      * Adds a function response to the current message.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param FunctionResponse $functionResponse The function response.
      * @return self
@@ -156,7 +156,7 @@ class PromptBuilder
     /**
      * Adds message parts to the current message.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessagePart ...$parts The message parts to add.
      * @return self
@@ -175,7 +175,7 @@ class PromptBuilder
      * Historical messages are prepended to the beginning of the message list,
      * before the current message being built.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Message ...$messages The messages to add to history.
      * @return self
@@ -194,7 +194,7 @@ class PromptBuilder
      * The model's configuration will be merged with the builder's configuration,
      * with the builder's configuration taking precedence for any overlapping settings.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelInterface $model The model to use.
      * @return self
@@ -219,7 +219,7 @@ class PromptBuilder
      * Merges the provided configuration with the builder's configuration,
      * with builder configuration taking precedence.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelConfig $config The model configuration to merge.
      * @return self
@@ -242,7 +242,7 @@ class PromptBuilder
     /**
      * Sets the provider to use for generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $providerIdOrClassName The provider ID or class name.
      * @return self
@@ -259,7 +259,7 @@ class PromptBuilder
      * System instructions are stored in the model configuration and guide
      * the AI model's behavior throughout the conversation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $systemInstruction The system instruction text.
      * @return self
@@ -273,7 +273,7 @@ class PromptBuilder
     /**
      * Sets the maximum number of tokens to generate.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $maxTokens The maximum number of tokens.
      * @return self
@@ -287,7 +287,7 @@ class PromptBuilder
     /**
      * Sets the temperature for generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $temperature The temperature value.
      * @return self
@@ -301,7 +301,7 @@ class PromptBuilder
     /**
      * Sets the top-p value for generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $topP The top-p value.
      * @return self
@@ -315,7 +315,7 @@ class PromptBuilder
     /**
      * Sets the top-k value for generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $topK The top-k value.
      * @return self
@@ -329,7 +329,7 @@ class PromptBuilder
     /**
      * Sets stop sequences for generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string ...$stopSequences The stop sequences.
      * @return self
@@ -343,7 +343,7 @@ class PromptBuilder
     /**
      * Sets the number of candidates to generate.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $candidateCount The number of candidates.
      * @return self
@@ -357,7 +357,7 @@ class PromptBuilder
     /**
      * Sets the output MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $mimeType The MIME type.
      * @return self
@@ -371,7 +371,7 @@ class PromptBuilder
     /**
      * Sets the output schema.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<string, mixed> $schema The output schema.
      * @return self
@@ -385,7 +385,7 @@ class PromptBuilder
     /**
      * Sets the output modalities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModalityEnum ...$modalities The output modalities.
      * @return self
@@ -399,7 +399,7 @@ class PromptBuilder
     /**
      * Configures the prompt for JSON response output.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<string, mixed>|null $schema Optional JSON schema.
      * @return self
@@ -416,7 +416,7 @@ class PromptBuilder
     /**
      * Gets the inferred model requirements based on prompt features.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param CapabilityEnum $capability The capability the model must support.
      * @return ModelRequirements The inferred requirements.
@@ -490,7 +490,7 @@ class PromptBuilder
     /**
      * Infers the capability from configured output modalities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return CapabilityEnum The inferred capability.
      * @throws RuntimeException If the output modality is not supported.
@@ -533,7 +533,7 @@ class PromptBuilder
     /**
      * Infers the capability from a model's implemented interfaces.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelInterface $model The model to infer capability from.
      * @return CapabilityEnum|null The inferred capability, or null if none can be inferred.
@@ -561,7 +561,7 @@ class PromptBuilder
     /**
      * Checks if the current prompt is supported by the selected model.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param CapabilityEnum|null $intendedCapability Optional capability to check support for.
      * @return bool True if supported, false otherwise.
@@ -594,7 +594,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for text generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if text generation is supported.
      */
@@ -606,7 +606,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for image generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if image generation is supported.
      */
@@ -618,7 +618,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for text to speech conversion.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if text to speech conversion is supported.
      */
@@ -630,7 +630,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for video generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if video generation is supported.
      */
@@ -642,7 +642,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for speech generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if speech generation is supported.
      */
@@ -654,7 +654,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for music generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if music generation is supported.
      */
@@ -666,7 +666,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for embedding generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if embedding generation is supported.
      */
@@ -682,7 +682,7 @@ class PromptBuilder
      * potentially multiple candidates) based on the specified capability or
      * the configured output modality.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param CapabilityEnum|null $capability Optional capability to use for generation.
      *                                        If null, capability is inferred from output modality.
@@ -775,7 +775,7 @@ class PromptBuilder
     /**
      * Generates a text result from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return GenerativeAiResult The generated result containing text candidates.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -793,7 +793,7 @@ class PromptBuilder
     /**
      * Generates an image result from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return GenerativeAiResult The generated result containing image candidates.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -811,7 +811,7 @@ class PromptBuilder
     /**
      * Generates a speech result from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return GenerativeAiResult The generated result containing speech audio candidates.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -829,7 +829,7 @@ class PromptBuilder
     /**
      * Converts text to speech and returns the result.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return GenerativeAiResult The generated result containing speech audio candidates.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -847,7 +847,7 @@ class PromptBuilder
     /**
      * Generates text from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The generated text.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -860,7 +860,7 @@ class PromptBuilder
     /**
      * Generates multiple text candidates from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int|null $candidateCount The number of candidates to generate.
      * @return list<string> The generated texts.
@@ -879,7 +879,7 @@ class PromptBuilder
     /**
      * Generates an image from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File The generated image file.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -893,7 +893,7 @@ class PromptBuilder
     /**
      * Generates multiple images from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int|null $candidateCount The number of images to generate.
      * @return list<File> The generated image files.
@@ -912,7 +912,7 @@ class PromptBuilder
     /**
      * Converts text to speech.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File The generated speech audio file.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -926,7 +926,7 @@ class PromptBuilder
     /**
      * Converts text to multiple speech outputs.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int|null $candidateCount The number of speech outputs to generate.
      * @return list<File> The generated speech audio files.
@@ -945,7 +945,7 @@ class PromptBuilder
     /**
      * Generates speech from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File The generated speech audio file.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -959,7 +959,7 @@ class PromptBuilder
     /**
      * Generates multiple speech outputs from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int|null $candidateCount The number of speech outputs to generate.
      * @return list<File> The generated speech audio files.
@@ -981,7 +981,7 @@ class PromptBuilder
      * If the last message has a user role, the part is added to it.
      * Otherwise, a new UserMessage is created with the part.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessagePart $part The part to append.
      * @return void
@@ -1007,7 +1007,7 @@ class PromptBuilder
      * If a model has been explicitly set, validates it meets requirements and returns it.
      * Otherwise, finds a suitable model based on the prompt requirements.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param CapabilityEnum $capability The capability the model will be using.
      * @return ModelInterface The model to use.
@@ -1083,7 +1083,7 @@ class PromptBuilder
     /**
      * Parses various input types into a Message with the given role.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param mixed $input The input to parse.
      * @param MessageRoleEnum $defaultRole The role for the message if not specified by input.
@@ -1164,7 +1164,7 @@ class PromptBuilder
      * - The last message is a user message
      * - The last message has parts
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return void
      * @throws InvalidArgumentException If validation fails.
@@ -1201,7 +1201,7 @@ class PromptBuilder
     /**
      * Checks if the value is a list of Message objects.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param mixed $value The value to check.
      * @return bool True if the value is a list of Message objects.
@@ -1230,7 +1230,7 @@ class PromptBuilder
      * Checks if a RequiredOption with the same name already exists in the list.
      * If not, adds the new option. Returns the updated list.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<RequiredOption> $options The existing list of required options.
      * @param RequiredOption $option The option to potentially add.
@@ -1258,7 +1258,7 @@ class PromptBuilder
      * already included. If output modalities is null, initializes it with
      * the given modalities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModalityEnum ...$modalities The modalities to include.
      * @return void

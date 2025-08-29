@@ -16,8 +16,6 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
  * Mock provider for testing purposes.
- *
- * @since n.e.x.t
  */
 class MockProvider implements ProviderInterface
 {

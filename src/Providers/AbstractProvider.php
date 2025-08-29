@@ -15,7 +15,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 /**
  * Base class for a provider.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 abstract class AbstractProvider implements ProviderInterface
 {
@@ -37,7 +37,7 @@ abstract class AbstractProvider implements ProviderInterface
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     final public static function metadata(): ProviderMetadata
     {
@@ -51,7 +51,7 @@ abstract class AbstractProvider implements ProviderInterface
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     final public static function model(string $modelId, ?ModelConfig $modelConfig = null): ModelInterface
     {
@@ -68,7 +68,7 @@ abstract class AbstractProvider implements ProviderInterface
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     final public static function availability(): ProviderAvailabilityInterface
     {
@@ -82,7 +82,7 @@ abstract class AbstractProvider implements ProviderInterface
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     final public static function modelMetadataDirectory(): ModelMetadataDirectoryInterface
     {
@@ -96,7 +96,7 @@ abstract class AbstractProvider implements ProviderInterface
     /**
      * Creates a model instance based on the given model metadata and provider metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelMetadata $modelMetadata The model metadata.
      * @param ProviderMetadata $providerMetadata The provider metadata.
@@ -110,7 +110,7 @@ abstract class AbstractProvider implements ProviderInterface
     /**
      * Creates the provider metadata instance.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderMetadata The provider metadata.
      */
@@ -119,7 +119,7 @@ abstract class AbstractProvider implements ProviderInterface
     /**
      * Creates the provider availability instance.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderAvailabilityInterface The provider availability.
      */
@@ -128,7 +128,7 @@ abstract class AbstractProvider implements ProviderInterface
     /**
      * Creates the model metadata directory instance.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ModelMetadataDirectoryInterface The model metadata directory.
      */

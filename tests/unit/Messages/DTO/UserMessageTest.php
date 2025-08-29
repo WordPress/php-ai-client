@@ -314,8 +314,6 @@ class UserMessageTest extends TestCase
 
     /**
      * Tests that withPart returns a new Message with user role.
-     *
-     * @since n.e.x.t
      */
     public function testWithPartReturnsNewMessage(): void
     {

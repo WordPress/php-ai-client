@@ -20,7 +20,7 @@ use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCo
 /**
  * Class for the Anthropic model metadata directory.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type ModelsResponseData array{
  *     data: list<array{id: string, display_name?: string}>
@@ -31,7 +31,7 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {
@@ -49,7 +49,7 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
     {
@@ -64,7 +64,7 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected function parseResponseToModelMetadataList(Response $response): array
     {

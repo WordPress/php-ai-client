@@ -14,8 +14,6 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
  * Mock model metadata directory for testing.
- *
- * @since n.e.x.t
  */
 class MockModelMetadataDirectory implements
     ModelMetadataDirectoryInterface,

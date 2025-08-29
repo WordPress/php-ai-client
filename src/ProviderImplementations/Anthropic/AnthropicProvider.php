@@ -17,7 +17,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 /**
  * Class for the Anthropic provider.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class AnthropicProvider extends AbstractProvider
 {
@@ -26,7 +26,7 @@ class AnthropicProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createModel(
         ModelMetadata $modelMetadata,
@@ -47,7 +47,7 @@ class AnthropicProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createProviderMetadata(): ProviderMetadata
     {
@@ -61,7 +61,7 @@ class AnthropicProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createProviderAvailability(): ProviderAvailabilityInterface
     {
@@ -74,7 +74,7 @@ class AnthropicProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createModelMetadataDirectory(): ModelMetadataDirectoryInterface
     {

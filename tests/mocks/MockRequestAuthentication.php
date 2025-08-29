@@ -30,8 +30,6 @@ class MockRequestAuthentication implements RequestAuthenticationInterface, WithJ
 
     /**
      * {@inheritDoc}
-     *
-     * @since n.e.x.t
      */
     public function authenticateRequest(Request $request): Request
     {
@@ -40,8 +38,6 @@ class MockRequestAuthentication implements RequestAuthenticationInterface, WithJ
 
     /**
      * {@inheritDoc}
-     *
-     * @since n.e.x.t
      */
     public static function getJsonSchema(): array
     {

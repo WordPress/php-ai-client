@@ -12,7 +12,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * This DTO defines constraints for web searches that AI models can perform,
  * including allowed and disallowed domains.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type WebSearchArrayShape array{allowedDomains?: string[], disallowedDomains?: string[]}
  *
@@ -35,7 +35,7 @@ class WebSearch extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string[] $allowedDomains List of domains that are allowed for web search.
      * @param string[] $disallowedDomains List of domains that are disallowed for web search.
@@ -49,7 +49,7 @@ class WebSearch extends AbstractDataTransferObject
     /**
      * Gets the allowed domains.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string[] The allowed domains.
      */
@@ -61,7 +61,7 @@ class WebSearch extends AbstractDataTransferObject
     /**
      * Gets the disallowed domains.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string[] The disallowed domains.
      */
@@ -73,7 +73,7 @@ class WebSearch extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -102,7 +102,7 @@ class WebSearch extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return WebSearchArrayShape
      */
@@ -117,7 +117,7 @@ class WebSearch extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

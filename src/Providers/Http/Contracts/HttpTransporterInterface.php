@@ -13,14 +13,14 @@ use WordPress\AiClient\Providers\Http\DTO\Response;
  * Handles sending HTTP requests and receiving responses using
  * PSR-7, PSR-17, and PSR-18 standards internally.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface HttpTransporterInterface
 {
     /**
      * Sends an HTTP request and returns the response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Request $request The request to send.
      * @return Response The response received.

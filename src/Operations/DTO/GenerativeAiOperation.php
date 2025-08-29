@@ -15,7 +15,7 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  * This DTO tracks the progress of generative AI tasks that may not complete
  * immediately, providing access to the result once available.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type GenerativeAiResultArrayShape from GenerativeAiResult
  *
@@ -46,7 +46,7 @@ class GenerativeAiOperation extends AbstractDataTransferObject implements Operat
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $id Unique identifier for this operation.
      * @param OperationStateEnum $state The current state of the operation.
@@ -62,7 +62,7 @@ class GenerativeAiOperation extends AbstractDataTransferObject implements Operat
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function getId(): string
     {
@@ -72,7 +72,7 @@ class GenerativeAiOperation extends AbstractDataTransferObject implements Operat
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function getState(): OperationStateEnum
     {
@@ -82,7 +82,7 @@ class GenerativeAiOperation extends AbstractDataTransferObject implements Operat
     /**
      * Gets the operation result.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return GenerativeAiResult|null The result or null if not yet complete.
      */
@@ -94,7 +94,7 @@ class GenerativeAiOperation extends AbstractDataTransferObject implements Operat
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -146,7 +146,7 @@ class GenerativeAiOperation extends AbstractDataTransferObject implements Operat
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return GenerativeAiOperationArrayShape
      */
@@ -167,7 +167,7 @@ class GenerativeAiOperation extends AbstractDataTransferObject implements Operat
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

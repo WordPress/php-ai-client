@@ -15,14 +15,14 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 /**
  * Base class for a model metadata directory for an OpenAI compatible provider.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractApiBasedModelMetadataDirectory
 {
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected function sendListModelsRequest(): array
     {
@@ -46,7 +46,7 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
     /**
      * Creates a request object for the provider's API.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param HttpMethodEnum $method The HTTP method.
      * @param string $path The API endpoint path, relative to the base URI.
@@ -64,7 +64,7 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
     /**
      * Throws an exception if the response is not successful.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Response $response The HTTP response to check.
      * @throws ResponseException If the response is not successful.
@@ -81,7 +81,7 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
     /**
      * Parses the response from the API endpoint to list models into a list of model metadata objects.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Response $response The response from the API endpoint to list models.
      * @return list<ModelMetadata> List of model metadata objects.

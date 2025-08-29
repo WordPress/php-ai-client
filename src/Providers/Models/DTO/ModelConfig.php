@@ -20,7 +20,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  * including output modalities, system instructions, generation parameters,
  * and tool integrations.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type FunctionDeclarationArrayShape from FunctionDeclaration
  * @phpstan-import-type WebSearchArrayShape from WebSearch
@@ -190,7 +190,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the output modalities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<ModalityEnum> $outputModalities The output modalities.
      *
@@ -208,7 +208,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output modalities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<ModalityEnum>|null The output modalities.
      */
@@ -220,7 +220,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the system instruction.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $systemInstruction The system instruction.
      */
@@ -232,7 +232,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the system instruction.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The system instruction.
      */
@@ -244,7 +244,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the candidate count.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $candidateCount The candidate count.
      */
@@ -256,7 +256,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the candidate count.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int|null The candidate count.
      */
@@ -268,7 +268,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the maximum tokens.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $maxTokens The maximum tokens.
      */
@@ -280,7 +280,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the maximum tokens.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int|null The maximum tokens.
      */
@@ -292,7 +292,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the temperature.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $temperature The temperature.
      */
@@ -304,7 +304,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the temperature.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return float|null The temperature.
      */
@@ -316,7 +316,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the top-p parameter.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $topP The top-p parameter.
      */
@@ -328,7 +328,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the top-p parameter.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return float|null The top-p parameter.
      */
@@ -340,7 +340,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the top-k parameter.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $topK The top-k parameter.
      */
@@ -352,7 +352,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the top-k parameter.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int|null The top-k parameter.
      */
@@ -364,7 +364,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the stop sequences.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<string> $stopSequences The stop sequences.
      *
@@ -382,7 +382,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the stop sequences.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<string>|null The stop sequences.
      */
@@ -394,7 +394,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the presence penalty.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $presencePenalty The presence penalty.
      */
@@ -406,7 +406,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the presence penalty.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return float|null The presence penalty.
      */
@@ -418,7 +418,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the frequency penalty.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $frequencyPenalty The frequency penalty.
      */
@@ -430,7 +430,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the frequency penalty.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return float|null The frequency penalty.
      */
@@ -442,7 +442,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets whether to return log probabilities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param bool $logprobs Whether to return log probabilities.
      */
@@ -454,7 +454,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets whether to return log probabilities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool|null Whether to return log probabilities.
      */
@@ -466,7 +466,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the number of top log probabilities to return.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $topLogprobs The number of top log probabilities.
      */
@@ -478,7 +478,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the number of top log probabilities to return.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int|null The number of top log probabilities.
      */
@@ -490,7 +490,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the function declarations.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<FunctionDeclaration> $function_declarations The function declarations.
      *
@@ -508,7 +508,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the function declarations.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<FunctionDeclaration>|null The function declarations.
      */
@@ -520,7 +520,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the web search configuration.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param WebSearch $web_search The web search configuration.
      */
@@ -532,7 +532,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the web search configuration.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return WebSearch|null The web search configuration.
      */
@@ -544,7 +544,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the output file type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param FileTypeEnum $outputFileType The output file type.
      */
@@ -556,7 +556,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output file type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FileTypeEnum|null The output file type.
      */
@@ -568,7 +568,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the output MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $outputMimeType The output MIME type.
      */
@@ -580,7 +580,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The output MIME type.
      */
@@ -595,7 +595,7 @@ class ModelConfig extends AbstractDataTransferObject
      * When setting an output schema, this method automatically sets
      * the output MIME type to "application/json" if not already set.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<string, mixed> $outputSchema The output schema (JSON schema).
      */
@@ -612,7 +612,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output schema.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, mixed>|null The output schema.
      */
@@ -624,7 +624,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the output media orientation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MediaOrientationEnum $outputMediaOrientation The output media orientation.
      */
@@ -636,7 +636,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output media orientation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MediaOrientationEnum|null The output media orientation.
      */
@@ -650,7 +650,7 @@ class ModelConfig extends AbstractDataTransferObject
      *
      * If set, this supersedes the output media orientation, as it is a more specific configuration.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $outputMediaAspectRatio The output media aspect ratio (e.g. 3:2, 16:9).
      */
@@ -667,7 +667,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output media aspect ratio.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The output media aspect ratio (e.g. 3:2, 16:9).
      */
@@ -679,7 +679,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the output speech voice.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $outputSpeechVoice The output speech voice.
      */
@@ -691,7 +691,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output speech voice.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The output speech voice.
      */
@@ -703,7 +703,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets a single custom option.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $key   The option key.
      * @param mixed  $value The option value.
@@ -716,7 +716,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the custom options.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<string, mixed> $customOptions The custom options.
      */
@@ -728,7 +728,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the custom options.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, mixed> The custom options.
      */
@@ -740,7 +740,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -857,7 +857,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ModelConfigArrayShape
      */
@@ -965,7 +965,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Converts the model configuration to required options.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<RequiredOption> The required options.
      */
@@ -1098,7 +1098,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

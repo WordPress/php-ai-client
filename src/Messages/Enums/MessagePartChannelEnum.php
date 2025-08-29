@@ -9,7 +9,7 @@ use WordPress\AiClient\Common\AbstractEnum;
 /**
  * Enum for message part channels.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @method static self content() Creates an instance for CONTENT channel.
  * @method static self thought() Creates an instance for THOUGHT channel.

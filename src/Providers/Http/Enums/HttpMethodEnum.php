@@ -9,7 +9,7 @@ use WordPress\AiClient\Common\AbstractEnum;
 /**
  * Represents HTTP request methods.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @method static self GET()
  * @method static self POST()
@@ -99,7 +99,7 @@ final class HttpMethodEnum extends AbstractEnum
     /**
      * Checks if this method is idempotent.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if the method is idempotent, false otherwise.
      */
@@ -115,7 +115,7 @@ final class HttpMethodEnum extends AbstractEnum
     /**
      * Checks if this method typically has a request body.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if the method typically has a body, false otherwise.
      */

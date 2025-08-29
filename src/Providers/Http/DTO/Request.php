@@ -16,7 +16,7 @@ use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
  * This class encapsulates HTTP request data that can be converted
  * to PSR-7 requests by the HTTP transporter.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type RequestArrayShape array{
  *     method: string,
@@ -62,7 +62,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param HttpMethodEnum $method The HTTP method.
      * @param string $uri The request URI.
@@ -92,7 +92,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets the HTTP method.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return HttpMethodEnum The HTTP method.
      */
@@ -106,7 +106,7 @@ class Request extends AbstractDataTransferObject
      *
      * For GET requests with array data, appends the data as query parameters.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The URI.
      */
@@ -124,7 +124,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets the request headers.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, list<string>> The headers.
      */
@@ -136,7 +136,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets a specific header value.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name (case-insensitive).
      * @return list<string>|null The header value(s) or null if not found.
@@ -149,7 +149,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets header values as a comma-separated string.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name (case-insensitive).
      * @return string|null The header values as a comma-separated string, or null if not found.
@@ -162,7 +162,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Checks if a header exists.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name (case-insensitive).
      * @return bool True if the header exists, false otherwise.
@@ -181,7 +181,7 @@ class Request extends AbstractDataTransferObject
      * - If data is set and Content-Type is JSON, returns JSON-encoded data
      * - If data is set and Content-Type is form, returns URL-encoded data
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The body.
      * @throws JsonException If the data cannot be encoded to JSON.
@@ -217,7 +217,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets the Content-Type header value.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The Content-Type header value or null if not set.
      */
@@ -230,7 +230,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Returns a new instance with the specified header.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name.
      * @param string|list<string> $value The header value(s).
@@ -247,7 +247,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Returns a new instance with the specified data.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|array<string, mixed> $data The request data.
      * @return self A new instance with the data.
@@ -271,7 +271,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets the request data array.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, mixed>|null The request data array.
      */
@@ -283,7 +283,7 @@ class Request extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -318,7 +318,7 @@ class Request extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return RequestArrayShape
      */
@@ -342,7 +342,7 @@ class Request extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

@@ -12,7 +12,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * This DTO describes a function that can be called by the AI model,
  * including its name, description, and parameter schema.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type FunctionDeclarationArrayShape array{
  *     name: string,
@@ -45,7 +45,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The name of the function.
      * @param string $description A description of what the function does.
@@ -61,7 +61,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * Gets the function name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The function name.
      */
@@ -73,7 +73,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * Gets the function description.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The function description.
      */
@@ -85,7 +85,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * Gets the function parameters schema.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, mixed>|null The parameters schema.
      */
@@ -97,7 +97,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -125,7 +125,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FunctionDeclarationArrayShape
      */
@@ -146,7 +146,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

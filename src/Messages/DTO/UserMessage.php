@@ -15,14 +15,14 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  * This is merely a helper class for construction. Always use `$message->getRole()`
  * to check the role of a message.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class UserMessage extends Message
 {
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessagePart[] $parts The parts that make up this message.
      */

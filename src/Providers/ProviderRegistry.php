@@ -27,7 +27,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
  * This class provides a centralized way to register AI providers, discover
  * their capabilities, and find suitable models based on requirements.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class ProviderRegistry implements WithHttpTransporterInterface
 {
@@ -54,7 +54,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Registers a provider class with the registry.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param class-string<ProviderInterface> $className The fully qualified provider class name implementing the
      * ProviderInterface
@@ -116,7 +116,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Checks if a provider is registered.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name to check.
      * @return bool True if the provider is registered.
@@ -130,7 +130,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Gets the class name for a registered provider.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $id The provider ID.
      * @return string The provider class name.
@@ -150,7 +150,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Checks if a provider is properly configured.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
      * @return bool True if the provider is configured and ready to use.
@@ -173,7 +173,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Finds models across all available providers that support the given requirements.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelRequirements $modelRequirements The requirements to match against.
      * @return list<ProviderModelsMetadata> List of provider models metadata that match requirements.
@@ -202,7 +202,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Finds models within a specific available provider that support the given requirements.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $idOrClassName The provider ID or class name.
      * @param ModelRequirements $modelRequirements The requirements to match against.
@@ -235,7 +235,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Gets a configured model instance from a provider.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
      * @param string $modelId The model identifier.
@@ -263,7 +263,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
      * This method injects required dependencies such as HTTP transporter
      * and authentication into model instances that need them.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelInterface $modelInstance The model instance to bind dependencies to.
      * @return void
@@ -309,7 +309,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function setHttpTransporter(HttpTransporterInterface $httpTransporter): void
     {
@@ -324,7 +324,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Sets the request authentication instance for the given provider.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
      * @param RequestAuthenticationInterface $requestAuthentication The request authentication instance.
@@ -343,7 +343,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Gets the request authentication instance for the given provider, if set.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
      * @return ?RequestAuthenticationInterface The request authentication instance, or null if not set.
@@ -360,7 +360,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Sets the HTTP transporter for a specific provider, hooking up its class instances.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param class-string<ProviderInterface> $className The provider class name.
      * @param HttpTransporterInterface $httpTransporter The HTTP transporter instance.
@@ -390,7 +390,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Sets the request authentication for a specific provider, hooking up its class instances.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param class-string<ProviderInterface> $className The provider class name.
      * @param RequestAuthenticationInterface $requestAuthentication The authentication instance.
@@ -420,7 +420,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Creates a default request authentication instance for a provider.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param class-string<ProviderInterface> $className The provider class name.
      * @return ?RequestAuthenticationInterface The default request authentication instance, or null if not required or
@@ -492,7 +492,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Converts a provider ID and field name to a constant case environment variable name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $providerId The provider ID.
      * @param string $field The field name.

@@ -383,8 +383,6 @@ class MessageTest extends TestCase
 
     /**
      * Tests that withPart creates a new instance with the part appended.
-     *
-     * @since n.e.x.t
      */
     public function testWithPartCreatesNewInstance(): void
     {

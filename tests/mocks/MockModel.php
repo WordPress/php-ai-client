@@ -15,8 +15,6 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
  * Mock model for testing.
- *
- * @since n.e.x.t
  */
 class MockModel implements ModelInterface, WithHttpTransporterInterface, WithRequestAuthenticationInterface
 {

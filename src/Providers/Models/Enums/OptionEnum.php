@@ -62,7 +62,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * @method bool isTopP() Checks if the option is TOP_P.
  * @method bool isWebSearch() Checks if the option is WEB_SEARCH.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class OptionEnum extends AbstractEnum
 {
@@ -81,7 +81,7 @@ class OptionEnum extends AbstractEnum
      * that are prefixed with KEY_. These are transformed to remove the KEY_ prefix
      * and converted to snake_case values.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param class-string $className The fully qualified class name.
      * @return array<string, string> The enum constants.

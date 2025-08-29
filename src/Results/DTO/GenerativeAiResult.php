@@ -19,7 +19,7 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  * This DTO contains the generated candidates along with usage statistics
  * and metadata from the AI provider.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type CandidateArrayShape from Candidate
  * @phpstan-import-type TokenUsageArrayShape from TokenUsage
@@ -78,7 +78,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $id Unique identifier for this result.
      * @param Candidate[] $candidates The generated candidates.
@@ -111,7 +111,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function getId(): string
     {
@@ -121,7 +121,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Gets the generated candidates.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return Candidate[] The candidates.
      */
@@ -133,7 +133,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function getTokenUsage(): TokenUsage
     {
@@ -143,7 +143,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Gets the provider metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderMetadata The provider metadata.
      */
@@ -155,7 +155,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Gets the model metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ModelMetadata The model metadata.
      */
@@ -167,7 +167,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function getAdditionalData(): array
     {
@@ -177,7 +177,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Gets the total number of candidates.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int The total number of candidates.
      */
@@ -189,7 +189,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Checks if the result has multiple candidates.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if there are multiple candidates, false otherwise.
      */
@@ -201,7 +201,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts the first candidate to text.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The text content.
      * @throws RuntimeException If no text content.
@@ -222,7 +222,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts the first candidate to a file.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File The file.
      * @throws RuntimeException If no file content.
@@ -243,7 +243,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts the first candidate to an image file.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File The image file.
      * @throws RuntimeException If no image content.
@@ -264,7 +264,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts the first candidate to an audio file.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File The audio file.
      * @throws RuntimeException If no audio content.
@@ -285,7 +285,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts the first candidate to a video file.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File The video file.
      * @throws RuntimeException If no video content.
@@ -306,7 +306,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts the first candidate to a message.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return Message The message.
      */
@@ -318,7 +318,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts all candidates to text array.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<string> Array of text content.
      */
@@ -341,7 +341,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts all candidates to files.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<File> Array of files.
      */
@@ -364,7 +364,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts all candidates to image files.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<File> Array of image files.
      */
@@ -379,7 +379,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts all candidates to audio files.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<File> Array of audio files.
      */
@@ -394,7 +394,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts all candidates to video files.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<File> Array of video files.
      */
@@ -409,7 +409,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts all candidates to messages.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<Message> Array of messages.
      */
@@ -421,7 +421,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -460,7 +460,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return GenerativeAiResultArrayShape
      */
@@ -479,7 +479,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

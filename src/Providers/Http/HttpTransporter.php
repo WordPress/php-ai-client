@@ -22,7 +22,7 @@ use WordPress\AiClient\Providers\Http\DTO\Response;
  * objects and PSR-7 messages, using HTTPlug for client abstraction
  * and PSR-17 factories for message creation.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class HttpTransporter implements HttpTransporterInterface
 {
@@ -44,7 +44,7 @@ class HttpTransporter implements HttpTransporterInterface
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ClientInterface|null $client PSR-18 HTTP client.
      * @param RequestFactoryInterface|null $requestFactory PSR-17 request factory.
@@ -63,7 +63,7 @@ class HttpTransporter implements HttpTransporterInterface
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function send(Request $request): Response
     {
@@ -76,7 +76,7 @@ class HttpTransporter implements HttpTransporterInterface
     /**
      * Converts a custom Request to a PSR-7 request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Request $request The custom request.
      * @return RequestInterface The PSR-7 request.
@@ -108,7 +108,7 @@ class HttpTransporter implements HttpTransporterInterface
     /**
      * Converts a PSR-7 response to a custom Response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ResponseInterface $psr7Response The PSR-7 response.
      * @return Response The custom response.

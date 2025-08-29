@@ -11,14 +11,14 @@ use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCo
 /**
  * Class for an Anthropic text generation model.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class AnthropicTextGenerationModel extends AbstractOpenAiCompatibleTextGenerationModel
 {
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
     {

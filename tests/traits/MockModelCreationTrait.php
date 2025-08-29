@@ -27,15 +27,11 @@ use WordPress\AiClient\Tests\mocks\MockProvider;
  *
  * This trait consolidates common mock model creation logic to reduce
  * code duplication across test classes and improve maintainability.
- *
- * @since n.e.x.t
  */
 trait MockModelCreationTrait
 {
     /**
      * Creates a provider registry with the mock provider registered.
-     *
-     * @since n.e.x.t
      *
      * @return ProviderRegistry The registry with mock provider.
      */

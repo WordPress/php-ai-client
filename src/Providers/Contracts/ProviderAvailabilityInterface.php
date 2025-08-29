@@ -10,14 +10,14 @@ namespace WordPress\AiClient\Providers\Contracts;
  * Determines whether a provider is configured and available
  * for use based on API keys, credentials, or other requirements.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface ProviderAvailabilityInterface
 {
     /**
      * Checks if the provider is configured.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if the provider is configured and available, false otherwise.
      */

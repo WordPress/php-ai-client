@@ -22,7 +22,7 @@ use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCo
 /**
  * Class for the Google model metadata directory.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type ModelsResponseData array{
  *     models: list<array{
@@ -38,7 +38,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {
@@ -56,7 +56,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
     {
@@ -80,7 +80,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected function parseResponseToModelMetadataList(Response $response): array
     {

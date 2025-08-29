@@ -10,7 +10,7 @@ use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 /**
  * Class for HTTP request authentication using an API key.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type ApiKeyRequestAuthenticationArrayShape array{
  *     apiKey: string
@@ -30,7 +30,7 @@ class ApiKeyRequestAuthentication extends AbstractDataTransferObject implements 
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $apiKey The API key used for authentication.
      */
@@ -42,7 +42,7 @@ class ApiKeyRequestAuthentication extends AbstractDataTransferObject implements 
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function authenticateRequest(Request $request): Request
     {
@@ -53,7 +53,7 @@ class ApiKeyRequestAuthentication extends AbstractDataTransferObject implements 
     /**
      * Gets the API key.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The API key.
      */
@@ -65,9 +65,9 @@ class ApiKeyRequestAuthentication extends AbstractDataTransferObject implements 
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ApiKeyRequestAuthenticationArrayShape
      */
@@ -81,9 +81,9 @@ class ApiKeyRequestAuthentication extends AbstractDataTransferObject implements 
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {
@@ -95,7 +95,7 @@ class ApiKeyRequestAuthentication extends AbstractDataTransferObject implements 
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {

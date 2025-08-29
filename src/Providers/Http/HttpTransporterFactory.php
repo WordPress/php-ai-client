@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
  * Uses HTTPlug's Discovery component to automatically find
  * available HTTP clients and factories.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class HttpTransporterFactory
 {
@@ -24,7 +24,7 @@ class HttpTransporterFactory
      * Uses HTTPlug Discovery to automatically find PSR-18 client
      * and PSR-17 factories if not provided.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return HttpTransporterInterface The HTTP transporter.
      */

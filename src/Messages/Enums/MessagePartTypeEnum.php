@@ -9,7 +9,7 @@ use WordPress\AiClient\Common\AbstractEnum;
 /**
  * Enum for message part types.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @method static self text() Creates an instance for TEXT type.
  * @method static self file() Creates an instance for FILE type.

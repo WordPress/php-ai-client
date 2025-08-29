@@ -13,7 +13,7 @@ use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
  * This class defines an option that the model must support with a specific value
  * for it to be considered suitable for the implementing code's requirements.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type RequiredOptionArrayShape array{
  *     name: string,
@@ -40,7 +40,7 @@ class RequiredOption extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param OptionEnum $name The option name.
      * @param mixed $value The value that the model must support for this option.
@@ -54,7 +54,7 @@ class RequiredOption extends AbstractDataTransferObject
     /**
      * Gets the option name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return OptionEnum The option name.
      */
@@ -66,7 +66,7 @@ class RequiredOption extends AbstractDataTransferObject
     /**
      * Gets the value that the model must support for this option.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return mixed The value that the model must support.
      */
@@ -78,7 +78,7 @@ class RequiredOption extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -109,7 +109,7 @@ class RequiredOption extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return RequiredOptionArrayShape
      */
@@ -124,7 +124,7 @@ class RequiredOption extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

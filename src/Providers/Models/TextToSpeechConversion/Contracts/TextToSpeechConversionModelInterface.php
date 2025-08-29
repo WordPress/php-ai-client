@@ -12,14 +12,14 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *
  * Provides synchronous methods for converting text to speech audio.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface TextToSpeechConversionModelInterface
 {
     /**
      * Converts text to speech.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<Message> $prompt Array of messages containing the text to convert to speech.
      * @return GenerativeAiResult Result containing generated speech audio.

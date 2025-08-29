@@ -12,7 +12,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * This DTO tracks the number of tokens used in prompts and completions,
  * which is important for monitoring usage and costs.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type TokenUsageArrayShape array{
  *     promptTokens: int,
@@ -45,7 +45,7 @@ class TokenUsage extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $promptTokens Number of tokens in the prompt.
      * @param int $completionTokens Number of tokens in the completion.
@@ -61,7 +61,7 @@ class TokenUsage extends AbstractDataTransferObject
     /**
      * Gets the number of prompt tokens.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int The prompt token count.
      */
@@ -73,7 +73,7 @@ class TokenUsage extends AbstractDataTransferObject
     /**
      * Gets the number of completion tokens.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int The completion token count.
      */
@@ -85,7 +85,7 @@ class TokenUsage extends AbstractDataTransferObject
     /**
      * Gets the total number of tokens.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int The total token count.
      */
@@ -97,7 +97,7 @@ class TokenUsage extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -124,7 +124,7 @@ class TokenUsage extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return TokenUsageArrayShape
      */
@@ -140,7 +140,7 @@ class TokenUsage extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

@@ -9,7 +9,7 @@ use WordPress\AiClient\Common\AbstractEnum;
 /**
  * Enum for finish reasons of AI generation.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @method static self stop() Creates an instance for STOP reason.
  * @method static self length() Creates an instance for LENGTH reason.

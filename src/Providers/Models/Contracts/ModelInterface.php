@@ -14,14 +14,14 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  * Models represent specific AI models from providers and define
  * their capabilities, configuration, and execution methods.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface ModelInterface
 {
     /**
      * Gets model metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ModelMetadata Model metadata.
      */
@@ -30,7 +30,7 @@ interface ModelInterface
     /**
      * Returns the metadata for the model's provider.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderMetadata The provider metadata.
      */
@@ -39,7 +39,7 @@ interface ModelInterface
     /**
      * Sets model configuration.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelConfig $config Model configuration.
      * @return void
@@ -49,7 +49,7 @@ interface ModelInterface
     /**
      * Gets model configuration.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ModelConfig Current model configuration.
      */

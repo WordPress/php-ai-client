@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Common\Contracts;
 /**
  * Interface for objects that support array transformation.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @template TArrayShape of array<string, mixed>
  */
@@ -16,7 +16,7 @@ interface WithArrayTransformationInterface
     /**
      * Converts the object to an array representation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return TArrayShape The array representation.
      */
@@ -25,7 +25,7 @@ interface WithArrayTransformationInterface
     /**
      * Creates an instance from array data.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param TArrayShape $array The array data.
      * @return self<TArrayShape> The created instance.
@@ -35,7 +35,7 @@ interface WithArrayTransformationInterface
     /**
      * Checks if the array is a valid shape for this object.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<mixed> $array The array to check.
      * @return bool True if the array is a valid shape.

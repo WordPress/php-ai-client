@@ -9,7 +9,7 @@ use WordPress\AiClient\Common\AbstractEnum;
 /**
  * Enum for tool types.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @method static self functionDeclarations() Creates an instance for FUNCTION_DECLARATIONS type.
  * @method static self webSearch() Creates an instance for WEB_SEARCH type.

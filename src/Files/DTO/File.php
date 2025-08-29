@@ -16,7 +16,7 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  * This DTO automatically detects whether a file is a URL, base64 data, or local file path
  * and handles them appropriately.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type FileArrayShape array{
  *     fileType: string,
@@ -56,7 +56,7 @@ class File extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $file The file string (URL, base64 data, or local path).
      * @param string|null $mimeType The MIME type of the file (optional).
@@ -71,7 +71,7 @@ class File extends AbstractDataTransferObject
     /**
      * Detects the file type and processes it accordingly.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $file The file string to process.
      * @param string|null $providedMimeType The explicitly provided MIME type.
@@ -129,7 +129,7 @@ class File extends AbstractDataTransferObject
     /**
      * Checks if a string is a valid URL.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $string The string to check.
      * @return bool True if the string is a URL.
@@ -143,7 +143,7 @@ class File extends AbstractDataTransferObject
     /**
      * Converts a local file to base64.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $filePath The path to the local file.
      * @return string The base64-encoded file data.
@@ -165,7 +165,7 @@ class File extends AbstractDataTransferObject
     /**
      * Gets the file type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FileTypeEnum The file type.
      */
@@ -177,7 +177,7 @@ class File extends AbstractDataTransferObject
     /**
      * Checks if the file is an inline file.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if the file is inline (base64/data URI).
      */
@@ -189,7 +189,7 @@ class File extends AbstractDataTransferObject
     /**
      * Checks if the file is a remote file.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if the file is remote (URL).
      */
@@ -201,7 +201,7 @@ class File extends AbstractDataTransferObject
     /**
      * Gets the URL for remote files.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The URL, or null if not a remote file.
      */
@@ -213,7 +213,7 @@ class File extends AbstractDataTransferObject
     /**
      * Gets the base64-encoded data for inline files.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The plain base64-encoded data (without data URI prefix), or null if not an inline file.
      */
@@ -225,7 +225,7 @@ class File extends AbstractDataTransferObject
     /**
      * Gets the data as a data URI for inline files.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The data URI in format: data:[mimeType];base64,[data], or null if not an inline file.
      */
@@ -241,7 +241,7 @@ class File extends AbstractDataTransferObject
     /**
      * Gets the MIME type of the file as a string.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The MIME type string value.
      */
@@ -253,7 +253,7 @@ class File extends AbstractDataTransferObject
     /**
      * Gets the MIME type object.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MimeType The MIME type object.
      */
@@ -265,7 +265,7 @@ class File extends AbstractDataTransferObject
     /**
      * Checks if the file is a video.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if the file is a video.
      */
@@ -277,7 +277,7 @@ class File extends AbstractDataTransferObject
     /**
      * Checks if the file is an image.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if the file is an image.
      */
@@ -289,7 +289,7 @@ class File extends AbstractDataTransferObject
     /**
      * Checks if the file is audio.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if the file is audio.
      */
@@ -301,7 +301,7 @@ class File extends AbstractDataTransferObject
     /**
      * Checks if the file is text.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if the file is text.
      */
@@ -313,7 +313,7 @@ class File extends AbstractDataTransferObject
     /**
      * Checks if the file is a document.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if the file is a document.
      */
@@ -325,7 +325,7 @@ class File extends AbstractDataTransferObject
     /**
      * Checks if the file is a specific MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $type The mime type to check (e.g. 'image', 'text', 'video', 'audio').
      *
@@ -339,7 +339,7 @@ class File extends AbstractDataTransferObject
     /**
      * Determines the MIME type from various sources.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|null $providedMimeType The explicitly provided MIME type.
      * @param string|null $extractedMimeType The MIME type extracted from data URI.
@@ -392,7 +392,7 @@ class File extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -447,7 +447,7 @@ class File extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FileArrayShape
      */
@@ -474,7 +474,7 @@ class File extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

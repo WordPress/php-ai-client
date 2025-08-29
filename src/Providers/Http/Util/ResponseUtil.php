@@ -10,7 +10,7 @@ use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 /**
  * Class with static utility methods to process HTTP responses.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class ResponseUtil
 {
@@ -22,7 +22,7 @@ class ResponseUtil
      * 2xx range). It also attempts to extract a more detailed error message from
      * the response body if available.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Response $response The HTTP response to check.
      * @throws ResponseException If the response is not successful.

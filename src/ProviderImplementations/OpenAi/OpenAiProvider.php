@@ -17,7 +17,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 /**
  * Class for the OpenAI provider.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class OpenAiProvider extends AbstractProvider
 {
@@ -26,7 +26,7 @@ class OpenAiProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createModel(
         ModelMetadata $modelMetadata,
@@ -56,7 +56,7 @@ class OpenAiProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createProviderMetadata(): ProviderMetadata
     {
@@ -70,7 +70,7 @@ class OpenAiProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createProviderAvailability(): ProviderAvailabilityInterface
     {
@@ -83,7 +83,7 @@ class OpenAiProvider extends AbstractProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected static function createModelMetadataDirectory(): ModelMetadataDirectoryInterface
     {

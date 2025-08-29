@@ -16,7 +16,7 @@ use WordPress\AiClient\Common\AbstractEnum;
  * @method bool isLandscape() Checks if this is a landscape orientation.
  * @method bool isPortrait() Checks if this is a portrait orientation.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class MediaOrientationEnum extends AbstractEnum
 {

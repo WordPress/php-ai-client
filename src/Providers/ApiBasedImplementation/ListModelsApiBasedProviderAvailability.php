@@ -15,7 +15,7 @@ use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
  * authentication. A request to this endpoint is used to determine if the provider is properly configured
  * with valid credentials.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class ListModelsApiBasedProviderAvailability implements ProviderAvailabilityInterface
 {
@@ -27,7 +27,7 @@ class ListModelsApiBasedProviderAvailability implements ProviderAvailabilityInte
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelMetadataDirectoryInterface $modelMetadataDirectory The model metadata directory to use for checking
      *                                                                availability.
@@ -40,7 +40,7 @@ class ListModelsApiBasedProviderAvailability implements ProviderAvailabilityInte
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function isConfigured(): bool
     {

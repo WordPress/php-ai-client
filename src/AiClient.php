@@ -74,7 +74,7 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *     ->generateTextResult();
  * ```
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type Prompt from PromptBuilder
  *
@@ -90,7 +90,7 @@ class AiClient
     /**
      * Gets the default provider registry instance.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderRegistry The default provider registry.
      */
@@ -114,7 +114,7 @@ class AiClient
     /**
      * Checks if a provider is configured and available for use.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ProviderAvailabilityInterface $availability The provider availability instance to check.
      * @return bool True if the provider is configured and available, false otherwise.
@@ -131,7 +131,7 @@ class AiClient
      * The traditional API methods in this class delegate to PromptBuilder
      * for all generation logic.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Prompt $prompt Optional initial prompt content.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
@@ -149,7 +149,7 @@ class AiClient
      * model discovery based on prompt content and configuration. When a model is provided,
      * it infers the capability from the model's interfaces and delegates to the capability-based method.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Prompt $prompt The prompt content.
      * @param ModelInterface|ModelConfig $modelOrConfig Specific model to use, or model configuration
@@ -172,7 +172,7 @@ class AiClient
     /**
      * Generates text using the traditional API approach.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Prompt $prompt The prompt content.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
@@ -197,7 +197,7 @@ class AiClient
     /**
      * Generates an image using the traditional API approach.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Prompt $prompt The prompt content.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
@@ -221,7 +221,7 @@ class AiClient
     /**
      * Converts text to speech using the traditional API approach.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Prompt $prompt The prompt content.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
@@ -245,7 +245,7 @@ class AiClient
     /**
      * Generates speech using the traditional API approach.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Prompt $prompt The prompt content.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
@@ -273,7 +273,7 @@ class AiClient
      * MessageBuilder will provide a fluent interface for constructing complex
      * messages with multiple parts, attachments, and metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|null $text Optional initial message text.
      * @return object MessageBuilder instance (type will be updated when MessageBuilder is available).

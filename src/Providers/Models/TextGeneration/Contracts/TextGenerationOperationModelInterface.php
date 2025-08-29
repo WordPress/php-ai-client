@@ -12,14 +12,14 @@ use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
  *
  * Provides methods for initiating long-running text generation tasks.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 interface TextGenerationOperationModelInterface
 {
     /**
      * Creates a text generation operation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<Message> $prompt Array of messages containing the text generation prompt.
      * @return GenerativeAiOperation The initiated text generation operation.

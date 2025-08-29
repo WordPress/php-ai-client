@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
  * This class defines an option that a model supports, including its name
  * and the values that are valid for that option.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type SupportedOptionArrayShape array{
  *     name: string,
@@ -41,7 +41,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param OptionEnum $name The option name.
      * @param list<mixed>|null $supportedValues The supported values for this option, or null if any value is supported.
@@ -61,7 +61,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * Gets the option name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return OptionEnum The option name.
      */
@@ -73,7 +73,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * Checks if a value is supported for this option.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param mixed $value The value to check.
      * @return bool True if the value is supported, false otherwise.
@@ -106,7 +106,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * Gets the supported values for this option.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<mixed>|null The supported values, or null if any value is supported.
      */
@@ -118,7 +118,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -152,7 +152,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return SupportedOptionArrayShape
      */
@@ -174,7 +174,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {
