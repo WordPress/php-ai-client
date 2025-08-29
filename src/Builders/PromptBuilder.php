@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Builders;
 use InvalidArgumentException;
 use RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
@@ -24,7 +25,9 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
+use WordPress\AiClient\Tools\DTO\WebSearch;
 
 /**
  * Fluent builder for constructing AI prompts.
@@ -355,6 +358,86 @@ class PromptBuilder
     }
 
     /**
+     * Sets the function declarations available to the model.
+     *
+     * @since n.e.x.t
+     *
+     * @param FunctionDeclaration ...$functionDeclarations The function declarations.
+     * @return self
+     */
+    public function usingFunctionDeclarations(FunctionDeclaration ...$functionDeclarations): self
+    {
+        $this->modelConfig->setFunctionDeclarations($functionDeclarations);
+        return $this;
+    }
+
+    /**
+     * Sets the presence penalty for generation.
+     *
+     * @since n.e.x.t
+     *
+     * @param float $presencePenalty The presence penalty value.
+     * @return self
+     */
+    public function usingPresencePenalty(float $presencePenalty): self
+    {
+        $this->modelConfig->setPresencePenalty($presencePenalty);
+        return $this;
+    }
+
+    /**
+     * Sets the frequency penalty for generation.
+     *
+     * @since n.e.x.t
+     *
+     * @param float $frequencyPenalty The frequency penalty value.
+     * @return self
+     */
+    public function usingFrequencyPenalty(float $frequencyPenalty): self
+    {
+        $this->modelConfig->setFrequencyPenalty($frequencyPenalty);
+        return $this;
+    }
+
+    /**
+     * Sets the web search configuration.
+     *
+     * @since n.e.x.t
+     *
+     * @param WebSearch $webSearch The web search configuration.
+     * @return self
+     */
+    public function usingWebSearch(WebSearch $webSearch): self
+    {
+        $this->modelConfig->setWebSearch($webSearch);
+        return $this;
+    }
+
+    /**
+     * Sets the top log probabilities configuration.
+     *
+     * If $topLogprobs is null, enables log probabilities.
+     * If $topLogprobs has a value, enables log probabilities and sets the number of top log probabilities to return.
+     *
+     * @since n.e.x.t
+     *
+     * @param int|null $topLogprobs The number of top log probabilities to return, or null to enable log probabilities.
+     * @return self
+     */
+    public function usingTopLogprobs(?int $topLogprobs = null): self
+    {
+        // Always enable log probabilities
+        $this->modelConfig->setLogprobs(true);
+
+        // If a specific number is provided, set it
+        if ($topLogprobs !== null) {
+            $this->modelConfig->setTopLogprobs($topLogprobs);
+        }
+
+        return $this;
+    }
+
+    /**
      * Sets the output MIME type.
      *
      * @since n.e.x.t
@@ -393,6 +476,20 @@ class PromptBuilder
     public function asOutputModalities(ModalityEnum ...$modalities): self
     {
         $this->modelConfig->setOutputModalities($modalities);
+        return $this;
+    }
+
+    /**
+     * Sets the output file type.
+     *
+     * @since n.e.x.t
+     *
+     * @param FileTypeEnum $fileType The output file type.
+     * @return self
+     */
+    public function asOutputFileType(FileTypeEnum $fileType): self
+    {
+        $this->modelConfig->setOutputFileType($fileType);
         return $this;
     }
 
