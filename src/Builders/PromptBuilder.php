@@ -360,7 +360,7 @@ class PromptBuilder
     /**
      * Sets the function declarations available to the model.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param FunctionDeclaration ...$functionDeclarations The function declarations.
      * @return self
@@ -374,7 +374,7 @@ class PromptBuilder
     /**
      * Sets the presence penalty for generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $presencePenalty The presence penalty value.
      * @return self
@@ -388,7 +388,7 @@ class PromptBuilder
     /**
      * Sets the frequency penalty for generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $frequencyPenalty The frequency penalty value.
      * @return self
@@ -402,7 +402,7 @@ class PromptBuilder
     /**
      * Sets the web search configuration.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param WebSearch $webSearch The web search configuration.
      * @return self
@@ -419,7 +419,7 @@ class PromptBuilder
      * If $topLogprobs is null, enables log probabilities.
      * If $topLogprobs has a value, enables log probabilities and sets the number of top log probabilities to return.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int|null $topLogprobs The number of top log probabilities to return, or null to enable log probabilities.
      * @return self
@@ -482,7 +482,7 @@ class PromptBuilder
     /**
      * Sets the output file type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param FileTypeEnum $fileType The output file type.
      * @return self
