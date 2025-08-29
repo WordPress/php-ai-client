@@ -946,5 +946,4 @@ class ModelConfigTest extends TestCase
         $this->assertSame(MediaOrientationEnum::portrait(), $outputMediaOrientationOption->getValue());
         $this->assertTrue($outputMediaOrientationOption->getValue()->isPortrait());
     }
-
 }
