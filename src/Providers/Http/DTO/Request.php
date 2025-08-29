@@ -114,7 +114,7 @@ class Request extends AbstractDataTransferObject
     {
         // If GET request with data, append as query parameters
         if ($this->method === HttpMethodEnum::GET() && $this->data !== null && !empty($this->data)) {
-            $separator = strpos($this->uri, '?') === false ? '?' : '&';
+            $separator = str_contains($this->uri, '?') ? '&' : '?';
             return $this->uri . $separator . http_build_query($this->data);
         }
 

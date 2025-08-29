@@ -57,6 +57,26 @@ if (!function_exists('str_starts_with')) {
     }
 }
 
+if (!function_exists('str_contains')) {
+    /**
+     * Checks if a string contains a given substring.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $haystack The string to search in.
+     * @param string $needle The substring to search for.
+     * @return bool True if $haystack contains $needle, false otherwise.
+     */
+    function str_contains(string $haystack, string $needle): bool
+    {
+        if ('' === $needle) {
+            return true;
+        }
+
+        return false !== strpos($haystack, $needle);
+    }
+}
+
 if (!function_exists('str_ends_with')) {
     /**
      * Checks if a string ends with a given substring.

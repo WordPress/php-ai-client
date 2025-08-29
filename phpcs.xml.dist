@@ -21,6 +21,15 @@
     <!-- Use PSR-12 standard -->
     <rule ref="PSR12"/>
 
+    <!-- Check PHP 7.4 compatibility -->
+    <rule ref="PHPCompatibility">
+        <!-- Exclude functions that are polyfilled in src/polyfills.php -->
+        <exclude name="PHPCompatibility.FunctionUse.NewFunctions.array_is_listFound"/>
+        <exclude name="PHPCompatibility.FunctionUse.NewFunctions.str_containsFound"/>
+        <exclude name="PHPCompatibility.FunctionUse.NewFunctions.str_starts_withFound"/>
+        <exclude name="PHPCompatibility.FunctionUse.NewFunctions.str_ends_withFound"/>
+    </rule>
+
     <!-- Enforce namespace best practices -->
 	<rule ref="SlevomatCodingStandard.Namespaces.DisallowGroupUse" />
 	<rule ref="SlevomatCodingStandard.Namespaces.UseDoesNotStartWithBackslash" />

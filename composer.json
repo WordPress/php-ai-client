@@ -34,6 +34,7 @@
         "guzzlehttp/psr7": "^1.0 || ^2.0",
         "php-http/curl-client": "^2.0",
         "php-http/mock-client": "^1.0",
+        "phpcompatibility/php-compatibility": "dev-develop",
         "phpstan/phpstan": "~2.1",
         "phpunit/phpunit": "^9.5 || ^10.0",
         "slevomat/coding-standard": "^8.20",
