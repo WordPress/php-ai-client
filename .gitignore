@@ -19,6 +19,7 @@ vendor/
 
 .claude/
 CLAUDE.md
+.clinerules/
 .cursor/
 GEMINI.md
 
