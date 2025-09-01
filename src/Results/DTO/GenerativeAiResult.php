@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
-use InvalidArgumentException;
-use RuntimeException;
+use WordPress\AiClient\Exceptions\InvalidArgumentException;
+use WordPress\AiClient\Exceptions\RuntimeException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
