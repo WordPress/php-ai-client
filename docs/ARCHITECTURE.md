@@ -353,9 +353,7 @@ direction LR
         class MessageBuilder {
             +usingRole(MessageRole $role) self
             +withText(string $text) self
-            +withImageFile(File $file) self
-            +withAudioFile(File $file) self
-            +withVideoFile(File $file) self
+            +withFile(File $file, ?string $mimeType = null) self
             +withFunctionCall(FunctionCall $functionCall) self
             +withFunctionResponse(FunctionResponse $functionResponse) self
             +withMessageParts(...MessagePart $part) self
@@ -514,14 +512,14 @@ direction LR
         }
 
         class MessageBuilder {
-            +usingRole(MessageRole $role) self
+            +usingRole(MessageRoleEnum $role) self
+            +usingUserRole() self
+            +usingModelRole() self
             +withText(string $text) self
-            +withImageFile(File $file) self
-            +withAudioFile(File $file) self
-            +withVideoFile(File $file) self
+            +withFile($file, ?string $mimeType) self
             +withFunctionCall(FunctionCall $functionCall) self
             +withFunctionResponse(FunctionResponse $functionResponse) self
-            +withMessageParts(...MessagePart $part) self
+            +withMessageParts(...MessagePart $parts) self
             +get() Message
         }
     }
