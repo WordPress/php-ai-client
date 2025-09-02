@@ -33,7 +33,7 @@ class MessageBuilderTest extends TestCase
 
         $this->assertInstanceOf(Message::class, $message);
         $this->assertTrue($message->getRole()->isUser());
-        
+
         $parts = $message->getParts();
         $this->assertCount(1, $parts);
         $this->assertTrue($parts[0]->getType()->isText());
@@ -90,7 +90,7 @@ class MessageBuilderTest extends TestCase
         $parts = $message->getParts();
         $this->assertCount(1, $parts);
         $this->assertTrue($parts[0]->getType()->isFile());
-        
+
         $file = $parts[0]->getFile();
         $this->assertInstanceOf(File::class, $file);
         $this->assertEquals('image/png', $file->getMimeType());
@@ -104,7 +104,7 @@ class MessageBuilderTest extends TestCase
     public function testWithFileAcceptsFileObject(): void
     {
         $file = new File('data:image/png;base64,iVBORw0KGgo=', 'image/png');
-        
+
         $builder = new MessageBuilder();
         $message = $builder
             ->withFile($file)
@@ -125,7 +125,7 @@ class MessageBuilderTest extends TestCase
     public function testWithFunctionCallAddsToModelMessage(): void
     {
         $functionCall = new FunctionCall('call_id', 'test_function', ['arg' => 'value']);
-        
+
         $builder = new MessageBuilder();
         $message = $builder
             ->usingModelRole()
@@ -146,7 +146,7 @@ class MessageBuilderTest extends TestCase
     public function testWithFunctionResponseAddsToUserMessage(): void
     {
         $functionResponse = new FunctionResponse('response_id', 'test_function', ['result' => 'success']);
-        
+
         $builder = new MessageBuilder();
         $message = $builder
             ->usingUserRole()
@@ -169,7 +169,7 @@ class MessageBuilderTest extends TestCase
         $part1 = new MessagePart('Text 1');
         $part2 = new MessagePart('Text 2');
         $part3 = new MessagePart(new File('data:image/png;base64,test', 'image/png'));
-        
+
         $builder = new MessageBuilder();
         $message = $builder
             ->usingUserRole()
@@ -191,10 +191,10 @@ class MessageBuilderTest extends TestCase
     public function testUsingRoleSetsRole(): void
     {
         $builder = new MessageBuilder('Test');
-        
+
         $userMessage = $builder->usingRole(MessageRoleEnum::user())->get();
         $this->assertTrue($userMessage->getRole()->isUser());
-        
+
         $builder = new MessageBuilder('Test');
         $modelMessage = $builder->usingRole(MessageRoleEnum::model())->get();
         $this->assertTrue($modelMessage->getRole()->isModel());
@@ -209,7 +209,7 @@ class MessageBuilderTest extends TestCase
     {
         $builder = new MessageBuilder('Test');
         $message = $builder->usingUserRole()->get();
-        
+
         $this->assertTrue($message->getRole()->isUser());
     }
 
@@ -222,7 +222,7 @@ class MessageBuilderTest extends TestCase
     {
         $builder = new MessageBuilder('Test');
         $message = $builder->usingModelRole()->get();
-        
+
         $this->assertTrue($message->getRole()->isModel());
     }
 
@@ -234,7 +234,9 @@ class MessageBuilderTest extends TestCase
     public function testGetThrowsExceptionForEmptyParts(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot build an empty message. Add content using withText() or similar methods.');
+        $this->expectExceptionMessage(
+            'Cannot build an empty message. Add content using withText() or similar methods.'
+        );
 
         $builder = new MessageBuilder();
         $builder->usingUserRole()->get();
@@ -248,7 +250,9 @@ class MessageBuilderTest extends TestCase
     public function testGetThrowsExceptionForNoRole(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot build a message with no role. Set a role using usingRole() or similar methods.');
+        $this->expectExceptionMessage(
+            'Cannot build a message with no role. Set a role using usingRole() or similar methods.'
+        );
 
         $builder = new MessageBuilder();
         $builder->withText('Test')->get();
@@ -265,7 +269,7 @@ class MessageBuilderTest extends TestCase
         $this->expectExceptionMessage('User messages cannot contain function calls.');
 
         $functionCall = new FunctionCall(null, 'test', []);
-        
+
         $builder = new MessageBuilder();
         $builder
             ->withFunctionCall($functionCall)
@@ -284,7 +288,7 @@ class MessageBuilderTest extends TestCase
         $this->expectExceptionMessage('Model messages cannot contain function responses.');
 
         $functionResponse = new FunctionResponse('id', 'test', []);
-        
+
         $builder = new MessageBuilder();
         $builder
             ->withFunctionResponse($functionResponse)
@@ -318,13 +322,13 @@ class MessageBuilderTest extends TestCase
     public function testBuilderIsFluent(): void
     {
         $builder = new MessageBuilder();
-        
+
         $result1 = $builder->withText('Test');
         $this->assertSame($builder, $result1);
-        
+
         $result2 = $builder->usingUserRole();
         $this->assertSame($builder, $result2);
-        
+
         $result3 = $builder->withFile('data:text/plain;base64,test', 'text/plain');
         $this->assertSame($builder, $result3);
     }
@@ -337,7 +341,7 @@ class MessageBuilderTest extends TestCase
     public function testMixedContentMessage(): void
     {
         $file = new File('data:image/png;base64,test', 'image/png');
-        
+
         $builder = new MessageBuilder();
         $message = $builder
             ->withText('Analyze this image:')
@@ -384,7 +388,7 @@ class MessageBuilderTest extends TestCase
             ->withText('Here is the result:')
             ->withFunctionResponse($functionResponse)
             ->get();
-        
+
         $this->assertTrue($message1->getRole()->isUser());
         $this->assertCount(2, $message1->getParts());
 
@@ -396,7 +400,7 @@ class MessageBuilderTest extends TestCase
             ->withText('I will call a function:')
             ->withFunctionCall($functionCall)
             ->get();
-        
+
         $this->assertTrue($message2->getRole()->isModel());
         $this->assertCount(2, $message2->getParts());
     }
