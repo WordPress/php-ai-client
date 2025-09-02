@@ -67,6 +67,21 @@ class ProviderRegistryTest extends TestCase
     }
 
     /**
+     * Tests that getRegisteredProviderIds returns the correct provider IDs.
+     *
+     * @return void
+     */
+    public function testGetRegisteredProviderIds(): void
+    {
+        $this->registry->registerProvider(MockProvider::class);
+
+        $this->assertEquals(['mock'], $this->registry->getRegisteredProviderIds());
+
+        // To test with multiple providers, we would need another mock provider class.
+        // For now, this covers the basic functionality.
+    }
+
+    /**
      * Tests hasProvider with unregistered provider.
      *
      * @return void

@@ -114,6 +114,18 @@ class ProviderRegistry implements WithHttpTransporterInterface
     }
 
     /**
+     * Gets a list of all registered provider IDs.
+     *
+     * @since 0.1.0
+     *
+     * @return list<string> List of registered provider IDs.
+     */
+    public function getRegisteredProviderIds(): array
+    {
+        return array_keys($this->providerClassNames);
+    }
+
+    /**
      * Checks if a provider is registered.
      *
      * @since 0.1.0
