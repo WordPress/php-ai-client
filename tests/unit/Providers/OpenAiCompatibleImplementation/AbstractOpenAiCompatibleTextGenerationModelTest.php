@@ -519,6 +519,26 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests prepareMessagesParam with message having no function calls (tool_calls should not be included).
+     *
+     * @return void
+     */
+    public function testPrepareMessagesParamNoToolCalls(): void
+    {
+        $message = new Message(
+            MessageRoleEnum::model(),
+            [new MessagePart('Hello, I am a simple text response.')]
+        );
+        
+        $model = $this->createModel();
+        $prepared = $model->exposePrepareMessagesParam([$message], null);
+        
+        $this->assertCount(1, $prepared);
+        $this->assertEquals('assistant', $prepared[0]['role']);
+        $this->assertArrayNotHasKey('tool_calls', $prepared[0]); // Should not have tool_calls field at all
+    }
+
+    /**
      * Tests prepareMessagesParam() with function response.
      *
      * @return void
@@ -738,6 +758,32 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             'function' => [
                 'name' => 'my_function',
                 'arguments' => json_encode(['arg1' => 'value1']),
+            ],
+        ], $data);
+    }
+
+    /**
+     * Tests getMessagePartToolCallData() with empty arguments (should encode as empty object).
+     *
+     * @return void
+     */
+    public function testGetMessagePartToolCallDataEmptyArguments(): void
+    {
+        $functionCall = new FunctionCall(
+            'call_1',
+            'list_capabilities',
+            [] // Empty arguments array
+        );
+        $part = new MessagePart($functionCall);
+        $model = $this->createModel();
+        $data = $model->exposeGetMessagePartToolCallData($part);
+
+        $this->assertEquals([
+            'type' => 'function',
+            'id' => 'call_1',
+            'function' => [
+                'name' => 'list_capabilities',
+                'arguments' => '{}', // Should be empty object, not empty array
             ],
         ], $data);
     }
