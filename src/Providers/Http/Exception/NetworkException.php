@@ -30,8 +30,7 @@ class NetworkException extends RuntimeException
         string $uri,
         string $reason = 'Connection failed',
         ?\Throwable $previous = null
-    ): self
-    {
+    ): self {
         $message = sprintf('Network connection failed for %s: %s', $uri, $reason);
 
         return new self($message, 0, $previous);
@@ -53,8 +52,7 @@ class NetworkException extends RuntimeException
         string $timeoutType = 'request',
         ?int $timeoutSeconds = null,
         ?\Throwable $previous = null
-    ): self
-    {
+    ): self {
         $message = sprintf('Network %s timeout for %s', $timeoutType, $uri);
         if ($timeoutSeconds !== null) {
             $message .= sprintf(' (after %d seconds)', $timeoutSeconds);
