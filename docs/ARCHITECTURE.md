@@ -419,6 +419,7 @@ direction LR
     namespace AiClientNamespace.Providers {
         class ProviderRegistry {
             +registerProvider(string $className) void
+            +getRegisteredProviderIds() string[]
             +hasProvider(string $idOrClassName) bool
             +getProviderClassName(string $id) string
             +isProviderConfigured(string $idOrClassName) bool
