@@ -118,7 +118,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
      *
      * @since 0.1.0
      *
-     * @return list<string> List of registered provider IDs.
+     * @return list<class-string<ProviderInterface> List of registered provider IDs.
      */
     public function getRegisteredProviderIds(): array
     {
