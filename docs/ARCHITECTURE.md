@@ -351,12 +351,14 @@ direction LR
         }
 
         class MessageBuilder {
-            +usingRole(MessageRole $role) self
+            +usingRole(MessageRoleEnum $role) self
+            +usingUserRole() self
+            +usingModelRole() self
             +withText(string $text) self
-            +withFile(File $file, ?string $mimeType = null) self
+            +withFile($file, ?string $mimeType) self
             +withFunctionCall(FunctionCall $functionCall) self
             +withFunctionResponse(FunctionResponse $functionResponse) self
-            +withMessageParts(...MessagePart $part) self
+            +withMessageParts(...MessagePart $parts) self
             +get() Message
         }
     }
