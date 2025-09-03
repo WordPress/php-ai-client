@@ -14,13 +14,14 @@ vendor/
 .DS_store?
 
 ############
-## AI Tools
+## AI Tools and IDEs
 ############
 
 .claude/
 CLAUDE.md
 .clinerules/
 .cursor/
+.vscode/
 GEMINI.md
 
 ############
