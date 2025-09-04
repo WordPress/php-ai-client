@@ -24,6 +24,13 @@ CLAUDE.md
 GEMINI.md
 
 ############
+## IDEs
+############
+
+.idea/
+.vscode/
+
+############
 ## PHPUnit
 ############
 
