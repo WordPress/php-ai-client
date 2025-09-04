@@ -14,15 +14,21 @@ vendor/
 .DS_store?
 
 ############
-## AI Tools and IDEs
+## AI Tools
 ############
 
 .claude/
 CLAUDE.md
 .clinerules/
 .cursor/
-.vscode/
 GEMINI.md
+
+############
+## IDEs
+############
+
+.idea/
+.vscode/
 
 ############
 ## PHPUnit
