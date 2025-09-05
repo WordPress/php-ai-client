@@ -517,10 +517,10 @@ class MessageBuilderTest extends TestCase
     public function testConstructorWithNullInputCreatesEmptyBuilder(): void
     {
         $builder = new MessageBuilder(null, MessageRoleEnum::user());
-        
+
         // Should be able to add content and build
         $message = $builder->withText('Added later')->get();
-        
+
         $this->assertTrue($message->getRole()->isUser());
         $parts = $message->getParts();
         $this->assertCount(1, $parts);
