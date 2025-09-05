@@ -9,6 +9,7 @@ use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
 use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
 use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
+use WordPress\AiClient\Providers\Contracts\ProviderInterface;
 use WordPress\AiClient\Providers\Http\HttpTransporterFactory;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
@@ -114,14 +115,44 @@ class AiClient
     /**
      * Checks if a provider is configured and available for use.
      *
+     * Supports multiple input formats for developer convenience:
+     * - ProviderAvailabilityInterface: Direct availability check (backward compatible)
+     * - string (provider ID): e.g., AiClient::isConfigured('openai')
+     * - string (class name): e.g., AiClient::isConfigured(OpenAiProvider::class)
+     *
+     * When using string input, this method leverages the ProviderRegistry's centralized
+     * dependency management, ensuring HttpTransporter and authentication are properly
+     * injected into availability instances.
+     *
      * @since 0.1.0
      *
-     * @param ProviderAvailabilityInterface $availability The provider availability instance to check.
+     * @param ProviderAvailabilityInterface|string|class-string<ProviderInterface> $availabilityOrIdOrClassName
+     *        The provider availability instance, provider ID, or provider class name.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return bool True if the provider is configured and available, false otherwise.
      */
-    public static function isConfigured(ProviderAvailabilityInterface $availability): bool
+    public static function isConfigured($availabilityOrIdOrClassName, ?ProviderRegistry $registry = null): bool
     {
-        return $availability->isConfigured();
+        // Handle direct ProviderAvailabilityInterface (backward compatibility)
+        if ($availabilityOrIdOrClassName instanceof ProviderAvailabilityInterface) {
+            return $availabilityOrIdOrClassName->isConfigured();
+        }
+
+        // Handle string input (provider ID or class name) via registry
+        if (is_string($availabilityOrIdOrClassName)) {
+            $registry = $registry ?? self::defaultRegistry();
+            return $registry->isProviderConfigured($availabilityOrIdOrClassName);
+        }
+
+        throw new \InvalidArgumentException(
+            'Parameter must be a ProviderAvailabilityInterface instance, provider ID string, or provider class name. ' .
+            sprintf(
+                'Received: %s',
+                is_object($availabilityOrIdOrClassName)
+                    ? get_class($availabilityOrIdOrClassName)
+                    : gettype($availabilityOrIdOrClassName)
+            )
+        );
     }
 
     /**
