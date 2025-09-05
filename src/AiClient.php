@@ -8,6 +8,7 @@ use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
 use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
 use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
+use WordPress\AiClient\ProviderImplementations\XAi\XAiProvider;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Http\HttpTransporterFactory;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
@@ -104,6 +105,7 @@ class AiClient
             $registry->registerProvider(AnthropicProvider::class);
             $registry->registerProvider(GoogleProvider::class);
             $registry->registerProvider(OpenAiProvider::class);
+            $registry->registerProvider(XAiProvider::class);
 
             self::$defaultRegistry = $registry;
         }
