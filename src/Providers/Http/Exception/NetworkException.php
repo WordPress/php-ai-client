@@ -12,14 +12,14 @@ use WordPress\AiClient\Common\Exception\RuntimeException;
  * This includes HTTP transport errors, connection failures,
  * timeouts, and other network-related issues.
  *
- * @since 0.2.0
+ * @since n.e.x.t
  */
 class NetworkException extends RuntimeException
 {
     /**
      * Creates a NetworkException for connection failures.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $uri The URI that failed to connect.
      * @param string $reason The reason for connection failure.
@@ -39,7 +39,7 @@ class NetworkException extends RuntimeException
     /**
      * Creates a NetworkException for timeout errors.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $uri The URI that timed out.
      * @param string $timeoutType Type of timeout (e.g., 'connection', 'read', 'request').
@@ -64,7 +64,7 @@ class NetworkException extends RuntimeException
     /**
      * Creates a NetworkException from a PSR-18 network exception.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $uri The URI that was being requested.
      * @param \Throwable $networkException The PSR-18 network exception.
@@ -84,7 +84,7 @@ class NetworkException extends RuntimeException
     /**
      * Creates a NetworkException for DNS resolution failures.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $hostname The hostname that failed to resolve.
      * @param \Throwable|null $previous The underlying DNS exception.
@@ -100,7 +100,7 @@ class NetworkException extends RuntimeException
     /**
      * Creates a NetworkException for SSL/TLS errors.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $uri The URI with SSL/TLS issues.
      * @param string $sslError Description of the SSL/TLS error.

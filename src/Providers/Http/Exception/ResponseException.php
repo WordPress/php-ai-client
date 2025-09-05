@@ -21,7 +21,7 @@ class ResponseException extends RuntimeException
     /**
      * Creates a ResponseException for missing expected data.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $apiName The name of the API/provider.
      * @param string $fieldName The field that was expected but missing.
@@ -42,7 +42,7 @@ class ResponseException extends RuntimeException
     /**
      * Creates a ResponseException for unexpected API response structure.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $apiName The name of the API/provider.
      * @param string $expected What structure was expected.
@@ -62,7 +62,7 @@ class ResponseException extends RuntimeException
     /**
      * Creates a ResponseException for malformed response data.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $apiName The name of the API/provider.
      * @param string $reason Why the response is considered malformed.
@@ -81,7 +81,7 @@ class ResponseException extends RuntimeException
     /**
      * Creates a ResponseException from response parsing failure.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $apiName The name of the API/provider.
      * @param string $dataType The type of data that failed to parse.

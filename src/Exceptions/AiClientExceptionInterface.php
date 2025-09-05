@@ -12,7 +12,7 @@ use Throwable;
  * This interface allows callers to catch all AI Client specific exceptions
  * with a single catch statement.
  *
- * @since 0.2.0
+ * @since n.e.x.t
  */
 interface AiClientExceptionInterface extends Throwable
 {

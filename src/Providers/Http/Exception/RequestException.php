@@ -14,14 +14,14 @@ use WordPress\AiClient\Providers\Http\DTO\Response;
  * where the API responds with a 400 Bad Request status code indicating
  * that our code didn't catch an invalid argument but the API did.
  *
- * @since 0.2.0
+ * @since n.e.x.t
  */
 class RequestException extends InvalidArgumentException
 {
     /**
      * Creates a RequestException for invalid API parameters.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $apiName The name of the API/provider.
      * @param string $paramName The parameter that was invalid.
@@ -41,7 +41,7 @@ class RequestException extends InvalidArgumentException
     /**
      * Creates a RequestException from a 400 Bad Request API response.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $apiName The name of the API/provider.
      * @param Response $response The HTTP response containing the error.
@@ -64,7 +64,7 @@ class RequestException extends InvalidArgumentException
     /**
      * Creates a RequestException from a bad request to a specific URI.
      *
-     * @since 0.2.0
+     * @since n.e.x.t
      *
      * @param string $uri The URI that was requested.
      * @param string $errorDetail Details about what made the request bad.

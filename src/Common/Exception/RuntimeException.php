@@ -12,7 +12,7 @@ use WordPress\AiClient\Exceptions\AiClientExceptionInterface;
  * This extends PHP's built-in RuntimeException while implementing
  * the AI Client exception interface for consistent catch handling.
  *
- * @since 0.2.0
+ * @since n.e.x.t
  */
 class RuntimeException extends \RuntimeException implements AiClientExceptionInterface
 {
