@@ -69,6 +69,28 @@ $texts = AiClient::generateTextResult(
 )->toTexts();
 ```
 
+#### Generate multiple text candidates using an xAI model
+
+##### Fluent API
+
+```php
+$texts = AiClient::prompt('Write a 2-verse poem about PHP.')
+    ->usingModel(XAi::model('grok-3-mini'))
+    ->generateTexts(4);
+```
+
+##### Traditional API
+
+```php
+$texts = AiClient::generateTextResult(
+    'Write a 2-verse poem about PHP.',
+    XAi::model(
+        'grok-3-mini',
+        [OptionEnum::CANDIDATE_COUNT => 4]
+    )
+)->toTexts();
+```
+
 #### Generate an image using any suitable OpenAI model
 
 ##### Fluent API
@@ -90,6 +112,25 @@ $imageFile = AiClient::generateImageResult(
         'openai',
         $modelsMetadata[0]->getId()
     )
+)->toImageFile();
+```
+
+#### Generate an image using an xAI model
+
+##### Fluent API
+
+```php
+$imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Caribbean sea.')
+    ->usingModel(XAi::model('grok-2-image-1212'))
+    ->generateImage();
+```
+
+##### Traditional API
+
+```php
+$imageFile = AiClient::generateImageResult(
+    'Generate an illustration of the PHP elephant in the Caribbean sea.',
+    XAi::model('grok-2-image-1212')
 )->toImageFile();
 ```
 
@@ -806,7 +847,7 @@ sequenceDiagram
     participant HttpTransporter
     participant PSR17Factory
     participant PSR18Client
-    
+
     Model->>HttpTransporter: send(Request)
     HttpTransporter->>PSR17Factory: createRequest(Request)
     PSR17Factory-->>HttpTransporter: PSR-7 Request
