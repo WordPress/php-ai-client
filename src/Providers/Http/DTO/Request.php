@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\DTO;
 
-use InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use JsonException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Providers\Http\Collections\HeadersCollection;
