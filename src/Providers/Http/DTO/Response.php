@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\DTO;
 
-use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Http\Collections\HeadersCollection;
 
 /**

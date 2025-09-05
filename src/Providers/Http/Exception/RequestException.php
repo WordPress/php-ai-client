@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Http\Exception;
 
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
-use WordPress\AiClient\Providers\Http\DTO\Response;
 
 /**
  * Exception thrown for AI API request errors due to bad request data.
@@ -18,8 +17,6 @@ use WordPress\AiClient\Providers\Http\DTO\Response;
  */
 class RequestException extends InvalidArgumentException
 {
-
-
     /**
      * Creates a RequestException from a bad request to a specific URI.
      *

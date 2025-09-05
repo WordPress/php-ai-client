@@ -84,6 +84,4 @@ class ResponseException extends RuntimeException
 
         return new self($errorMessage, $response->getStatusCode());
     }
-
-
 }

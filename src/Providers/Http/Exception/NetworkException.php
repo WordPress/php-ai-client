@@ -16,8 +16,6 @@ use WordPress\AiClient\Common\Exception\RuntimeException;
  */
 class NetworkException extends RuntimeException
 {
-
-
     /**
      * Creates a NetworkException from a PSR-18 network exception.
      *
@@ -37,6 +35,4 @@ class NetworkException extends RuntimeException
 
         return new self($message, 0, $networkException);
     }
-
-
 }
