@@ -59,10 +59,11 @@ class NetworkException extends RuntimeException implements NetworkExceptionInter
     {
         if ($this->request === null) {
             throw new \RuntimeException(
-                'Request object not available. This exception was directly instantiated. Use fromPsr18NetworkException() factory method for PSR-18 compliance.'
+                'Request object not available. This exception was directly instantiated. ' .
+                'Use fromPsr18NetworkException() factory method for PSR-18 compliance.'
             );
         }
-        
+
         return $this->request;
     }
 }

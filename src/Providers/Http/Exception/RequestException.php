@@ -35,10 +35,12 @@ class RequestException extends InvalidArgumentException implements RequestExcept
      * @param string $errorDetail Details about what made the request bad.
      * @return self
      */
-    public static function fromBadRequest(RequestInterface $request, string $errorDetail = 'Invalid request parameters'): self
-    {
+    public static function fromBadRequest(
+        RequestInterface $request,
+        string $errorDetail = 'Invalid request parameters'
+    ): self {
         $message = sprintf('Bad request to %s (400): %s', (string) $request->getUri(), $errorDetail);
-        
+
         $exception = new self($message);
         $exception->request = $request;
         return $exception;
@@ -52,7 +54,7 @@ class RequestException extends InvalidArgumentException implements RequestExcept
      * @param string $uri The URI that was requested.
      * @param string $errorDetail Details about what made the request bad.
      * @return self
-     * 
+     *
      * @deprecated Use fromBadRequest() with RequestInterface for PSR-18 compliance
      */
     public static function fromBadRequestToUri(string $uri, string $errorDetail = 'Invalid request parameters'): self
@@ -72,10 +74,11 @@ class RequestException extends InvalidArgumentException implements RequestExcept
     {
         if ($this->request === null) {
             throw new \RuntimeException(
-                'Request object not available. This exception was created using the deprecated fromBadRequestToUri() method. Use fromBadRequest() instead for PSR-18 compliance.'
+                'Request object not available. This exception was created using the deprecated ' .
+                'fromBadRequestToUri() method. Use fromBadRequest() instead for PSR-18 compliance.'
             );
         }
-        
+
         return $this->request;
     }
 }
