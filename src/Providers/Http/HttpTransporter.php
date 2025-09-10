@@ -75,7 +75,7 @@ class HttpTransporter implements HttpTransporterInterface
         try {
             $psr7Response = $this->client->sendRequest($psr7Request);
         } catch (\Psr\Http\Client\NetworkExceptionInterface $e) {
-            throw NetworkException::fromPsr18NetworkException($request->getUri(), $e);
+            throw NetworkException::fromPsr18NetworkException($psr7Request, $e);
         } catch (\Psr\Http\Client\ClientExceptionInterface $e) {
             // Handle other PSR-18 client exceptions that are not network-related
             throw new RuntimeException(
@@ -93,7 +93,7 @@ class HttpTransporter implements HttpTransporterInterface
         if ($psr7Response->getStatusCode() === 400) {
             $body = (string) $psr7Response->getBody();
             $errorDetail = $body ? substr($body, 0, 200) : 'Invalid request parameters';
-            throw RequestException::fromBadRequestToUri($request->getUri(), $errorDetail);
+            throw RequestException::fromBadRequest($psr7Request, $errorDetail);
         }
 
         return $this->convertFromPsr7Response($psr7Response);

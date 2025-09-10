@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Exception;
 
+use Psr\Http\Client\ClientExceptionInterface;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 
@@ -16,7 +17,7 @@ use WordPress\AiClient\Providers\Http\DTO\Response;
  *
  * @since 0.1.0
  */
-class ResponseException extends RuntimeException
+class ResponseException extends RuntimeException implements ClientExceptionInterface
 {
     /**
      * Creates a ResponseException for missing expected data.
