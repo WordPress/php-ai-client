@@ -375,7 +375,12 @@ class File extends AbstractDataTransferObject
 
             $extension = pathinfo($cleanPath, PATHINFO_EXTENSION);
             if (!empty($extension)) {
-                return MimeType::fromExtension($extension);
+                try {
+                    return MimeType::fromExtension($extension);
+                } catch (InvalidArgumentException $e) {
+                    // Extension not recognized, continue to error
+                    unset($e);
+                }
             }
         }
 
