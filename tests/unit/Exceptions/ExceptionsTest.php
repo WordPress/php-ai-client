@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Exceptions;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\AiClientExceptionInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
-use WordPress\AiClient\Exceptions\AiClientExceptionInterface;
 use WordPress\AiClient\Providers\Http\Exception\NetworkException;
 use WordPress\AiClient\Providers\Http\Exception\RequestException;
 
@@ -17,7 +17,7 @@ use WordPress\AiClient\Providers\Http\Exception\RequestException;
  * @since 0.2.0
  * @covers \WordPress\AiClient\Common\Exception\InvalidArgumentException
  * @covers \WordPress\AiClient\Common\Exception\RuntimeException
- * @covers \WordPress\AiClient\Exceptions\AiClientExceptionInterface
+ * @covers \WordPress\AiClient\Common\Contracts\AiClientExceptionInterface
  * @covers \WordPress\AiClient\Providers\Http\Exception\NetworkException
  * @covers \WordPress\AiClient\Providers\Http\Exception\RequestException
  */

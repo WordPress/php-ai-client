@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Exceptions;
+namespace WordPress\AiClient\Common\Contracts;
 
 use Throwable;
 

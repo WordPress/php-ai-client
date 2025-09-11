@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Common\Exception;
 
-use WordPress\AiClient\Exceptions\AiClientExceptionInterface;
+use WordPress\AiClient\Common\Contracts\AiClientExceptionInterface;
 
 /**
  * Exception thrown when an invalid argument is provided.
