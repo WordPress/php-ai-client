@@ -7,31 +7,17 @@ namespace WordPress\AiClient\Providers\Http\Exception;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 
 /**
- * Exception thrown for 4xx HTTP client errors.
+ * Exception thrown for 5xx HTTP server errors.
  *
- * This represents errors where the client request was malformed,
- * unauthorized, forbidden, or otherwise invalid.
+ * This represents errors where the server failed to fulfill
+ * a valid request due to internal server errors.
  *
  * @since n.e.x.t
  */
-class ClientException extends RequestException
+class ServerException extends RequestException
 {
     /**
-     * Creates a ClientException from a 400 Bad Request response.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $errorDetail Details about what made the request bad.
-     * @return self
-     */
-    public static function fromBadRequestResponse(string $errorDetail = 'Invalid request parameters'): self
-    {
-        $message = sprintf('Bad request (400): %s', $errorDetail);
-        return new self($message, 400);
-    }
-
-    /**
-     * Creates a ClientException from a client error response (4xx).
+     * Creates a ServerException from a server error response.
      *
      * This method extracts error details from common API response formats
      * and creates an exception with a descriptive message and status code.
@@ -41,10 +27,10 @@ class ClientException extends RequestException
      * @param Response $response The HTTP response that failed.
      * @return self
      */
-    public static function fromClientError(Response $response): self
+    public static function fromServerError(Response $response): self
     {
         $errorMessage = sprintf(
-            'Client error (%d): Request was rejected due to client-side issue',
+            'Server error (%d): Request failed due to server-side issue',
             $response->getStatusCode()
         );
 
