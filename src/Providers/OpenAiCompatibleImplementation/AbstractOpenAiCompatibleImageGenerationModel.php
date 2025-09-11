@@ -293,21 +293,21 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
         /** @var ResponseData $responseData */
         $responseData = $response->getData();
         if (!isset($responseData['data']) || !$responseData['data']) {
-            throw new RuntimeException(
-                'Unexpected API response: Missing the data key.'
-            );
+            throw ResponseException::fromMissingData($this->providerMetadata()->getName(), 'data');
         }
         if (!is_array($responseData['data'])) {
-            throw new RuntimeException(
-                'Unexpected API response: The data key must contain an array.'
+            throw ResponseException::fromInvalidData(
+                $this->providerMetadata()->getName(),
+                'The data key must contain an array.'
             );
         }
 
         $candidates = [];
         foreach ($responseData['data'] as $choiceData) {
             if (!is_array($choiceData) || array_is_list($choiceData)) {
-                throw new RuntimeException(
-                    'Unexpected API response: Each element in the data key must be an associative array.'
+                throw ResponseException::fromInvalidData(
+                    $this->providerMetadata()->getName(),
+                    'Each element in the data key must be an associative array.'
                 );
             }
 
@@ -361,8 +361,10 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
         } elseif (isset($choiceData['b64_json']) && is_string($choiceData['b64_json'])) {
             $imageFile = new File($choiceData['b64_json'], $expectedMimeType);
         } else {
-            throw new RuntimeException(
-                'Unexpected API response: Each choice must contain either a url or b64_json key with a string value.'
+            throw ResponseException::fromMissingData(
+                $this->providerMetadata()->getName(),
+                'url or b64_json',
+                'choice data'
             );
         }
 

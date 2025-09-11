@@ -7,7 +7,6 @@ namespace WordPress\AiClient\Tests\unit\Providers\Http\Util;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Exception\ClientException;
-use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Http\Exception\ServerException;
 use WordPress\AiClient\Providers\Http\Util\ResponseUtil;
 
@@ -88,7 +87,10 @@ class ResponseUtilTest extends TestCase
 
         $this->expectException(ClientException::class);
         $this->expectExceptionCode($statusCode);
-        $this->expectExceptionMessageMatches("/^Client error \\({$statusCode}\\): Request was rejected due to client-side issue( - {$expectedMessagePart})?$/");
+        $this->expectExceptionMessageMatches(
+            "/^Client error \\({$statusCode}\\): Request was rejected due to " .
+            "client-side issue( - {$expectedMessagePart})?$/"
+        );
 
         ResponseUtil::throwIfNotSuccessful($response);
     }
@@ -114,7 +116,9 @@ class ResponseUtilTest extends TestCase
 
         $this->expectException(ServerException::class);
         $this->expectExceptionCode($statusCode);
-        $this->expectExceptionMessageMatches("/^Server error \\({$statusCode}\\): Request failed due to server-side issue( - {$expectedMessagePart})?$/");
+        $this->expectExceptionMessageMatches(
+            "/^Server error \\({$statusCode}\\): Request failed due to server-side issue( - {$expectedMessagePart})?$/"
+        );
 
         ResponseUtil::throwIfNotSuccessful($response);
     }

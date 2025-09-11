@@ -6,7 +6,6 @@ namespace WordPress\AiClient\Tests\unit\Providers\OpenAiCompatibleImplementation
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
@@ -58,6 +57,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $this->modelMetadata = $this->createStub(ModelMetadata::class);
         $this->modelMetadata->method('getId')->willReturn('test-image-model');
         $this->providerMetadata = $this->createStub(ProviderMetadata::class);
+        $this->providerMetadata->method('getName')->willReturn('TestProvider');
         $this->mockHttpTransporter = $this->createMock(HttpTransporterInterface::class);
         $this->mockRequestAuthentication = $this->createMock(RequestAuthenticationInterface::class);
     }
@@ -720,8 +720,8 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $response = new Response(200, [], json_encode(['id' => 'test-id']));
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: Missing the data key.');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Unexpected TestProvider API response: Missing the "data" key.');
 
         $model->exposeParseResponseToGenerativeAiResult($response);
     }
@@ -740,8 +740,8 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         );
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: The data key must contain an array.');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Unexpected TestProvider API response: The data key must contain an array.');
 
         $model->exposeParseResponseToGenerativeAiResult($response);
     }
@@ -756,9 +756,9 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $response = new Response(200, [], json_encode(['data' => ['invalid']]));
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each element in the data key must be an associative array.'
+            'Unexpected TestProvider API response: Each element in the data key must be an associative array.'
         );
 
         $model->exposeParseResponseToGenerativeAiResult($response);
@@ -820,9 +820,9 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each choice must contain either a url or b64_json key with a string value.'
+            'Unexpected TestProvider API response: Missing the "url or b64_json" key in choice data.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);

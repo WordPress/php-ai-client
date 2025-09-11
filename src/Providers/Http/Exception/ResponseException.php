@@ -40,6 +40,19 @@ class ResponseException extends RuntimeException implements ClientExceptionInter
         return new self($message);
     }
 
+    /**
+     * Creates a ResponseException from invalid data in an API response.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $apiName The name of the API service (e.g., 'OpenAI', 'Anthropic').
+     * @param string $message The specific error message describing the invalid data.
+     * @return self
+     */
+    public static function fromInvalidData(string $apiName, string $message): self
+    {
+        return new self(sprintf('Unexpected %s API response: %s', $apiName, $message));
+    }
 
     /**
      * Creates a ResponseException from a bad HTTP response.

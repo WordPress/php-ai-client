@@ -60,6 +60,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $this->modelMetadata = $this->createStub(ModelMetadata::class);
         $this->modelMetadata->method('getId')->willReturn('test-model');
         $this->providerMetadata = $this->createStub(ProviderMetadata::class);
+        $this->providerMetadata->method('getName')->willReturn('TestProvider');
         $this->mockHttpTransporter = $this->createMock(HttpTransporterInterface::class);
         $this->mockRequestAuthentication = $this->createMock(RequestAuthenticationInterface::class);
     }
@@ -950,8 +951,8 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $response = new Response(200, [], json_encode(['id' => 'test-id']));
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: Missing the choices key.');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Unexpected TestProvider API response: Missing the "choices" key.');
 
         $model->parseResponseToGenerativeAiResult($response);
     }
@@ -970,8 +971,8 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         );
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: The choices key must contain an array.');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Unexpected TestProvider API response: The choices key must contain an array.');
 
         $model->parseResponseToGenerativeAiResult($response);
     }
@@ -986,9 +987,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $response = new Response(200, [], json_encode(['choices' => ['invalid']]));
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each element in the choices key must be an associative array.'
+            'Unexpected TestProvider API response: Each element in the choices key must be an associative array.'
         );
 
         $model->parseResponseToGenerativeAiResult($response);
@@ -1028,9 +1029,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each choice must contain a message key with an associative array.'
+            'Unexpected TestProvider API response: Missing the "message" key in choice data.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
@@ -1049,9 +1050,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each choice must contain a message key with an associative array.'
+            'Unexpected TestProvider API response: Missing the "message" key in choice data.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
@@ -1072,9 +1073,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each choice must contain a finish_reason key with a string value.'
+            'Unexpected TestProvider API response: Missing the "finish_reason" key in choice data.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
@@ -1096,8 +1097,8 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: Invalid finish reason "unknown".');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Unexpected TestProvider API response: Invalid finish reason "unknown".');
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
     }
