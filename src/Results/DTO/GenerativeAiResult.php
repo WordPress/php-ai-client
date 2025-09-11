@@ -320,7 +320,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     }
 
     /**
-     * Converts all candidates to text array.
+     * Converts all content candidates to a text array.
      *
      * @since 0.1.0
      *
@@ -332,8 +332,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
         foreach ($this->candidates as $candidate) {
             $message = $candidate->getMessage();
             foreach ($message->getParts() as $part) {
+                $channel = $part->getChannel();
                 $text = $part->getText();
-                if ($text !== null) {
+                if (MessagePartChannelEnum::content() === $channel && $text !== null) {
                     $texts[] = $text;
                     break;
                 }
