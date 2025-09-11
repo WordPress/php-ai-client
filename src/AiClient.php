@@ -128,10 +128,9 @@ class AiClient
      *
      * @param ProviderAvailabilityInterface|string|class-string<ProviderInterface> $availabilityOrIdOrClassName
      *        The provider availability instance, provider ID, or provider class name.
-     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return bool True if the provider is configured and available, false otherwise.
      */
-    public static function isConfigured($availabilityOrIdOrClassName, ?ProviderRegistry $registry = null): bool
+    public static function isConfigured($availabilityOrIdOrClassName): bool
     {
         // Handle direct ProviderAvailabilityInterface (backward compatibility)
         if ($availabilityOrIdOrClassName instanceof ProviderAvailabilityInterface) {
@@ -140,8 +139,7 @@ class AiClient
 
         // Handle string input (provider ID or class name) via registry
         if (is_string($availabilityOrIdOrClassName)) {
-            $registry = $registry ?? self::defaultRegistry();
-            return $registry->isProviderConfigured($availabilityOrIdOrClassName);
+            return self::defaultRegistry()->isProviderConfigured($availabilityOrIdOrClassName);
         }
 
         throw new \InvalidArgumentException(
