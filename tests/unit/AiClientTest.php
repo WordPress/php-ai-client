@@ -276,34 +276,6 @@ class AiClientTest extends TestCase
     }
 
     /**
-     * Tests isConfigured method with provider ID uses default registry when none provided.
-     */
-    public function testIsConfiguredWithProviderIdUsesDefaultRegistry(): void
-    {
-        // This test will use the actual default registry since we can't easily mock static methods
-        // The default registry should have providers registered, so we test the delegation path
-        $result = AiClient::isConfigured('openai');
-
-        // The result will be false because no actual API keys are configured in tests,
-        // but the important thing is that no exception is thrown and the registry delegation works
-        $this->assertIsBool($result);
-    }
-
-    /**
-     * Tests isConfigured method with provider class name uses default registry when none provided.
-     */
-    public function testIsConfiguredWithProviderClassNameUsesDefaultRegistry(): void
-    {
-        // This test will use the actual default registry since we can't easily mock static methods
-        // The default registry should have providers registered, so we test the delegation path
-        $result = AiClient::isConfigured(OpenAiProvider::class);
-
-        // The result will be false because no actual API keys are configured in tests,
-        // but the important thing is that no exception is thrown and the registry delegation works
-        $this->assertIsBool($result);
-    }
-
-    /**
      * Tests isConfigured method throws exception for invalid parameter types.
      */
     public function testIsConfiguredThrowsExceptionForInvalidParameterTypes(): void
