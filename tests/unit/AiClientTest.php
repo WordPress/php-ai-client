@@ -9,6 +9,7 @@ use RuntimeException;
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
+use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
@@ -244,6 +245,115 @@ class AiClientTest extends TestCase
         $result = AiClient::isConfigured($mockAvailability);
 
         $this->assertFalse($result);
+    }
+
+    /**
+     * Tests isConfigured method with provider ID string leverages default registry.
+     */
+    public function testIsConfiguredWithProviderIdString(): void
+    {
+        // This test will use the actual default registry since we can't easily mock static methods
+        // The default registry should have providers registered, so we test the delegation path
+        $result = AiClient::isConfigured('openai');
+
+        // The result will be false because no actual API keys are configured in tests,
+        // but the important thing is that no exception is thrown and the registry delegation works
+        $this->assertIsBool($result);
+    }
+
+    /**
+     * Tests isConfigured method with provider class name leverages default registry.
+     */
+    public function testIsConfiguredWithProviderClassName(): void
+    {
+        // This test will use the actual default registry since we can't easily mock static methods
+        // The default registry should have providers registered, so we test the delegation path
+        $result = AiClient::isConfigured(OpenAiProvider::class);
+
+        // The result will be false because no actual API keys are configured in tests,
+        // but the important thing is that no exception is thrown and the registry delegation works
+        $this->assertIsBool($result);
+    }
+
+    /**
+     * Tests isConfigured method throws exception for invalid parameter types.
+     */
+    public function testIsConfiguredThrowsExceptionForInvalidParameterTypes(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Parameter must be a ProviderAvailabilityInterface instance, provider ID string, or provider class name. ' .
+            'Received: integer'
+        );
+
+        AiClient::isConfigured(123);
+    }
+
+    /**
+     * Data provider for invalid isConfigured parameter types.
+     *
+     * @return array<string, array{mixed, string}>
+     */
+    public function invalidIsConfiguredParameterTypesProvider(): array
+    {
+        return [
+            'integer parameter' => [123, 'integer'],
+            'array parameter' => [['invalid_array'], 'array'],
+            'object parameter' => [new \stdClass(), 'stdClass'],
+            'boolean parameter' => [true, 'boolean'],
+            'null parameter' => [null, 'NULL'],
+        ];
+    }
+
+    /**
+     * Tests that isConfigured rejects all invalid parameter types consistently.
+     *
+     * @dataProvider invalidIsConfiguredParameterTypesProvider
+     * @param mixed $invalidParam
+     */
+    public function testIsConfiguredRejectsInvalidParameterTypes($invalidParam, string $expectedType): void
+    {
+        try {
+            AiClient::isConfigured($invalidParam);
+            $this->fail("Expected InvalidArgumentException for isConfigured with $expectedType");
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString(
+                'Parameter must be a ProviderAvailabilityInterface instance, provider ID string, ' .
+                'or provider class name.',
+                $e->getMessage(),
+                "isConfigured should reject invalid parameter type: $expectedType"
+            );
+            $this->assertStringContainsString(
+                "Received: $expectedType",
+                $e->getMessage(),
+                "isConfigured should include received type in error message"
+            );
+        }
+    }
+
+    /**
+     * Tests backward compatibility - isConfigured still works with ProviderAvailabilityInterface.
+     */
+    public function testIsConfiguredBackwardCompatibility(): void
+    {
+        // Test that the original interface-based approach still works exactly as before
+        $mockAvailability = $this->createMock(ProviderAvailabilityInterface::class);
+        $mockAvailability->expects($this->once())
+            ->method('isConfigured')
+            ->willReturn(true);
+
+        // Should work without registry parameter
+        $result = AiClient::isConfigured($mockAvailability);
+        $this->assertTrue($result);
+
+        // Should work in all cases with interface input
+        $mockAvailability2 = $this->createMock(ProviderAvailabilityInterface::class);
+        $mockAvailability2->expects($this->once())
+            ->method('isConfigured')
+            ->willReturn(false);
+
+        $result2 = AiClient::isConfigured($mockAvailability2);
+        $this->assertFalse($result2);
     }
 
     /**
