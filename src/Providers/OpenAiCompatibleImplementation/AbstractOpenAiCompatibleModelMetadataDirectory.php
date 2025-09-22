@@ -13,7 +13,11 @@ use WordPress\AiClient\Providers\Http\Util\ResponseUtil;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
- * Base class for a model metadata directory for an OpenAI compatible provider.
+ * Base class for a model metadata directory for providers that implement OpenAI's API format.
+ *
+ * This abstract class is designed to work with any AI provider that offers an OpenAI-compatible
+ * models listing endpoint, including but not limited to Anthropic, Google, and other
+ * providers that have adopted OpenAI's models API specification as a standard interface.
  *
  * @since 0.1.0
  */
