@@ -25,6 +25,7 @@ vendor/
 ############
 
 .claude/
+.clinerules
 .clinerules/
 .codex/
 .cursor/
