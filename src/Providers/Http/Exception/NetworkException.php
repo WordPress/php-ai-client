@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Exception;
 
-use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Message\RequestInterface;
+use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Providers\Http\DTO\Request;
 
 /**
  * Exception thrown for network-related errors.
@@ -15,54 +16,55 @@ use Psr\Http\Message\RequestInterface;
  *
  * @since n.e.x.t
  */
-class NetworkException extends RequestException implements NetworkExceptionInterface
+class NetworkException extends RuntimeException
 {
     /**
      * The request that failed.
      *
-     * @var RequestInterface|null
+     * @var Request|null
      */
-    private ?RequestInterface $request = null;
+    protected ?Request $request = null;
+
+    /**
+     * Returns the request that failed as our Request DTO.
+     *
+     * @since n.e.x.t
+     *
+     * @return Request
+     * @throws \RuntimeException If no request is available
+     */
+    public function getRequest(): Request
+    {
+        if ($this->request === null) {
+            throw new \RuntimeException(
+                'Request object not available. This exception was directly instantiated. ' .
+                'Use a factory method that provides request context.'
+            );
+        }
+
+        return $this->request;
+    }
 
     /**
      * Creates a NetworkException from a PSR-18 network exception.
      *
      * @since n.e.x.t
      *
-     * @param RequestInterface $request The request that failed.
+     * @param RequestInterface $psrRequest The PSR-7 request that failed.
      * @param \Throwable $networkException The PSR-18 network exception.
      * @return self
      */
-    public static function fromPsr18NetworkException(RequestInterface $request, \Throwable $networkException): self
+    public static function fromPsr18NetworkException(RequestInterface $psrRequest, \Throwable $networkException): self
     {
+        $request = Request::fromPsrRequest($psrRequest);
         $message = sprintf(
             'Network error occurred while sending request to %s: %s',
-            (string) $request->getUri(),
+            $request->getUri(),
             $networkException->getMessage()
         );
 
         $exception = new self($message, 0, $networkException);
         $exception->request = $request;
         return $exception;
-    }
-
-    /**
-     * Returns the request that failed.
-     *
-     * @since n.e.x.t
-     *
-     * @return RequestInterface
-     * @throws \RuntimeException If no request is available (when directly instantiated)
-     */
-    public function getRequest(): RequestInterface
-    {
-        if ($this->request === null) {
-            throw new \RuntimeException(
-                'Request object not available. This exception was directly instantiated. ' .
-                'Use fromPsr18NetworkException() factory method for PSR-18 compliance.'
-            );
-        }
-
-        return $this->request;
     }
 }

@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Exception;
 
+use Psr\Http\Message\RequestInterface;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Utilities\ErrorMessageExtractor;
 
 /**
  * Exception thrown for 4xx HTTP client errors.
@@ -14,8 +18,35 @@ use WordPress\AiClient\Providers\Http\DTO\Response;
  *
  * @since n.e.x.t
  */
-class ClientException extends RequestException
+class ClientException extends InvalidArgumentException
 {
+    /**
+     * The request that failed.
+     *
+     * @var Request|null
+     */
+    protected ?Request $request = null;
+
+    /**
+     * Returns the request that failed as our Request DTO.
+     *
+     * @since n.e.x.t
+     *
+     * @return Request
+     * @throws \RuntimeException If no request is available
+     */
+    public function getRequest(): Request
+    {
+        if ($this->request === null) {
+            throw new \RuntimeException(
+                'Request object not available. This exception was directly instantiated. ' .
+                'Use a factory method that provides request context.'
+            );
+        }
+
+        return $this->request;
+    }
+
     /**
      * Creates a ClientException from a 400 Bad Request response.
      *
@@ -28,6 +59,43 @@ class ClientException extends RequestException
     {
         $message = sprintf('Bad request (400): %s', $errorDetail);
         return new self($message, 400);
+    }
+
+    /**
+     * Creates a ClientException from a bad request.
+     *
+     * @since n.e.x.t
+     *
+     * @param RequestInterface $psrRequest The PSR-7 request that failed.
+     * @param string $errorDetail Details about what made the request bad.
+     * @return self
+     */
+    public static function fromBadRequest(
+        RequestInterface $psrRequest,
+        string $errorDetail = 'Invalid request parameters'
+    ): self {
+        $request = Request::fromPsrRequest($psrRequest);
+        $message = sprintf('Bad request to %s (400): %s', $request->getUri(), $errorDetail);
+
+        $exception = new self($message, 400);
+        $exception->request = $request;
+        return $exception;
+    }
+
+    /**
+     * Creates a ClientException from a bad request to a specific URI.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $uri The URI that was requested.
+     * @param string $errorDetail Details about what made the request bad.
+     * @return self
+     *
+     * @deprecated Use fromBadRequest() with RequestInterface for better type safety
+     */
+    public static function fromBadRequestToUri(string $uri, string $errorDetail = 'Invalid request parameters'): self
+    {
+        return new self(sprintf('Bad request to %s (400): %s', $uri, $errorDetail), 400);
     }
 
     /**
@@ -48,28 +116,10 @@ class ClientException extends RequestException
             $response->getStatusCode()
         );
 
-        // Handle common error formats in API responses
-        $data = $response->getData();
-        if (
-            is_array($data) &&
-            isset($data['error']) &&
-            is_array($data['error']) &&
-            isset($data['error']['message']) &&
-            is_string($data['error']['message'])
-        ) {
-            $errorMessage .= ' - ' . $data['error']['message'];
-        } elseif (
-            is_array($data) &&
-            isset($data['error']) &&
-            is_string($data['error'])
-        ) {
-            $errorMessage .= ' - ' . $data['error'];
-        } elseif (
-            is_array($data) &&
-            isset($data['message']) &&
-            is_string($data['message'])
-        ) {
-            $errorMessage .= ' - ' . $data['message'];
+        // Extract error message from response data using centralized utility
+        $extractedError = ErrorMessageExtractor::extractFromResponseData($response->getData());
+        if ($extractedError !== null) {
+            $errorMessage .= ' - ' . $extractedError;
         }
 
         return new self($errorMessage, $response->getStatusCode());
