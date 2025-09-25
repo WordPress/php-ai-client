@@ -8,8 +8,8 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\AiClientExceptionInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Http\Exception\NetworkException;
-use WordPress\AiClient\Providers\Http\Exception\RequestException;
 
 /**
  * Tests for AI Client exceptions.
@@ -19,7 +19,7 @@ use WordPress\AiClient\Providers\Http\Exception\RequestException;
  * @covers \WordPress\AiClient\Common\Exception\RuntimeException
  * @covers \WordPress\AiClient\Common\Contracts\AiClientExceptionInterface
  * @covers \WordPress\AiClient\Providers\Http\Exception\NetworkException
- * @covers \WordPress\AiClient\Providers\Http\Exception\RequestException
+ * @covers \WordPress\AiClient\Providers\Http\Exception\ClientException
  */
 class ExceptionsTest extends TestCase
 {
@@ -29,7 +29,7 @@ class ExceptionsTest extends TestCase
             new InvalidArgumentException('test'),
             new RuntimeException('test'),
             new NetworkException('test'),
-            new RequestException('test'),
+            new ClientException('test'),
         ];
 
         foreach ($exceptions as $exception) {
@@ -43,7 +43,7 @@ class ExceptionsTest extends TestCase
             new InvalidArgumentException('invalid error'),
             new RuntimeException('runtime error'),
             new NetworkException('network error'),
-            new RequestException('request error'),
+            new ClientException('client error'),
         ];
 
         foreach ($exceptions as $exception) {
