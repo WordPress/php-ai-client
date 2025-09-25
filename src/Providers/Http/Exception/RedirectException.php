@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Exception;
 
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 
 /**
@@ -15,7 +16,7 @@ use WordPress\AiClient\Providers\Http\DTO\Response;
  *
  * @since n.e.x.t
  */
-class RedirectException extends RequestException
+class RedirectException extends RuntimeException
 {
     /**
      * Creates a RedirectException from a redirect response.

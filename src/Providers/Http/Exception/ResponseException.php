@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Exception;
 
-use Psr\Http\Client\ClientExceptionInterface;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Utilities\ErrorMessageExtractor;
 
 /**
  * Exception class for HTTP response errors.
@@ -17,7 +17,7 @@ use WordPress\AiClient\Providers\Http\DTO\Response;
  *
  * @since 0.1.0
  */
-class ResponseException extends RuntimeException implements ClientExceptionInterface
+class ResponseException extends RuntimeException
 {
     /**
      * Creates a ResponseException for missing expected data.
@@ -72,28 +72,10 @@ class ResponseException extends RuntimeException implements ClientExceptionInter
             $response->getStatusCode()
         );
 
-        // Handle common error formats in API responses.
-        $data = $response->getData();
-        if (
-            is_array($data) &&
-            isset($data['error']) &&
-            is_array($data['error']) &&
-            isset($data['error']['message']) &&
-            is_string($data['error']['message'])
-        ) {
-            $errorMessage .= ' ' . $data['error']['message'];
-        } elseif (
-            is_array($data) &&
-            isset($data['error']) &&
-            is_string($data['error'])
-        ) {
-            $errorMessage .= ' ' . $data['error'];
-        } elseif (
-            is_array($data) &&
-            isset($data['message']) &&
-            is_string($data['message'])
-        ) {
-            $errorMessage .= ' ' . $data['message'];
+        // Extract error message from response data using centralized utility
+        $extractedError = ErrorMessageExtractor::extractFromResponseData($response->getData());
+        if ($extractedError !== null) {
+            $errorMessage .= ' ' . $extractedError;
         }
 
         return new self($errorMessage, $response->getStatusCode());
