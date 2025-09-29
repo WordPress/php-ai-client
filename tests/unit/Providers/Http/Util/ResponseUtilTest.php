@@ -57,11 +57,11 @@ class ResponseUtilTest extends TestCase
         $response = $this->createMock(Response::class);
         $response->method('isSuccessful')->willReturn(false);
         $response->method('getStatusCode')->willReturn(400);
-        $response->method('getBody')->willReturn('');
+        $response->method('getData')->willReturn([]);
 
         $this->expectException(ClientException::class);
         $this->expectExceptionCode(400);
-        $this->expectExceptionMessage('Bad request (400): Invalid request parameters');
+        $this->expectExceptionMessage('Client error (400): Request was rejected due to client-side issue');
 
         ResponseUtil::throwIfNotSuccessful($response);
     }

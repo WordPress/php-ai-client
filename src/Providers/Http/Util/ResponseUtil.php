@@ -50,13 +50,6 @@ class ResponseUtil
 
         // 4xx Client Errors
         if ($statusCode >= 400 && $statusCode < 500) {
-            // Special handling for 400 Bad Request
-            if ($statusCode === 400) {
-                $body = (string) $response->getBody();
-                $errorDetail = $body ? substr($body, 0, 200) : 'Invalid request parameters';
-                throw ClientException::fromBadRequestResponse($errorDetail);
-            }
-            // General 4xx client errors
             throw ClientException::fromClientError($response);
         }
 
