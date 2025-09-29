@@ -50,7 +50,7 @@ class ResponseUtil
 
         // 4xx Client Errors
         if ($statusCode >= 400 && $statusCode < 500) {
-            throw ClientException::fromClientError($response);
+            throw ClientException::fromClientErrorResponse($response);
         }
 
         // 5xx Server Errors

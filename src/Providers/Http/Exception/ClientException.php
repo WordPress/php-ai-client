@@ -109,7 +109,7 @@ class ClientException extends InvalidArgumentException
      * @param Response $response The HTTP response that failed.
      * @return self
      */
-    public static function fromClientError(Response $response): self
+    public static function fromClientErrorResponse(Response $response): self
     {
         $errorMessage = sprintf(
             'Client error (%d): Request was rejected due to client-side issue',

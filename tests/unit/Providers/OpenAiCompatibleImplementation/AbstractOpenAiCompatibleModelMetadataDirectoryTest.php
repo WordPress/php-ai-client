@@ -109,7 +109,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
         );
 
         $this->expectException(ClientException::class);
-        $this->expectExceptionMessage('Bad request (400): {"error": "Bad Request"}');
+        $this->expectExceptionMessage('Client error (400): Request was rejected due to client-side issue - Bad Request');
 
         $directory->listModelMetadata();
     }
