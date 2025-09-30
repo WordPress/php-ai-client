@@ -68,6 +68,8 @@ For a more detailed overview, refer to the `docs/ARCHITECTURE.md` file.
 
 ## Agent Guidelines
 
+### Naming conventions
+
 ### DO:
 
 *   **Read the Docs:** Before making any changes, thoroughly read `CONTRIBUTING.md` and `docs/ARCHITECTURE.md`.
@@ -82,6 +84,15 @@ For a more detailed overview, refer to the `docs/ARCHITECTURE.md` file.
 *   **Add Provider-Specific Logic to Core:** Keep the core client agnostic. Provider-specific logic should be encapsulated within the provider's implementation in `src/ProviderImplementations/`.
 *   **Introduce Out-of-Scope Features:** Do not add features that are out of scope for this project, such as agents or the Model Context Protocol (MCP), as noted in `docs/REQUIREMENTS.md`.
 *   **Duplicate Documentation:** Avoid duplicating PHPDoc descriptions for methods that implement an interface.
+
+### Exception handling
+
+All exceptions must use the project's custom exception classes rather than PHP built-in exceptions. This includes:
+
+- Use the custom primitive exceptions in `WordPress\AiClient\Common\Exception\` instead of the PHP primitive exceptions
+- If a PHP primitive exception is needed that doesn't have a custom exception counterpart, then create one that extends the primitive and implements AiClientExceptionInterface
+- All custom exceptions implement `WordPress\AiClient\Exceptions\AiClientExceptionInterface` for unified exception handling
+- Follow usage-driven design: only implement static factory methods that are actually used in the codebase
 
 ## Common Pitfalls
 

@@ -17,6 +17,7 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -59,6 +60,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $this->modelMetadata = $this->createStub(ModelMetadata::class);
         $this->modelMetadata->method('getId')->willReturn('test-model');
         $this->providerMetadata = $this->createStub(ProviderMetadata::class);
+        $this->providerMetadata->method('getName')->willReturn('TestProvider');
         $this->mockHttpTransporter = $this->createMock(HttpTransporterInterface::class);
         $this->mockRequestAuthentication = $this->createMock(RequestAuthenticationInterface::class);
     }
@@ -144,7 +146,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     public function testGenerateTextResultApiFailure(): void
     {
         $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Hello')])];
-        $response = new Response(400, [], '{"error": "Bad Request"}');
+        $response = new Response(400, [], '{"error": "Invalid parameter."}');
 
         $this->mockRequestAuthentication
             ->expects($this->once())
@@ -158,8 +160,8 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         $model = $this->createModel();
 
-        $this->expectException(ResponseException::class);
-        $this->expectExceptionMessage('Bad status code: 400. Bad Request');
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('Bad Request (400) - Invalid parameter.');
 
         $model->generateTextResult($prompt);
     }
@@ -949,8 +951,8 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $response = new Response(200, [], json_encode(['id' => 'test-id']));
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: Missing the choices key.');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Unexpected TestProvider API response: Missing the "choices" key.');
 
         $model->parseResponseToGenerativeAiResult($response);
     }
@@ -969,8 +971,8 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         );
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: The choices key must contain an array.');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Unexpected TestProvider API response: The choices key must contain an array.');
 
         $model->parseResponseToGenerativeAiResult($response);
     }
@@ -985,9 +987,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $response = new Response(200, [], json_encode(['choices' => ['invalid']]));
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each element in the choices key must be an associative array.'
+            'Unexpected TestProvider API response: Each element in the choices key must be an associative array.'
         );
 
         $model->parseResponseToGenerativeAiResult($response);
@@ -1027,9 +1029,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each choice must contain a message key with an associative array.'
+            'Unexpected TestProvider API response: Missing the "choices[0].message" key.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
@@ -1048,9 +1050,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each choice must contain a message key with an associative array.'
+            'Unexpected TestProvider API response: Missing the "choices[0].message" key.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
@@ -1071,9 +1073,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each choice must contain a finish_reason key with a string value.'
+            'Unexpected TestProvider API response: Missing the "choices[0].finish_reason" key.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
@@ -1095,8 +1097,8 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: Invalid finish reason "unknown".');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Unexpected TestProvider API response: Invalid finish reason "unknown".');
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
     }

@@ -4,7 +4,7 @@ This document outlines the functional requirements for the PHP AI Client, as wel
 
 ## Target Audiences
 
-There are two primary developer audiences this client is intended for. This is important to understand as it significantly influences the thinking and complexity around the APIs introduced in this library.a
+There are two primary developer audiences this client is intended for. This is important to understand as it significantly influences the thinking and complexity around the APIs introduced in this library.
 
 ### Extenders
 
@@ -12,7 +12,7 @@ Extenders are the folks that will be adding providers, models, and otherwise ext
 
 ### Implementers
 
-Implementors are the folks that will be utilizing the client to take advantage of AI features. These developers know their own codebase well, but their technical and model knowledge varies. It is important not to rely on this knowledge for them to get significant value from the client. The APIs for these people will be simpler, straightforward, readable, and composable, so they can interact with the model with only what they need to know in mind.
+Implementers are the folks that will be utilizing the client to take advantage of AI features. These developers know their own codebase well, but their technical and model knowledge varies. It is important not to rely on this knowledge for them to get significant value from the client. The APIs for these people will be simpler, straightforward, readable, and composable, so they can interact with the model with only what they need to know in mind.
 
 ## Objective
 

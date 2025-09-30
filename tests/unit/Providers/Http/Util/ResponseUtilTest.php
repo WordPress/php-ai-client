@@ -6,7 +6,8 @@ namespace WordPress\AiClient\Tests\unit\Providers\Http\Util;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Http\DTO\Response;
-use WordPress\AiClient\Providers\Http\Exception\ResponseException;
+use WordPress\AiClient\Providers\Http\Exception\ClientException;
+use WordPress\AiClient\Providers\Http\Exception\ServerException;
 use WordPress\AiClient\Providers\Http\Util\ResponseUtil;
 
 /**
@@ -47,15 +48,34 @@ class ResponseUtilTest extends TestCase
     }
 
     /**
-     * Tests that throwIfNotSuccessful throws an exception for unsuccessful responses.
+     * Tests that throwIfNotSuccessful throws ClientException for 400 Bad Request.
      *
-     * @dataProvider unsuccessfulResponseStatusCodeProvider
-     * @param int $statusCode The unsuccessful HTTP status code.
+     * @return void
+     */
+    public function testThrowIfNotSuccessfulThrowsClientExceptionFor400BadRequest(): void
+    {
+        $response = $this->createMock(Response::class);
+        $response->method('isSuccessful')->willReturn(false);
+        $response->method('getStatusCode')->willReturn(400);
+        $response->method('getData')->willReturn([]);
+
+        $this->expectException(ClientException::class);
+        $this->expectExceptionCode(400);
+        $this->expectExceptionMessage('Bad Request (400)');
+
+        ResponseUtil::throwIfNotSuccessful($response);
+    }
+
+    /**
+     * Tests that throwIfNotSuccessful throws ClientException for 4xx client errors.
+     *
+     * @dataProvider clientErrorStatusCodeProvider
+     * @param int $statusCode The 4xx HTTP status code.
      * @param array $data The response data.
      * @param string $expectedMessagePart The expected part of the exception message.
      * @return void
      */
-    public function testThrowIfNotSuccessfulThrowsForUnsuccessfulResponses(
+    public function testThrowIfNotSuccessfulThrowsClientExceptionFor4xxErrors(
         int $statusCode,
         array $data,
         string $expectedMessagePart
@@ -65,41 +85,77 @@ class ResponseUtilTest extends TestCase
         $response->method('getStatusCode')->willReturn($statusCode);
         $response->method('getData')->willReturn($data);
 
-        $this->expectException(ResponseException::class);
+        $this->expectException(ClientException::class);
         $this->expectExceptionCode($statusCode);
-        $this->expectExceptionMessageMatches("/^Bad status code: {$statusCode}\.($| {$expectedMessagePart})$/");
+        $this->expectExceptionMessageMatches(
+            "/^[A-Za-z ]+ \\({$statusCode}\\)( - {$expectedMessagePart})?$/"
+        );
 
         ResponseUtil::throwIfNotSuccessful($response);
     }
 
     /**
-     * Provides unsuccessful HTTP status codes and corresponding data for testing.
+     * Tests that throwIfNotSuccessful throws ServerException for 5xx server errors.
+     *
+     * @dataProvider serverErrorStatusCodeProvider
+     * @param int $statusCode The 5xx HTTP status code.
+     * @param array $data The response data.
+     * @param string $expectedMessagePart The expected part of the exception message.
+     * @return void
+     */
+    public function testThrowIfNotSuccessfulThrowsServerExceptionFor5xxErrors(
+        int $statusCode,
+        array $data,
+        string $expectedMessagePart
+    ): void {
+        $response = $this->createMock(Response::class);
+        $response->method('isSuccessful')->willReturn(false);
+        $response->method('getStatusCode')->willReturn($statusCode);
+        $response->method('getData')->willReturn($data);
+
+        $this->expectException(ServerException::class);
+        $this->expectExceptionCode($statusCode);
+        $this->expectExceptionMessageMatches(
+            "/^[A-Za-z ]+ \\({$statusCode}\\)( - {$expectedMessagePart})?$/"
+        );
+
+        ResponseUtil::throwIfNotSuccessful($response);
+    }
+
+    /**
+     * Provides 4xx client error HTTP status codes and corresponding data for testing.
      *
      * @return array
      */
-    public function unsuccessfulResponseStatusCodeProvider(): array
+    public function clientErrorStatusCodeProvider(): array
     {
         return [
-            '400 Bad Request (no extra message)' => [
-                400,
-                [],
-                '',
-            ],
             '401 Unauthorized (error.message)' => [
                 401,
                 ['error' => ['message' => 'Invalid API key.']],
-                'Invalid API key\.',
+                'Invalid API key\\.',
             ],
             '403 Forbidden (error string)' => [
                 403,
                 ['error' => 'Access denied.'],
-                'Access denied\.',
+                'Access denied\\.',
             ],
             '404 Not Found (message string)' => [
                 404,
                 ['message' => 'Resource not found.'],
-                'Resource not found\.',
+                'Resource not found\\.',
             ],
+        ];
+    }
+
+    /**
+     * Provides 5xx server error HTTP status codes and corresponding data for testing.
+     *
+     * @return array
+     */
+    public function serverErrorStatusCodeProvider(): array
+    {
+        return [
             '500 Internal Server Error (no extra message)' => [
                 500,
                 [],
@@ -108,7 +164,7 @@ class ResponseUtilTest extends TestCase
             '503 Service Unavailable (error.message with special chars)' => [
                 503,
                 ['error' => ['message' => 'Service is temporarily unavailable. Please try again later.']],
-                'Service is temporarily unavailable\. Please try again later\.',
+                'Service is temporarily unavailable\\. Please try again later\\.',
             ],
         ];
     }

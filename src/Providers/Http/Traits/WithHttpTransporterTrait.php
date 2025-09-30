@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Traits;
 
-use RuntimeException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 
 /**

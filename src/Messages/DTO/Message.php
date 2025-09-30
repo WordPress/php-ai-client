@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
-use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
@@ -188,7 +188,7 @@ class Message extends AbstractDataTransferObject
             return new ModelMessage($parts);
         } else {
             // Only USER and MODEL roles are supported
-            throw new \InvalidArgumentException('Invalid message role: ' . $role->value);
+            throw new InvalidArgumentException('Invalid message role: ' . $role->value);
         }
     }
 }

@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\Response;
-use WordPress\AiClient\Providers\Http\Exception\ResponseException;
+use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
@@ -88,7 +88,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
      */
     public function testSendListModelsRequestFailure(): void
     {
-        $response = new Response(400, [], '{"error": "Bad Request"}');
+        $response = new Response(400, [], '{"error": "Invalid parameter provided."}');
 
         $this->mockRequestAuthentication
             ->expects($this->once())
@@ -108,8 +108,8 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
             }
         );
 
-        $this->expectException(ResponseException::class);
-        $this->expectExceptionMessage('Bad status code: 400. Bad Request');
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('Bad Request (400) - Invalid parameter provided.');
 
         $directory->listModelMetadata();
     }

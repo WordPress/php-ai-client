@@ -25,9 +25,13 @@ vendor/
 ############
 
 .claude/
-CLAUDE.md
+.clinerules
 .clinerules/
+.codex/
 .cursor/
+.gemini/
+.windsurf/
+CLAUDE.md
 GEMINI.md
 
 ############
