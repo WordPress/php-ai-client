@@ -11,6 +11,7 @@ use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
+use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
@@ -187,6 +188,36 @@ class GenerativeAiResultTest extends TestCase
         );
 
         $this->assertEquals($text, $result->toText());
+    }
+
+    /**
+     * Tests toText method with both reasoning_content and content channels.
+     *
+     * @return void
+     */
+    public function testToTextWithReasoningContent(): void
+    {
+        $reasoningContent = 'Let me think about this step by step...';
+        $actualContent = 'This is the final answer.';
+
+        $message = new ModelMessage([
+            new MessagePart($reasoningContent, MessagePartChannelEnum::thought()),
+            new MessagePart($actualContent, MessagePartChannelEnum::content())
+        ]);
+        $candidate = new Candidate($message, FinishReasonEnum::stop());
+        $tokenUsage = new TokenUsage(10, 8, 18);
+
+        $result = new GenerativeAiResult(
+            'result_with_reasoning',
+            [$candidate],
+            $tokenUsage,
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
+
+        // toText() should only return content from the 'content' channel, not 'thought' channel
+        $this->assertEquals($actualContent, $result->toText());
+        $this->assertNotEquals($reasoningContent, $result->toText());
     }
 
     /**
@@ -428,6 +459,50 @@ class GenerativeAiResultTest extends TestCase
         );
 
         $this->assertEquals($texts, $result->toTexts());
+    }
+
+    /**
+     * Tests toTexts method with both reasoning_content and content channels.
+     *
+     * @return void
+     */
+    public function testToTextsWithReasoningContent(): void
+    {
+        $reasoningContent1 = 'Let me think about the first question...';
+        $actualContent1 = 'This is the first answer.';
+        $reasoningContent2 = 'Now for the second question...';
+        $actualContent2 = 'This is the second answer.';
+
+        $message1 = new ModelMessage([
+            new MessagePart($reasoningContent1, MessagePartChannelEnum::thought()),
+            new MessagePart($actualContent1, MessagePartChannelEnum::content())
+        ]);
+        $message2 = new ModelMessage([
+            new MessagePart($reasoningContent2, MessagePartChannelEnum::thought()),
+            new MessagePart($actualContent2, MessagePartChannelEnum::content())
+        ]);
+
+        $candidates = [
+            new Candidate($message1, FinishReasonEnum::stop()),
+            new Candidate($message2, FinishReasonEnum::stop())
+        ];
+        $tokenUsage = new TokenUsage(20, 15, 35);
+
+        $result = new GenerativeAiResult(
+            'result_texts_with_reasoning',
+            $candidates,
+            $tokenUsage,
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
+
+        // toTexts() should only return content from the 'content' channel, not 'thought' channel
+        $expectedTexts = [$actualContent1, $actualContent2];
+        $this->assertEquals($expectedTexts, $result->toTexts());
+
+        // Verify reasoning content is not included
+        $this->assertNotContains($reasoningContent1, $result->toTexts());
+        $this->assertNotContains($reasoningContent2, $result->toTexts());
     }
 
     /**

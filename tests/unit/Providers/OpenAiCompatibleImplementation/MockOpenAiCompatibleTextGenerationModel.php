@@ -113,9 +113,9 @@ class MockOpenAiCompatibleTextGenerationModel extends AbstractOpenAiCompatibleTe
         return $this->prepareGenerateTextParams($prompt);
     }
 
-    public function exposeMergeSystemInstruction(array $prompt, string $systemInstruction): array
+    public function exposePrepareMessagesParamWithSystemInstruction(array $prompt, string $systemInstruction): array
     {
-        return $this->mergeSystemInstruction($prompt, $systemInstruction);
+        return $this->prepareMessagesParam($prompt, $systemInstruction);
     }
 
     public function exposePrepareMessagesParam(array $messages): array
