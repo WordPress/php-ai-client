@@ -158,9 +158,9 @@ class MockOpenAiCompatibleTextGenerationModel extends AbstractOpenAiCompatibleTe
         return $this->prepareResponseFormatParam($outputSchema);
     }
 
-    public function exposeParseResponseChoiceToCandidate(array $choiceData): Candidate
+    public function exposeParseResponseChoiceToCandidate(array $choiceData, int $index = 0): Candidate
     {
-        return $this->parseResponseChoiceToCandidate($choiceData);
+        return $this->parseResponseChoiceToCandidate($choiceData, $index);
     }
 
     public function exposeParseResponseChoiceMessage(array $messageData): Message

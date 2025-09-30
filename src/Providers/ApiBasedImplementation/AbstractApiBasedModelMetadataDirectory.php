@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\ApiBasedImplementation;
 
-use InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;

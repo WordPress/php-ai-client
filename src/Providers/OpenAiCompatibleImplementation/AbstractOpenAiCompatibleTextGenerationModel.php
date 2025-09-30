@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
 use Generator;
-use InvalidArgumentException;
-use RuntimeException;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
@@ -560,25 +560,25 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         /** @var ResponseData $responseData */
         $responseData = $response->getData();
         if (!isset($responseData['choices']) || !$responseData['choices']) {
-            throw new RuntimeException(
-                'Unexpected API response: Missing the choices key.'
-            );
+            throw ResponseException::fromMissingData($this->providerMetadata()->getName(), 'choices');
         }
         if (!is_array($responseData['choices'])) {
-            throw new RuntimeException(
-                'Unexpected API response: The choices key must contain an array.'
+            throw ResponseException::fromInvalidData(
+                $this->providerMetadata()->getName(),
+                'The choices key must contain an array.'
             );
         }
 
         $candidates = [];
-        foreach ($responseData['choices'] as $choiceData) {
+        foreach ($responseData['choices'] as $index => $choiceData) {
             if (!is_array($choiceData) || array_is_list($choiceData)) {
-                throw new RuntimeException(
-                    'Unexpected API response: Each element in the choices key must be an associative array.'
+                throw ResponseException::fromInvalidData(
+                    $this->providerMetadata()->getName(),
+                    'Each element in the choices key must be an associative array.'
                 );
             }
 
-            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData);
+            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData, $index);
         }
 
         $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
@@ -615,24 +615,27 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      * @since 0.1.0
      *
      * @param ChoiceData $choiceData The choice data from the API response.
+     * @param int $index The index of the choice in the choices array.
      * @return Candidate The parsed candidate.
      * @throws RuntimeException If the choice data is invalid.
      */
-    protected function parseResponseChoiceToCandidate(array $choiceData): Candidate
+    protected function parseResponseChoiceToCandidate(array $choiceData, int $index): Candidate
     {
         if (
             !isset($choiceData['message']) ||
             !is_array($choiceData['message']) ||
             array_is_list($choiceData['message'])
         ) {
-            throw new RuntimeException(
-                'Unexpected API response: Each choice must contain a message key with an associative array.'
+            throw ResponseException::fromMissingData(
+                $this->providerMetadata()->getName(),
+                "choices[{$index}].message"
             );
         }
 
         if (!isset($choiceData['finish_reason']) || !is_string($choiceData['finish_reason'])) {
-            throw new RuntimeException(
-                'Unexpected API response: Each choice must contain a finish_reason key with a string value.'
+            throw ResponseException::fromMissingData(
+                $this->providerMetadata()->getName(),
+                "choices[{$index}].finish_reason"
             );
         }
 
@@ -653,11 +656,9 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 $finishReason = FinishReasonEnum::toolCalls();
                 break;
             default:
-                throw new RuntimeException(
-                    sprintf(
-                        'Unexpected API response: Invalid finish reason "%s".',
-                        $choiceData['finish_reason']
-                    )
+                throw ResponseException::fromInvalidData(
+                    $this->providerMetadata()->getName(),
+                    sprintf('Invalid finish reason "%s".', $choiceData['finish_reason'])
                 );
         }
 
@@ -707,8 +708,9 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             foreach ($messageData['tool_calls'] as $toolCallData) {
                 $toolCallPart = $this->parseResponseChoiceMessageToolCallPart($toolCallData);
                 if (!$toolCallPart) {
-                    throw new RuntimeException(
-                        'Unexpected API response: The response includes a tool call of an unexpected type.'
+                    throw ResponseException::fromInvalidData(
+                        $this->providerMetadata()->getName(),
+                        'The response includes a tool call of an unexpected type.'
                     );
                 }
                 $parts[] = $toolCallPart;

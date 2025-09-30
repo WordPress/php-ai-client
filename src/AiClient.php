@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WordPress\AiClient;
 
 use WordPress\AiClient\Builders\PromptBuilder;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
 use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
 use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
@@ -312,7 +314,7 @@ class AiClient
      */
     public static function message(?string $text = null)
     {
-        throw new \RuntimeException(
+        throw new RuntimeException(
             'MessageBuilder is not yet available. This method depends on builder infrastructure. ' .
             'Use direct generation methods (generateTextResult, generateImageResult, etc.) for now.'
         );
@@ -332,7 +334,7 @@ class AiClient
             && !$modelOrConfig instanceof ModelInterface
             && !$modelOrConfig instanceof ModelConfig
         ) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Parameter must be a ModelInterface instance (specific model), ' .
                 'ModelConfig instance (for auto-discovery), or null (default auto-discovery). ' .
                 sprintf('Received: %s', is_object($modelOrConfig) ? get_class($modelOrConfig) : gettype($modelOrConfig))

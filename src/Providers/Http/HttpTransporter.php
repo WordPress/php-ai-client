@@ -11,9 +11,11 @@ use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Exception\NetworkException;
 
 /**
  * HTTP transporter implementation using HTTPlug.
@@ -68,7 +70,23 @@ class HttpTransporter implements HttpTransporterInterface
     public function send(Request $request): Response
     {
         $psr7Request = $this->convertToPsr7Request($request);
-        $psr7Response = $this->client->sendRequest($psr7Request);
+
+        try {
+            $psr7Response = $this->client->sendRequest($psr7Request);
+        } catch (\Psr\Http\Client\NetworkExceptionInterface $e) {
+            throw NetworkException::fromPsr18NetworkException($psr7Request, $e);
+        } catch (\Psr\Http\Client\ClientExceptionInterface $e) {
+            // Handle other PSR-18 client exceptions that are not network-related
+            throw new RuntimeException(
+                sprintf(
+                    'HTTP client error occurred while sending request to %s: %s',
+                    $request->getUri(),
+                    $e->getMessage()
+                ),
+                0,
+                $e
+            );
+        }
 
         return $this->convertFromPsr7Response($psr7Response);
     }

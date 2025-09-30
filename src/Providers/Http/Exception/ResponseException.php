@@ -4,13 +4,46 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Exception;
 
-use Exception;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 
 /**
  * Exception class for HTTP response errors.
  *
+ * This is used when response data is unexpected or malformed,
+ * typically indicating that a provider changed in ways our code
+ * is not aware of or when parsing response data fails.
+ *
  * @since 0.1.0
  */
-class ResponseException extends Exception
+class ResponseException extends RuntimeException
 {
+    /**
+     * Creates a ResponseException for missing expected data.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $apiName The name of the API/provider.
+     * @param string $fieldName The field that was expected but missing.
+     * @return self
+     */
+    public static function fromMissingData(string $apiName, string $fieldName): self
+    {
+        $message = sprintf('Unexpected %s API response: Missing the "%s" key.', $apiName, $fieldName);
+
+        return new self($message);
+    }
+
+    /**
+     * Creates a ResponseException from invalid data in an API response.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $apiName The name of the API service (e.g., 'OpenAI', 'Anthropic').
+     * @param string $message The specific error message describing the invalid data.
+     * @return self
+     */
+    public static function fromInvalidData(string $apiName, string $message): self
+    {
+        return new self(sprintf('Unexpected %s API response: %s', $apiName, $message));
+    }
 }

@@ -83,6 +83,15 @@ The production code in `src` follows a structured namespace hierarchy under the 
 
 All parameters, return values, and properties must use explicit type hints, except in cases where providing the correct type hint would be impossible given limitations of backward compatibility with PHP 7.4. In any case, concrete type annotations using PHPStan should be present.
 
+### Exception handling
+
+All exceptions must use the project's custom exception classes rather than PHP built-in exceptions. This includes:
+
+- Use the custom primitive exceptions in `WordPress\AiClient\Common\Exception\` instead of the PHP primitive exceptions
+- If a PHP primitive exception is needed that doesn't have a custom exception counterpart, then create one that extends the primitive and implements AiClientExceptionInterface
+- All custom exceptions implement `WordPress\AiClient\Exceptions\AiClientExceptionInterface` for unified exception handling
+- Follow usage-driven design: only implement static factory methods that are actually used in the codebase
+
 ### Naming conventions
 
 The following naming conventions must be followed for consistency and autoloading:
