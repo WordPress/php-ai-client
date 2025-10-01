@@ -741,7 +741,9 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(ResponseException::class);
-        $this->expectExceptionMessage('Unexpected TestProvider API response: The data key must contain an array.');
+        $this->expectExceptionMessage(
+            'Unexpected TestProvider API response: Invalid "data" key: The value must be an array.'
+        );
 
         $model->exposeParseResponseToGenerativeAiResult($response);
     }
@@ -758,7 +760,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
 
         $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected TestProvider API response: Each element in the data key must be an associative array.'
+            'Unexpected TestProvider API response: Invalid "data[0]" key: The value must be an associative array.'
         );
 
         $model->exposeParseResponseToGenerativeAiResult($response);
@@ -775,7 +777,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
             'url' => 'https://example.com/image.png',
         ];
         $model = $this->createModel();
-        $candidate = $model->exposeParseResponseChoiceToCandidate($choiceData, 'image/png');
+        $candidate = $model->exposeParseResponseChoiceToCandidate($choiceData, 0, 'image/png');
 
         $this->assertInstanceOf(Candidate::class, $candidate);
         $this->assertEquals(
@@ -799,7 +801,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
             'b64_json' => $base64Image,
         ];
         $model = $this->createModel();
-        $candidate = $model->exposeParseResponseChoiceToCandidate($choiceData, 'image/png');
+        $candidate = $model->exposeParseResponseChoiceToCandidate($choiceData, 0, 'image/png');
 
         $this->assertInstanceOf(Candidate::class, $candidate);
         $this->assertEquals($base64Image, $candidate->getMessage()->getParts()[0]->getFile()->getBase64Data());
@@ -822,10 +824,10 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
 
         $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected TestProvider API response: Each choice must contain either a url or b64_json key with a ' .
-            'string value.'
+            'Unexpected TestProvider API response: Invalid "choices[0]" key: The value must contain either a ' .
+            'url or b64_json key with a string value.'
         );
 
-        $model->exposeParseResponseChoiceToCandidate($choiceData);
+        $model->exposeParseResponseChoiceToCandidate($choiceData, 0);
     }
 }

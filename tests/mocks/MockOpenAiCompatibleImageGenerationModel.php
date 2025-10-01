@@ -91,13 +91,15 @@ class MockOpenAiCompatibleImageGenerationModel extends AbstractOpenAiCompatibleI
      * Exposes the protected parseResponseChoiceToCandidate method.
      *
      * @param array<string, mixed> $choiceData
+     * @param int $index
      * @param string $expectedMimeType
      * @return \WordPress\AiClient\Results\DTO\Candidate
      */
     public function exposeParseResponseChoiceToCandidate(
         array $choiceData,
+        int $index,
         string $expectedMimeType = 'image/png'
     ): \WordPress\AiClient\Results\DTO\Candidate {
-        return $this->parseResponseChoiceToCandidate($choiceData, $expectedMimeType);
+        return $this->parseResponseChoiceToCandidate($choiceData, $index, $expectedMimeType);
     }
 }

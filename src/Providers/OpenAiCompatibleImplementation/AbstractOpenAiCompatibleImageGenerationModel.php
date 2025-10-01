@@ -302,20 +302,22 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
         if (!is_array($responseData['data'])) {
             throw ResponseException::fromInvalidData(
                 $this->providerMetadata()->getName(),
-                'The data key must contain an array.'
+                'data',
+                'The value must be an array.'
             );
         }
 
         $candidates = [];
-        foreach ($responseData['data'] as $choiceData) {
+        foreach ($responseData['data'] as $index => $choiceData) {
             if (!is_array($choiceData) || array_is_list($choiceData)) {
                 throw ResponseException::fromInvalidData(
                     $this->providerMetadata()->getName(),
-                    'Each element in the data key must be an associative array.'
+                    "data[{$index}]",
+                    'The value must be an associative array.'
                 );
             }
 
-            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData, $expectedMimeType);
+            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData, $index, $expectedMimeType);
         }
 
         $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
@@ -352,12 +354,14 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
      * @since 0.1.0
      *
      * @param ChoiceData $choiceData The choice data from the API response.
+     * @param int $index The index of the choice in the choices array.
      * @param string   $expectedMimeType The expected MIME type the response is in.
      * @return Candidate The parsed candidate.
      * @throws RuntimeException If the choice data is invalid.
      */
     protected function parseResponseChoiceToCandidate(
         array $choiceData,
+        int $index,
         string $expectedMimeType = 'image/png'
     ): Candidate {
         if (isset($choiceData['url']) && is_string($choiceData['url'])) {
@@ -367,7 +371,8 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
         } else {
             throw ResponseException::fromInvalidData(
                 $this->providerMetadata()->getName(),
-                'Each choice must contain either a url or b64_json key with a string value.'
+                "choices[{$index}]",
+                'The value must contain either a url or b64_json key with a string value.'
             );
         }
 
