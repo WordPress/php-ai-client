@@ -972,7 +972,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(ResponseException::class);
-        $this->expectExceptionMessage('Unexpected TestProvider API response: The choices key must contain an array.');
+        $this->expectExceptionMessage(
+            'Unexpected TestProvider API response: Invalid "choices" key: The value must be an array.'
+        );
 
         $model->parseResponseToGenerativeAiResult($response);
     }
@@ -989,7 +991,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected TestProvider API response: Each element in the choices key must be an associative array.'
+            'Unexpected TestProvider API response: Invalid "choices[0]" key: The value must be an associative array.'
         );
 
         $model->parseResponseToGenerativeAiResult($response);
@@ -1098,7 +1100,12 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(ResponseException::class);
-        $this->expectExceptionMessage('Unexpected TestProvider API response: Invalid finish reason "unknown".');
+        $this->expectExceptionMessage(
+            sprintf(
+                'Unexpected TestProvider API response: Invalid "%s" key: Invalid finish reason "unknown".',
+                'choices[0].finish_reason'
+            )
+        );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
     }
@@ -1115,7 +1122,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             'content' => 'Assistant response',
         ];
         $model = $this->createModel();
-        $message = $model->exposeParseResponseChoiceMessage($messageData);
+        $message = $model->exposeParseResponseChoiceMessage($messageData, 0);
 
         $this->assertEquals(MessageRoleEnum::model(), $message->getRole());
         $this->assertCount(1, $message->getParts());
@@ -1134,7 +1141,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             'content' => 'User response',
         ];
         $model = $this->createModel();
-        $message = $model->exposeParseResponseChoiceMessage($messageData);
+        $message = $model->exposeParseResponseChoiceMessage($messageData, 0);
 
         $this->assertEquals(MessageRoleEnum::user(), $message->getRole());
         $this->assertCount(1, $message->getParts());
@@ -1153,7 +1160,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             'content' => 'Final answer',
         ];
         $model = $this->createModel();
-        $parts = $model->exposeParseResponseChoiceMessageParts($messageData);
+        $parts = $model->exposeParseResponseChoiceMessageParts($messageData, 0);
 
         $this->assertCount(2, $parts);
         $this->assertEquals('Thinking process', $parts[0]->getText());
@@ -1182,7 +1189,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             ],
         ];
         $model = $this->createModel();
-        $parts = $model->exposeParseResponseChoiceMessageParts($messageData);
+        $parts = $model->exposeParseResponseChoiceMessageParts($messageData, 0);
 
         $this->assertCount(1, $parts);
         $this->assertInstanceOf(FunctionCall::class, $parts[0]->getFunctionCall());
