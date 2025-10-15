@@ -646,6 +646,72 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests usingModelPreference supports provider/model tuple with string identifier.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithProviderTupleSelectsModel(): void
+    {
+        $result = $this->createTestResult('Tuple preferred result');
+        $preferredMetadata = $this->createTextModelMetadataWithInputSupport('preferred-model');
+        $otherMetadata = $this->createTextModelMetadataWithInputSupport('other-model');
+        $model = $this->createMockTextGenerationModel($result, $preferredMetadata);
+
+        $preferredProviderMetadata = new ProviderMetadata(
+            'preferred-provider',
+            'Preferred Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $otherProviderMetadata = new ProviderMetadata(
+            'other-provider',
+            'Other Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([
+                new ProviderModelsMetadata($preferredProviderMetadata, [$preferredMetadata]),
+                new ProviderModelsMetadata($otherProviderMetadata, [$otherMetadata]),
+            ]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('preferred-provider', 'preferred-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModelPreference(['preferred-provider', 'preferred-model']);
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference rejects provider/model tuples that contain a model instance.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithProviderTupleModelInstanceThrowsException(): void
+    {
+        $metadata = $this->createTextModelMetadataWithInputSupport('preferred-model');
+        $model = $this->createMockTextGenerationModel($this->createTestResult(), $metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model preference tuple must contain provider ID and model identifier.');
+
+        $builder->usingModelPreference(['mock', $model]);
+    }
+
+    /**
      * Tests usingModelPreference selects the first available model ID for the configured provider.
      *
      * @return void
@@ -738,8 +804,9 @@ class PromptBuilderTest extends TestCase
         $this->registry->expects($this->never())
             ->method('findProviderModelsMetadataForSupport');
 
-        $this->registry->expects($this->never())
-            ->method('bindModelDependencies');
+        $this->registry->expects($this->once())
+            ->method('bindModelDependencies')
+            ->with($model);
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
         $builder->usingModelPreference('unavailable-model');
@@ -759,9 +826,24 @@ class PromptBuilderTest extends TestCase
         $builder = new PromptBuilder($this->registry);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model preferences must be model identifiers or instances of ModelInterface.');
+        $this->expectExceptionMessage('Model preferences must be model identifiers, instances of ModelInterface, or provider/model tuples.');
 
         $builder->usingModelPreference(123);
+    }
+
+    /**
+     * Tests usingModelPreference rejects malformed preference tuples.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithInvalidTupleThrowsException(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model preference tuple must contain provider ID and model identifier.');
+
+        $builder->usingModelPreference(['provider' => 'test', 'model' => 'id']);
     }
 
     /**

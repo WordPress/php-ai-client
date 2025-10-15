@@ -61,7 +61,7 @@ class PromptBuilder
     protected ?ModelInterface $model = null;
 
     /**
-     * @var list<ModelInterface|string> Preferred models to evaluate in order.
+     * @var list<ModelInterface|string|array{0:string,1:string}> Preferred models to evaluate in order.
      */
     protected array $modelPreference = [];
 
@@ -226,7 +226,7 @@ class PromptBuilder
      *
      * @since n.e.x.t
      *
-     * @param mixed ...$preferredModels The preferred models as model IDs or instances.
+     * @param string|ModelInterface|array{0:string,1:string} ...$preferredModels The preferred models as model IDs, model instances, or [provider ID, model ID] tuples.
      * @return self
      *
      * @throws InvalidArgumentException When a preferred model has an invalid type or identifier.
@@ -240,6 +240,37 @@ class PromptBuilder
         $normalizedModels = [];
 
         foreach ($preferredModels as $preferredModel) {
+            if (is_array($preferredModel)) {
+                if (!array_is_list($preferredModel) || count($preferredModel) !== 2) {
+                    throw new InvalidArgumentException(
+                        'Model preference tuple must contain provider ID and model identifier.'
+                    );
+                }
+
+                [$providerId, $modelIdentifier] = $preferredModel;
+
+                if (!is_string($providerId)) {
+                    throw new InvalidArgumentException('Model preference provider identifiers cannot be empty.');
+                }
+                $providerId = trim($providerId);
+                if ($providerId === '') {
+                    throw new InvalidArgumentException('Model preference provider identifiers cannot be empty.');
+                }
+
+                if (!is_string($modelIdentifier)) {
+                    throw new InvalidArgumentException(
+                        'Model preference tuple must contain provider ID and model identifier.'
+                    );
+                }
+                $modelIdentifier = trim($modelIdentifier);
+                if ($modelIdentifier === '') {
+                    throw new InvalidArgumentException('Model preference identifiers cannot be empty.');
+                }
+
+                $normalizedModels[] = [$providerId, $modelIdentifier];
+                continue;
+            }
+
             if ($preferredModel instanceof ModelInterface) {
                 $normalizedModels[] = $preferredModel;
                 continue;
@@ -255,7 +286,7 @@ class PromptBuilder
             }
 
             throw new InvalidArgumentException(
-                'Model preferences must be model identifiers or instances of ModelInterface.'
+                'Model preferences must be model identifiers, instances of ModelInterface, or provider/model tuples.'
             );
         }
 
@@ -1153,35 +1184,63 @@ class PromptBuilder
         }
 
         $selectedModel = null;
+        $selectedPreferenceIndex = null;
 
-        foreach ($this->modelPreference as $preferredModel) {
-            if ($preferredModel instanceof ModelInterface) {
-                // Check if the explicitly provided preferred model is among the supported candidates.
-                $preferredProviderId = $preferredModel->providerMetadata()->getId();
-                $preferredModelId = $preferredModel->metadata()->getId();
-
-                foreach ($candidateModels as [$providerId, $modelMetadata]) {
-                    if ($providerId === $preferredProviderId && $modelMetadata->getId() === $preferredModelId) {
-                        $selectedModel = $this->prepareExplicitModel($preferredModel);
-                        break 2;
-                    }
-                }
-
-                continue;
-            }
-
-            // Otherwise treat the preference as a model identifier and match it against candidates.
-            foreach ($candidateModels as [$providerId, $modelMetadata]) {
-                if ($modelMetadata->getId() !== $preferredModel) {
+        foreach ($candidateModels as [$providerId, $modelMetadata]) {
+            foreach ($this->modelPreference as $preferenceIndex => $preferredModel) {
+                if ($selectedPreferenceIndex !== null && $preferenceIndex >= $selectedPreferenceIndex) {
                     continue;
                 }
 
-                $selectedModel = $this->registry->getProviderModel(
-                    $providerId,
-                    $modelMetadata->getId(),
-                    $this->modelConfig
-                );
-                break 2;
+                if (is_array($preferredModel)) {
+                    // [provider ID, model ID] tuple
+                    [$preferredProviderId, $preferredModelId] = $preferredModel;
+                    if (
+                        $providerId !== $preferredProviderId ||
+                        $modelMetadata->getId() !== $preferredModelId
+                    ) {
+                        continue;
+                    }
+
+                    $selectedModel = $this->registry->getProviderModel(
+                        $providerId,
+                        $modelMetadata->getId(),
+                        $this->modelConfig
+                    );
+                    $selectedPreferenceIndex = $preferenceIndex;
+                } elseif ($preferredModel instanceof ModelInterface) {
+                    // Model instance
+                    $preferredProviderId = $preferredModel->providerMetadata()->getId();
+                    $preferredModelId = $preferredModel->metadata()->getId();
+
+                    if (
+                        $providerId !== $preferredProviderId ||
+                        $modelMetadata->getId() !== $preferredModelId
+                    ) {
+                        continue;
+                    }
+
+                    $selectedModel = $preferredModel;
+                    $selectedPreferenceIndex = $preferenceIndex;
+                } else {
+                    // Model ID
+                    if ($modelMetadata->getId() !== $preferredModel) {
+                        continue;
+                    }
+
+                    $selectedModel = $this->registry->getProviderModel(
+                        $providerId,
+                        $modelMetadata->getId(),
+                        $this->modelConfig
+                    );
+                    $selectedPreferenceIndex = $preferenceIndex;
+                }
+
+                if ($selectedPreferenceIndex === 0) {
+                    break 2;
+                }
+
+                break;
             }
         }
 
@@ -1195,29 +1254,10 @@ class PromptBuilder
             );
         }
 
+        $selectedModel->setConfig($this->modelConfig);
+        $this->registry->bindModelDependencies($selectedModel);
+
         return $selectedModel;
-    }
-
-    /**
-     * Prepares an explicitly provided model for usage by merging configuration and binding dependencies.
-     *
-     * @since n.e.x.t
-     *
-     * @param ModelInterface $model The model to prepare.
-     * @return ModelInterface The prepared model instance.
-     */
-    private function prepareExplicitModel(ModelInterface $model): ModelInterface
-    {
-        $modelConfigArray = $model->getConfig()->toArray();
-        $builderConfigArray = $this->modelConfig->toArray();
-        $mergedConfigArray = array_merge($modelConfigArray, $builderConfigArray);
-
-        $this->modelConfig = ModelConfig::fromArray($mergedConfigArray);
-
-        $model->setConfig($this->modelConfig);
-        $this->registry->bindModelDependencies($model);
-
-        return $model;
     }
 
     /**
