@@ -61,10 +61,9 @@ class PromptBuilder
     protected ?ModelInterface $model = null;
 
     /**
-     * @var array<string, string|array{0:string,1:string}> Preferred model map keyed by preference key with
-     * provider-model mappings.
+     * @var list<string> Ordered list of preference keys to check when selecting a model.
      */
-    protected array $modelPreferenceMap = [];
+    protected array $modelPreferenceKeys = [];
 
     /**
      * @var string|null The provider ID or class name.
@@ -239,7 +238,7 @@ class PromptBuilder
             throw new InvalidArgumentException('At least one model preference must be provided.');
         }
 
-        $preferenceMap = [];
+        $preferenceKeys = [];
 
         foreach ($preferredModels as $preferredModel) {
             if (is_array($preferredModel)) {
@@ -259,34 +258,28 @@ class PromptBuilder
                 );
 
                 $prefKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
-                $preferenceMap[$prefKey] = [$modelId, $providerId];
-                continue;
-            }
-
-            if ($preferredModel instanceof ModelInterface) {
+                $preferenceKeys[] = $prefKey;
+            } elseif ($preferredModel instanceof ModelInterface) {
                 // Model instance
                 $modelId = $preferredModel->metadata()->getId();
                 $providerId = $preferredModel->providerMetadata()->getId();
                 $providerModelKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
-                $preferenceMap[$providerModelKey] = [$modelId, $providerId];
-                continue;
-            }
-
-            if (is_string($preferredModel)) {
+                $preferenceKeys[] = $providerModelKey;
+            } elseif (is_string($preferredModel)) {
                 // Model ID
                 $modelId = $this->normalizePreferenceIdentifier($preferredModel);
                 $modelKey = $this->createModelPreferenceKey($modelId);
-                $preferenceMap[$modelKey] = $modelId;
-                continue;
+                $preferenceKeys[] = $modelKey;
+            } else {
+                // Invalid type
+                throw new InvalidArgumentException(
+                    'Model preferences must be model identifiers, instances of ModelInterface, ' .
+                    'or provider/model tuples.'
+                );
             }
-
-            // Invalid type
-            throw new InvalidArgumentException(
-                'Model preferences must be model identifiers, instances of ModelInterface, or provider/model tuples.'
-            );
         }
 
-        $this->modelPreferenceMap = $preferenceMap;
+        $this->modelPreferenceKeys = $preferenceKeys;
 
         return $this;
     }
@@ -1123,18 +1116,51 @@ class PromptBuilder
             return $this->model;
         }
 
-        // Retrieve the models which satisfy the requirements.
-        $candidateModels = $this->getCandidateModels($requirements);
+        // Retrieve the candidate models map which satisfies the requirements.
+        $candidateMap = $this->getCandidateModelsMap($requirements);
 
-        // Find the model which matches the preference, if any.
-        $selectedModel = $this->findModelByPreference($candidateModels);
+        if (empty($candidateMap)) {
+            $message = sprintf(
+                'No models found that support %s for this prompt.',
+                $capability->value
+            );
+
+            if ($this->providerIdOrClassName !== null) {
+                $message = sprintf(
+                    'No models found for provider "%s" that support %s for this prompt.',
+                    $this->providerIdOrClassName,
+                    $capability->value
+                );
+            }
+
+            throw new InvalidArgumentException($message);
+        }
+
+        // Check if any preferred models match the candidates, in priority order.
+        $selectedModel = null;
+        if (!empty($this->modelPreferenceKeys)) {
+            // Find preferences that match available candidates, preserving preference order.
+            $matchingPreferences = array_intersect_key(
+                array_flip($this->modelPreferenceKeys),
+                $candidateMap
+            );
+
+            if (!empty($matchingPreferences)) {
+                // Get the first matching preference key
+                $firstMatchKey = key($matchingPreferences);
+                [$providerId, $modelId] = $candidateMap[$firstMatchKey];
+
+                $selectedModel = $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
+            }
+        }
 
         if ($selectedModel === null) {
             // No preference matched; fall back to the first candidate discovered.
-            [$providerId, $modelMetadata] = $candidateModels[0];
+            [$providerId, $modelId] = reset($candidateMap);
+
             $selectedModel = $this->registry->getProviderModel(
                 $providerId,
-                $modelMetadata->getId(),
+                $modelId,
                 $this->modelConfig
             );
         }
@@ -1143,45 +1169,28 @@ class PromptBuilder
     }
 
     /**
-     * Builds the list of candidate provider/model combinations that satisfy the requirements.
+     * Builds a map of candidate models that satisfy the requirements for efficient lookup.
      *
      * @since n.e.x.t
      *
      * @param ModelRequirements $requirements The requirements derived from the prompt.
-     * @return list<array{0:string,1:ModelMetadata}> The candidate provider/model tuples.
-     *
-     * @throws InvalidArgumentException If no suitable models are found.
+     * @return array<string, array{0:string,1:string}> Map of preference keys to [providerId, modelId] tuples.
      */
-    private function getCandidateModels(ModelRequirements $requirements): array
+    private function getCandidateModelsMap(ModelRequirements $requirements): array
     {
         if ($this->providerIdOrClassName === null) {
             // No provider locked in, gather all models across providers that meet requirements.
             $providerModelsMetadata = $this->registry->findModelsMetadataForSupport($requirements);
 
-            if (empty($providerModelsMetadata)) {
-                throw new InvalidArgumentException(
-                    sprintf(
-                        'No models found that support the required capabilities and options for this prompt. ' .
-                        'Required capabilities: %s. Required options: %s',
-                        implode(', ', array_map(function ($cap) {
-                            return $cap->value;
-                        }, $requirements->getRequiredCapabilities())),
-                        implode(', ', array_map(function ($opt) {
-                            return $opt->getName()->value . '=' . json_encode($opt->getValue());
-                        }, $requirements->getRequiredOptions()))
-                    )
-                );
-            }
-
-            $candidateModels = [];
+            $candidateMap = [];
             foreach ($providerModelsMetadata as $providerModels) {
                 $providerId = $providerModels->getProvider()->getId();
-                foreach ($providerModels->getModels() as $modelMetadata) {
-                    $candidateModels[] = [$providerId, $modelMetadata];
-                }
+                $providerMap = $this->generateMapFromCandidates($providerId, $providerModels->getModels());
+                // Use + operator to merge, preserving keys from $candidateMap (first provider wins for model-only keys)
+                $candidateMap = $candidateMap + $providerMap;
             }
 
-            return $candidateModels;
+            return $candidateMap;
         }
 
         // Provider set, only consider models from that provider.
@@ -1190,59 +1199,35 @@ class PromptBuilder
             $requirements
         );
 
-        if (empty($modelsMetadata)) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'No models found for %s that support the required capabilities and options for this prompt. ' .
-                    'Required capabilities: %s. Required options: %s',
-                    $this->providerIdOrClassName,
-                    implode(', ', array_map(function ($cap) {
-                        return $cap->value;
-                    }, $requirements->getRequiredCapabilities())),
-                    implode(', ', array_map(function ($opt) {
-                        return $opt->getName()->value . '=' . json_encode($opt->getValue());
-                    }, $requirements->getRequiredOptions()))
-                )
-            );
-        }
-
-        $candidateModels = [];
-        foreach ($modelsMetadata as $modelMetadata) {
-            $candidateModels[] = [$this->providerIdOrClassName, $modelMetadata];
-        }
-
-        return $candidateModels;
+        return $this->generateMapFromCandidates($this->providerIdOrClassName, $modelsMetadata);
     }
 
     /**
-     * Finds a preferred model among the given candidates.
+     * Generates a candidate map from model metadata with both provider-specific and model-only keys.
      *
      * @since n.e.x.t
      *
-     * @param list<array{0:string,1:ModelMetadata}> $candidateModels Candidate provider/model tuples.
-     * @return ModelInterface|null The model matching the highest-priority preference, or null if none.
+     * @param string $providerId The provider ID.
+     * @param list<ModelMetadata> $modelsMetadata The models metadata to map.
+     * @return array<string, array{0:string,1:string}> Map of preference keys to [providerId, modelId] tuples.
      */
-    private function findModelByPreference(array $candidateModels): ?ModelInterface
+    private function generateMapFromCandidates(string $providerId, array $modelsMetadata): array
     {
-        if ($this->modelPreferenceMap === []) {
-            return null;
-        }
+        $map = [];
 
-        foreach ($candidateModels as [$providerId, $modelMetadata]) {
+        foreach ($modelsMetadata as $modelMetadata) {
             $modelId = $modelMetadata->getId();
 
+            // Add provider-specific key
             $providerModelKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
-            if (isset($this->modelPreferenceMap[$providerModelKey])) {
-                return $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
-            }
+            $map[$providerModelKey] = [$providerId, $modelId];
 
+            // Add model-only key (when merging multiple maps, the + operator preserves first occurrence)
             $modelKey = $this->createModelPreferenceKey($modelId);
-            if (isset($this->modelPreferenceMap[$modelKey])) {
-                return $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
-            }
+            $map[$modelKey] = [$providerId, $modelId];
         }
 
-        return null;
+        return $map;
     }
 
     /**

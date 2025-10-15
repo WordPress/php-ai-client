@@ -395,7 +395,7 @@ class AiClientTest extends TestCase
 
         // This should delegate to PromptBuilder's intelligent discovery
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('No models found that support the required capabilities');
+        $this->expectExceptionMessage('No models found that support text_generation for this prompt.');
 
         AiClient::generateResult($prompt, null, $this->createMockEmptyRegistry());
     }
@@ -441,7 +441,7 @@ class AiClientTest extends TestCase
         $config->setMaxTokens(100);
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('No models found that support the required capabilities');
+        $this->expectExceptionMessage('No models found that support text_generation for this prompt.');
 
         AiClient::generateResult($prompt, $config, $this->createMockEmptyRegistry());
     }
@@ -613,7 +613,7 @@ class AiClientTest extends TestCase
                 $this->fail("Expected InvalidArgumentException for configuration $index");
             } catch (\InvalidArgumentException $e) {
                 $this->assertStringContainsString(
-                    'No models found that support the required capabilities',
+                    'No models found that support text_generation for this prompt.',
                     $e->getMessage(),
                     "Configuration $index should delegate to PromptBuilder properly"
                 );
@@ -630,7 +630,7 @@ class AiClientTest extends TestCase
         $emptyConfig = new ModelConfig();
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('No models found that support the required capabilities');
+        $this->expectExceptionMessage('No models found that support text_generation for this prompt.');
 
         AiClient::generateResult($prompt, $emptyConfig, $this->createMockEmptyRegistry());
     }

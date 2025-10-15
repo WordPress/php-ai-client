@@ -814,6 +814,51 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests usingModelPreference respects priority order when multiple preferred models are available.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceRespectsOrderWhenMultipleAvailable(): void
+    {
+        $result = $this->createTestResult('Second choice result');
+        $secondChoiceMetadata = $this->createTextModelMetadataWithInputSupport('second-choice');
+        $thirdChoiceMetadata = $this->createTextModelMetadataWithInputSupport('third-choice');
+        $providerMetadata = $this->createTestProviderMetadata();
+
+        $model = $this->createMockTextGenerationModel($result, $secondChoiceMetadata);
+
+        // Make both second-choice and third-choice available (but not first-choice)
+        $providerModelsMetadata = new ProviderModelsMetadata(
+            $providerMetadata,
+            [$thirdChoiceMetadata, $secondChoiceMetadata]  // Order shouldn't matter
+        );
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$providerModelsMetadata]);
+
+        // Should select 'second-choice' (respecting preference order), not 'third-choice'
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with($providerMetadata->getId(), 'second-choice', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        // Preferences in order: first-choice, second-choice, third-choice
+        // Available: second-choice, third-choice
+        // Expected: second-choice (respects priority)
+        $builder->usingModelPreference('first-choice', 'second-choice', 'third-choice');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
      * Tests usingModelPreference rejects invalid preference types.
      *
      * @return void
@@ -3003,7 +3048,9 @@ class PromptBuilderTest extends TestCase
         $builder->usingProvider('test-provider');
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('No models found for test-provider that support the required capabilities');
+        $this->expectExceptionMessage(
+            'No models found for provider "test-provider" that support text_generation for this prompt.'
+        );
 
         $builder->generateResult();
     }
