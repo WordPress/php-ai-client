@@ -240,17 +240,24 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                         'tool_call_id' => $functionResponse->getId(),
                     ];
                 }
-                return [
+                $messageData = [
                     'role' => $this->getMessageRoleString($message->getRole()),
                     'content' => array_values(array_filter(array_map(
                         [$this, 'getMessagePartContentData'],
                         $messageParts
                     ))),
-                    'tool_calls' => array_values(array_filter(array_map(
-                        [$this, 'getMessagePartToolCallData'],
-                        $messageParts
-                    ))),
                 ];
+
+                // Only include tool_calls if there are any (OpenAI rejects empty arrays).
+                $toolCalls = array_values(array_filter(array_map(
+                    [$this, 'getMessagePartToolCallData'],
+                    $messageParts
+                )));
+                if (!empty($toolCalls)) {
+                    $messageData['tool_calls'] = $toolCalls;
+                }
+
+                return $messageData;
             },
             $messages
         );
@@ -398,12 +405,26 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                     'The function call typed message part must contain a function call.'
                 );
             }
+            $args = $functionCall->getArgs();
+
+            /*
+             * Ensure empty arrays become empty objects for JSON encoding.
+             * While in theory the JSON schema could also dictate a type of
+             * 'array', in practice function arguments are typically of type
+             * 'object'. More importantly, the OpenAI API specification seems
+             * to expect that, and does not support passing arrays as the root
+             * value.
+             */
+            if (is_array($args) && count($args) === 0) {
+                $args = new \stdClass();
+            }
+
             return [
                 'type' => 'function',
                 'id' => $functionCall->getId(),
                 'function' => [
                     'name' => $functionCall->getName(),
-                    'arguments' => json_encode($functionCall->getArgs()),
+                    'arguments' => json_encode($args),
                 ],
             ];
         }
