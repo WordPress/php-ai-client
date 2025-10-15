@@ -346,12 +346,9 @@ class Request extends AbstractDataTransferObject
     {
         $options = $this->ensureOptions();
 
-        if ($allowRedirects) {
-            $this->options = $options->withRedirects();
-            return;
-        }
-
-        $this->options = $options->withoutRedirects();
+        $this->options = $allowRedirects
+            ? $options->withRedirects()
+            : $options->withoutRedirects();
     }
 
     /**
