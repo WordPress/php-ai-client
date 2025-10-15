@@ -531,10 +531,10 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             MessageRoleEnum::model(),
             [new MessagePart('Hello, I am a simple text response.')]
         );
-        
+
         $model = $this->createModel();
         $prepared = $model->exposePrepareMessagesParam([$message], null);
-        
+
         $this->assertCount(1, $prepared);
         $this->assertEquals('assistant', $prepared[0]['role']);
         $this->assertArrayNotHasKey('tool_calls', $prepared[0]); // Should not have tool_calls field at all
