@@ -327,4 +327,55 @@ class HttpTransporterTest extends TestCase
         // The transporter should be created successfully
         $this->assertInstanceOf(HttpTransporter::class, $transporter);
     }
+
+    /**
+     * Tests that parameter options override request options when both are provided.
+     *
+     * @covers ::send
+     * @covers ::mergeOptions
+     * @covers ::buildGuzzleOptions
+     *
+     * @return void
+     */
+    public function testSendMergesOptionsWithParameterPrecedence(): void
+    {
+        $response = new Psr7Response(200);
+        $guzzleClient = new GuzzleLikeClient($response);
+        $transporter = new HttpTransporter(
+            $guzzleClient,
+            $this->httpFactory,
+            $this->httpFactory
+        );
+
+        // Request has some options
+        $requestOptions = new RequestOptions();
+        $requestOptions->setTimeout(10.0);
+        $requestOptions->setConnectTimeout(5.0);
+        $requestOptions->setMaxRedirects(5);
+
+        $request = new Request(
+            HttpMethodEnum::GET(),
+            'https://api.example.com/test',
+            [],
+            null,
+            $requestOptions
+        );
+
+        // Parameter options override some values
+        $parameterOptions = new RequestOptions();
+        $parameterOptions->setTimeout(2.0); // Override timeout
+        $parameterOptions->setMaxRedirects(0); // Override maxRedirects (disable)
+
+        $result = $transporter->send($request, $parameterOptions);
+
+        $this->assertEquals(200, $result->getStatusCode());
+
+        $lastOptions = $guzzleClient->getLastOptions();
+        $this->assertIsArray($lastOptions);
+
+        // Verify parameter options took precedence
+        $this->assertSame(2.0, $lastOptions['timeout']); // From parameter
+        $this->assertSame(5.0, $lastOptions['connect_timeout']); // From request (not overridden)
+        $this->assertFalse($lastOptions['allow_redirects']); // From parameter (0 = disabled)
+    }
 }

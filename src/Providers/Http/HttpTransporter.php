@@ -73,13 +73,15 @@ class HttpTransporter implements HttpTransporterInterface
     public function send(Request $request, ?RequestOptions $options = null): Response
     {
         $psr7Request = $this->convertToPsr7Request($request);
-        $options = $options ?? $request->getOptions();
+
+        // Merge request options with parameter options, with parameter options taking precedence
+        $mergedOptions = $this->mergeOptions($request->getOptions(), $options);
 
         try {
             if ($this->client instanceof ClientWithOptionsInterface) {
-                $psr7Response = $this->client->sendRequestWithOptions($psr7Request, $options);
+                $psr7Response = $this->client->sendRequestWithOptions($psr7Request, $mergedOptions);
             } elseif ($this->isGuzzleClient($this->client)) {
-                $psr7Response = $this->sendWithGuzzle($psr7Request, $options);
+                $psr7Response = $this->sendWithGuzzle($psr7Request, $mergedOptions);
             } else {
                 $psr7Response = $this->client->sendRequest($psr7Request);
             }
@@ -99,6 +101,63 @@ class HttpTransporter implements HttpTransporterInterface
         }
 
         return $this->convertFromPsr7Response($psr7Response);
+    }
+
+    /**
+     * Merges request options with parameter options taking precedence.
+     *
+     * @since n.e.x.t
+     *
+     * @param RequestOptions|null $requestOptions Options from the Request object.
+     * @param RequestOptions|null $parameterOptions Options passed as method parameter.
+     * @return RequestOptions|null Merged options, or null if both are null.
+     */
+    private function mergeOptions(?RequestOptions $requestOptions, ?RequestOptions $parameterOptions): ?RequestOptions
+    {
+        // If no options at all, return null
+        if ($requestOptions === null && $parameterOptions === null) {
+            return null;
+        }
+
+        // If only one set of options exists, return it
+        if ($requestOptions === null) {
+            return $parameterOptions;
+        }
+
+        if ($parameterOptions === null) {
+            return $requestOptions;
+        }
+
+        // Both exist, merge them with parameter options taking precedence
+        $merged = new RequestOptions();
+
+        // Start with request options (lower precedence)
+        if ($requestOptions->getTimeout() !== null) {
+            $merged->setTimeout($requestOptions->getTimeout());
+        }
+
+        if ($requestOptions->getConnectTimeout() !== null) {
+            $merged->setConnectTimeout($requestOptions->getConnectTimeout());
+        }
+
+        if ($requestOptions->getMaxRedirects() !== null) {
+            $merged->setMaxRedirects($requestOptions->getMaxRedirects());
+        }
+
+        // Override with parameter options (higher precedence)
+        if ($parameterOptions->getTimeout() !== null) {
+            $merged->setTimeout($parameterOptions->getTimeout());
+        }
+
+        if ($parameterOptions->getConnectTimeout() !== null) {
+            $merged->setConnectTimeout($parameterOptions->getConnectTimeout());
+        }
+
+        if ($parameterOptions->getMaxRedirects() !== null) {
+            $merged->setMaxRedirects($parameterOptions->getMaxRedirects());
+        }
+
+        return $merged;
     }
 
     /**
