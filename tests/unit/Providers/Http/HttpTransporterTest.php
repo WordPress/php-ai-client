@@ -256,10 +256,11 @@ class HttpTransporterTest extends TestCase
             $this->httpFactory
         );
 
-        $options = (new RequestOptions())
-            ->withTimeout(5.0)
-            ->withConnectTimeout(1.0)
-            ->withRedirects(3);
+        $options = new RequestOptions();
+        $options->setTimeout(5.0);
+        $options->setConnectTimeout(1.0);
+        $options->setAllowRedirects(true);
+        $options->setMaxRedirects(3);
 
         $request = new Request(
             HttpMethodEnum::GET(),

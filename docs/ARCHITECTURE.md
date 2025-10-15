@@ -932,10 +932,6 @@ direction LR
             +getBody() ?string
             +getData() ?array< string, mixed >
             +getOptions() ?RequestOptions
-            +setTimeout(?float $timeout) void
-            +setConnectTimeout(?float $timeout) void
-            +setAllowRedirects(bool $allowRedirects) void
-            +setMaxRedirects(?int $maxRedirects) void
             +withHeader(string $name, string|list< string > $value) self
             +withData(string|array< string, mixed > $data) self
             +withOptions(?RequestOptions $options) self
@@ -945,11 +941,10 @@ direction LR
             +fromPsrRequest(RequestInterface $psrRequest) self$
         }
         class RequestOptions {
-            +withTimeout(?float $timeout) self
-            +withConnectTimeout(?float $timeout) self
-            +withRedirects(?int $maxRedirects) self
-            +withoutRedirects() self
-            +withMaxRedirects(?int $maxRedirects) self
+            +setTimeout(?float $timeout) void
+            +setConnectTimeout(?float $timeout) void
+            +setAllowRedirects(bool $allowRedirects) void
+            +setMaxRedirects(?int $maxRedirects) void
             +getTimeout() ?float
             +getConnectTimeout() ?float
             +allowsRedirects() ?bool

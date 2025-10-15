@@ -39,7 +39,8 @@ class RequestTest extends TestCase
     public function testWithOptionsStoresProvidedOptions(): void
     {
         $request = new Request(HttpMethodEnum::post(), 'https://example.com');
-        $options = (new RequestOptions())->withTimeout(1.5);
+        $options = new RequestOptions();
+        $options->setTimeout(1.5);
 
         $updated = $request->withOptions($options);
 
@@ -178,9 +179,10 @@ class RequestTest extends TestCase
      */
     public function testToArrayIncludesBodyAndOptions(): void
     {
-        $options = (new RequestOptions())
-            ->withTimeout(1.0)
-            ->withRedirects(2);
+        $options = new RequestOptions();
+        $options->setTimeout(1.0);
+        $options->setAllowRedirects(true);
+        $options->setMaxRedirects(2);
 
         $request = new Request(
             HttpMethodEnum::post(),

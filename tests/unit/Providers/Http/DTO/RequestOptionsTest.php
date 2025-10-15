@@ -18,7 +18,7 @@ class RequestOptionsTest extends TestCase
      *
      * @return void
      */
-    public function testConstructorDefaultsToNullValues(): void
+    public function testDefaultsToNullValues(): void
     {
         $options = new RequestOptions();
 
@@ -30,18 +30,16 @@ class RequestOptionsTest extends TestCase
     }
 
     /**
-     * Tests immutable helpers modify the cloned instance only.
+     * Tests mutable setters modify the same instance.
      *
      * @return void
      */
-    public function testWithTimeoutReturnsUpdatedClone(): void
+    public function testSetTimeoutModifiesInstance(): void
     {
         $options = new RequestOptions();
-        $updated = $options->withTimeout(5.0);
+        $options->setTimeout(5.0);
 
-        $this->assertNotSame($options, $updated);
-        $this->assertNull($options->getTimeout());
-        $this->assertSame(5.0, $updated->getTimeout());
+        $this->assertSame(5.0, $options->getTimeout());
     }
 
     /**
@@ -49,13 +47,14 @@ class RequestOptionsTest extends TestCase
      *
      * @return void
      */
-    public function testWithRedirectsSetsFlagsAndLimit(): void
+    public function testSetAllowRedirectsEnablesRedirects(): void
     {
         $options = new RequestOptions();
-        $updated = $options->withRedirects(3);
+        $options->setAllowRedirects(true);
+        $options->setMaxRedirects(3);
 
-        $this->assertTrue($updated->allowsRedirects());
-        $this->assertSame(3, $updated->getMaxRedirects());
+        $this->assertTrue($options->allowsRedirects());
+        $this->assertSame(3, $options->getMaxRedirects());
     }
 
     /**
@@ -63,13 +62,15 @@ class RequestOptionsTest extends TestCase
      *
      * @return void
      */
-    public function testWithoutRedirectsClearsRedirectLimit(): void
+    public function testSetAllowRedirectsFalseClearsRedirectLimit(): void
     {
-        $options = (new RequestOptions())->withRedirects(4);
-        $disabled = $options->withoutRedirects();
+        $options = new RequestOptions();
+        $options->setAllowRedirects(true);
+        $options->setMaxRedirects(4);
+        $options->setAllowRedirects(false);
 
-        $this->assertFalse($disabled->allowsRedirects());
-        $this->assertNull($disabled->getMaxRedirects());
+        $this->assertFalse($options->allowsRedirects());
+        $this->assertNull($options->getMaxRedirects());
     }
 
     /**
@@ -77,12 +78,12 @@ class RequestOptionsTest extends TestCase
      *
      * @return void
      */
-    public function testWithMaxRedirectsThrowsWhenRedirectsDisabled(): void
+    public function testSetMaxRedirectsThrowsWhenRedirectsDisabled(): void
     {
         $options = new RequestOptions();
 
         $this->expectException(InvalidArgumentException::class);
-        $options->withMaxRedirects(2);
+        $options->setMaxRedirects(2);
     }
 
     /**

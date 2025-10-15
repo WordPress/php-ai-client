@@ -10,7 +10,7 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 /**
  * Represents optional HTTP transport configuration for a single request.
  *
- * Provides immutable helpers for working with timeouts and redirect handling.
+ * Provides mutable setters for working with timeouts and redirect handling.
  *
  * @since n.e.x.t
  *
@@ -33,140 +33,92 @@ class RequestOptions extends AbstractDataTransferObject
     /**
      * @var float|null Maximum duration in seconds to wait for the full response.
      */
-    protected ?float $timeout;
+    protected ?float $timeout = null;
 
     /**
      * @var float|null Maximum duration in seconds to wait for the initial connection.
      */
-    protected ?float $connectTimeout;
+    protected ?float $connectTimeout = null;
 
     /**
      * @var bool|null Whether HTTP redirects should be automatically followed.
      */
-    protected ?bool $allowRedirects;
+    protected ?bool $allowRedirects = null;
 
     /**
      * @var int|null Maximum number of redirects to follow when enabled.
      */
-    protected ?int $maxRedirects;
+    protected ?int $maxRedirects = null;
 
     /**
-     * Constructor.
-     *
-     * @since n.e.x.t
-     *
-     * @param float|null $timeout Maximum duration in seconds to wait for the response.
-     * @param float|null $connectTimeout Maximum duration in seconds to wait for the connection.
-     * @param bool|null $allowRedirects Whether redirects should be followed.
-     * @param int|null $maxRedirects Maximum redirects to follow when enabled.
-     *
-     * @throws InvalidArgumentException When timeout values or redirect limits are invalid.
-     */
-    public function __construct(
-        ?float $timeout = null,
-        ?float $connectTimeout = null,
-        ?bool $allowRedirects = null,
-        ?int $maxRedirects = null
-    ) {
-        $this->validateTimeout($timeout, self::KEY_TIMEOUT);
-        $this->validateTimeout($connectTimeout, self::KEY_CONNECT_TIMEOUT);
-        $this->validateRedirectLimit($allowRedirects, $maxRedirects);
-
-        $this->timeout = $timeout;
-        $this->connectTimeout = $connectTimeout;
-        $this->allowRedirects = $allowRedirects;
-        $this->maxRedirects = $allowRedirects === true ? $maxRedirects : null;
-    }
-
-    /**
-     * Returns a new instance with an updated request timeout.
+     * Sets the request timeout in seconds.
      *
      * @since n.e.x.t
      *
      * @param float|null $timeout Timeout in seconds.
-     * @return self Options instance with updated timeout.
+     * @return void
+     *
+     * @throws InvalidArgumentException When timeout is negative.
      */
-    public function withTimeout(?float $timeout): self
+    public function setTimeout(?float $timeout): void
     {
         $this->validateTimeout($timeout, self::KEY_TIMEOUT);
-
-        $clone = clone $this;
-        $clone->timeout = $timeout;
-        return $clone;
+        $this->timeout = $timeout;
     }
 
     /**
-     * Returns a new instance with an updated connection timeout.
+     * Sets the connection timeout in seconds.
      *
      * @since n.e.x.t
      *
      * @param float|null $timeout Connection timeout in seconds.
-     * @return self Options instance with updated connection timeout.
+     * @return void
+     *
+     * @throws InvalidArgumentException When timeout is negative.
      */
-    public function withConnectTimeout(?float $timeout): self
+    public function setConnectTimeout(?float $timeout): void
     {
         $this->validateTimeout($timeout, self::KEY_CONNECT_TIMEOUT);
-
-        $clone = clone $this;
-        $clone->connectTimeout = $timeout;
-        return $clone;
+        $this->connectTimeout = $timeout;
     }
 
     /**
-     * Returns a new instance with redirects enabled.
+     * Sets whether redirects should be automatically followed.
      *
      * @since n.e.x.t
      *
-     * @param int|null $maxRedirects Maximum redirects to follow, or null to leave unspecified.
-     * @return self Options instance with redirects enabled.
+     * @param bool $allowRedirects Whether redirects should be followed.
+     * @return void
      */
-    public function withRedirects(?int $maxRedirects = null): self
+    public function setAllowRedirects(bool $allowRedirects): void
     {
-        $limit = $maxRedirects ?? $this->maxRedirects;
-        $this->validateRedirectLimit(true, $limit);
+        $this->allowRedirects = $allowRedirects;
 
-        $clone = clone $this;
-        $clone->allowRedirects = true;
-        $clone->maxRedirects = $limit;
-        return $clone;
+        // Clear maxRedirects when disabling redirects
+        if ($allowRedirects === false) {
+            $this->maxRedirects = null;
+        }
     }
 
     /**
-     * Returns a new instance with redirects disabled.
+     * Sets the maximum number of redirects to follow.
      *
      * @since n.e.x.t
      *
-     * @return self Options instance with redirects disabled.
-     */
-    public function withoutRedirects(): self
-    {
-        $clone = clone $this;
-        $clone->allowRedirects = false;
-        $clone->maxRedirects = null;
-        return $clone;
-    }
-
-    /**
-     * Returns a new instance with an updated redirect limit.
+     * @param int|null $maxRedirects Maximum redirects to follow when enabled.
+     * @return void
      *
-     * @since n.e.x.t
-     *
-     * @param int|null $maxRedirects Maximum redirects to follow.
-     * @return self Options instance with updated redirect limit.
+     * @throws InvalidArgumentException When redirect count is invalid.
      */
-    public function withMaxRedirects(?int $maxRedirects): self
+    public function setMaxRedirects(?int $maxRedirects): void
     {
         $this->validateRedirectLimit($this->allowRedirects, $maxRedirects);
 
-        $clone = clone $this;
-
         if ($this->allowRedirects === true) {
-            $clone->maxRedirects = $maxRedirects;
+            $this->maxRedirects = $maxRedirects;
         } else {
-            $clone->maxRedirects = null;
+            $this->maxRedirects = null;
         }
-
-        return $clone;
     }
 
     /**
@@ -254,17 +206,25 @@ class RequestOptions extends AbstractDataTransferObject
      */
     public static function fromArray(array $array): self
     {
-        $timeout = $array[self::KEY_TIMEOUT] ?? null;
-        $connectTimeout = $array[self::KEY_CONNECT_TIMEOUT] ?? null;
-        $allowRedirects = $array[self::KEY_ALLOW_REDIRECTS] ?? null;
-        $maxRedirects = $array[self::KEY_MAX_REDIRECTS] ?? null;
+        $instance = new self();
 
-        return new self(
-            $timeout !== null ? (float) $timeout : null,
-            $connectTimeout !== null ? (float) $connectTimeout : null,
-            $allowRedirects !== null ? (bool) $allowRedirects : null,
-            $maxRedirects !== null ? (int) $maxRedirects : null
-        );
+        if (isset($array[self::KEY_TIMEOUT])) {
+            $instance->setTimeout((float) $array[self::KEY_TIMEOUT]);
+        }
+
+        if (isset($array[self::KEY_CONNECT_TIMEOUT])) {
+            $instance->setConnectTimeout((float) $array[self::KEY_CONNECT_TIMEOUT]);
+        }
+
+        if (isset($array[self::KEY_ALLOW_REDIRECTS])) {
+            $instance->setAllowRedirects((bool) $array[self::KEY_ALLOW_REDIRECTS]);
+        }
+
+        if (isset($array[self::KEY_MAX_REDIRECTS])) {
+            $instance->setMaxRedirects((int) $array[self::KEY_MAX_REDIRECTS]);
+        }
+
+        return $instance;
     }
 
     /**
