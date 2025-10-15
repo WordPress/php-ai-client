@@ -258,28 +258,32 @@ class PromptBuilder
                     'Model preference provider identifiers cannot be empty.'
                 );
 
-                $key = $this->createProviderModelPreferenceKey($providerId, $modelId);
-                $preferenceMap[$key] = [$modelId, $providerId];
+                $prefKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
+                $preferenceMap[$prefKey] = [$modelId, $providerId];
+                continue;
+            }
 
-            } elseif ($preferredModel instanceof ModelInterface) {
+            if ($preferredModel instanceof ModelInterface) {
                 // Model instance
                 $modelId = $preferredModel->metadata()->getId();
                 $providerId = $preferredModel->providerMetadata()->getId();
                 $providerModelKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
                 $preferenceMap[$providerModelKey] = [$modelId, $providerId];
+                continue;
+            }
 
-            } elseif (is_string($preferredModel)) {
+            if (is_string($preferredModel)) {
                 // Model ID
                 $modelId = $this->normalizePreferenceIdentifier($preferredModel);
                 $modelKey = $this->createModelPreferenceKey($modelId);
                 $preferenceMap[$modelKey] = $modelId;
-
-            } else {
-                // Invalid type
-                throw new InvalidArgumentException(
-                    'Model preferences must be model identifiers, instances of ModelInterface, or provider/model tuples.'
-                );
+                continue;
             }
+
+            // Invalid type
+            throw new InvalidArgumentException(
+                'Model preferences must be model identifiers, instances of ModelInterface, or provider/model tuples.'
+            );
         }
 
         $this->modelPreferenceMap = $preferenceMap;
