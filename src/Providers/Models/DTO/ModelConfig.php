@@ -9,6 +9,7 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
@@ -23,6 +24,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  *
  * @phpstan-import-type FunctionDeclarationArrayShape from FunctionDeclaration
  * @phpstan-import-type WebSearchArrayShape from WebSearch
+ * @phpstan-import-type RequestOptionsArrayShape from RequestOptions
  *
  * @phpstan-type ModelConfigArrayShape array{
  *     outputModalities?: list<string>,
@@ -45,7 +47,8 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  *     outputMediaOrientation?: string,
  *     outputMediaAspectRatio?: string,
  *     outputSpeechVoice?: string,
- *     customOptions?: array<string, mixed>
+ *     customOptions?: array<string, mixed>,
+ *     requestOptions?: RequestOptionsArrayShape
  * }
  *
  * @extends AbstractDataTransferObject<ModelConfigArrayShape>
@@ -73,6 +76,7 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_OUTPUT_MEDIA_ASPECT_RATIO = 'outputMediaAspectRatio';
     public const KEY_OUTPUT_SPEECH_VOICE = 'outputSpeechVoice';
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
+    public const KEY_REQUEST_OPTIONS = 'requestOptions';
 
     /*
      * Note: This key is not an actual model config key, but specified here for convenience.
@@ -185,6 +189,11 @@ class ModelConfig extends AbstractDataTransferObject
      * @var array<string, mixed> Custom provider-specific options.
      */
     protected array $customOptions = [];
+
+    /**
+     * @var RequestOptions|null HTTP request options.
+     */
+    protected ?RequestOptions $requestOptions = null;
 
     /**
      * Sets the output modalities.
@@ -737,6 +746,30 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Sets the HTTP request options for all transporter calls.
+     *
+     * @since n.e.x.t
+     *
+     * @param RequestOptions $requestOptions Request options to apply.
+     */
+    public function setRequestOptions(RequestOptions $requestOptions): void
+    {
+        $this->requestOptions = $requestOptions;
+    }
+
+    /**
+     * Gets the HTTP request options.
+     *
+     * @since n.e.x.t
+     *
+     * @return RequestOptions|null Request options when configured, null otherwise.
+     */
+    public function getRequestOptions(): ?RequestOptions
+    {
+        return $this->requestOptions;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -848,6 +881,9 @@ class ModelConfig extends AbstractDataTransferObject
                     'additionalProperties' => true,
                     'description' => 'Custom provider-specific options.',
                 ],
+                self::KEY_REQUEST_OPTIONS => RequestOptions::getJsonSchema() + [
+                    'description' => 'HTTP request transport options.',
+                ],
             ],
             'additionalProperties' => false,
         ];
@@ -958,6 +994,13 @@ class ModelConfig extends AbstractDataTransferObject
             $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
         }
 
+        if ($this->requestOptions !== null) {
+            $requestOptions = $this->requestOptions->toArray();
+            if (!empty($requestOptions)) {
+                $data[self::KEY_REQUEST_OPTIONS] = $requestOptions;
+            }
+        }
+
         return $data;
     }
 
@@ -1061,6 +1104,10 @@ class ModelConfig extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_CUSTOM_OPTIONS])) {
             $config->setCustomOptions($array[self::KEY_CUSTOM_OPTIONS]);
+        }
+
+        if (isset($array[self::KEY_REQUEST_OPTIONS])) {
+            $config->setRequestOptions(RequestOptions::fromArray($array[self::KEY_REQUEST_OPTIONS]));
         }
 
         return $config;

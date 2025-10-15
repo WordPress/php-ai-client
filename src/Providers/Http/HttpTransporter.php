@@ -12,8 +12,10 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Providers\Http\Contracts\ClientWithOptionsInterface;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Exception\NetworkException;
 
@@ -66,13 +68,19 @@ class HttpTransporter implements HttpTransporterInterface
      * {@inheritDoc}
      *
      * @since 0.1.0
+     * @since n.e.x.t Added optional RequestOptions parameter and ClientWithOptions support.
      */
-    public function send(Request $request): Response
+    public function send(Request $request, ?RequestOptions $options = null): Response
     {
         $psr7Request = $this->convertToPsr7Request($request);
+        $options = $options ?? $request->getOptions();
 
         try {
-            $psr7Response = $this->client->sendRequest($psr7Request);
+            if ($this->client instanceof ClientWithOptionsInterface) {
+                $psr7Response = $this->client->sendRequestWithOptions($psr7Request, $options);
+            } else {
+                $psr7Response = $this->client->sendRequest($psr7Request);
+            }
         } catch (\Psr\Http\Client\NetworkExceptionInterface $e) {
             throw NetworkException::fromPsr18NetworkException($psr7Request, $e);
         } catch (\Psr\Http\Client\ClientExceptionInterface $e) {
