@@ -13,8 +13,10 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
+use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
@@ -62,7 +64,7 @@ class PromptBuilder
     /**
      * @var list<ModelInterface|string> Preferred models to evaluate in order.
      */
-    protected array $modelPreferences = [];
+    protected array $modelPreference = [];
 
     /**
      * @var string|null The provider ID or class name.
@@ -236,11 +238,11 @@ class PromptBuilder
             throw new InvalidArgumentException('At least one model preference must be provided.');
         }
 
-        $normalizedPreferences = [];
+        $normalizedModels = [];
 
         foreach ($preferredModels as $preferredModel) {
             if ($preferredModel instanceof ModelInterface) {
-                $normalizedPreferences[] = $preferredModel;
+                $normalizedModels[] = $preferredModel;
                 continue;
             }
 
@@ -249,7 +251,7 @@ class PromptBuilder
                 if ($trimmed === '') {
                     throw new InvalidArgumentException('Model preference identifiers cannot be empty.');
                 }
-                $normalizedPreferences[] = $trimmed;
+                $normalizedModels[] = $trimmed;
                 continue;
             }
 
@@ -258,7 +260,7 @@ class PromptBuilder
             );
         }
 
-        $this->modelPreferences = $normalizedPreferences;
+        $this->modelPreference = $normalizedModels;
 
         return $this;
     }
@@ -1073,40 +1075,6 @@ class PromptBuilder
     }
 
     /**
-     * Gets the first preferred model that can be instantiated.
-     *
-     * @since n.e.x.t
-     *
-     * @return ModelInterface|null The instantiated preferred model, or null if none found.
-     */
-    private function getAvailablePreferredModel(): ?ModelInterface
-    {
-        if ($this->modelPreferences === []) {
-            return null;
-        }
-
-        foreach ($this->modelPreferences as $preferredModel) {
-            if ($preferredModel instanceof ModelInterface) {
-                return $preferredModel;
-            }
-
-            $providerIds = $this->providerIdOrClassName !== null
-                ? [$this->providerIdOrClassName]
-                : $this->registry->getRegisteredProviderIds();
-
-            foreach ($providerIds as $providerId) {
-                try {
-                    return $this->registry->getProviderModel($providerId, $preferredModel);
-                } catch (InvalidArgumentException $exception) {
-                    continue;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * Gets the model to use for generation.
      *
      * If a model has been explicitly set, validates it meets requirements and returns it.
@@ -1122,17 +1090,18 @@ class PromptBuilder
     {
         $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
 
-        $explicitModel = $this->model ?? $this->getAvailablePreferredModel();
-
-        if ($explicitModel !== null) {
-            $explicitModel->setConfig($this->modelConfig);
-            $this->registry->bindModelDependencies($explicitModel);
-            $this->model = $explicitModel;
-            return $explicitModel;
+        if ($this->model !== null) {
+            // Explicit model was provided via usingModel(); just update config and bind dependencies.
+            $this->model->setConfig($this->modelConfig);
+            $this->registry->bindModelDependencies($this->model);
+            return $this->model;
         }
 
-        // Find a suitable model based on requirements
+        /** @var list<array{0:string,1:ModelMetadata}> $candidateModels */
+        $candidateModels = [];
+
         if ($this->providerIdOrClassName === null) {
+            // No provider locked in, gather all models across providers that meet requirements.
             $providerModelsMetadata = $this->registry->findModelsMetadataForSupport($requirements);
 
             if (empty($providerModelsMetadata)) {
@@ -1150,10 +1119,14 @@ class PromptBuilder
                 );
             }
 
-            $firstProviderModels = $providerModelsMetadata[0];
-            $provider = $firstProviderModels->getProvider()->getId();
-            $modelMetadata = $firstProviderModels->getModels()[0];
+            foreach ($providerModelsMetadata as $providerModels) {
+                $providerId = $providerModels->getProvider()->getId();
+                foreach ($providerModels->getModels() as $modelMetadata) {
+                    $candidateModels[] = [$providerId, $modelMetadata];
+                }
+            }
         } else {
+            // Provider forced, only consider models from that provider.
             $modelsMetadata = $this->registry->findProviderModelsMetadataForSupport(
                 $this->providerIdOrClassName,
                 $requirements
@@ -1175,16 +1148,77 @@ class PromptBuilder
                 );
             }
 
-            $provider = $this->providerIdOrClassName;
-            $modelMetadata = $modelsMetadata[0];
+            foreach ($modelsMetadata as $modelMetadata) {
+                $candidateModels[] = [$this->providerIdOrClassName, $modelMetadata];
+            }
         }
 
-        // Get the model instance from the provider
-        return $this->registry->getProviderModel(
-            $provider,
-            $modelMetadata->getId(),
-            $this->modelConfig
-        );
+        $selectedModel = null;
+
+        foreach ($this->modelPreference as $preferredModel) {
+            if ($preferredModel instanceof ModelInterface) {
+                // Check if the explicitly provided preferred model is among the supported candidates.
+                $preferredProviderId = $preferredModel->providerMetadata()->getId();
+                $preferredModelId = $preferredModel->metadata()->getId();
+
+                foreach ($candidateModels as [$providerId, $modelMetadata]) {
+                    if ($providerId === $preferredProviderId && $modelMetadata->getId() === $preferredModelId) {
+                        $selectedModel = $this->prepareExplicitModel($preferredModel);
+                        break 2;
+                    }
+                }
+
+                continue;
+            }
+
+            // Otherwise treat the preference as a model identifier and match it against candidates.
+            foreach ($candidateModels as [$providerId, $modelMetadata]) {
+                if ($modelMetadata->getId() !== $preferredModel) {
+                    continue;
+                }
+
+                $selectedModel = $this->registry->getProviderModel(
+                    $providerId,
+                    $modelMetadata->getId(),
+                    $this->modelConfig
+                );
+                break 2;
+            }
+        }
+
+        if ($selectedModel === null) {
+            // No preference matched; fall back to the first candidate discovered.
+            [$providerId, $modelMetadata] = $candidateModels[0];
+            $selectedModel = $this->registry->getProviderModel(
+                $providerId,
+                $modelMetadata->getId(),
+                $this->modelConfig
+            );
+        }
+
+        return $selectedModel;
+    }
+
+    /**
+     * Prepares an explicitly provided model for usage by merging configuration and binding dependencies.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $model The model to prepare.
+     * @return ModelInterface The prepared model instance.
+     */
+    private function prepareExplicitModel(ModelInterface $model): ModelInterface
+    {
+        $modelConfigArray = $model->getConfig()->toArray();
+        $builderConfigArray = $this->modelConfig->toArray();
+        $mergedConfigArray = array_merge($modelConfigArray, $builderConfigArray);
+
+        $this->modelConfig = ModelConfig::fromArray($mergedConfigArray);
+
+        $model->setConfig($this->modelConfig);
+        $this->registry->bindModelDependencies($model);
+
+        return $model;
     }
 
     /**

@@ -9,7 +9,6 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\Builders\PromptBuilder;
-use WordPress\AiClient\Common\Exception\InvalidArgumentException as AiInvalidArgumentException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -618,13 +617,16 @@ class PromptBuilderTest extends TestCase
         $result = $this->createTestResult('Preferred model result');
         $metadata = $this->createTextModelMetadataWithInputSupport('preferred-model');
         $model = $this->createMockTextGenerationModel($result, $metadata);
+        $providerMetadata = $model->providerMetadata();
 
         $this->registry->expects($this->once())
             ->method('bindModelDependencies')
             ->with($model);
 
-        $this->registry->expects($this->never())
-            ->method('findModelsMetadataForSupport');
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([new ProviderModelsMetadata($providerMetadata, [$metadata])]);
 
         $this->registry->expects($this->never())
             ->method('findProviderModelsMetadataForSupport');
@@ -640,7 +642,7 @@ class PromptBuilderTest extends TestCase
         $modelProperty = $reflection->getProperty('model');
         $modelProperty->setAccessible(true);
 
-        $this->assertSame($model, $modelProperty->getValue($builder));
+        $this->assertNull($modelProperty->getValue($builder));
     }
 
     /**
@@ -655,16 +657,17 @@ class PromptBuilderTest extends TestCase
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
         $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$metadata]);
+
+        $this->registry->expects($this->once())
             ->method('getProviderModel')
-            ->with('test-provider', 'preferred-id', $this->isNull())
+            ->with('test-provider', 'preferred-id', $this->isInstanceOf(ModelConfig::class))
             ->willReturn($model);
 
         $this->registry->expects($this->never())
             ->method('findModelsMetadataForSupport');
-
-        $this->registry->expects($this->once())
-            ->method('bindModelDependencies')
-            ->with($model);
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
         $builder->usingProvider('test-provider');
@@ -686,23 +689,18 @@ class PromptBuilderTest extends TestCase
         $metadata = $this->createTextModelMetadataWithInputSupport('fallback-id');
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
-        $this->registry->expects($this->exactly(2))
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$metadata]);
+
+        $this->registry->expects($this->once())
             ->method('getProviderModel')
-            ->withConsecutive(
-                ['test-provider', 'missing-id', $this->isNull()],
-                ['test-provider', 'fallback-id', $this->isNull()]
-            )
-            ->willReturnOnConsecutiveCalls(
-                $this->throwException(new AiInvalidArgumentException('missing model')),
-                $model
-            );
+            ->with('test-provider', 'fallback-id', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
 
         $this->registry->expects($this->never())
             ->method('findModelsMetadataForSupport');
-
-        $this->registry->expects($this->once())
-            ->method('bindModelDependencies')
-            ->with($model);
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
         $builder->usingProvider('test-provider');
@@ -728,24 +726,14 @@ class PromptBuilderTest extends TestCase
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
         $this->registry->expects($this->once())
-            ->method('getRegisteredProviderIds')
-            ->willReturn([$providerMetadata->getId()]);
-
-        $this->registry->expects($this->once())
             ->method('findModelsMetadataForSupport')
             ->with($this->isInstanceOf(ModelRequirements::class))
             ->willReturn([$providerModelsMetadata]);
 
-        $this->registry->expects($this->exactly(2))
+        $this->registry->expects($this->once())
             ->method('getProviderModel')
-            ->withConsecutive(
-                [$providerMetadata->getId(), 'unavailable-model', $this->isNull()],
-                [$providerMetadata->getId(), 'discovered-id', $this->isInstanceOf(ModelConfig::class)]
-            )
-            ->willReturnOnConsecutiveCalls(
-                $this->throwException(new AiInvalidArgumentException('missing model')),
-                $model
-            );
+            ->with($providerMetadata->getId(), 'discovered-id', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
 
         $this->registry->expects($this->never())
             ->method('findProviderModelsMetadataForSupport');
