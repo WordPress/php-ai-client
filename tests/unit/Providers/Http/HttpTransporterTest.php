@@ -9,9 +9,11 @@ use GuzzleHttp\Psr7\Response as Psr7Response;
 use Http\Mock\Client as MockClient;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 use WordPress\AiClient\Providers\Http\HttpTransporter;
+use WordPress\AiClient\Tests\mocks\GuzzleLikeClient;
 
 /**
  * Tests for HttpTransporter class.
@@ -233,6 +235,50 @@ class HttpTransporterTest extends TestCase
         // Assert
         $sentRequest = $this->mockClient->getRequests()[0];
         $this->assertEquals('name=test&value=123', (string) $sentRequest->getBody());
+    }
+
+    /**
+     * Tests that Guzzle-like clients receive request options through the send method.
+     *
+     * @covers ::send
+     * @covers ::buildGuzzleOptions
+     * @covers ::isGuzzleClient
+     *
+     * @return void
+     */
+    public function testSendUsesGuzzleClientOptions(): void
+    {
+        $response = new Psr7Response(204);
+        $guzzleClient = new GuzzleLikeClient($response);
+        $transporter = new HttpTransporter(
+            $guzzleClient,
+            $this->httpFactory,
+            $this->httpFactory
+        );
+
+        $options = (new RequestOptions())
+            ->withTimeout(5.0)
+            ->withConnectTimeout(1.0)
+            ->withRedirects(3);
+
+        $request = new Request(
+            HttpMethodEnum::GET(),
+            'https://api.example.com/guzzle-test',
+            [],
+            null,
+            $options
+        );
+
+        $result = $transporter->send($request);
+
+        $this->assertEquals(204, $result->getStatusCode());
+        $this->assertFalse($guzzleClient->wasSendRequestCalled());
+
+        $lastOptions = $guzzleClient->getLastOptions();
+        $this->assertIsArray($lastOptions);
+        $this->assertSame(5.0, $lastOptions['timeout']);
+        $this->assertSame(1.0, $lastOptions['connect_timeout']);
+        $this->assertSame(['max' => 3], $lastOptions['allow_redirects']);
     }
 
     /**

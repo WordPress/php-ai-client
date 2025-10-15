@@ -78,6 +78,8 @@ class HttpTransporter implements HttpTransporterInterface
         try {
             if ($this->client instanceof ClientWithOptionsInterface) {
                 $psr7Response = $this->client->sendRequestWithOptions($psr7Request, $options);
+            } elseif ($this->isGuzzleClient($this->client)) {
+                $psr7Response = $this->sendWithGuzzle($psr7Request, $options);
             } else {
                 $psr7Response = $this->client->sendRequest($psr7Request);
             }
@@ -97,6 +99,122 @@ class HttpTransporter implements HttpTransporterInterface
         }
 
         return $this->convertFromPsr7Response($psr7Response);
+    }
+
+    /**
+     * Determines if the underlying client matches the Guzzle client shape.
+     *
+     * @since n.e.x.t
+     *
+     * @param ClientInterface $client The HTTP client instance.
+     * @return bool True when the client exposes Guzzle's send signature.
+     */
+    private function isGuzzleClient(ClientInterface $client): bool
+    {
+        $reflection = new \ReflectionObject($client);
+
+        if (!is_callable([$client, 'send'])) {
+            return false;
+        }
+
+        if (!$reflection->hasMethod('send')) {
+            return false;
+        }
+
+        $method = $reflection->getMethod('send');
+
+        if (!$method->isPublic() || $method->isStatic()) {
+            return false;
+        }
+
+        $parameters = $method->getParameters();
+
+        if (count($parameters) < 2) {
+            return false;
+        }
+
+        $firstParameter = $parameters[0]->getType();
+        if (!$firstParameter instanceof \ReflectionNamedType || $firstParameter->isBuiltin()) {
+            return false;
+        }
+
+        if (!is_a($firstParameter->getName(), RequestInterface::class, true)) {
+            return false;
+        }
+
+        $secondParameter = $parameters[1];
+        $secondType = $secondParameter->getType();
+
+        if (!$secondType instanceof \ReflectionNamedType || $secondType->getName() !== 'array') {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Sends a request using a Guzzle-compatible client.
+     *
+     * @since n.e.x.t
+     *
+     * @param RequestInterface $request The PSR-7 request to send.
+     * @param RequestOptions|null $options The request options.
+     * @return ResponseInterface The PSR-7 response received.
+     */
+    private function sendWithGuzzle(RequestInterface $request, ?RequestOptions $options): ResponseInterface
+    {
+        $guzzleOptions = $this->buildGuzzleOptions($options);
+
+        /** @var callable $callable */
+        $callable = [$this->client, 'send'];
+
+        /** @var ResponseInterface $response */
+        $response = $callable($request, $guzzleOptions);
+
+        return $response;
+    }
+
+    /**
+     * Converts request options to a Guzzle-compatible options array.
+     *
+     * @since n.e.x.t
+     *
+     * @param RequestOptions|null $options The request options.
+     * @return array<string, mixed> Guzzle-compatible options.
+     */
+    private function buildGuzzleOptions(?RequestOptions $options): array
+    {
+        if ($options === null) {
+            return [];
+        }
+
+        $guzzleOptions = [];
+
+        $timeout = $options->getTimeout();
+        if ($timeout !== null) {
+            $guzzleOptions['timeout'] = $timeout;
+        }
+
+        $connectTimeout = $options->getConnectTimeout();
+        if ($connectTimeout !== null) {
+            $guzzleOptions['connect_timeout'] = $connectTimeout;
+        }
+
+        $allowRedirects = $options->allowsRedirects();
+        if ($allowRedirects !== null) {
+            if ($allowRedirects) {
+                $redirectOptions = [];
+                $maxRedirects = $options->getMaxRedirects();
+                if ($maxRedirects !== null) {
+                    $redirectOptions['max'] = $maxRedirects;
+                }
+                $guzzleOptions['allow_redirects'] = !empty($redirectOptions) ? $redirectOptions : true;
+            } else {
+                $guzzleOptions['allow_redirects'] = false;
+            }
+        }
+
+        return $guzzleOptions;
     }
 
     /**
