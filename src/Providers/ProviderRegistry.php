@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers;
 
-use InvalidArgumentException;
-use RuntimeException;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderWithOperationsHandlerInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
@@ -111,6 +111,18 @@ class ProviderRegistry implements WithHttpTransporterInterface
 
         $this->providerClassNames[$metadata->getId()] = $className;
         $this->registeredClassNames[$className] = true;
+    }
+
+    /**
+     * Gets a list of all registered provider IDs.
+     *
+     * @since 0.1.0
+     *
+     * @return list<string> List of registered provider IDs.
+     */
+    public function getRegisteredProviderIds(): array
+    {
+        return array_keys($this->providerClassNames);
     }
 
     /**
@@ -224,7 +236,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
         // Filter models that meet requirements
         $matchingModels = [];
         foreach ($modelMetadataDirectory->listModelMetadata() as $modelMetadata) {
-            if ($modelMetadata->meetsRequirements($modelRequirements)) {
+            if ($modelRequirements->areMetBy($modelMetadata)) {
                 $matchingModels[] = $modelMetadata;
             }
         }

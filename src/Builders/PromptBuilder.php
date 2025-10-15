@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Builders;
 
-use InvalidArgumentException;
-use RuntimeException;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -18,7 +18,6 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
-use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
@@ -510,79 +509,6 @@ class PromptBuilder
         return $this;
     }
 
-    /**
-     * Gets the inferred model requirements based on prompt features.
-     *
-     * @since 0.1.0
-     *
-     * @param CapabilityEnum $capability The capability the model must support.
-     * @return ModelRequirements The inferred requirements.
-     */
-    private function getModelRequirements(CapabilityEnum $capability): ModelRequirements
-    {
-        $capabilities = [$capability];
-        $inputModalities = [];
-
-        // Check if we have chat history (multiple messages)
-        if (count($this->messages) > 1) {
-            $capabilities[] = CapabilityEnum::chatHistory();
-        }
-
-        // Analyze all messages to determine required input modalities
-        $hasFunctionMessageParts = false;
-        foreach ($this->messages as $message) {
-            foreach ($message->getParts() as $part) {
-                // Check for text input
-                if ($part->getType()->isText()) {
-                    $inputModalities[] = ModalityEnum::text();
-                }
-
-                // Check for file inputs
-                if ($part->getType()->isFile()) {
-                    $file = $part->getFile();
-
-                    if ($file !== null) {
-                        if ($file->isImage()) {
-                            $inputModalities[] = ModalityEnum::image();
-                        } elseif ($file->isAudio()) {
-                            $inputModalities[] = ModalityEnum::audio();
-                        } elseif ($file->isVideo()) {
-                            $inputModalities[] = ModalityEnum::video();
-                        } elseif ($file->isDocument() || $file->isText()) {
-                            $inputModalities[] = ModalityEnum::document();
-                        }
-                    }
-                }
-
-                // Check for function calls/responses (these might require special capabilities)
-                if ($part->getType()->isFunctionCall() || $part->getType()->isFunctionResponse()) {
-                    $hasFunctionMessageParts = true;
-                }
-            }
-        }
-
-        // Build required options from ModelConfig
-        $requiredOptions = $this->modelConfig->toRequiredOptions();
-
-        if ($hasFunctionMessageParts) {
-            // Add function declarations option if we have function calls/responses
-            $requiredOptions = $this->includeInRequiredOptions(
-                $requiredOptions,
-                new RequiredOption(OptionEnum::functionDeclarations(), true)
-            );
-        }
-
-        // Add input modalities if we have any inputs
-        $requiredOptions = $this->includeInRequiredOptions(
-            $requiredOptions,
-            new RequiredOption(OptionEnum::inputModalities(), $inputModalities)
-        );
-
-        return new ModelRequirements(
-            $capabilities,
-            $requiredOptions
-        );
-    }
 
     /**
      * Infers the capability from configured output modalities.
@@ -671,11 +597,11 @@ class PromptBuilder
         }
 
         // Build requirements with the specified capability
-        $requirements = $this->getModelRequirements($intendedCapability);
+        $requirements = ModelRequirements::fromPromptData($intendedCapability, $this->messages, $this->modelConfig);
 
         // If the model has been set, check if it meets the requirements
         if ($this->model !== null) {
-            return $this->model->metadata()->meetsRequirements($requirements);
+            return $requirements->areMetBy($this->model->metadata());
         }
 
         try {
@@ -1112,7 +1038,7 @@ class PromptBuilder
      */
     private function getConfiguredModel(CapabilityEnum $capability): ModelInterface
     {
-        $requirements = $this->getModelRequirements($capability);
+        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
 
         // If a model has been explicitly set, return it
         if ($this->model !== null) {
@@ -1333,20 +1259,6 @@ class PromptBuilder
      * @param RequiredOption $option The option to potentially add.
      * @return list<RequiredOption> The updated list of required options.
      */
-    private function includeInRequiredOptions(array $options, RequiredOption $option): array
-    {
-        // Check if an option with the same name already exists
-        foreach ($options as $existingOption) {
-            if ($existingOption->getName()->equals($option->getName())) {
-                // Option already exists, return unchanged list
-                return $options;
-            }
-        }
-
-        // Add the new option
-        $options[] = $option;
-        return $options;
-    }
 
     /**
      * Includes output modalities if not already present.

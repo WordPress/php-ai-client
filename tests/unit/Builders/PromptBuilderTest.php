@@ -23,6 +23,9 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
@@ -1135,7 +1138,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1166,7 +1168,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -1198,7 +1199,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createSpeechGenerationModel($metadata, $result);
 
@@ -1227,7 +1227,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1248,7 +1247,6 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         // Model that only implements ModelInterface, not TextGenerationModelInterface
         $model = $this->createMock(ModelInterface::class);
@@ -1272,7 +1270,6 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMock(ModelInterface::class);
         $model->method('metadata')->willReturn($metadata);
@@ -1304,7 +1301,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1346,7 +1342,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -1388,7 +1383,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createSpeechGenerationModel($metadata, $result);
 
@@ -1430,7 +1424,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createTextToSpeechModel($metadata, $result);
 
@@ -1461,7 +1454,6 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         // Model that doesn't implement TextToSpeechConversionModelInterface
         $model = $this->createMock(ModelInterface::class);
@@ -1497,7 +1489,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1519,7 +1510,6 @@ class PromptBuilderTest extends TestCase
         // we need to create a mock that throws an exception or test a different scenario
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $providerMetadata = new ProviderMetadata(
             'mock-provider',
@@ -1604,7 +1594,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1639,7 +1628,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1684,7 +1672,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1717,7 +1704,6 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $providerMetadata = new ProviderMetadata(
             'mock-provider',
@@ -1804,7 +1790,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -1836,7 +1821,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -1879,7 +1863,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -1915,7 +1898,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createTextToSpeechModel($metadata, $result);
 
@@ -1956,7 +1938,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createTextToSpeechModel($metadata, $result);
 
@@ -1992,7 +1973,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createSpeechGenerationModel($metadata, $result);
 
@@ -2035,7 +2015,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createSpeechGenerationModel($metadata, $result);
 
@@ -2243,7 +2222,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -2387,7 +2365,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -2452,7 +2429,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -2516,7 +2492,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -2552,7 +2527,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -2585,7 +2559,15 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('text-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::inputModalities(), [
+                [ModalityEnum::text()],
+                [ModalityEnum::text(), ModalityEnum::image()]
+            ])
+        ]);
 
         $result = new GenerativeAiResult('test-id', [
             new Candidate(
@@ -2659,7 +2641,15 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('speech-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::speechGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::inputModalities(), [
+                [ModalityEnum::text()],
+                [ModalityEnum::text(), ModalityEnum::image()]
+            ])
+        ]);
 
         $result = new GenerativeAiResult('test-id', [
             new Candidate(
@@ -2687,7 +2677,6 @@ class PromptBuilderTest extends TestCase
 
         $modelMetadata = $this->createMock(ModelMetadata::class);
         $modelMetadata->method('getId')->willReturn('provider-model');
-        $modelMetadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $modelMetadata);
 
@@ -2742,7 +2731,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('explicit-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 

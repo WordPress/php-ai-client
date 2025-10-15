@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\ProviderImplementations\Anthropic;
 
-use RuntimeException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\AbstractProvider;
 use WordPress\AiClient\Providers\ApiBasedImplementation\ListModelsApiBasedProviderAvailability;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;

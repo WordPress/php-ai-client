@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
-use InvalidArgumentException;
-use RuntimeException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
@@ -201,6 +201,8 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts the first candidate to text.
      *
+     * Only text from the content channel is considered. Text within model thought or reasoning is ignored.
+     *
      * @since 0.1.0
      *
      * @return string The text content.
@@ -210,8 +212,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     {
         $message = $this->candidates[0]->getMessage();
         foreach ($message->getParts() as $part) {
+            $channel = $part->getChannel();
             $text = $part->getText();
-            if ($text !== null) {
+            if ($channel->isContent() && $text !== null) {
                 return $text;
             }
         }
@@ -222,6 +225,8 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     /**
      * Converts the first candidate to a file.
      *
+     * Only files from the content channel are considered. Files within model thought or reasoning are ignored.
+     *
      * @since 0.1.0
      *
      * @return File The file.
@@ -231,8 +236,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     {
         $message = $this->candidates[0]->getMessage();
         foreach ($message->getParts() as $part) {
+            $channel = $part->getChannel();
             $file = $part->getFile();
-            if ($file !== null) {
+            if ($channel->isContent() && $file !== null) {
                 return $file;
             }
         }
@@ -316,7 +322,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     }
 
     /**
-     * Converts all candidates to text array.
+     * Converts all candidates to text.
      *
      * @since 0.1.0
      *
@@ -328,8 +334,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
         foreach ($this->candidates as $candidate) {
             $message = $candidate->getMessage();
             foreach ($message->getParts() as $part) {
+                $channel = $part->getChannel();
                 $text = $part->getText();
-                if ($text !== null) {
+                if ($channel->isContent() && $text !== null) {
                     $texts[] = $text;
                     break;
                 }
@@ -351,8 +358,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
         foreach ($this->candidates as $candidate) {
             $message = $candidate->getMessage();
             foreach ($message->getParts() as $part) {
+                $channel = $part->getChannel();
                 $file = $part->getFile();
-                if ($file !== null) {
+                if ($channel->isContent() && $file !== null) {
                     $files[] = $file;
                     break;
                 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\ProviderImplementations\Google;
 
-use RuntimeException;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -13,6 +12,7 @@ use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
+use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
@@ -87,9 +87,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
         /** @var ModelsResponseData $responseData */
         $responseData = $response->getData();
         if (!isset($responseData['models']) || !$responseData['models']) {
-            throw new RuntimeException(
-                'Unexpected API response: Missing the models key.'
-            );
+            throw ResponseException::fromMissingData('Google', 'models');
         }
 
         $geminiCapabilities = [

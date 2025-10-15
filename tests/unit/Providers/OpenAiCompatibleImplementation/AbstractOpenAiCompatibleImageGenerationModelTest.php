@@ -6,7 +6,6 @@ namespace WordPress\AiClient\Tests\unit\Providers\OpenAiCompatibleImplementation
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
@@ -17,6 +16,7 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -57,6 +57,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $this->modelMetadata = $this->createStub(ModelMetadata::class);
         $this->modelMetadata->method('getId')->willReturn('test-image-model');
         $this->providerMetadata = $this->createStub(ProviderMetadata::class);
+        $this->providerMetadata->method('getName')->willReturn('TestProvider');
         $this->mockHttpTransporter = $this->createMock(HttpTransporterInterface::class);
         $this->mockRequestAuthentication = $this->createMock(RequestAuthenticationInterface::class);
     }
@@ -205,7 +206,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
     public function testGenerateImageResultApiFailure(): void
     {
         $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('A tree')])];
-        $response = new Response(400, [], '{"error": "Bad Request"}');
+        $response = new Response(400, [], '{"error": "Invalid parameter."}');
 
         $this->mockRequestAuthentication
             ->expects($this->once())
@@ -219,8 +220,8 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
 
         $model = $this->createModel();
 
-        $this->expectException(ResponseException::class);
-        $this->expectExceptionMessage('Bad status code: 400. Bad Request');
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('Bad Request (400) - Invalid parameter.');
 
         $model->generateImageResult($prompt);
     }
@@ -609,11 +610,11 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
      */
     public function testThrowIfNotSuccessfulFailure(): void
     {
-        $response = new Response(404, [], '{"error":"Not Found"}');
+        $response = new Response(404, [], '{"error":"The resource does not exist."}');
         $model = $this->createModel();
 
-        $this->expectException(ResponseException::class);
-        $this->expectExceptionMessage('Bad status code: 404. Not Found');
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('Not Found (404) - The resource does not exist.');
 
         $model->exposeThrowIfNotSuccessful($response);
     }
@@ -719,8 +720,8 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $response = new Response(200, [], json_encode(['id' => 'test-id']));
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: Missing the data key.');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Unexpected TestProvider API response: Missing the "data" key.');
 
         $model->exposeParseResponseToGenerativeAiResult($response);
     }
@@ -739,8 +740,10 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         );
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: The data key must contain an array.');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage(
+            'Unexpected TestProvider API response: Invalid "data" key: The value must be an array.'
+        );
 
         $model->exposeParseResponseToGenerativeAiResult($response);
     }
@@ -755,9 +758,9 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $response = new Response(200, [], json_encode(['data' => ['invalid']]));
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each element in the data key must be an associative array.'
+            'Unexpected TestProvider API response: Invalid "data[0]" key: The value must be an associative array.'
         );
 
         $model->exposeParseResponseToGenerativeAiResult($response);
@@ -774,7 +777,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
             'url' => 'https://example.com/image.png',
         ];
         $model = $this->createModel();
-        $candidate = $model->exposeParseResponseChoiceToCandidate($choiceData, 'image/png');
+        $candidate = $model->exposeParseResponseChoiceToCandidate($choiceData, 0, 'image/png');
 
         $this->assertInstanceOf(Candidate::class, $candidate);
         $this->assertEquals(
@@ -798,7 +801,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
             'b64_json' => $base64Image,
         ];
         $model = $this->createModel();
-        $candidate = $model->exposeParseResponseChoiceToCandidate($choiceData, 'image/png');
+        $candidate = $model->exposeParseResponseChoiceToCandidate($choiceData, 0, 'image/png');
 
         $this->assertInstanceOf(Candidate::class, $candidate);
         $this->assertEquals($base64Image, $candidate->getMessage()->getParts()[0]->getFile()->getBase64Data());
@@ -819,11 +822,12 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each choice must contain either a url or b64_json key with a string value.'
+            'Unexpected TestProvider API response: Invalid "choices[0]" key: The value must contain either a ' .
+            'url or b64_json key with a string value.'
         );
 
-        $model->exposeParseResponseChoiceToCandidate($choiceData);
+        $model->exposeParseResponseChoiceToCandidate($choiceData, 0);
     }
 }

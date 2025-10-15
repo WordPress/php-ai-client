@@ -113,9 +113,9 @@ class MockOpenAiCompatibleTextGenerationModel extends AbstractOpenAiCompatibleTe
         return $this->prepareGenerateTextParams($prompt);
     }
 
-    public function exposeMergeSystemInstruction(array $prompt, string $systemInstruction): array
+    public function exposePrepareMessagesParamWithSystemInstruction(array $prompt, string $systemInstruction): array
     {
-        return $this->mergeSystemInstruction($prompt, $systemInstruction);
+        return $this->prepareMessagesParam($prompt, $systemInstruction);
     }
 
     public function exposePrepareMessagesParam(array $messages): array
@@ -158,19 +158,19 @@ class MockOpenAiCompatibleTextGenerationModel extends AbstractOpenAiCompatibleTe
         return $this->prepareResponseFormatParam($outputSchema);
     }
 
-    public function exposeParseResponseChoiceToCandidate(array $choiceData): Candidate
+    public function exposeParseResponseChoiceToCandidate(array $choiceData, int $index = 0): Candidate
     {
-        return $this->parseResponseChoiceToCandidate($choiceData);
+        return $this->parseResponseChoiceToCandidate($choiceData, $index);
     }
 
-    public function exposeParseResponseChoiceMessage(array $messageData): Message
+    public function exposeParseResponseChoiceMessage(array $messageData, int $index = 0): Message
     {
-        return $this->parseResponseChoiceMessage($messageData);
+        return $this->parseResponseChoiceMessage($messageData, $index);
     }
 
-    public function exposeParseResponseChoiceMessageParts(array $messageData): array
+    public function exposeParseResponseChoiceMessageParts(array $messageData, int $index = 0): array
     {
-        return $this->parseResponseChoiceMessageParts($messageData);
+        return $this->parseResponseChoiceMessageParts($messageData, $index);
     }
 
     public function exposeParseResponseChoiceMessageToolCallPart(array $toolCallData): ?MessagePart

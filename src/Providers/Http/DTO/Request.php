@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\DTO;
 
-use InvalidArgumentException;
 use JsonException;
+use Psr\Http\Message\RequestInterface;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Http\Collections\HeadersCollection;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 
@@ -354,5 +355,30 @@ class Request extends AbstractDataTransferObject
             $array[self::KEY_HEADERS] ?? [],
             $array[self::KEY_BODY] ?? null
         );
+    }
+
+    /**
+     * Creates a Request instance from a PSR-7 RequestInterface.
+     *
+     * @since n.e.x.t
+     *
+     * @param RequestInterface $psrRequest The PSR-7 request to convert.
+     * @return self A new Request instance.
+     * @throws InvalidArgumentException If the HTTP method is not supported.
+     */
+    public static function fromPsrRequest(RequestInterface $psrRequest): self
+    {
+        $method = HttpMethodEnum::from($psrRequest->getMethod());
+        $uri = (string) $psrRequest->getUri();
+
+        // Convert PSR-7 headers to array format expected by our constructor
+        /** @var array<string, list<string>> $headers */
+        $headers = $psrRequest->getHeaders();
+
+        // Get body content
+        $body = $psrRequest->getBody()->getContents();
+        $bodyOrData = !empty($body) ? $body : null;
+
+        return new self($method, $uri, $headers, $bodyOrData);
     }
 }

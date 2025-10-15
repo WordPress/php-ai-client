@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
-use InvalidArgumentException;
-use RuntimeException;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -24,7 +24,11 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
 /**
- * Base class for an image generation model for an OpenAI compatible provider.
+ * Base class for an image generation model for providers that implement OpenAI's API format.
+ *
+ * This abstract class is designed to work with any AI provider that offers an OpenAI-compatible
+ * API endpoint for image generation, including but not limited to Anthropic, Google, and other
+ * providers that have adopted OpenAI's image generation API specification as a standard interface.
  *
  * @since 0.1.0
  *
@@ -293,25 +297,27 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
         /** @var ResponseData $responseData */
         $responseData = $response->getData();
         if (!isset($responseData['data']) || !$responseData['data']) {
-            throw new RuntimeException(
-                'Unexpected API response: Missing the data key.'
-            );
+            throw ResponseException::fromMissingData($this->providerMetadata()->getName(), 'data');
         }
         if (!is_array($responseData['data'])) {
-            throw new RuntimeException(
-                'Unexpected API response: The data key must contain an array.'
+            throw ResponseException::fromInvalidData(
+                $this->providerMetadata()->getName(),
+                'data',
+                'The value must be an array.'
             );
         }
 
         $candidates = [];
-        foreach ($responseData['data'] as $choiceData) {
+        foreach ($responseData['data'] as $index => $choiceData) {
             if (!is_array($choiceData) || array_is_list($choiceData)) {
-                throw new RuntimeException(
-                    'Unexpected API response: Each element in the data key must be an associative array.'
+                throw ResponseException::fromInvalidData(
+                    $this->providerMetadata()->getName(),
+                    "data[{$index}]",
+                    'The value must be an associative array.'
                 );
             }
 
-            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData, $expectedMimeType);
+            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData, $index, $expectedMimeType);
         }
 
         $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
@@ -348,12 +354,14 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
      * @since 0.1.0
      *
      * @param ChoiceData $choiceData The choice data from the API response.
+     * @param int $index The index of the choice in the choices array.
      * @param string   $expectedMimeType The expected MIME type the response is in.
      * @return Candidate The parsed candidate.
      * @throws RuntimeException If the choice data is invalid.
      */
     protected function parseResponseChoiceToCandidate(
         array $choiceData,
+        int $index,
         string $expectedMimeType = 'image/png'
     ): Candidate {
         if (isset($choiceData['url']) && is_string($choiceData['url'])) {
@@ -361,8 +369,10 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
         } elseif (isset($choiceData['b64_json']) && is_string($choiceData['b64_json'])) {
             $imageFile = new File($choiceData['b64_json'], $expectedMimeType);
         } else {
-            throw new RuntimeException(
-                'Unexpected API response: Each choice must contain either a url or b64_json key with a string value.'
+            throw ResponseException::fromInvalidData(
+                $this->providerMetadata()->getName(),
+                "choices[{$index}]",
+                'The value must contain either a url or b64_json key with a string value.'
             );
         }
 

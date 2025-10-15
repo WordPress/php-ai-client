@@ -296,22 +296,20 @@ direction LR
     namespace AiClientNamespace {
         class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
-            +message(?string $text) MessageBuilder$
+            +message($input = null) MessageBuilder$
         }
     }
 
     namespace AiClientNamespace.Builders {
         class PromptBuilder {
             +withText(string $text) self
-            +withInlineImage(string $base64Blob, string $mimeType)
-            +withRemoteImage(string $uri, string $mimeType)
-            +withImageFile(File $file) self
-            +withAudioFile(File $file) self
-            +withVideoFile(File $file) self
+            +withFile($file, ?string $mimeType) self
             +withFunctionResponse(FunctionResponse $functionResponse) self
-            +withMessageParts(...MessagePart $part) self
+            +withMessageParts(...MessagePart $parts) self
             +withHistory(...Message $messages) self
             +usingModel(ModelInterface $model) self
+            +usingModelConfig(ModelConfig $config) self
+            +usingProvider(string $providerIdOrClassName) self
             +usingSystemInstruction(string $systemInstruction) self
             +usingMaxTokens(int $maxTokens) self
             +usingTemperature(float $temperature) self
@@ -319,46 +317,47 @@ direction LR
             +usingTopK(int $topK) self
             +usingStopSequences(...string $stopSequences) self
             +usingCandidateCount(int $candidateCount) self
-            +usingOutputMime(string $mimeType) self
-            +usingOutputSchema(array< string, mixed > $schema) self
-            +usingOutputModalities(...ModalityEnum $modalities) self
+            +usingFunctionDeclarations(...FunctionDeclaration $functionDeclarations) self
+            +usingPresencePenalty(float $presencePenalty) self
+            +usingFrequencyPenalty(float $frequencyPenalty) self
+            +usingWebSearch(WebSearch $webSearch) self
+            +usingTopLogprobs(?int $topLogprobs) self
+            +asOutputMimeType(string $mimeType) self
+            +asOutputSchema(array< string, mixed > $schema) self
+            +asOutputModalities(...ModalityEnum $modalities) self
+            +asOutputFileType(FileTypeEnum $fileType) self
             +asJsonResponse(?array< string, mixed > $schema) self
-            +generateResult() GenerativeAiResult
-            +generateOperation() GenerativeAiOperation
+            +generateResult(?CapabilityEnum $capability) GenerativeAiResult
             +generateTextResult() GenerativeAiResult
-            +streamGenerateTextResult() Generator< GenerativeAiResult >
             +generateImageResult() GenerativeAiResult
-            +convertTextToSpeechResult() GenerativeAiResult
             +generateSpeechResult() GenerativeAiResult
-            +generateEmbeddingsResult() EmbeddingResult
-            +generateTextOperation() GenerativeAiOperation
-            +generateImageOperation() GenerativeAiOperation
-            +convertTextToSpeechOperation() GenerativeAiOperation
-            +generateSpeechOperation() GenerativeAiOperation
-            +generateEmbeddingsOperation() EmbeddingOperation
+            +convertTextToSpeechResult() GenerativeAiResult
             +generateText() string
             +generateTexts(?int $candidateCount) string[]
-            +streamGenerateText() Generator< string >
             +generateImage() File
             +generateImages(?int $candidateCount) File[]
             +convertTextToSpeech() File
             +convertTextToSpeeches(?int $candidateCount) File[]
             +generateSpeech() File
             +generateSpeeches(?int $candidateCount) File[]
-            +generateEmbeddings() Embedding[]
-            +getModelRequirements() ModelRequirements
-            +isSupported() bool
+            +isSupportedForTextGeneration() bool
+            +isSupportedForImageGeneration() bool
+            +isSupportedForTextToSpeechConversion() bool
+            +isSupportedForVideoGeneration() bool
+            +isSupportedForSpeechGeneration() bool
+            +isSupportedForMusicGeneration() bool
+            +isSupportedForEmbeddingGeneration() bool
         }
 
         class MessageBuilder {
-            +usingRole(MessageRole $role) self
+            +usingRole(MessageRoleEnum $role) self
+            +usingUserRole() self
+            +usingModelRole() self
             +withText(string $text) self
-            +withImageFile(File $file) self
-            +withAudioFile(File $file) self
-            +withVideoFile(File $file) self
+            +withFile($file, ?string $mimeType) self
             +withFunctionCall(FunctionCall $functionCall) self
             +withFunctionResponse(FunctionResponse $functionResponse) self
-            +withMessageParts(...MessagePart $part) self
+            +withMessageParts(...MessagePart $parts) self
             +get() Message
         }
     }
@@ -419,6 +418,7 @@ direction LR
     namespace AiClientNamespace.Providers {
         class ProviderRegistry {
             +registerProvider(string $className) void
+            +getRegisteredProviderIds() string[]
             +hasProvider(string $idOrClassName) bool
             +getProviderClassName(string $id) string
             +isProviderConfigured(string $idOrClassName) bool
@@ -444,7 +444,7 @@ direction LR
     namespace AiClientNamespace {
         class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
-            +message(?string $text) MessageBuilder$
+            +message($input = null) MessageBuilder$
             +defaultRegistry() ProviderRegistry$
             +isConfigured(ProviderAvailabilityInterface $availability) bool$
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
@@ -466,15 +466,13 @@ direction LR
     namespace AiClientNamespace.Builders {
         class PromptBuilder {
             +withText(string $text) self
-            +withInlineImage(string $base64Blob, string $mimeType)
-            +withRemoteImage(string $uri, string $mimeType)
-            +withImageFile(File $file) self
-            +withAudioFile(File $file) self
-            +withVideoFile(File $file) self
+            +withFile($file, ?string $mimeType) self
             +withFunctionResponse(FunctionResponse $functionResponse) self
-            +withMessageParts(...MessagePart $part) self
+            +withMessageParts(...MessagePart $parts) self
             +withHistory(...Message $messages) self
             +usingModel(ModelInterface $model) self
+            +usingModelConfig(ModelConfig $config) self
+            +usingProvider(string $providerIdOrClassName) self
             +usingSystemInstruction(string $systemInstruction) self
             +usingMaxTokens(int $maxTokens) self
             +usingTemperature(float $temperature) self
@@ -482,46 +480,47 @@ direction LR
             +usingTopK(int $topK) self
             +usingStopSequences(...string $stopSequences) self
             +usingCandidateCount(int $candidateCount) self
-            +usingOutputMime(string $mimeType) self
-            +usingOutputSchema(array< string, mixed > $schema) self
-            +usingOutputModalities(...ModalityEnum $modalities) self
+            +usingFunctionDeclarations(...FunctionDeclaration $functionDeclarations) self
+            +usingPresencePenalty(float $presencePenalty) self
+            +usingFrequencyPenalty(float $frequencyPenalty) self
+            +usingWebSearch(WebSearch $webSearch) self
+            +usingTopLogprobs(?int $topLogprobs) self
+            +asOutputMimeType(string $mimeType) self
+            +asOutputSchema(array< string, mixed > $schema) self
+            +asOutputModalities(...ModalityEnum $modalities) self
+            +asOutputFileType(FileTypeEnum $fileType) self
             +asJsonResponse(?array< string, mixed > $schema) self
-            +generateResult() GenerativeAiResult
-            +generateOperation() GenerativeAiOperation
+            +generateResult(?CapabilityEnum $capability) GenerativeAiResult
             +generateTextResult() GenerativeAiResult
-            +streamGenerateTextResult() Generator< GenerativeAiResult >
             +generateImageResult() GenerativeAiResult
-            +convertTextToSpeechResult() GenerativeAiResult
             +generateSpeechResult() GenerativeAiResult
-            +generateEmbeddingsResult() EmbeddingResult
-            +generateTextOperation() GenerativeAiOperation
-            +generateImageOperation() GenerativeAiOperation
-            +convertTextToSpeechOperation() GenerativeAiOperation
-            +generateSpeechOperation() GenerativeAiOperation
-            +generateEmbeddingsOperation() EmbeddingOperation
+            +convertTextToSpeechResult() GenerativeAiResult
             +generateText() string
             +generateTexts(?int $candidateCount) string[]
-            +streamGenerateText() Generator< string >
             +generateImage() File
             +generateImages(?int $candidateCount) File[]
             +convertTextToSpeech() File
             +convertTextToSpeeches(?int $candidateCount) File[]
             +generateSpeech() File
             +generateSpeeches(?int $candidateCount) File[]
-            +generateEmbeddings() Embedding[]
-            +getModelRequirements() ModelRequirements
-            +isSupported() bool
+            +isSupportedForTextGeneration() bool
+            +isSupportedForImageGeneration() bool
+            +isSupportedForTextToSpeechConversion() bool
+            +isSupportedForVideoGeneration() bool
+            +isSupportedForSpeechGeneration() bool
+            +isSupportedForMusicGeneration() bool
+            +isSupportedForEmbeddingGeneration() bool
         }
 
         class MessageBuilder {
-            +usingRole(MessageRole $role) self
+            +usingRole(MessageRoleEnum $role) self
+            +usingUserRole() self
+            +usingModelRole() self
             +withText(string $text) self
-            +withImageFile(File $file) self
-            +withAudioFile(File $file) self
-            +withVideoFile(File $file) self
+            +withFile($file, ?string $mimeType) self
             +withFunctionCall(FunctionCall $functionCall) self
             +withFunctionResponse(FunctionResponse $functionResponse) self
-            +withMessageParts(...MessagePart $part) self
+            +withMessageParts(...MessagePart $parts) self
             +get() Message
         }
     }

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Http\Util;
 
 use WordPress\AiClient\Providers\Http\DTO\Response;
-use WordPress\AiClient\Providers\Http\Exception\ResponseException;
+use WordPress\AiClient\Providers\Http\Exception\ClientException;
+use WordPress\AiClient\Providers\Http\Exception\RedirectException;
+use WordPress\AiClient\Providers\Http\Exception\ServerException;
 
 /**
  * Class with static utility methods to process HTTP responses.
@@ -15,17 +17,22 @@ use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 class ResponseUtil
 {
     /**
-     * Throws a response exception if the given response is not successful.
+     * Throws an appropriate exception if the given response is not successful.
      *
      * This method checks the HTTP status code of the response and throws
-     * a ResponseException if the status code indicates an error (i.e., not in the
-     * 2xx range). It also attempts to extract a more detailed error message from
-     * the response body if available.
+     * the appropriate exception type based on the status code range:
+     * - 3xx: RedirectException (redirect responses)
+     * - 4xx: ClientException (client errors)
+     * - 5xx: ServerException (server errors)
+     * - Other unsuccessful responses: RuntimeException (invalid status codes)
      *
      * @since 0.1.0
      *
      * @param Response $response The HTTP response to check.
-     * @throws ResponseException If the response is not successful.
+     * @throws RedirectException If the response indicates a redirect (3xx).
+     * @throws ClientException If the response indicates a client error (4xx).
+     * @throws ServerException If the response indicates a server error (5xx).
+     * @throws \RuntimeException If the response has an invalid status code.
      */
     public static function throwIfNotSuccessful(Response $response): void
     {
@@ -33,35 +40,25 @@ class ResponseUtil
             return;
         }
 
-        $errorMessage = sprintf(
-            'Bad status code: %d.',
-            $response->getStatusCode()
-        );
+        $statusCode = $response->getStatusCode();
 
-        // Handle common error formats in API responses.
-        $data = $response->getData();
-        if (
-            is_array($data) &&
-            isset($data['error']) &&
-            is_array($data['error']) &&
-            isset($data['error']['message']) &&
-            is_string($data['error']['message'])
-        ) {
-            $errorMessage .= ' ' . $data['error']['message'];
-        } elseif (
-            is_array($data) &&
-            isset($data['error']) &&
-            is_string($data['error'])
-        ) {
-            $errorMessage .= ' ' . $data['error'];
-        } elseif (
-            is_array($data) &&
-            isset($data['message']) &&
-            is_string($data['message'])
-        ) {
-            $errorMessage .= ' ' . $data['message'];
+        // 3xx Redirect Responses
+        if ($statusCode >= 300 && $statusCode < 400) {
+            throw RedirectException::fromRedirectResponse($response);
         }
 
-        throw new ResponseException($errorMessage, $response->getStatusCode());
+        // 4xx Client Errors
+        if ($statusCode >= 400 && $statusCode < 500) {
+            throw ClientException::fromClientErrorResponse($response);
+        }
+
+        // 5xx Server Errors
+        if ($statusCode >= 500 && $statusCode < 600) {
+            throw ServerException::fromServerErrorResponse($response);
+        }
+
+        throw new \RuntimeException(
+            sprintf('Response returned invalid status code: %s', $response->getStatusCode())
+        );
     }
 }

@@ -6,7 +6,7 @@ This glossary defines common terms relevant for the PHP AI Client and related pr
 * **Candidate Count**: The number of different response options an LLM generates internally.
 * **Capability**: A specific skill, function, or type of task that an AI model can perform, e.g. text generation or image generation.
 * **Extender API**: The API used by developers that want to enable the use of additional _Providers_ or _Models_.
-* **Generative AI**: Overaching term describing AI models that generate content as requested in a prompt.
+* **Generative AI**: Overarching term describing AI models that generate content as requested in a prompt.
 * **Implementer API**: The API used by people that want to _implement_ AI features in their own software/products.
 * **MCP**: The "Model Context Protocol", a proposed standard for connecting AI assistants to the systems where data lives.
 * **Message**: A single message, either a user prompt, a model response, or a system prompt—optionally containing of multiple message parts.

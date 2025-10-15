@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
 use Generator;
-use InvalidArgumentException;
-use RuntimeException;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
@@ -27,7 +27,11 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
 /**
- * Base class for a text generation model for an OpenAI compatible provider.
+ * Base class for a text generation model for providers that implement OpenAI's API format.
+ *
+ * This abstract class is designed to work with any AI provider that offers an OpenAI-compatible
+ * API endpoint, including but not limited to Anthropic, Google, and other providers
+ * that have adopted OpenAI's API specification as a standard interface.
  *
  * @since 0.1.0
  *
@@ -568,25 +572,27 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         /** @var ResponseData $responseData */
         $responseData = $response->getData();
         if (!isset($responseData['choices']) || !$responseData['choices']) {
-            throw new RuntimeException(
-                'Unexpected API response: Missing the choices key.'
-            );
+            throw ResponseException::fromMissingData($this->providerMetadata()->getName(), 'choices');
         }
         if (!is_array($responseData['choices'])) {
-            throw new RuntimeException(
-                'Unexpected API response: The choices key must contain an array.'
+            throw ResponseException::fromInvalidData(
+                $this->providerMetadata()->getName(),
+                'choices',
+                'The value must be an array.'
             );
         }
 
         $candidates = [];
-        foreach ($responseData['choices'] as $choiceData) {
+        foreach ($responseData['choices'] as $index => $choiceData) {
             if (!is_array($choiceData) || array_is_list($choiceData)) {
-                throw new RuntimeException(
-                    'Unexpected API response: Each element in the choices key must be an associative array.'
+                throw ResponseException::fromInvalidData(
+                    $this->providerMetadata()->getName(),
+                    "choices[{$index}]",
+                    'The value must be an associative array.'
                 );
             }
 
-            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData);
+            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData, $index);
         }
 
         $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
@@ -623,29 +629,32 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      * @since 0.1.0
      *
      * @param ChoiceData $choiceData The choice data from the API response.
+     * @param int $index The index of the choice in the choices array.
      * @return Candidate The parsed candidate.
      * @throws RuntimeException If the choice data is invalid.
      */
-    protected function parseResponseChoiceToCandidate(array $choiceData): Candidate
+    protected function parseResponseChoiceToCandidate(array $choiceData, int $index): Candidate
     {
         if (
             !isset($choiceData['message']) ||
             !is_array($choiceData['message']) ||
             array_is_list($choiceData['message'])
         ) {
-            throw new RuntimeException(
-                'Unexpected API response: Each choice must contain a message key with an associative array.'
+            throw ResponseException::fromMissingData(
+                $this->providerMetadata()->getName(),
+                "choices[{$index}].message"
             );
         }
 
         if (!isset($choiceData['finish_reason']) || !is_string($choiceData['finish_reason'])) {
-            throw new RuntimeException(
-                'Unexpected API response: Each choice must contain a finish_reason key with a string value.'
+            throw ResponseException::fromMissingData(
+                $this->providerMetadata()->getName(),
+                "choices[{$index}].finish_reason"
             );
         }
 
         $messageData = $choiceData['message'];
-        $message = $this->parseResponseChoiceMessage($messageData);
+        $message = $this->parseResponseChoiceMessage($messageData, $index);
 
         switch ($choiceData['finish_reason']) {
             case 'stop':
@@ -661,11 +670,10 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 $finishReason = FinishReasonEnum::toolCalls();
                 break;
             default:
-                throw new RuntimeException(
-                    sprintf(
-                        'Unexpected API response: Invalid finish reason "%s".',
-                        $choiceData['finish_reason']
-                    )
+                throw ResponseException::fromInvalidData(
+                    $this->providerMetadata()->getName(),
+                    "choices[{$index}].finish_reason",
+                    sprintf('Invalid finish reason "%s".', $choiceData['finish_reason'])
                 );
         }
 
@@ -678,15 +686,16 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      * @since 0.1.0
      *
      * @param MessageData $messageData The message data from the API response.
+     * @param int $index The index of the choice in the choices array.
      * @return Message The parsed message.
      */
-    protected function parseResponseChoiceMessage(array $messageData): Message
+    protected function parseResponseChoiceMessage(array $messageData, int $index): Message
     {
         $role = isset($messageData['role']) && 'user' === $messageData['role']
             ? MessageRoleEnum::user()
             : MessageRoleEnum::model();
 
-        $parts = $this->parseResponseChoiceMessageParts($messageData);
+        $parts = $this->parseResponseChoiceMessageParts($messageData, $index);
 
         return new Message($role, $parts);
     }
@@ -697,9 +706,10 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      * @since 0.1.0
      *
      * @param MessageData $messageData The message data from the API response.
+     * @param int $index The index of the choice in the choices array.
      * @return MessagePart[] The parsed message parts.
      */
-    protected function parseResponseChoiceMessageParts(array $messageData): array
+    protected function parseResponseChoiceMessageParts(array $messageData, int $index): array
     {
         $parts = [];
 
@@ -712,11 +722,13 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
 
         if (isset($messageData['tool_calls']) && is_array($messageData['tool_calls'])) {
-            foreach ($messageData['tool_calls'] as $toolCallData) {
+            foreach ($messageData['tool_calls'] as $toolCallIndex => $toolCallData) {
                 $toolCallPart = $this->parseResponseChoiceMessageToolCallPart($toolCallData);
                 if (!$toolCallPart) {
-                    throw new RuntimeException(
-                        'Unexpected API response: The response includes a tool call of an unexpected type.'
+                    throw ResponseException::fromInvalidData(
+                        $this->providerMetadata()->getName(),
+                        "choices[{$index}].message.tool_calls[{$toolCallIndex}]",
+                        'The response includes a tool call of an unexpected type.'
                     );
                 }
                 $parts[] = $toolCallPart;
