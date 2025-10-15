@@ -58,7 +58,6 @@ class OptionEnumTest extends TestCase
             'OUTPUT_MEDIA_ASPECT_RATIO' => 'outputMediaAspectRatio',
             'OUTPUT_SPEECH_VOICE' => 'outputSpeechVoice',
             'CUSTOM_OPTIONS' => 'customOptions',
-            'REQUEST_OPTIONS' => 'requestOptions',
         ];
     }
 
@@ -113,7 +112,6 @@ class OptionEnumTest extends TestCase
         $this->assertInstanceOf(OptionEnum::class, OptionEnum::outputMediaOrientation());
         $this->assertInstanceOf(OptionEnum::class, OptionEnum::outputMediaAspectRatio());
         $this->assertInstanceOf(OptionEnum::class, OptionEnum::customOptions());
-        $this->assertInstanceOf(OptionEnum::class, OptionEnum::requestOptions());
     }
 
     /**
@@ -137,6 +135,5 @@ class OptionEnumTest extends TestCase
         $this->assertContains('outputMediaOrientation', $values);
         $this->assertContains('outputMediaAspectRatio', $values);
         $this->assertContains('customOptions', $values);
-        $this->assertContains('requestOptions', $values);
     }
 }
