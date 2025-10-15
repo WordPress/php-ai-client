@@ -794,7 +794,9 @@ This section describes the HTTP communication architecture that differs from the
 4. **PSR Compliance**: The transporter uses PSR-7 (HTTP messages), PSR-17 (HTTP factories), and PSR-18 (HTTP client) internally
 5. **No Direct Coupling**: The library remains decoupled from any specific HTTP client implementation
 6. **Provider Domain Location**: HTTP components are located within the Providers domain (`src/Providers/Http/`) as they are provider-specific infrastructure
-7. **Synchronous Only**: Currently supports only synchronous HTTP requests. Async support may be added in the future if needed
+7. **Per-request Transport Options**: Request-specific transport settings flow through a `RequestOptions` DTO, allowing callers to control timeouts and redirect handling on a per-request basis
+8. **Extensible Client Support**: HTTP clients can opt into receiving request options by implementing `ClientWithOptionsInterface`, and the transporter automatically bridges well-known client shapes such as Guzzle's `send($request, array $options)` signature
+9. **Synchronous Only**: Currently supports only synchronous HTTP requests. Async support may be added in the future if needed
 
 ### HTTP Communication Flow
 
@@ -802,18 +804,32 @@ This section describes the HTTP communication architecture that differs from the
 sequenceDiagram
     participant Model
     participant HttpTransporter
+    participant RequestOptions
     participant PSR17Factory
-    participant PSR18Client
-    
-    Model->>HttpTransporter: send(Request)
+    participant Client
+
+    Model->>HttpTransporter: send(Request, ?RequestOptions)
+    HttpTransporter-->>RequestOptions: buildOptions(Request)
     HttpTransporter->>PSR17Factory: createRequest(Request)
     PSR17Factory-->>HttpTransporter: PSR-7 Request
-    HttpTransporter->>PSR18Client: sendRequest(PSR-7 Request)
-    PSR18Client-->>HttpTransporter: PSR-7 Response
+    alt Client implements ClientWithOptionsInterface
+        HttpTransporter->>Client: sendRequestWithOptions(PSR-7 Request, RequestOptions)
+    else Client has Guzzle send signature
+        HttpTransporter->>Client: send(PSR-7 Request, guzzleOptions)
+    else Plain PSR-18 client
+        HttpTransporter->>Client: sendRequest(PSR-7 Request)
+    end
+    Client-->>HttpTransporter: PSR-7 Response
     HttpTransporter->>PSR17Factory: parseResponse(PSR-7 Response)
     PSR17Factory-->>HttpTransporter: Response
     HttpTransporter-->>Model: Response
 ```
+
+Whenever request options are present, the transporter enriches the PSR-18 call path: it translates the `RequestOptions` DTO into the client’s native format. Clients that implement `ClientWithOptionsInterface` receive the DTO directly, while Guzzle-style clients are detected through reflection and receive an options array (e.g., `timeout`, `connect_timeout`, `allow_redirects`).
+
+### ClientWithOptionsInterface
+
+`ClientWithOptionsInterface` is a lightweight extension point for HTTP clients that already support per-request configuration. By implementing it, a client (for example, a wrapper around Guzzle or the WordPress AI Client’s richer transporter) can accept a `RequestOptions` instance directly through `sendRequestWithOptions()`. The transporter prefers this pathway, falling back to Guzzle detection or plain PSR-18 `sendRequest()` when the interface is not implemented, keeping the core agnostic while still allowing rich integrations.
 
 
 ### Details: Class diagram for AI extenders
@@ -889,7 +905,10 @@ direction LR
 
     namespace AiClientNamespace.Providers.Http.Contracts {
         class HttpTransporterInterface {
-            +send(Request $request) Response
+            +send(Request $request, ?RequestOptions $options) Response
+        }
+        interface ClientWithOptionsInterface {
+            +sendRequestWithOptions(RequestInterface $request, RequestOptions $options) ResponseInterface
         }
         class RequestAuthenticationInterface {
             +authenticateRequest(Request $request) Request
@@ -912,6 +931,30 @@ direction LR
             +getHeaders() array< string, string[] >
             +getBody() ?string
             +getData() ?array< string, mixed >
+            +getOptions() ?RequestOptions
+            +setTimeout(?float $timeout) void
+            +setConnectTimeout(?float $timeout) void
+            +setAllowRedirects(bool $allowRedirects) void
+            +setMaxRedirects(?int $maxRedirects) void
+            +withHeader(string $name, string|list< string > $value) self
+            +withData(string|array< string, mixed > $data) self
+            +withOptions(?RequestOptions $options) self
+            +toArray() array< string, mixed >
+            +getJsonSchema() array< string, mixed >$
+            +fromArray(array< string, mixed > $array) self$
+            +fromPsrRequest(RequestInterface $psrRequest) self$
+        }
+        class RequestOptions {
+            +withTimeout(?float $timeout) self
+            +withConnectTimeout(?float $timeout) self
+            +withRedirects(?int $maxRedirects) self
+            +withoutRedirects() self
+            +withMaxRedirects(?int $maxRedirects) self
+            +getTimeout() ?float
+            +getConnectTimeout() ?float
+            +allowsRedirects() ?bool
+            +getMaxRedirects() ?int
+            +toArray() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
 
