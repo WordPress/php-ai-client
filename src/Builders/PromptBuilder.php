@@ -60,6 +60,11 @@ class PromptBuilder
     protected ?ModelInterface $model = null;
 
     /**
+     * @var list<ModelInterface|string> Preferred models to evaluate in order.
+     */
+    protected array $modelPreferences = [];
+
+    /**
      * @var string|null The provider ID or class name.
      */
     protected ?string $providerIdOrClassName = null;
@@ -211,6 +216,49 @@ class PromptBuilder
         $mergedConfigArray = array_merge($modelConfigArray, $builderConfigArray);
 
         $this->modelConfig = ModelConfig::fromArray($mergedConfigArray);
+
+        return $this;
+    }
+
+    /**
+     * Sets preferred models to evaluate in order.
+     *
+     * @since n.e.x.t
+     *
+     * @param mixed ...$preferredModels The preferred models as model IDs or instances.
+     * @return self
+     *
+     * @throws InvalidArgumentException When a preferred model has an invalid type or identifier.
+     */
+    public function usingModelPreference(...$preferredModels): self
+    {
+        if ($preferredModels === []) {
+            throw new InvalidArgumentException('At least one model preference must be provided.');
+        }
+
+        $normalizedPreferences = [];
+
+        foreach ($preferredModels as $preferredModel) {
+            if ($preferredModel instanceof ModelInterface) {
+                $normalizedPreferences[] = $preferredModel;
+                continue;
+            }
+
+            if (is_string($preferredModel)) {
+                $trimmed = trim($preferredModel);
+                if ($trimmed === '') {
+                    throw new InvalidArgumentException('Model preference identifiers cannot be empty.');
+                }
+                $normalizedPreferences[] = $trimmed;
+                continue;
+            }
+
+            throw new InvalidArgumentException(
+                'Model preferences must be model identifiers or instances of ModelInterface.'
+            );
+        }
+
+        $this->modelPreferences = $normalizedPreferences;
 
         return $this;
     }
@@ -1025,6 +1073,40 @@ class PromptBuilder
     }
 
     /**
+     * Gets the first preferred model that can be instantiated.
+     *
+     * @since n.e.x.t
+     *
+     * @return ModelInterface|null The instantiated preferred model, or null if none found.
+     */
+    private function getAvailablePreferredModel(): ?ModelInterface
+    {
+        if ($this->modelPreferences === []) {
+            return null;
+        }
+
+        foreach ($this->modelPreferences as $preferredModel) {
+            if ($preferredModel instanceof ModelInterface) {
+                return $preferredModel;
+            }
+
+            $providerIds = $this->providerIdOrClassName !== null
+                ? [$this->providerIdOrClassName]
+                : $this->registry->getRegisteredProviderIds();
+
+            foreach ($providerIds as $providerId) {
+                try {
+                    return $this->registry->getProviderModel($providerId, $preferredModel);
+                } catch (InvalidArgumentException $exception) {
+                    continue;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Gets the model to use for generation.
      *
      * If a model has been explicitly set, validates it meets requirements and returns it.
@@ -1040,11 +1122,13 @@ class PromptBuilder
     {
         $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
 
-        // If a model has been explicitly set, return it
-        if ($this->model !== null) {
-            $this->model->setConfig($this->modelConfig);
-            $this->registry->bindModelDependencies($this->model);
-            return $this->model;
+        $explicitModel = $this->model ?? $this->getAvailablePreferredModel();
+
+        if ($explicitModel !== null) {
+            $explicitModel->setConfig($this->modelConfig);
+            $this->registry->bindModelDependencies($explicitModel);
+            $this->model = $explicitModel;
+            return $explicitModel;
         }
 
         // Find a suitable model based on requirements
