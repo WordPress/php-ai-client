@@ -620,13 +620,14 @@ class PromptBuilderTest extends TestCase
         $providerMetadata = $model->providerMetadata();
 
         $this->registry->expects($this->once())
-            ->method('bindModelDependencies')
-            ->with($model);
-
-        $this->registry->expects($this->once())
             ->method('findModelsMetadataForSupport')
             ->with($this->isInstanceOf(ModelRequirements::class))
             ->willReturn([new ProviderModelsMetadata($providerMetadata, [$metadata])]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with($providerMetadata->getId(), 'preferred-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
 
         $this->registry->expects($this->never())
             ->method('findProviderModelsMetadataForSupport');
@@ -686,7 +687,7 @@ class PromptBuilderTest extends TestCase
             ->method('findProviderModelsMetadataForSupport');
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
-        $builder->usingModelPreference(['preferred-provider', 'preferred-model']);
+        $builder->usingModelPreference(['preferred-model', 'preferred-provider']);
 
         $actualResult = $builder->generateTextResult();
 
@@ -706,7 +707,7 @@ class PromptBuilderTest extends TestCase
         $builder = new PromptBuilder($this->registry, 'Test prompt');
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model preference tuple must contain provider ID and model identifier.');
+        $this->expectExceptionMessage('Model preference provider identifiers cannot be empty.');
 
         $builder->usingModelPreference(['mock', $model]);
     }
@@ -839,7 +840,7 @@ class PromptBuilderTest extends TestCase
         $builder = new PromptBuilder($this->registry);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model preference tuple must contain provider ID and model identifier.');
+        $this->expectExceptionMessage('Model preference tuple must contain model identifier and provider ID.');
 
         $builder->usingModelPreference(['provider' => 'test', 'model' => 'id']);
     }

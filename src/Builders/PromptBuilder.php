@@ -61,9 +61,10 @@ class PromptBuilder
     protected ?ModelInterface $model = null;
 
     /**
-     * @var list<ModelInterface|string|array{0:string,1:string}> Preferred models to evaluate in order.
+     * @var array<string, string|array{0:string,1:string}> Preferred model map keyed by preference key with
+     * provider-model mappings.
      */
-    protected array $modelPreference = [];
+    protected array $modelPreferenceMap = [];
 
     /**
      * @var string|null The provider ID or class name.
@@ -227,7 +228,7 @@ class PromptBuilder
      * @since n.e.x.t
      *
      * @param string|ModelInterface|array{0:string,1:string} ...$preferredModels The preferred models as model IDs,
-     * model instances, or [provider ID, model ID] tuples.
+     * model instances, or [model ID, provider ID] tuples.
      * @return self
      *
      * @throws InvalidArgumentException When a preferred model has an invalid type or identifier.
@@ -238,68 +239,58 @@ class PromptBuilder
             throw new InvalidArgumentException('At least one model preference must be provided.');
         }
 
-        $normalizedModels = [];
+        $preferenceMap = [];
 
         foreach ($preferredModels as $preferredModel) {
             if (is_array($preferredModel)) {
+                // [model identifier, provider ID] tuple
                 if (!array_is_list($preferredModel) || count($preferredModel) !== 2) {
                     throw new InvalidArgumentException(
-                        'Model preference tuple must contain provider ID and model identifier.'
+                        'Model preference tuple must contain model identifier and provider ID.'
                     );
                 }
 
-                [$providerId, $modelIdentifier] = $preferredModel;
+                [$modelIdentifier, $providerId] = $preferredModel;
 
-                if (!is_string($providerId)) {
-                    throw new InvalidArgumentException('Model preference provider identifiers cannot be empty.');
-                }
-                $providerId = trim($providerId);
-                if ($providerId === '') {
-                    throw new InvalidArgumentException('Model preference provider identifiers cannot be empty.');
-                }
+                $modelId = $this->normalizePreferenceIdentifier($modelIdentifier);
+                $providerId = $this->normalizePreferenceIdentifier(
+                    $providerId,
+                    'Model preference provider identifiers cannot be empty.'
+                );
 
-                if (!is_string($modelIdentifier)) {
-                    throw new InvalidArgumentException(
-                        'Model preference tuple must contain provider ID and model identifier.'
-                    );
-                }
-                $modelIdentifier = trim($modelIdentifier);
-                if ($modelIdentifier === '') {
-                    throw new InvalidArgumentException('Model preference identifiers cannot be empty.');
-                }
+                $key = $this->createProviderModelPreferenceKey($providerId, $modelId);
+                $preferenceMap[$key] = [$modelId, $providerId];
 
-                $normalizedModels[] = [$providerId, $modelIdentifier];
-                continue;
+            } elseif ($preferredModel instanceof ModelInterface) {
+                // Model instance
+                $modelId = $preferredModel->metadata()->getId();
+                $providerId = $preferredModel->providerMetadata()->getId();
+                $providerModelKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
+                $preferenceMap[$providerModelKey] = [$modelId, $providerId];
+
+            } elseif (is_string($preferredModel)) {
+                // Model ID
+                $modelId = $this->normalizePreferenceIdentifier($preferredModel);
+                $modelKey = $this->createModelPreferenceKey($modelId);
+                $preferenceMap[$modelKey] = $modelId;
+
+            } else {
+                // Invalid type
+                throw new InvalidArgumentException(
+                    'Model preferences must be model identifiers, instances of ModelInterface, or provider/model tuples.'
+                );
             }
-
-            if ($preferredModel instanceof ModelInterface) {
-                $normalizedModels[] = $preferredModel;
-                continue;
-            }
-
-            if (is_string($preferredModel)) {
-                $trimmed = trim($preferredModel);
-                if ($trimmed === '') {
-                    throw new InvalidArgumentException('Model preference identifiers cannot be empty.');
-                }
-                $normalizedModels[] = $trimmed;
-                continue;
-            }
-
-            throw new InvalidArgumentException(
-                'Model preferences must be model identifiers, instances of ModelInterface, or provider/model tuples.'
-            );
         }
 
-        $this->modelPreference = $normalizedModels;
+        $this->modelPreferenceMap = $preferenceMap;
 
         return $this;
     }
 
     /**
-     * Sets the model configuration.
-     *
-     * Merges the provided configuration with the builder's configuration,
+         * Sets the model configuration.
+         *
+         * Merges the provided configuration with the builder's configuration,
      * with builder configuration taking precedence.
      *
      * @since 0.1.0
@@ -1229,52 +1220,79 @@ class PromptBuilder
      */
     private function findModelByPreference(array $candidateModels): ?ModelInterface
     {
+        if ($this->modelPreferenceMap === []) {
+            return null;
+        }
+
         foreach ($candidateModels as [$providerId, $modelMetadata]) {
-            foreach ($this->modelPreference as $preferenceIndex => $preferredModel) {
-                if (is_array($preferredModel)) {
-                    [$preferredProviderId, $preferredModelId] = $preferredModel;
-                    if (
-                        $providerId !== $preferredProviderId ||
-                        $modelMetadata->getId() !== $preferredModelId
-                    ) {
-                        continue;
-                    }
+            $modelId = $modelMetadata->getId();
 
-                    return $this->registry->getProviderModel(
-                        $providerId,
-                        $modelMetadata->getId(),
-                        $this->modelConfig
-                    );
-                } elseif ($preferredModel instanceof ModelInterface) {
-                    $preferredProviderId = $preferredModel->providerMetadata()->getId();
-                    $preferredModelId = $preferredModel->metadata()->getId();
+            $providerModelKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
+            if (isset($this->modelPreferenceMap[$providerModelKey])) {
+                return $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
+            }
 
-                    if (
-                        $providerId !== $preferredProviderId ||
-                        $modelMetadata->getId() !== $preferredModelId
-                    ) {
-                        continue;
-                    }
-
-                    $preferredModel->setConfig($this->modelConfig);
-                    $this->registry->bindModelDependencies($preferredModel);
-
-                    return $preferredModel;
-                } else {
-                    if ($modelMetadata->getId() !== $preferredModel) {
-                        continue;
-                    }
-
-                    return $this->registry->getProviderModel(
-                        $providerId,
-                        $modelMetadata->getId(),
-                        $this->modelConfig
-                    );
-                }
+            $modelKey = $this->createModelPreferenceKey($modelId);
+            if (isset($this->modelPreferenceMap[$modelKey])) {
+                return $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
             }
         }
 
         return null;
+    }
+
+    /**
+     * Normalizes and validates a preference identifier string.
+     *
+     * @since n.e.x.t
+     *
+     * @param mixed $value The value to normalize.
+     * @param string $emptyMessage The message for empty or invalid values.
+     * @return string The normalized identifier.
+     *
+     * @throws InvalidArgumentException If the value is not a non-empty string.
+     */
+    private function normalizePreferenceIdentifier(
+        $value,
+        string $emptyMessage = 'Model preference identifiers cannot be empty.'
+    ): string {
+        if (!is_string($value)) {
+            throw new InvalidArgumentException($emptyMessage);
+        }
+
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            throw new InvalidArgumentException($emptyMessage);
+        }
+
+        return $trimmed;
+    }
+
+    /**
+     * Creates a preference key for a provider/model combination.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $providerId The provider identifier.
+     * @param string $modelId The model identifier.
+     * @return string The generated preference key.
+     */
+    private function createProviderModelPreferenceKey(string $providerId, string $modelId): string
+    {
+        return 'providerModel::' . $providerId . '::' . $modelId;
+    }
+
+    /**
+     * Creates a preference key for a model identifier.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $modelId The model identifier.
+     * @return string The generated preference key.
+     */
+    private function createModelPreferenceKey(string $modelId): string
+    {
+        return 'model::' . $modelId;
     }
 
     /**
