@@ -943,7 +943,6 @@ direction LR
         class RequestOptions {
             +setTimeout(?float $timeout) void
             +setConnectTimeout(?float $timeout) void
-            +setAllowRedirects(bool $allowRedirects) void
             +setMaxRedirects(?int $maxRedirects) void
             +getTimeout() ?float
             +getConnectTimeout() ?float

@@ -181,7 +181,6 @@ class RequestTest extends TestCase
     {
         $options = new RequestOptions();
         $options->setTimeout(1.0);
-        $options->setAllowRedirects(true);
         $options->setMaxRedirects(2);
 
         $request = new Request(
@@ -199,7 +198,7 @@ class RequestTest extends TestCase
         $this->assertSame(['application/json'], $array[Request::KEY_HEADERS]['Content-Type']);
         $this->assertSame('{"key":"value"}', $array[Request::KEY_BODY]);
         $this->assertSame(
-            ['timeout' => 1.0, 'allowRedirects' => true, 'maxRedirects' => 2],
+            ['timeout' => 1.0, 'maxRedirects' => 2],
             $array[Request::KEY_OPTIONS]
         );
     }
@@ -218,7 +217,6 @@ class RequestTest extends TestCase
             Request::KEY_BODY => 'payload',
             Request::KEY_OPTIONS => [
                 RequestOptions::KEY_TIMEOUT => 4.0,
-                RequestOptions::KEY_ALLOW_REDIRECTS => true,
                 RequestOptions::KEY_MAX_REDIRECTS => 1,
             ],
         ];

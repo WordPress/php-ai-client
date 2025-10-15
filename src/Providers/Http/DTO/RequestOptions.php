@@ -17,7 +17,6 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
  * @phpstan-type RequestOptionsArrayShape array{
  *     timeout?: float|null,
  *     connectTimeout?: float|null,
- *     allowRedirects?: bool|null,
  *     maxRedirects?: int|null
  * }
  *
@@ -27,7 +26,6 @@ class RequestOptions extends AbstractDataTransferObject
 {
     public const KEY_TIMEOUT = 'timeout';
     public const KEY_CONNECT_TIMEOUT = 'connectTimeout';
-    public const KEY_ALLOW_REDIRECTS = 'allowRedirects';
     public const KEY_MAX_REDIRECTS = 'maxRedirects';
 
     /**
@@ -41,12 +39,7 @@ class RequestOptions extends AbstractDataTransferObject
     protected ?float $connectTimeout = null;
 
     /**
-     * @var bool|null Whether HTTP redirects should be automatically followed.
-     */
-    protected ?bool $allowRedirects = null;
-
-    /**
-     * @var int|null Maximum number of redirects to follow when enabled.
+     * @var int|null Maximum number of redirects to follow. 0 disables redirects, null is unspecified.
      */
     protected ?int $maxRedirects = null;
 
@@ -83,42 +76,27 @@ class RequestOptions extends AbstractDataTransferObject
     }
 
     /**
-     * Sets whether redirects should be automatically followed.
-     *
-     * @since n.e.x.t
-     *
-     * @param bool $allowRedirects Whether redirects should be followed.
-     * @return void
-     */
-    public function setAllowRedirects(bool $allowRedirects): void
-    {
-        $this->allowRedirects = $allowRedirects;
-
-        // Clear maxRedirects when disabling redirects
-        if ($allowRedirects === false) {
-            $this->maxRedirects = null;
-        }
-    }
-
-    /**
      * Sets the maximum number of redirects to follow.
      *
+     * Set to 0 to disable redirects, null for unspecified, or a positive integer
+     * to enable redirects with a maximum count.
+     *
      * @since n.e.x.t
      *
-     * @param int|null $maxRedirects Maximum redirects to follow when enabled.
+     * @param int|null $maxRedirects Maximum redirects to follow, or 0 to disable, or null for unspecified.
      * @return void
      *
-     * @throws InvalidArgumentException When redirect count is invalid.
+     * @throws InvalidArgumentException When redirect count is negative.
      */
     public function setMaxRedirects(?int $maxRedirects): void
     {
-        $this->validateRedirectLimit($this->allowRedirects, $maxRedirects);
-
-        if ($this->allowRedirects === true) {
-            $this->maxRedirects = $maxRedirects;
-        } else {
-            $this->maxRedirects = null;
+        if ($maxRedirects !== null && $maxRedirects < 0) {
+            throw new InvalidArgumentException(
+                'Request option "maxRedirects" must be greater than or equal to 0.'
+            );
         }
+
+        $this->maxRedirects = $maxRedirects;
     }
 
     /**
@@ -150,11 +128,17 @@ class RequestOptions extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return bool|null True when redirects are allowed, false when disabled, null when unspecified.
+     * @return bool|null True when redirects are allowed (maxRedirects > 0),
+     *                   false when disabled (maxRedirects = 0),
+     *                   null when unspecified (maxRedirects = null).
      */
     public function allowsRedirects(): ?bool
     {
-        return $this->allowRedirects;
+        if ($this->maxRedirects === null) {
+            return null;
+        }
+
+        return $this->maxRedirects > 0;
     }
 
     /**
@@ -188,10 +172,6 @@ class RequestOptions extends AbstractDataTransferObject
             $data[self::KEY_CONNECT_TIMEOUT] = $this->connectTimeout;
         }
 
-        if ($this->allowRedirects !== null) {
-            $data[self::KEY_ALLOW_REDIRECTS] = $this->allowRedirects;
-        }
-
         if ($this->maxRedirects !== null) {
             $data[self::KEY_MAX_REDIRECTS] = $this->maxRedirects;
         }
@@ -214,10 +194,6 @@ class RequestOptions extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_CONNECT_TIMEOUT])) {
             $instance->setConnectTimeout((float) $array[self::KEY_CONNECT_TIMEOUT]);
-        }
-
-        if (isset($array[self::KEY_ALLOW_REDIRECTS])) {
-            $instance->setAllowRedirects((bool) $array[self::KEY_ALLOW_REDIRECTS]);
         }
 
         if (isset($array[self::KEY_MAX_REDIRECTS])) {
@@ -247,14 +223,10 @@ class RequestOptions extends AbstractDataTransferObject
                     'minimum' => 0,
                     'description' => 'Maximum duration in seconds to wait for the initial connection.',
                 ],
-                self::KEY_ALLOW_REDIRECTS => [
-                    'type' => ['boolean', 'null'],
-                    'description' => 'Whether HTTP redirects should be automatically followed.',
-                ],
                 self::KEY_MAX_REDIRECTS => [
                     'type' => ['integer', 'null'],
                     'minimum' => 0,
-                    'description' => 'Maximum number of redirects to follow when enabled.',
+                    'description' => 'Maximum redirects to follow. 0 disables, null is unspecified.',
                 ],
             ],
             'additionalProperties' => false,
@@ -276,35 +248,6 @@ class RequestOptions extends AbstractDataTransferObject
         if ($value !== null && $value < 0) {
             throw new InvalidArgumentException(
                 sprintf('Request option "%s" must be greater than or equal to 0.', $fieldName)
-            );
-        }
-    }
-
-    /**
-     * Validates redirect configuration.
-     *
-     * @since n.e.x.t
-     *
-     * @param bool|null $allowRedirects Whether redirects are enabled.
-     * @param int|null $maxRedirects Maximum redirects.
-     *
-     * @throws InvalidArgumentException When redirect count is invalid.
-     */
-    private function validateRedirectLimit(?bool $allowRedirects, ?int $maxRedirects): void
-    {
-        if ($allowRedirects === true) {
-            if ($maxRedirects !== null && $maxRedirects < 0) {
-                throw new InvalidArgumentException(
-                    'Request option "maxRedirects" must be greater than or equal to 0 when redirects are enabled.'
-                );
-            }
-
-            return;
-        }
-
-        if ($maxRedirects !== null) {
-            throw new InvalidArgumentException(
-                'Request option "maxRedirects" can only be set when redirects are enabled.'
             );
         }
     }

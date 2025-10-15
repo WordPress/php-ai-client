@@ -47,10 +47,9 @@ class RequestOptionsTest extends TestCase
      *
      * @return void
      */
-    public function testSetAllowRedirectsEnablesRedirects(): void
+    public function testSetMaxRedirectsEnablesRedirects(): void
     {
         $options = new RequestOptions();
-        $options->setAllowRedirects(true);
         $options->setMaxRedirects(3);
 
         $this->assertTrue($options->allowsRedirects());
@@ -58,44 +57,41 @@ class RequestOptionsTest extends TestCase
     }
 
     /**
-     * Tests disabling redirects clears the maximum.
+     * Tests disabling redirects by setting maxRedirects to 0.
      *
      * @return void
      */
-    public function testSetAllowRedirectsFalseClearsRedirectLimit(): void
+    public function testSetMaxRedirectsToZeroDisablesRedirects(): void
     {
         $options = new RequestOptions();
-        $options->setAllowRedirects(true);
-        $options->setMaxRedirects(4);
-        $options->setAllowRedirects(false);
+        $options->setMaxRedirects(0);
 
         $this->assertFalse($options->allowsRedirects());
-        $this->assertNull($options->getMaxRedirects());
+        $this->assertSame(0, $options->getMaxRedirects());
     }
 
     /**
-     * Tests validation when attempting to set a redirect limit while redirects are not enabled.
+     * Tests validation when attempting to set a negative redirect limit.
      *
      * @return void
      */
-    public function testSetMaxRedirectsThrowsWhenRedirectsDisabled(): void
+    public function testSetMaxRedirectsThrowsWhenNegative(): void
     {
         $options = new RequestOptions();
 
         $this->expectException(InvalidArgumentException::class);
-        $options->setMaxRedirects(2);
+        $options->setMaxRedirects(-1);
     }
 
     /**
-     * Tests that the JSON schema reflects nullable redirect flag.
+     * Tests that the JSON schema reflects nullable maxRedirects.
      *
      * @return void
      */
-    public function testGetJsonSchemaDefinesNullableRedirectFlag(): void
+    public function testGetJsonSchemaDefinesNullableMaxRedirects(): void
     {
         $schema = RequestOptions::getJsonSchema();
 
-        $this->assertSame(['boolean', 'null'], $schema['properties'][RequestOptions::KEY_ALLOW_REDIRECTS]['type']);
         $this->assertSame(['integer', 'null'], $schema['properties'][RequestOptions::KEY_MAX_REDIRECTS]['type']);
     }
 }
