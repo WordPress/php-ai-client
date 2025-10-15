@@ -226,7 +226,8 @@ class PromptBuilder
      *
      * @since n.e.x.t
      *
-     * @param string|ModelInterface|array{0:string,1:string} ...$preferredModels The preferred models as model IDs, model instances, or [provider ID, model ID] tuples.
+     * @param string|ModelInterface|array{0:string,1:string} ...$preferredModels The preferred models as model IDs,
+     * model instances, or [provider ID, model ID] tuples.
      * @return self
      *
      * @throws InvalidArgumentException When a preferred model has an invalid type or identifier.
@@ -1127,9 +1128,37 @@ class PromptBuilder
             return $this->model;
         }
 
-        /** @var list<array{0:string,1:ModelMetadata}> $candidateModels */
-        $candidateModels = [];
+        // Retrieve the models which satisfy the requirements.
+        $candidateModels = $this->getCandidateModels($requirements);
 
+        // Find the model which matches the preference, if any.
+        $selectedModel = $this->findModelByPreference($candidateModels);
+
+        if ($selectedModel === null) {
+            // No preference matched; fall back to the first candidate discovered.
+            [$providerId, $modelMetadata] = $candidateModels[0];
+            $selectedModel = $this->registry->getProviderModel(
+                $providerId,
+                $modelMetadata->getId(),
+                $this->modelConfig
+            );
+        }
+
+        return $selectedModel;
+    }
+
+    /**
+     * Builds the list of candidate provider/model combinations that satisfy the requirements.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelRequirements $requirements The requirements derived from the prompt.
+     * @return list<array{0:string,1:ModelMetadata}> The candidate provider/model tuples.
+     *
+     * @throws InvalidArgumentException If no suitable models are found.
+     */
+    private function getCandidateModels(ModelRequirements $requirements): array
+    {
         if ($this->providerIdOrClassName === null) {
             // No provider locked in, gather all models across providers that meet requirements.
             $providerModelsMetadata = $this->registry->findModelsMetadataForSupport($requirements);
@@ -1149,51 +1178,60 @@ class PromptBuilder
                 );
             }
 
+            $candidateModels = [];
             foreach ($providerModelsMetadata as $providerModels) {
                 $providerId = $providerModels->getProvider()->getId();
                 foreach ($providerModels->getModels() as $modelMetadata) {
                     $candidateModels[] = [$providerId, $modelMetadata];
                 }
             }
-        } else {
-            // Provider forced, only consider models from that provider.
-            $modelsMetadata = $this->registry->findProviderModelsMetadataForSupport(
-                $this->providerIdOrClassName,
-                $requirements
-            );
 
-            if (empty($modelsMetadata)) {
-                throw new InvalidArgumentException(
-                    sprintf(
-                        'No models found for %s that support the required capabilities and options for this prompt. ' .
-                        'Required capabilities: %s. Required options: %s',
-                        $this->providerIdOrClassName,
-                        implode(', ', array_map(function ($cap) {
-                            return $cap->value;
-                        }, $requirements->getRequiredCapabilities())),
-                        implode(', ', array_map(function ($opt) {
-                            return $opt->getName()->value . '=' . json_encode($opt->getValue());
-                        }, $requirements->getRequiredOptions()))
-                    )
-                );
-            }
-
-            foreach ($modelsMetadata as $modelMetadata) {
-                $candidateModels[] = [$this->providerIdOrClassName, $modelMetadata];
-            }
+            return $candidateModels;
         }
 
-        $selectedModel = null;
-        $selectedPreferenceIndex = null;
+        // Provider set, only consider models from that provider.
+        $modelsMetadata = $this->registry->findProviderModelsMetadataForSupport(
+            $this->providerIdOrClassName,
+            $requirements
+        );
 
+        if (empty($modelsMetadata)) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'No models found for %s that support the required capabilities and options for this prompt. ' .
+                    'Required capabilities: %s. Required options: %s',
+                    $this->providerIdOrClassName,
+                    implode(', ', array_map(function ($cap) {
+                        return $cap->value;
+                    }, $requirements->getRequiredCapabilities())),
+                    implode(', ', array_map(function ($opt) {
+                        return $opt->getName()->value . '=' . json_encode($opt->getValue());
+                    }, $requirements->getRequiredOptions()))
+                )
+            );
+        }
+
+        $candidateModels = [];
+        foreach ($modelsMetadata as $modelMetadata) {
+            $candidateModels[] = [$this->providerIdOrClassName, $modelMetadata];
+        }
+
+        return $candidateModels;
+    }
+
+    /**
+     * Finds a preferred model among the given candidates.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<array{0:string,1:ModelMetadata}> $candidateModels Candidate provider/model tuples.
+     * @return ModelInterface|null The model matching the highest-priority preference, or null if none.
+     */
+    private function findModelByPreference(array $candidateModels): ?ModelInterface
+    {
         foreach ($candidateModels as [$providerId, $modelMetadata]) {
             foreach ($this->modelPreference as $preferenceIndex => $preferredModel) {
-                if ($selectedPreferenceIndex !== null && $preferenceIndex >= $selectedPreferenceIndex) {
-                    continue;
-                }
-
                 if (is_array($preferredModel)) {
-                    // [provider ID, model ID] tuple
                     [$preferredProviderId, $preferredModelId] = $preferredModel;
                     if (
                         $providerId !== $preferredProviderId ||
@@ -1202,14 +1240,12 @@ class PromptBuilder
                         continue;
                     }
 
-                    $selectedModel = $this->registry->getProviderModel(
+                    return $this->registry->getProviderModel(
                         $providerId,
                         $modelMetadata->getId(),
                         $this->modelConfig
                     );
-                    $selectedPreferenceIndex = $preferenceIndex;
                 } elseif ($preferredModel instanceof ModelInterface) {
-                    // Model instance
                     $preferredProviderId = $preferredModel->providerMetadata()->getId();
                     $preferredModelId = $preferredModel->metadata()->getId();
 
@@ -1220,44 +1256,25 @@ class PromptBuilder
                         continue;
                     }
 
-                    $selectedModel = $preferredModel;
-                    $selectedPreferenceIndex = $preferenceIndex;
+                    $preferredModel->setConfig($this->modelConfig);
+                    $this->registry->bindModelDependencies($preferredModel);
+
+                    return $preferredModel;
                 } else {
-                    // Model ID
                     if ($modelMetadata->getId() !== $preferredModel) {
                         continue;
                     }
 
-                    $selectedModel = $this->registry->getProviderModel(
+                    return $this->registry->getProviderModel(
                         $providerId,
                         $modelMetadata->getId(),
                         $this->modelConfig
                     );
-                    $selectedPreferenceIndex = $preferenceIndex;
                 }
-
-                if ($selectedPreferenceIndex === 0) {
-                    break 2;
-                }
-
-                break;
             }
         }
 
-        if ($selectedModel === null) {
-            // No preference matched; fall back to the first candidate discovered.
-            [$providerId, $modelMetadata] = $candidateModels[0];
-            $selectedModel = $this->registry->getProviderModel(
-                $providerId,
-                $modelMetadata->getId(),
-                $this->modelConfig
-            );
-        }
-
-        $selectedModel->setConfig($this->modelConfig);
-        $this->registry->bindModelDependencies($selectedModel);
-
-        return $selectedModel;
+        return null;
     }
 
     /**

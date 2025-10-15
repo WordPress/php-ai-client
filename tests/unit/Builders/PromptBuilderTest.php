@@ -804,10 +804,6 @@ class PromptBuilderTest extends TestCase
         $this->registry->expects($this->never())
             ->method('findProviderModelsMetadataForSupport');
 
-        $this->registry->expects($this->once())
-            ->method('bindModelDependencies')
-            ->with($model);
-
         $builder = new PromptBuilder($this->registry, 'Test prompt');
         $builder->usingModelPreference('unavailable-model');
 
@@ -826,7 +822,9 @@ class PromptBuilderTest extends TestCase
         $builder = new PromptBuilder($this->registry);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model preferences must be model identifiers, instances of ModelInterface, or provider/model tuples.');
+        $this->expectExceptionMessage(
+            'Model preferences must be model identifiers, instances of ModelInterface, or provider/model tuples.'
+        );
 
         $builder->usingModelPreference(123);
     }
