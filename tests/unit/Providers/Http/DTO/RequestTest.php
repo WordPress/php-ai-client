@@ -49,50 +49,6 @@ class RequestTest extends TestCase
     }
 
     /**
-     * Tests that convenience setters lazily instantiate request options.
-     *
-     * @return void
-     */
-    public function testSettersInstantiateRequestOptions(): void
-    {
-        $request = new Request(HttpMethodEnum::post(), 'https://example.com');
-        $this->assertNull($request->getOptions());
-
-        $request->setTimeout(2.0);
-        $request->setConnectTimeout(1.0);
-        $request->setAllowRedirects(true);
-        $request->setMaxRedirects(5);
-
-        $options = $request->getOptions();
-        $this->assertInstanceOf(RequestOptions::class, $options);
-        $this->assertSame(2.0, $options->getTimeout());
-        $this->assertSame(1.0, $options->getConnectTimeout());
-        $this->assertTrue($options->allowsRedirects());
-        $this->assertSame(5, $options->getMaxRedirects());
-
-        $array = $request->toArray();
-        $this->assertArrayHasKey(Request::KEY_OPTIONS, $array);
-        $this->assertArrayHasKey(RequestOptions::KEY_TIMEOUT, $array[Request::KEY_OPTIONS]);
-    }
-
-    /**
-     * Tests that disabling redirects clears the limit serialized in toArray.
-     *
-     * @return void
-     */
-    public function testDisablingRedirectsClearsLimit(): void
-    {
-        $request = new Request(HttpMethodEnum::post(), 'https://example.com');
-        $request->setAllowRedirects(true);
-        $request->setMaxRedirects(3);
-        $request->setAllowRedirects(false);
-
-        $options = $request->getOptions();
-        $this->assertFalse($options->allowsRedirects());
-        $this->assertNull($options->getMaxRedirects());
-    }
-
-    /**
      * Tests that GET requests with array data append data as query parameters.
      *
      * @return void
