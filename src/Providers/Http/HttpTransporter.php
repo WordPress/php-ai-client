@@ -129,35 +129,12 @@ class HttpTransporter implements HttpTransporterInterface
         }
 
         // Both exist, merge them with parameter options taking precedence
-        $merged = new RequestOptions();
+        $merged = array_merge(
+            $requestOptions->toArray(),
+            $parameterOptions->toArray()
+        );
 
-        // Start with request options (lower precedence)
-        if ($requestOptions->getTimeout() !== null) {
-            $merged->setTimeout($requestOptions->getTimeout());
-        }
-
-        if ($requestOptions->getConnectTimeout() !== null) {
-            $merged->setConnectTimeout($requestOptions->getConnectTimeout());
-        }
-
-        if ($requestOptions->getMaxRedirects() !== null) {
-            $merged->setMaxRedirects($requestOptions->getMaxRedirects());
-        }
-
-        // Override with parameter options (higher precedence)
-        if ($parameterOptions->getTimeout() !== null) {
-            $merged->setTimeout($parameterOptions->getTimeout());
-        }
-
-        if ($parameterOptions->getConnectTimeout() !== null) {
-            $merged->setConnectTimeout($parameterOptions->getConnectTimeout());
-        }
-
-        if ($parameterOptions->getMaxRedirects() !== null) {
-            $merged->setMaxRedirects($parameterOptions->getMaxRedirects());
-        }
-
-        return $merged;
+        return RequestOptions::fromArray($merged);
     }
 
     /**
