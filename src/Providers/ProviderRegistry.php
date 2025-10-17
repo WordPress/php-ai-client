@@ -160,6 +160,37 @@ class ProviderRegistry implements WithHttpTransporterInterface
     }
 
     /**
+     * Gets the provider ID for a registered provider.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
+     * @return string The provider ID.
+     * @throws InvalidArgumentException If the provider is not registered.
+     */
+    public function getProviderId(string $idOrClassName): string
+    {
+        // If it's already an ID, return it
+        if (isset($this->providerClassNames[$idOrClassName])) {
+            return $idOrClassName;
+        }
+
+        // If it's a class name, find its ID
+        if (isset($this->registeredClassNames[$idOrClassName])) {
+            foreach ($this->providerClassNames as $id => $className) {
+                if ($className === $idOrClassName) {
+                    return $id;
+                }
+            }
+        }
+
+        // Not found
+        throw new InvalidArgumentException(
+            sprintf('Provider not registered: %s', $idOrClassName)
+        );
+    }
+
+    /**
      * Checks if a provider is properly configured.
      *
      * @since 0.1.0

@@ -18,6 +18,7 @@ use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
@@ -59,6 +60,25 @@ class PromptBuilderTest extends TestCase
     private function createTestProviderMetadata(): ProviderMetadata
     {
         return new ProviderMetadata('test-provider', 'Test Provider', ProviderTypeEnum::cloud());
+    }
+
+    /**
+     * Creates text model metadata supporting any input modalities.
+     *
+     * @param string $id The model identifier.
+     * @return ModelMetadata
+     */
+    private function createTextModelMetadataWithInputSupport(string $id): ModelMetadata
+    {
+        return new ModelMetadata(
+            $id,
+            'Test Text Model',
+            [CapabilityEnum::textGeneration()],
+            [
+                new SupportedOption(OptionEnum::inputModalities()),
+                new SupportedOption(OptionEnum::outputModalities()),
+            ]
+        );
     }
 
     /**
@@ -585,6 +605,367 @@ class PromptBuilderTest extends TestCase
         /** @var ModelInterface $actualModel */
         $actualModel = $modelProperty->getValue($builder);
         $this->assertSame($model, $actualModel);
+    }
+
+    /**
+     * Tests usingModelPreference selects provided model instance when requirements are met.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithModelInstance(): void
+    {
+        $result = $this->createTestResult('Preferred model result');
+        $metadata = $this->createTextModelMetadataWithInputSupport('preferred-model');
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+        $providerMetadata = $model->providerMetadata();
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([new ProviderModelsMetadata($providerMetadata, [$metadata])]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with($providerMetadata->getId(), 'preferred-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModelPreference($model);
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+
+        $reflection = new \ReflectionClass($builder);
+        $modelProperty = $reflection->getProperty('model');
+        $modelProperty->setAccessible(true);
+
+        $this->assertNull($modelProperty->getValue($builder));
+    }
+
+    /**
+     * Tests usingModelPreference supports provider/model tuple with string identifier.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithProviderTupleSelectsModel(): void
+    {
+        $result = $this->createTestResult('Tuple preferred result');
+        $preferredMetadata = $this->createTextModelMetadataWithInputSupport('preferred-model');
+        $otherMetadata = $this->createTextModelMetadataWithInputSupport('other-model');
+        $model = $this->createMockTextGenerationModel($result, $preferredMetadata);
+
+        $preferredProviderMetadata = new ProviderMetadata(
+            'preferred-provider',
+            'Preferred Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $otherProviderMetadata = new ProviderMetadata(
+            'other-provider',
+            'Other Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([
+                new ProviderModelsMetadata($preferredProviderMetadata, [$preferredMetadata]),
+                new ProviderModelsMetadata($otherProviderMetadata, [$otherMetadata]),
+            ]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('preferred-provider', 'preferred-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModelPreference(['preferred-model', 'preferred-provider']);
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference rejects provider/model tuples that contain a model instance.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithProviderTupleModelInstanceThrowsException(): void
+    {
+        $metadata = $this->createTextModelMetadataWithInputSupport('preferred-model');
+        $model = $this->createMockTextGenerationModel($this->createTestResult(), $metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model preference provider identifiers cannot be empty.');
+
+        $builder->usingModelPreference(['mock', $model]);
+    }
+
+    /**
+     * Tests usingModelPreference selects the first available model ID for the configured provider.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferencePrefersFirstAvailableModelId(): void
+    {
+        $result = $this->createTestResult('Preferred by ID');
+        $metadata = $this->createTextModelMetadataWithInputSupport('preferred-id');
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('test-provider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$metadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('test-provider', 'preferred-id', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('test-provider');
+        $builder->usingModelPreference('preferred-id', 'secondary-id');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference with provider class name instead of ID.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithProviderClassName(): void
+    {
+        $result = $this->createTestResult('Preferred with class name');
+        $metadata = $this->createTextModelMetadataWithInputSupport('preferred-id');
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('WordPress\AiClient\TestProvider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('WordPress\AiClient\TestProvider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$metadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('test-provider', 'preferred-id', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('WordPress\AiClient\TestProvider');
+        $builder->usingModelPreference('preferred-id', 'secondary-id');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference skips unavailable model IDs and falls back to the next preference.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceSkipsUnavailableModelId(): void
+    {
+        $result = $this->createTestResult('Fallback model result');
+        $metadata = $this->createTextModelMetadataWithInputSupport('fallback-id');
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('test-provider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$metadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('test-provider', 'fallback-id', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('test-provider');
+        $builder->usingModelPreference('missing-id', 'fallback-id');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference falls back to discovery when no preferences are available.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceFallsBackToDiscovery(): void
+    {
+        $result = $this->createTestResult('Discovered model result');
+        $metadata = $this->createTextModelMetadataWithInputSupport('discovered-id');
+        $providerMetadata = $this->createTestProviderMetadata();
+        $providerModelsMetadata = new ProviderModelsMetadata($providerMetadata, [$metadata]);
+
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$providerModelsMetadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with($providerMetadata->getId(), 'discovered-id', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModelPreference('unavailable-model');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference respects priority order when multiple preferred models are available.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceRespectsOrderWhenMultipleAvailable(): void
+    {
+        $result = $this->createTestResult('Second choice result');
+        $secondChoiceMetadata = $this->createTextModelMetadataWithInputSupport('second-choice');
+        $thirdChoiceMetadata = $this->createTextModelMetadataWithInputSupport('third-choice');
+        $providerMetadata = $this->createTestProviderMetadata();
+
+        $model = $this->createMockTextGenerationModel($result, $secondChoiceMetadata);
+
+        // Make both second-choice and third-choice available (but not first-choice)
+        $providerModelsMetadata = new ProviderModelsMetadata(
+            $providerMetadata,
+            [$thirdChoiceMetadata, $secondChoiceMetadata]  // Order shouldn't matter
+        );
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$providerModelsMetadata]);
+
+        // Should select 'second-choice' (respecting preference order), not 'third-choice'
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with($providerMetadata->getId(), 'second-choice', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        // Preferences in order: first-choice, second-choice, third-choice
+        // Available: second-choice, third-choice
+        // Expected: second-choice (respects priority)
+        $builder->usingModelPreference('first-choice', 'second-choice', 'third-choice');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference rejects invalid preference types.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithInvalidTypeThrowsException(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Model preferences must be model identifiers, instances of ModelInterface, or provider/model tuples.'
+        );
+
+        $builder->usingModelPreference(123);
+    }
+
+    /**
+     * Tests usingModelPreference rejects malformed preference tuples.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithInvalidTupleThrowsException(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model preference tuple must contain model identifier and provider ID.');
+
+        $builder->usingModelPreference(['provider' => 'test', 'model' => 'id']);
+    }
+
+    /**
+     * Tests usingModelPreference rejects empty preference identifier strings.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithEmptyIdentifierThrowsException(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model preference identifiers cannot be empty.');
+
+        $builder->usingModelPreference('   ');
+    }
+
+    /**
+     * Tests usingModelPreference rejects calls without preferences.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithoutArgumentsThrowsException(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('At least one model preference must be provided.');
+
+        $builder->usingModelPreference();
     }
 
     /**
@@ -2386,25 +2767,6 @@ class PromptBuilderTest extends TestCase
         $this->assertTrue($outputModalities[0]->isImage());
     }
 
-    /**
-     * Tests generateAudioResult method creates proper operation.
-     *
-     * @return void
-     */
-    public function testGenerateAudioResultCreatesProperOperation(): void
-    {
-        $this->markTestSkipped('generateAudioResult method does not exist yet');
-    }
-
-    /**
-     * Tests generateVideoResult method creates proper operation.
-     *
-     * @return void
-     */
-    public function testGenerateVideoResultCreatesProperOperation(): void
-    {
-        $this->markTestSkipped('generateVideoResult method does not exist yet');
-    }
 
     /**
      * Tests generateImage shorthand method returns file directly.
@@ -2439,45 +2801,7 @@ class PromptBuilderTest extends TestCase
         $this->assertSame($file, $generatedFile);
     }
 
-    /**
-     * Tests generateAudio shorthand method returns file directly.
-     *
-     * @return void
-     */
-    public function testGenerateAudioReturnsFileDirectly(): void
-    {
-        $this->markTestSkipped('generateAudio method does not exist yet');
-    }
 
-    /**
-     * Tests generateVideo shorthand method returns file directly.
-     *
-     * @return void
-     */
-    public function testGenerateVideoReturnsFileDirectly(): void
-    {
-        $this->markTestSkipped('generateVideo method does not exist yet');
-    }
-
-    /**
-     * Tests generation method with multiple output modalities.
-     *
-     * @return void
-     */
-    public function testGenerationWithMultipleOutputModalities(): void
-    {
-        $this->markTestSkipped('Operations-based generation not implemented yet');
-    }
-
-    /**
-     * Tests streaming generation methods.
-     *
-     * @return void
-     */
-    public function testStreamingGenerationMethods(): void
-    {
-        $this->markTestSkipped('Streaming methods do not exist yet');
-    }
 
     /**
      * Tests generateText with no candidates throws exception.
@@ -2537,16 +2861,6 @@ class PromptBuilderTest extends TestCase
         $this->expectExceptionMessage('No text content found in first candidate');
 
         $builder->generateText();
-    }
-
-    /**
-     * Tests chain generation with multiple prompts.
-     *
-     * @return void
-     */
-    public function testChainGenerationWithMultiplePrompts(): void
-    {
-        $this->markTestSkipped('Complex chaining with model response methods not fully implemented yet');
     }
 
 
@@ -2682,6 +2996,11 @@ class PromptBuilderTest extends TestCase
 
         // Mock the registry to return the model when provider is specified
         $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('test-provider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
             ->method('findProviderModelsMetadataForSupport')
             ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
             ->willReturn([$modelMetadata]);
@@ -2693,6 +3012,43 @@ class PromptBuilderTest extends TestCase
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
         $builder->usingProvider('test-provider');
+
+        $actualResult = $builder->generateResult();
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests generateResult with provider class name specified.
+     *
+     * @return void
+     */
+    public function testGenerateResultWithProviderClassName(): void
+    {
+        $result = $this->createMock(GenerativeAiResult::class);
+
+        $modelMetadata = $this->createMock(ModelMetadata::class);
+        $modelMetadata->method('getId')->willReturn('provider-model');
+
+        $model = $this->createMockTextGenerationModel($result, $modelMetadata);
+
+        // Mock the registry to return the provider ID when given a class name
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('WordPress\AiClient\TestProvider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('WordPress\AiClient\TestProvider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$modelMetadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('test-provider', 'provider-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('WordPress\AiClient\TestProvider');
 
         $actualResult = $builder->generateResult();
         $this->assertSame($result, $actualResult);
@@ -2715,7 +3071,9 @@ class PromptBuilderTest extends TestCase
         $builder->usingProvider('test-provider');
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('No models found for test-provider that support the required capabilities');
+        $this->expectExceptionMessage(
+            'No models found for provider "test-provider" that support text_generation for this prompt.'
+        );
 
         $builder->generateResult();
     }
