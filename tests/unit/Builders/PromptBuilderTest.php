@@ -728,8 +728,9 @@ class PromptBuilderTest extends TestCase
     public function testUsingModelPreferencePrefersFirstAvailableModelId(): void
     {
         $result = $this->createTestResult('Preferred by ID');
-        $metadata = $this->createTextModelMetadataWithInputSupport('preferred-id');
-        $model = $this->createMockTextGenerationModel($result, $metadata);
+        $secondaryMetadata = $this->createTextModelMetadataWithInputSupport('secondary-id');
+        $preferredMetadata = $this->createTextModelMetadataWithInputSupport('preferred-id');
+        $model = $this->createMockTextGenerationModel($result, $preferredMetadata);
 
         $this->registry->expects($this->once())
             ->method('getProviderId')
@@ -739,7 +740,7 @@ class PromptBuilderTest extends TestCase
         $this->registry->expects($this->once())
             ->method('findProviderModelsMetadataForSupport')
             ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
-            ->willReturn([$metadata]);
+            ->willReturn([$secondaryMetadata, $preferredMetadata]);
 
         $this->registry->expects($this->once())
             ->method('getProviderModel')
@@ -766,8 +767,9 @@ class PromptBuilderTest extends TestCase
     public function testUsingModelPreferenceWithProviderClassName(): void
     {
         $result = $this->createTestResult('Preferred with class name');
-        $metadata = $this->createTextModelMetadataWithInputSupport('preferred-id');
-        $model = $this->createMockTextGenerationModel($result, $metadata);
+        $secondaryMetadata = $this->createTextModelMetadataWithInputSupport('secondary-id');
+        $preferredMetadata = $this->createTextModelMetadataWithInputSupport('preferred-id');
+        $model = $this->createMockTextGenerationModel($result, $preferredMetadata);
 
         $this->registry->expects($this->once())
             ->method('getProviderId')
@@ -777,7 +779,7 @@ class PromptBuilderTest extends TestCase
         $this->registry->expects($this->once())
             ->method('findProviderModelsMetadataForSupport')
             ->with('WordPress\AiClient\TestProvider', $this->isInstanceOf(ModelRequirements::class))
-            ->willReturn([$metadata]);
+            ->willReturn([$secondaryMetadata, $preferredMetadata]);
 
         $this->registry->expects($this->once())
             ->method('getProviderModel')
@@ -804,8 +806,9 @@ class PromptBuilderTest extends TestCase
     public function testUsingModelPreferenceSkipsUnavailableModelId(): void
     {
         $result = $this->createTestResult('Fallback model result');
-        $metadata = $this->createTextModelMetadataWithInputSupport('fallback-id');
-        $model = $this->createMockTextGenerationModel($result, $metadata);
+        $otherMetadata = $this->createTextModelMetadataWithInputSupport('other-id');
+        $fallbackMetadata = $this->createTextModelMetadataWithInputSupport('fallback-id');
+        $model = $this->createMockTextGenerationModel($result, $fallbackMetadata);
 
         $this->registry->expects($this->once())
             ->method('getProviderId')
@@ -815,7 +818,7 @@ class PromptBuilderTest extends TestCase
         $this->registry->expects($this->once())
             ->method('findProviderModelsMetadataForSupport')
             ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
-            ->willReturn([$metadata]);
+            ->willReturn([$otherMetadata, $fallbackMetadata]);
 
         $this->registry->expects($this->once())
             ->method('getProviderModel')
