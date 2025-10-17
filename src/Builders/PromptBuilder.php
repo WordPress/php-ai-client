@@ -1178,6 +1178,7 @@ class PromptBuilder
             foreach ($providerModelsMetadata as $providerModels) {
                 $providerId = $providerModels->getProvider()->getId();
                 $providerMap = $this->generateMapFromCandidates($providerId, $providerModels->getModels());
+
                 // Use + operator to merge, preserving keys from $candidateMap (first provider wins for model-only keys)
                 $candidateMap = $candidateMap + $providerMap;
             }
@@ -1191,7 +1192,10 @@ class PromptBuilder
             $requirements
         );
 
-        return $this->generateMapFromCandidates($this->providerIdOrClassName, $modelsMetadata);
+        // Ensure we pass the provider ID, not the class name
+        $providerId = $this->registry->getProviderId($this->providerIdOrClassName);
+
+        return $this->generateMapFromCandidates($providerId, $modelsMetadata);
     }
 
     /**

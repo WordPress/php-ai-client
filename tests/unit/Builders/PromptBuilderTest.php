@@ -724,6 +724,11 @@ class PromptBuilderTest extends TestCase
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
         $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('test-provider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
             ->method('findProviderModelsMetadataForSupport')
             ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
             ->willReturn([$metadata]);
@@ -746,6 +751,44 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests usingModelPreference with provider class name instead of ID.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithProviderClassName(): void
+    {
+        $result = $this->createTestResult('Preferred with class name');
+        $metadata = $this->createTextModelMetadataWithInputSupport('preferred-id');
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('WordPress\AiClient\TestProvider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('WordPress\AiClient\TestProvider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$metadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('test-provider', 'preferred-id', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('WordPress\AiClient\TestProvider');
+        $builder->usingModelPreference('preferred-id', 'secondary-id');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
      * Tests usingModelPreference skips unavailable model IDs and falls back to the next preference.
      *
      * @return void
@@ -755,6 +798,11 @@ class PromptBuilderTest extends TestCase
         $result = $this->createTestResult('Fallback model result');
         $metadata = $this->createTextModelMetadataWithInputSupport('fallback-id');
         $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('test-provider')
+            ->willReturn('test-provider');
 
         $this->registry->expects($this->once())
             ->method('findProviderModelsMetadataForSupport')
@@ -3015,6 +3063,11 @@ class PromptBuilderTest extends TestCase
 
         // Mock the registry to return the model when provider is specified
         $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('test-provider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
             ->method('findProviderModelsMetadataForSupport')
             ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
             ->willReturn([$modelMetadata]);
@@ -3026,6 +3079,43 @@ class PromptBuilderTest extends TestCase
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
         $builder->usingProvider('test-provider');
+
+        $actualResult = $builder->generateResult();
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests generateResult with provider class name specified.
+     *
+     * @return void
+     */
+    public function testGenerateResultWithProviderClassName(): void
+    {
+        $result = $this->createMock(GenerativeAiResult::class);
+
+        $modelMetadata = $this->createMock(ModelMetadata::class);
+        $modelMetadata->method('getId')->willReturn('provider-model');
+
+        $model = $this->createMockTextGenerationModel($result, $modelMetadata);
+
+        // Mock the registry to return the provider ID when given a class name
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('WordPress\AiClient\TestProvider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('WordPress\AiClient\TestProvider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$modelMetadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('test-provider', 'provider-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('WordPress\AiClient\TestProvider');
 
         $actualResult = $builder->generateResult();
         $this->assertSame($result, $actualResult);
