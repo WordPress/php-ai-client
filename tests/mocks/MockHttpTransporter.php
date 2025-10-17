@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\mocks;
 
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 
 /**
@@ -19,6 +20,11 @@ class MockHttpTransporter implements HttpTransporterInterface
     private ?Request $lastRequest = null;
 
     /**
+     * @var RequestOptions|null The last options that were provided.
+     */
+    private ?RequestOptions $lastOptions = null;
+
+    /**
      * @var Response|null The response to return.
      */
     private ?Response $responseToReturn = null;
@@ -26,9 +32,10 @@ class MockHttpTransporter implements HttpTransporterInterface
     /**
      * {@inheritDoc}
      */
-    public function send(Request $request): Response
+    public function send(Request $request, ?RequestOptions $options = null): Response
     {
         $this->lastRequest = $request;
+        $this->lastOptions = $options;
         return $this->responseToReturn ?? new Response(200, [], '{"status":"success"}');
     }
 
@@ -40,6 +47,16 @@ class MockHttpTransporter implements HttpTransporterInterface
     public function getLastRequest(): ?Request
     {
         return $this->lastRequest;
+    }
+
+    /**
+     * Gets the last request options that were provided.
+     *
+     * @return RequestOptions|null
+     */
+    public function getLastOptions(): ?RequestOptions
+    {
+        return $this->lastOptions;
     }
 
     /**

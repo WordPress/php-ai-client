@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Http\Contracts;
 
 use WordPress\AiClient\Providers\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 
 /**
@@ -23,7 +24,8 @@ interface HttpTransporterInterface
      * @since 0.1.0
      *
      * @param Request $request The request to send.
+     * @param RequestOptions|null $options Optional transport options for the request.
      * @return Response The response received.
      */
-    public function send(Request $request): Response;
+    public function send(Request $request, ?RequestOptions $options = null): Response;
 }
