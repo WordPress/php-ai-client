@@ -1138,7 +1138,6 @@ class PromptBuilder
         }
 
         // Check if any preferred models match the candidates, in priority order.
-        $selectedModel = null;
         if (!empty($this->modelPreferenceKeys)) {
             // Find preferences that match available candidates, preserving preference order.
             $matchingPreferences = array_intersect_key(
@@ -1151,22 +1150,14 @@ class PromptBuilder
                 $firstMatchKey = key($matchingPreferences);
                 [$providerId, $modelId] = $candidateMap[$firstMatchKey];
 
-                $selectedModel = $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
+                return $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
             }
         }
 
-        if ($selectedModel === null) {
-            // No preference matched; fall back to the first candidate discovered.
-            [$providerId, $modelId] = reset($candidateMap);
+        // No preference matched; fall back to the first candidate discovered.
+        [$providerId, $modelId] = reset($candidateMap);
 
-            $selectedModel = $this->registry->getProviderModel(
-                $providerId,
-                $modelId,
-                $this->modelConfig
-            );
-        }
-
-        return $selectedModel;
+        return $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
     }
 
     /**
