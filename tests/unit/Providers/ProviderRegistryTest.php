@@ -51,6 +51,7 @@ class ProviderRegistryTest extends TestCase
         $this->assertTrue($this->registry->hasProvider('mock'));
         $this->assertTrue($this->registry->hasProvider(MockProvider::class));
         $this->assertEquals(MockProvider::class, $this->registry->getProviderClassName('mock'));
+        $this->assertEquals('mock', $this->registry->getProviderId(MockProvider::class));
     }
 
     /**
@@ -103,6 +104,19 @@ class ProviderRegistryTest extends TestCase
         $this->expectExceptionMessage('Provider not registered: nonexistent');
 
         $this->registry->getProviderClassName('nonexistent');
+    }
+
+    /**
+     * Tests getProviderId with unregistered provider.
+     *
+     * @return void
+     */
+    public function testGetProviderIdWithUnregisteredProvider(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Provider not registered: ' . InvalidArgumentException::class);
+
+        $this->registry->getProviderId(InvalidArgumentException::class);
     }
 
     /**

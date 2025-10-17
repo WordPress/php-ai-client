@@ -38,12 +38,12 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * @var array<string, class-string<ProviderInterface>> Mapping of provider IDs to class names.
      */
-    private array $providerClassNames = [];
+    private array $registeredIdsToClassNames = [];
 
     /**
-     * @var array<class-string<ProviderInterface>, true> Set of registered class names for fast lookup.
+     * @var array<class-string<ProviderInterface>, string> Mapping of provider class names to IDs.
      */
-    private array $registeredClassNames = [];
+    private array $registeredClassNamesToIds = [];
 
     /**
      * @var array<class-string<ProviderInterface>, RequestAuthenticationInterface> Mapping of provider class names to
@@ -109,8 +109,8 @@ class ProviderRegistry implements WithHttpTransporterInterface
             $this->setRequestAuthenticationForProvider($className, $this->providerAuthenticationInstances[$className]);
         }
 
-        $this->providerClassNames[$metadata->getId()] = $className;
-        $this->registeredClassNames[$className] = true;
+        $this->registeredIdsToClassNames[$metadata->getId()] = $className;
+        $this->registeredClassNamesToIds[$className] = $metadata->getId();
     }
 
     /**
@@ -122,7 +122,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
      */
     public function getRegisteredProviderIds(): array
     {
-        return array_keys($this->providerClassNames);
+        return array_keys($this->registeredIdsToClassNames);
     }
 
     /**
@@ -135,8 +135,8 @@ class ProviderRegistry implements WithHttpTransporterInterface
      */
     public function hasProvider(string $idOrClassName): bool
     {
-        return isset($this->providerClassNames[$idOrClassName]) ||
-            isset($this->registeredClassNames[$idOrClassName]);
+        return isset($this->registeredIdsToClassNames[$idOrClassName]) ||
+            isset($this->registeredClassNamesToIds[$idOrClassName]);
     }
 
     /**
@@ -150,13 +150,13 @@ class ProviderRegistry implements WithHttpTransporterInterface
      */
     public function getProviderClassName(string $id): string
     {
-        if (!isset($this->providerClassNames[$id])) {
+        if (!isset($this->registeredIdsToClassNames[$id])) {
             throw new InvalidArgumentException(
                 sprintf('Provider not registered: %s', $id)
             );
         }
 
-        return $this->providerClassNames[$id];
+        return $this->registeredIdsToClassNames[$id];
     }
 
     /**
@@ -171,17 +171,13 @@ class ProviderRegistry implements WithHttpTransporterInterface
     public function getProviderId(string $idOrClassName): string
     {
         // If it's already an ID, return it
-        if (isset($this->providerClassNames[$idOrClassName])) {
+        if (isset($this->registeredIdsToClassNames[$idOrClassName])) {
             return $idOrClassName;
         }
 
-        // If it's a class name, find its ID
-        if (isset($this->registeredClassNames[$idOrClassName])) {
-            foreach ($this->providerClassNames as $id => $className) {
-                if ($className === $idOrClassName) {
-                    return $id;
-                }
-            }
+        // If it's a registered class name, return its ID
+        if (isset($this->registeredClassNamesToIds[$idOrClassName])) {
+            return $this->registeredClassNamesToIds[$idOrClassName];
         }
 
         // Not found
@@ -225,7 +221,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     {
         $results = [];
 
-        foreach ($this->providerClassNames as $providerId => $className) {
+        foreach ($this->registeredIdsToClassNames as $providerId => $className) {
             $providerResults = $this->findProviderModelsMetadataForSupport($providerId, $modelRequirements);
             if (!empty($providerResults)) {
                 // Use static method from ProviderInterface
@@ -337,7 +333,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     private function resolveProviderClassName(string $idOrClassName): string
     {
         // Handle both ID and class name
-        $className = $this->providerClassNames[$idOrClassName] ?? $idOrClassName;
+        $className = $this->registeredIdsToClassNames[$idOrClassName] ?? $idOrClassName;
 
         if (!$this->hasProvider($idOrClassName)) {
             throw new InvalidArgumentException(
@@ -359,7 +355,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
         $this->setHttpTransporterOriginal($httpTransporter);
 
         // Make sure all registered providers have the HTTP transporter hooked up as needed.
-        foreach ($this->providerClassNames as $className) {
+        foreach ($this->registeredIdsToClassNames as $className) {
             $this->setHttpTransporterForProvider($className, $httpTransporter);
         }
     }
