@@ -78,9 +78,10 @@ class HttpTransporter implements HttpTransporterInterface
         $mergedOptions = $this->mergeOptions($request->getOptions(), $options);
 
         try {
-            if ($this->client instanceof ClientWithOptionsInterface) {
+            $hasOptions = $mergedOptions !== null;
+            if ($hasOptions && $this->client instanceof ClientWithOptionsInterface) {
                 $psr7Response = $this->client->sendRequestWithOptions($psr7Request, $mergedOptions);
-            } elseif ($this->isGuzzleClient($this->client)) {
+            } elseif ($hasOptions && $this->isGuzzleClient($this->client)) {
                 $psr7Response = $this->sendWithGuzzle($psr7Request, $mergedOptions);
             } else {
                 $psr7Response = $this->client->sendRequest($psr7Request);
@@ -129,12 +130,35 @@ class HttpTransporter implements HttpTransporterInterface
         }
 
         // Both exist, merge them with parameter options taking precedence
-        $merged = array_merge(
-            $requestOptions->toArray(),
-            $parameterOptions->toArray()
-        );
+        $merged = new RequestOptions();
 
-        return RequestOptions::fromArray($merged);
+        // Start with request options (lower precedence)
+        if ($requestOptions->getTimeout() !== null) {
+            $merged->setTimeout($requestOptions->getTimeout());
+        }
+
+        if ($requestOptions->getConnectTimeout() !== null) {
+            $merged->setConnectTimeout($requestOptions->getConnectTimeout());
+        }
+
+        if ($requestOptions->getMaxRedirects() !== null) {
+            $merged->setMaxRedirects($requestOptions->getMaxRedirects());
+        }
+
+        // Override with parameter options (higher precedence)
+        if ($parameterOptions->getTimeout() !== null) {
+            $merged->setTimeout($parameterOptions->getTimeout());
+        }
+
+        if ($parameterOptions->getConnectTimeout() !== null) {
+            $merged->setConnectTimeout($parameterOptions->getConnectTimeout());
+        }
+
+        if ($parameterOptions->getMaxRedirects() !== null) {
+            $merged->setMaxRedirects($parameterOptions->getMaxRedirects());
+        }
+
+        return $merged;
     }
 
     /**
