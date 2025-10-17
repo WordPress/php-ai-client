@@ -37,7 +37,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     {
         return new Request(
             $method,
-            OpenAiProvider::BASE_URI . '/' . ltrim($path, '/'),
+            OpenAiProvider::url($path),
             $headers,
             $data
         );

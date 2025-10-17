@@ -22,7 +22,7 @@ class GoogleImageGenerationModel extends AbstractOpenAiCompatibleImageGeneration
     {
         return new Request(
             $method,
-            GoogleProvider::BASE_URI . '/openai/' . ltrim($path, '/'),
+            GoogleProvider::url("openai/{$path}"),
             $headers,
             $data
         );

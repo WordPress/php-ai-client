@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\ProviderImplementations\Anthropic;
 
 use WordPress\AiClient\Common\Exception\RuntimeException;
-use WordPress\AiClient\Providers\AbstractProvider;
+use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiProvider;
 use WordPress\AiClient\Providers\ApiBasedImplementation\ListModelsApiBasedProviderAvailability;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
@@ -19,9 +19,17 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  *
  * @since 0.1.0
  */
-class AnthropicProvider extends AbstractProvider
+class AnthropicProvider extends AbstractApiProvider
 {
-    public const BASE_URI = 'https://api.anthropic.com/v1';
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    protected static function baseUrl(): string
+    {
+        return 'https://api.anthropic.com/v1';
+    }
 
     /**
      * {@inheritDoc}
