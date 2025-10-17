@@ -52,6 +52,10 @@ class ProviderRegistryTest extends TestCase
         $this->assertTrue($this->registry->hasProvider(MockProvider::class));
         $this->assertEquals(MockProvider::class, $this->registry->getProviderClassName('mock'));
         $this->assertEquals('mock', $this->registry->getProviderId(MockProvider::class));
+
+        // Ensure calling the lookup functions with a value in the correct format simply returns it as is.
+        $this->assertEquals(MockProvider::class, $this->registry->getProviderClassName(MockProvider::class));
+        $this->assertEquals('mock', $this->registry->getProviderId('mock'));
     }
 
     /**
