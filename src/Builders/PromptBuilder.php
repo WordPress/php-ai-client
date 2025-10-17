@@ -257,19 +257,18 @@ class PromptBuilder
                     'Model preference provider identifiers cannot be empty.'
                 );
 
-                $prefKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
-                $preferenceKeys[] = $prefKey;
+                $preferenceKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
             } elseif ($preferredModel instanceof ModelInterface) {
                 // Model instance
                 $modelId = $preferredModel->metadata()->getId();
                 $providerId = $preferredModel->providerMetadata()->getId();
-                $providerModelKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
-                $preferenceKeys[] = $providerModelKey;
+
+                $preferenceKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
             } elseif (is_string($preferredModel)) {
                 // Model ID
                 $modelId = $this->normalizePreferenceIdentifier($preferredModel);
-                $modelKey = $this->createModelPreferenceKey($modelId);
-                $preferenceKeys[] = $modelKey;
+
+                $preferenceKey = $this->createModelPreferenceKey($modelId);
             } else {
                 // Invalid type
                 throw new InvalidArgumentException(
@@ -277,6 +276,8 @@ class PromptBuilder
                     'or provider/model tuples.'
                 );
             }
+
+            $preferenceKeys[] = $preferenceKey;
         }
 
         $this->modelPreferenceKeys = $preferenceKeys;
