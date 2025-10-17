@@ -218,10 +218,10 @@ class HttpTransporter implements HttpTransporterInterface
      * @since n.e.x.t
      *
      * @param RequestInterface $request The PSR-7 request to send.
-     * @param RequestOptions|null $options The request options.
+     * @param RequestOptions $options The request options.
      * @return ResponseInterface The PSR-7 response received.
      */
-    private function sendWithGuzzle(RequestInterface $request, ?RequestOptions $options): ResponseInterface
+    private function sendWithGuzzle(RequestInterface $request, RequestOptions $options): ResponseInterface
     {
         $guzzleOptions = $this->buildGuzzleOptions($options);
 
@@ -239,15 +239,11 @@ class HttpTransporter implements HttpTransporterInterface
      *
      * @since n.e.x.t
      *
-     * @param RequestOptions|null $options The request options.
+     * @param RequestOptions $options The request options.
      * @return array<string, mixed> Guzzle-compatible options.
      */
-    private function buildGuzzleOptions(?RequestOptions $options): array
+    private function buildGuzzleOptions(RequestOptions $options): array
     {
-        if ($options === null) {
-            return [];
-        }
-
         $guzzleOptions = [];
 
         $timeout = $options->getTimeout();

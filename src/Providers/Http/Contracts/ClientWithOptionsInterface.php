@@ -24,11 +24,11 @@ interface ClientWithOptionsInterface
      * @since n.e.x.t
      *
      * @param RequestInterface $request The PSR-7 request to send.
-     * @param RequestOptions|null $options The request transport options.
+     * @param RequestOptions $options The request transport options. Must not be null.
      * @return ResponseInterface The PSR-7 response received.
      */
     public function sendRequestWithOptions(
         RequestInterface $request,
-        ?RequestOptions $options
+        RequestOptions $options
     ): ResponseInterface;
 }
