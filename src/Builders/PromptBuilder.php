@@ -249,9 +249,9 @@ class PromptBuilder
                     );
                 }
 
-                [$modelIdentifier, $providerId] = $preferredModel;
+                [$providerId, $modelId] = $preferredModel;
 
-                $modelId = $this->normalizePreferenceIdentifier($modelIdentifier);
+                $modelId = $this->normalizePreferenceIdentifier($modelId);
                 $providerId = $this->normalizePreferenceIdentifier(
                     $providerId,
                     'Model preference provider identifiers cannot be empty.'

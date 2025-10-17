@@ -654,9 +654,16 @@ class PromptBuilderTest extends TestCase
     public function testUsingModelPreferenceWithProviderTupleSelectsModel(): void
     {
         $result = $this->createTestResult('Tuple preferred result');
+        $firstMetadata = $this->createTextModelMetadataWithInputSupport('first-model');
         $preferredMetadata = $this->createTextModelMetadataWithInputSupport('preferred-model');
         $otherMetadata = $this->createTextModelMetadataWithInputSupport('other-model');
         $model = $this->createMockTextGenerationModel($result, $preferredMetadata);
+
+        $firstProviderMetadata = new ProviderMetadata(
+            'first-provider',
+            'First Provider',
+            ProviderTypeEnum::cloud()
+        );
 
         $preferredProviderMetadata = new ProviderMetadata(
             'preferred-provider',
@@ -674,6 +681,7 @@ class PromptBuilderTest extends TestCase
             ->method('findModelsMetadataForSupport')
             ->with($this->isInstanceOf(ModelRequirements::class))
             ->willReturn([
+                new ProviderModelsMetadata($firstProviderMetadata, [$firstMetadata]),
                 new ProviderModelsMetadata($preferredProviderMetadata, [$preferredMetadata]),
                 new ProviderModelsMetadata($otherProviderMetadata, [$otherMetadata]),
             ]);
@@ -687,7 +695,7 @@ class PromptBuilderTest extends TestCase
             ->method('findProviderModelsMetadataForSupport');
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
-        $builder->usingModelPreference(['preferred-model', 'preferred-provider']);
+        $builder->usingModelPreference(['preferred-provider', 'preferred-model']);
 
         $actualResult = $builder->generateTextResult();
 
@@ -707,7 +715,7 @@ class PromptBuilderTest extends TestCase
         $builder = new PromptBuilder($this->registry, 'Test prompt');
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model preference provider identifiers cannot be empty.');
+        $this->expectExceptionMessage('Model preference identifiers cannot be empty.');
 
         $builder->usingModelPreference(['mock', $model]);
     }
