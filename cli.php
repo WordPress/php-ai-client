@@ -100,6 +100,7 @@ if (str_starts_with($promptInput, '{') || str_starts_with($promptInput, '[')) {
 // Provider ID, model ID, and output format.
 $providerId = $named_args['providerId'] ?? null;
 $modelId = $named_args['modelId'] ?? null;
+$modelPreference = $named_args['modelPreference'] ?? null;
 $outputFormat = $named_args['outputFormat'] ?? 'message-text';
 
 // Any model configuration options.
@@ -148,6 +149,19 @@ try {
         $promptBuilder = $promptBuilder->usingModel($providerClassName::model($modelId));
     } elseif ($providerId) {
         $promptBuilder = $promptBuilder->usingProvider($providerId);
+    }
+    if ($modelPreference) {
+        $modelPreference = array_map(
+            static function ($item) {
+                $item = trim($item);
+                if (str_contains($item, '::')) {
+                    return explode('::', $item, 2);
+                }
+                return $item;
+            },
+            explode(',', $modelPreference)
+        );
+        $promptBuilder = $promptBuilder->usingModelPreference(...$modelPreference);
     }
 } catch (InvalidArgumentException $e) {
     logError('Invalid arguments while trying to set up prompt builder: ' . $e->getMessage());
