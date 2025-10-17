@@ -1214,7 +1214,7 @@ class PromptBuilder
             $providerModelKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
             $map[$providerModelKey] = [$providerId, $modelId];
 
-            // Add model-only key (when merging multiple maps, the + operator preserves first occurrence)
+            // Add model-only key
             $modelKey = $this->createModelPreferenceKey($modelId);
             $map[$modelKey] = [$providerId, $modelId];
         }
