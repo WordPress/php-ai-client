@@ -24,7 +24,7 @@ class AnthropicTextGenerationModel extends AbstractOpenAiCompatibleTextGeneratio
     {
         return new Request(
             $method,
-            AnthropicProvider::BASE_URI . '/' . ltrim($path, '/'),
+            AnthropicProvider::url($path),
             $headers,
             $data
         );

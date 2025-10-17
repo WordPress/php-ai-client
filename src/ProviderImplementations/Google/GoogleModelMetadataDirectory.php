@@ -71,7 +71,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
         }
         return new Request(
             $method,
-            GoogleProvider::BASE_URI . '/' . ltrim($path, '/'),
+            GoogleProvider::url($path),
             $headers,
             $data
         );
