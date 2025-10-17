@@ -2767,25 +2767,6 @@ class PromptBuilderTest extends TestCase
         $this->assertTrue($outputModalities[0]->isImage());
     }
 
-    /**
-     * Tests generateAudioResult method creates proper operation.
-     *
-     * @return void
-     */
-    public function testGenerateAudioResultCreatesProperOperation(): void
-    {
-        $this->markTestSkipped('generateAudioResult method does not exist yet');
-    }
-
-    /**
-     * Tests generateVideoResult method creates proper operation.
-     *
-     * @return void
-     */
-    public function testGenerateVideoResultCreatesProperOperation(): void
-    {
-        $this->markTestSkipped('generateVideoResult method does not exist yet');
-    }
 
     /**
      * Tests generateImage shorthand method returns file directly.
@@ -2820,45 +2801,7 @@ class PromptBuilderTest extends TestCase
         $this->assertSame($file, $generatedFile);
     }
 
-    /**
-     * Tests generateAudio shorthand method returns file directly.
-     *
-     * @return void
-     */
-    public function testGenerateAudioReturnsFileDirectly(): void
-    {
-        $this->markTestSkipped('generateAudio method does not exist yet');
-    }
 
-    /**
-     * Tests generateVideo shorthand method returns file directly.
-     *
-     * @return void
-     */
-    public function testGenerateVideoReturnsFileDirectly(): void
-    {
-        $this->markTestSkipped('generateVideo method does not exist yet');
-    }
-
-    /**
-     * Tests generation method with multiple output modalities.
-     *
-     * @return void
-     */
-    public function testGenerationWithMultipleOutputModalities(): void
-    {
-        $this->markTestSkipped('Operations-based generation not implemented yet');
-    }
-
-    /**
-     * Tests streaming generation methods.
-     *
-     * @return void
-     */
-    public function testStreamingGenerationMethods(): void
-    {
-        $this->markTestSkipped('Streaming methods do not exist yet');
-    }
 
     /**
      * Tests generateText with no candidates throws exception.
@@ -2918,16 +2861,6 @@ class PromptBuilderTest extends TestCase
         $this->expectExceptionMessage('No text content found in first candidate');
 
         $builder->generateText();
-    }
-
-    /**
-     * Tests chain generation with multiple prompts.
-     *
-     * @return void
-     */
-    public function testChainGenerationWithMultiplePrompts(): void
-    {
-        $this->markTestSkipped('Complex chaining with model response methods not fully implemented yet');
     }
 
 
