@@ -169,7 +169,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Gets the provider ID for a registered provider.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
      * @return string The provider ID.

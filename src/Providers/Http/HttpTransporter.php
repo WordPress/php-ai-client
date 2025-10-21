@@ -68,7 +68,7 @@ class HttpTransporter implements HttpTransporterInterface
      * {@inheritDoc}
      *
      * @since 0.1.0
-     * @since n.e.x.t Added optional RequestOptions parameter and ClientWithOptions support.
+     * @since 0.2.0 Added optional RequestOptions parameter and ClientWithOptions support.
      */
     public function send(Request $request, ?RequestOptions $options = null): Response
     {
@@ -107,7 +107,7 @@ class HttpTransporter implements HttpTransporterInterface
     /**
      * Merges request options with parameter options taking precedence.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param RequestOptions|null $requestOptions Options from the Request object.
      * @param RequestOptions|null $parameterOptions Options passed as method parameter.
@@ -164,7 +164,7 @@ class HttpTransporter implements HttpTransporterInterface
     /**
      * Determines if the underlying client matches the Guzzle client shape.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param ClientInterface $client The HTTP client instance.
      * @return bool True when the client exposes Guzzle's send signature.
@@ -215,7 +215,7 @@ class HttpTransporter implements HttpTransporterInterface
     /**
      * Sends a request using a Guzzle-compatible client.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param RequestInterface $request The PSR-7 request to send.
      * @param RequestOptions $options The request options.
@@ -237,7 +237,7 @@ class HttpTransporter implements HttpTransporterInterface
     /**
      * Converts request options to a Guzzle-compatible options array.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param RequestOptions $options The request options.
      * @return array<string, mixed> Guzzle-compatible options.

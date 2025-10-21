@@ -13,7 +13,7 @@ use WordPress\AiClient\Providers\AbstractProvider;
  * communicate with REST APIs. It standardizes the pattern of combining a base
  * URL with endpoint paths.
  *
- * @since n.e.x.t
+ * @since 0.2.0
  */
 abstract class AbstractApiProvider extends AbstractProvider
 {
@@ -23,7 +23,7 @@ abstract class AbstractApiProvider extends AbstractProvider
      * The base URL should include the protocol and domain, and may include
      * the API version path (e.g., "https://api.example.com/v1").
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return string The base URL for the provider's API.
      */
@@ -37,7 +37,7 @@ abstract class AbstractApiProvider extends AbstractProvider
      * - Trimming leading slashes from the path to prevent double-slashes
      * - Joining the base URL and path with a single forward slash
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param string $path Optional path to append to the base URL. Default empty string.
      * @return string The complete URL.

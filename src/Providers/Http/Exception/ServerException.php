@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Http\Utilities\ErrorMessageExtractor;
  * This represents errors where the server failed to fulfill
  * a valid request due to internal server errors.
  *
- * @since n.e.x.t
+ * @since 0.2.0
  */
 class ServerException extends RuntimeException
 {
@@ -24,7 +24,7 @@ class ServerException extends RuntimeException
      * This method extracts error details from common API response formats
      * and creates an exception with a descriptive message and status code.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param Response $response The HTTP response that failed.
      * @return self

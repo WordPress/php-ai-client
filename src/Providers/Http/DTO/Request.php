@@ -300,7 +300,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets the request options.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return RequestOptions|null Request transport options when configured.
      */
@@ -312,7 +312,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Returns a new instance with the specified request options.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param RequestOptions|null $options The request options to apply.
      * @return self A new instance with the options.
@@ -414,7 +414,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Creates a Request instance from a PSR-7 RequestInterface.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param RequestInterface $psrRequest The PSR-7 request to convert.
      * @return self A new Request instance.

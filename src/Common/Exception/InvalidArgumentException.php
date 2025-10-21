@@ -12,7 +12,7 @@ use WordPress\AiClient\Common\Contracts\AiClientExceptionInterface;
  * This extends PHP's built-in InvalidArgumentException while implementing
  * the AI Client exception interface for consistent catch handling.
  *
- * @since n.e.x.t
+ * @since 0.2.0
  */
 class InvalidArgumentException extends \InvalidArgumentException implements AiClientExceptionInterface
 {

@@ -15,7 +15,7 @@ use WordPress\AiClient\Providers\Http\Utilities\ErrorMessageExtractor;
  * This represents errors where the client request was malformed,
  * unauthorized, forbidden, or otherwise invalid.
  *
- * @since n.e.x.t
+ * @since 0.2.0
  */
 class ClientException extends InvalidArgumentException
 {
@@ -29,7 +29,7 @@ class ClientException extends InvalidArgumentException
     /**
      * Returns the request that failed as our Request DTO.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return Request
      * @throws \RuntimeException If no request is available
@@ -52,7 +52,7 @@ class ClientException extends InvalidArgumentException
      * This method extracts error details from common API response formats
      * and creates an exception with a descriptive message and status code.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param Response $response The HTTP response that failed.
      * @return self

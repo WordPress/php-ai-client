@@ -94,7 +94,7 @@ class ModelRequirements extends AbstractDataTransferObject
     /**
      * Checks whether the given model metadata meets these requirements.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param ModelMetadata $metadata The model metadata to check against.
      * @return bool True if the model meets all requirements, false otherwise.
@@ -140,7 +140,7 @@ class ModelRequirements extends AbstractDataTransferObject
     /**
      * Creates ModelRequirements from prompt data and model configuration.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param CapabilityEnum $capability The capability the model must support.
      * @param list<Message> $messages The messages in the conversation.
@@ -219,7 +219,7 @@ class ModelRequirements extends AbstractDataTransferObject
     /**
      * Converts ModelConfig to an array of RequiredOptions.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param ModelConfig $modelConfig The model configuration.
      * @return list<RequiredOption> The required options.
@@ -353,7 +353,7 @@ class ModelRequirements extends AbstractDataTransferObject
     /**
      * Includes a RequiredOption in the array, ensuring no duplicates based on option name.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param list<RequiredOption> $requiredOptions The existing required options.
      * @param RequiredOption $newOption The new option to include.

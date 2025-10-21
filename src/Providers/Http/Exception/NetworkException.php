@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Http\DTO\Request;
  * This includes HTTP transport errors, connection failures,
  * timeouts, and other network-related issues.
  *
- * @since n.e.x.t
+ * @since 0.2.0
  */
 class NetworkException extends RuntimeException
 {
@@ -28,7 +28,7 @@ class NetworkException extends RuntimeException
     /**
      * Returns the request that failed as our Request DTO.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return Request
      * @throws \RuntimeException If no request is available
@@ -48,7 +48,7 @@ class NetworkException extends RuntimeException
     /**
      * Creates a NetworkException from a PSR-18 network exception.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param RequestInterface $psrRequest The PSR-7 request that failed.
      * @param \Throwable $networkException The PSR-18 network exception.

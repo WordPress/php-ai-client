@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Http\DTO\Response;
  * should be retried at a different location, but automatic redirect
  * handling was not successful or not enabled.
  *
- * @since n.e.x.t
+ * @since 0.2.0
  */
 class RedirectException extends RuntimeException
 {
@@ -24,7 +24,7 @@ class RedirectException extends RuntimeException
      * This method extracts redirect information from the response headers
      * and creates an exception with a descriptive message and status code.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param Response $response The HTTP redirect response.
      * @return self

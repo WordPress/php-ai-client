@@ -20,7 +20,7 @@ class ResponseException extends RuntimeException
     /**
      * Creates a ResponseException for missing expected data.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param string $apiName The name of the API/provider.
      * @param string $fieldName The field that was expected but missing.
@@ -36,7 +36,7 @@ class ResponseException extends RuntimeException
     /**
      * Creates a ResponseException from invalid data in an API response.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param string $apiName The name of the API service (e.g., 'OpenAI', 'Anthropic').
      * @param string $fieldName The field that was invalid.

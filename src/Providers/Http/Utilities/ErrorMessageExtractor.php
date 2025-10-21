@@ -10,7 +10,7 @@ namespace WordPress\AiClient\Providers\Http\Utilities;
  * Centralizes the logic for parsing common API error response formats
  * to avoid code duplication across exception classes.
  *
- * @since n.e.x.t
+ * @since 0.2.0
  */
 class ErrorMessageExtractor
 {
@@ -22,7 +22,7 @@ class ErrorMessageExtractor
      * - { "error": "Error text" }
      * - { "message": "Error text" }
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param mixed $data The response data to extract error message from.
      * @return string|null The extracted error message, or null if none found.

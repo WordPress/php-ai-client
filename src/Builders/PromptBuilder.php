@@ -224,7 +224,7 @@ class PromptBuilder
     /**
      * Sets preferred models to evaluate in order.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param string|ModelInterface|array{0:string,1:string} ...$preferredModels The preferred models as model IDs,
      * model instances, or [model ID, provider ID] tuples.
@@ -1163,7 +1163,7 @@ class PromptBuilder
     /**
      * Builds a map of candidate models that satisfy the requirements for efficient lookup.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param ModelRequirements $requirements The requirements derived from the prompt.
      * @return array<string, array{0:string,1:string}> Map of preference keys to [providerId, modelId] tuples.
@@ -1201,7 +1201,7 @@ class PromptBuilder
     /**
      * Generates a candidate map from model metadata with both provider-specific and model-only keys.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param string $providerId The provider ID.
      * @param list<ModelMetadata> $modelsMetadata The models metadata to map.
@@ -1229,7 +1229,7 @@ class PromptBuilder
     /**
      * Normalizes and validates a preference identifier string.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param mixed $value The value to normalize.
      * @param string $emptyMessage The message for empty or invalid values.
@@ -1256,7 +1256,7 @@ class PromptBuilder
     /**
      * Creates a preference key for a provider/model combination.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param string $providerId The provider identifier.
      * @param string $modelId The model identifier.
@@ -1270,7 +1270,7 @@ class PromptBuilder
     /**
      * Creates a preference key for a model identifier.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param string $modelId The model identifier.
      * @return string The generated preference key.

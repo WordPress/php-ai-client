@@ -18,7 +18,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * This class provides a fluent interface for building messages with various
  * content types including text, files, function calls, and function responses.
  *
- * @since n.e.x.t
+ * @since 0.2.0
  *
  * @phpstan-import-type MessagePartArrayShape from MessagePart
  *
@@ -39,7 +39,7 @@ class MessageBuilder
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param Input $input Optional initial content.
      * @param MessageRoleEnum|null $role Optional role.
@@ -75,7 +75,7 @@ class MessageBuilder
     /**
      * Sets the role of the message sender.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param MessageRoleEnum $role The role to set.
      * @return self
@@ -89,7 +89,7 @@ class MessageBuilder
     /**
      * Sets the role to user.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return self
      */
@@ -101,7 +101,7 @@ class MessageBuilder
     /**
      * Sets the role to model.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return self
      */
@@ -113,7 +113,7 @@ class MessageBuilder
     /**
      * Adds text content to the message.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param string $text The text to add.
      * @return self
@@ -139,7 +139,7 @@ class MessageBuilder
      * - Data URI string (data:mime/type;base64,data)
      * - Local file path string
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param string|File $file The file to add.
      * @param string|null $mimeType Optional MIME type (ignored if File object provided).
@@ -156,7 +156,7 @@ class MessageBuilder
     /**
      * Adds a function call to the message.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param FunctionCall $functionCall The function call to add.
      * @return self
@@ -170,7 +170,7 @@ class MessageBuilder
     /**
      * Adds a function response to the message.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param FunctionResponse $functionResponse The function response to add.
      * @return self
@@ -184,7 +184,7 @@ class MessageBuilder
     /**
      * Adds multiple message parts to the message.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param MessagePart ...$parts The message parts to add.
      * @return self
@@ -201,7 +201,7 @@ class MessageBuilder
     /**
      * Builds and returns the Message object.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return Message The built message.
      * @throws InvalidArgumentException If the message validation fails.

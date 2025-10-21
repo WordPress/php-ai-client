@@ -24,7 +24,7 @@ class OpenAiProvider extends AbstractApiProvider
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      */
     protected static function baseUrl(): string
     {

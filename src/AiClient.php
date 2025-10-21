@@ -127,7 +127,7 @@ class AiClient
      * injected into availability instances.
      *
      * @since 0.1.0
-     * @since n.e.x.t Now supports being passed a provider ID or class name.
+     * @since 0.2.0 Now supports being passed a provider ID or class name.
      *
      * @param ProviderAvailabilityInterface|string|class-string<ProviderInterface> $availabilityOrIdOrClassName
      *        The provider availability instance, provider ID, or provider class name.

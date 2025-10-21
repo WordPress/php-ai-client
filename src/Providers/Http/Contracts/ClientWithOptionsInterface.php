@@ -14,14 +14,14 @@ use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
  * Extends the capabilities of PSR-18 clients by allowing custom transport
  * configuration such as timeouts and redirect handling on each request.
  *
- * @since n.e.x.t
+ * @since 0.2.0
  */
 interface ClientWithOptionsInterface
 {
     /**
      * Sends an HTTP request with the given transport options.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param RequestInterface $request The PSR-7 request to send.
      * @param RequestOptions $options The request transport options. Must not be null.

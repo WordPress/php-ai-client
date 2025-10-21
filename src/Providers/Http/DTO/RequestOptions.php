@@ -12,7 +12,7 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
  *
  * Provides mutable setters for working with timeouts and redirect handling.
  *
- * @since n.e.x.t
+ * @since 0.2.0
  *
  * @phpstan-type RequestOptionsArrayShape array{
  *     timeout?: float|null,
@@ -46,7 +46,7 @@ class RequestOptions extends AbstractDataTransferObject
     /**
      * Sets the request timeout in seconds.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param float|null $timeout Timeout in seconds.
      * @return void
@@ -62,7 +62,7 @@ class RequestOptions extends AbstractDataTransferObject
     /**
      * Sets the connection timeout in seconds.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param float|null $timeout Connection timeout in seconds.
      * @return void
@@ -81,7 +81,7 @@ class RequestOptions extends AbstractDataTransferObject
      * Set to 0 to disable redirects, null for unspecified, or a positive integer
      * to enable redirects with a maximum count.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param int|null $maxRedirects Maximum redirects to follow, or 0 to disable, or null for unspecified.
      * @return void
@@ -102,7 +102,7 @@ class RequestOptions extends AbstractDataTransferObject
     /**
      * Gets the request timeout in seconds.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return float|null Timeout in seconds.
      */
@@ -114,7 +114,7 @@ class RequestOptions extends AbstractDataTransferObject
     /**
      * Gets the connection timeout in seconds.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return float|null Connection timeout in seconds.
      */
@@ -126,7 +126,7 @@ class RequestOptions extends AbstractDataTransferObject
     /**
      * Checks whether redirects are allowed.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return bool|null True when redirects are allowed (maxRedirects > 0),
      *                   false when disabled (maxRedirects = 0),
@@ -144,7 +144,7 @@ class RequestOptions extends AbstractDataTransferObject
     /**
      * Gets the maximum number of redirects to follow.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return int|null Maximum redirects or null when not specified.
      */
@@ -156,7 +156,7 @@ class RequestOptions extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @return RequestOptionsArrayShape
      */
@@ -182,7 +182,7 @@ class RequestOptions extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      */
     public static function fromArray(array $array): self
     {
@@ -206,7 +206,7 @@ class RequestOptions extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      */
     public static function getJsonSchema(): array
     {
@@ -236,7 +236,7 @@ class RequestOptions extends AbstractDataTransferObject
     /**
      * Validates timeout values.
      *
-     * @since n.e.x.t
+     * @since 0.2.0
      *
      * @param float|null $value Timeout to validate.
      * @param string $fieldName Field name for the error message.
