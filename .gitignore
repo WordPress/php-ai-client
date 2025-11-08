@@ -14,13 +14,6 @@ vendor/
 .DS_store?
 
 ############
-## IDEs
-############
-
-.idea/
-.vscode/
-
-############
 ## AI Tools
 ############
 
@@ -35,14 +28,14 @@ CLAUDE.md
 GEMINI.md
 
 ############
+## PHPUnit
+############
+
+.phpunit.cache/
+
+############
 ## IDEs
 ############
 
 .idea/
 .vscode/
-
-############
-## PHPUnit
-############
-
-.phpunit.cache/
