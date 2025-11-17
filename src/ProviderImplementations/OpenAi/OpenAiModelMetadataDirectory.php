@@ -109,6 +109,14 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                 ]
             ),
         ]);
+        $gptSearchOptions = [
+            new SupportedOption(OptionEnum::systemInstruction()),
+            new SupportedOption(OptionEnum::outputMimeType(), ['text/plain', 'application/json']),
+            new SupportedOption(OptionEnum::outputSchema()),
+            new SupportedOption(OptionEnum::customOptions()),
+            new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
+            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
+        ];
         $imageCapabilities = [
             CapabilityEnum::imageGeneration(),
         ];
@@ -166,6 +174,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     $gptOptions,
                     $gptMultimodalInputOptions,
                     $gptMultimodalSpeechOutputOptions,
+                    $gptSearchOptions,
                     $imageCapabilities,
                     $dalleImageOptions,
                     $gptImageOptions,
@@ -200,6 +209,8 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                             // New multimodal output model for audio generation.
                             if (str_contains($modelId, '-audio')) {
                                 $modelOptions = $gptMultimodalSpeechOutputOptions;
+                            } elseif (str_contains($modelId, '-search')) {
+                                $modelOptions = $gptSearchOptions;
                             }
                         } elseif (!str_contains($modelId, '-audio')) {
                             $modelCaps = $gptCapabilities;
