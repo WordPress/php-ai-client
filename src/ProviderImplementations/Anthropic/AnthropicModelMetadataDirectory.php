@@ -180,7 +180,7 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
             return 1;
         }
 
-        // Prefer Claude models with type, version number, and date (e.g. 'claude-sonnet-4') over those without.
+        // Prefer Claude models with type, version number, and date (e.g. 'claude-sonnet-4-5-20250929') over those without.
         $aMatch = preg_match('/^claude-([a-z]+)-(\d(-\d)?)-([0-9]+)$/', $aId, $aMatches);
         $bMatch = preg_match('/^claude-([a-z]+)-(\d(-\d)?)-([0-9]+)$/', $bId, $bMatches);
         if ($aMatch && !$bMatch) {
