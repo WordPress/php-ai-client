@@ -180,9 +180,12 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
             return 1;
         }
 
-        // Prefer Claude models with type, version number, and date (e.g. 'claude-sonnet-4-5-20250929') over those without.
-        $aMatch = preg_match('/^claude-([a-z]+)-(\d(-\d)?)-([0-9]+)$/', $aId, $aMatches);
-        $bMatch = preg_match('/^claude-([a-z]+)-(\d(-\d)?)-([0-9]+)$/', $bId, $bMatches);
+        /*
+         * Prefer Claude models with type and version number (e.g. 'claude-sonnet-4', 'claude-sonnet-4-5-20250929')
+         * over those without. An optional date suffix may also be present.
+         */
+        $aMatch = preg_match('/^claude-([a-z]+)-(\d(-\d)?)(-[0-9]+)?$/', $aId, $aMatches);
+        $bMatch = preg_match('/^claude-([a-z]+)-(\d(-\d)?)(-[0-9]+)?$/', $bId, $bMatches);
         if ($aMatch && !$bMatch) {
             return -1;
         }
@@ -200,6 +203,14 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
                 return 1;
             }
 
+            // Prefer models without a suffix (i.e. base models) over those with a suffix.
+            if (!isset($aMatches[4]) && isset($bMatches[4])) {
+                return -1;
+            }
+            if (!isset($bMatches[4]) && isset($aMatches[4])) {
+                return 1;
+            }
+
             // Prefer 'sonnet' models over other types.
             if ($aMatches[1] === 'sonnet' && $bMatches[1] !== 'sonnet') {
                 return -1;
@@ -209,13 +220,15 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
             }
 
             // Prefer later release dates.
-            $aDate = (int) $aMatches[4];
-            $bDate = (int) $bMatches[4];
-            if ($aDate > $bDate) {
-                return -1;
-            }
-            if ($bDate > $aDate) {
-                return 1;
+            if (isset($aMatches[4]) && isset($bMatches[4])) {
+                $aDate = (int) substr($aMatches[4], 1);
+                $bDate = (int) substr($bMatches[4], 1);
+                if ($aDate > $bDate) {
+                    return -1;
+                }
+                if ($bDate > $aDate) {
+                    return 1;
+                }
             }
         }
 
