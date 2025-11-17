@@ -109,7 +109,7 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
 
         $modelsData = (array) $responseData['data'];
 
-        return array_values(
+        $models = array_values(
             array_map(
                 static function (array $modelData) use (
                     $anthropicCapabilities,
@@ -137,5 +137,89 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
                 $modelsData
             )
         );
+
+        usort($models, [$this, 'modelSortCallback']);
+
+        return $models;
+    }
+
+    /**
+     * Callback function for sorting models by ID, to be used with `usort()`.
+     *
+     * This method expresses preferences for certain models or model families within the provider by putting them
+     * earlier in the sorted list. The objective is not to be opinionated about which models are better, but to ensure
+     * that more commonly used, more recent, or flagship models are presented first to users.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelMetadata $a First model.
+     * @param ModelMetadata $b Second model.
+     * @return int Comparison result.
+     */
+    protected function modelSortCallback(ModelMetadata $a, ModelMetadata $b): int
+    {
+        $aId = $a->getId();
+        $bId = $b->getId();
+
+        // Prefer Claude models over non-Claude models.
+        if (str_starts_with($aId, 'claude-') && !str_starts_with($bId, 'claude-')) {
+            return -1;
+        }
+        if (str_starts_with($bId, 'claude-') && !str_starts_with($aId, 'claude-')) {
+            return 1;
+        }
+
+        /*
+         * Prefer Claude models where the version number isn't the second segment (e.g. 'claude-sonnet-4')
+         * over those where it is (e.g. 'claude-2', 'claude-3-5-sonnet'). The latter is only used for older models.
+         */
+        if (!preg_match('/^claude-\d/', $aId) && preg_match('/^claude-\d/', $bId)) {
+            return -1;
+        }
+        if (!preg_match('/^claude-\d/', $bId) && preg_match('/^claude-\d/', $aId)) {
+            return 1;
+        }
+
+        // Prefer Claude models with type, version number, and date (e.g. 'claude-sonnet-4') over those without.
+        $aMatch = preg_match('/^claude-([a-z]+)-(\d(-\d)?)-([0-9]+)$/', $aId, $aMatches);
+        $bMatch = preg_match('/^claude-([a-z]+)-(\d(-\d)?)-([0-9]+)$/', $bId, $bMatches);
+        if ($aMatch && !$bMatch) {
+            return -1;
+        }
+        if ($bMatch && !$aMatch) {
+            return 1;
+        }
+        if ($aMatch && $bMatch) {
+            // Prefer later model versions.
+            $aVersion = str_replace('-', '.', $aMatches[2]);
+            $bVersion = str_replace('-', '.', $bMatches[2]);
+            if (version_compare($aVersion, $bVersion, '>')) {
+                return -1;
+            }
+            if (version_compare($bVersion, $aVersion, '>')) {
+                return 1;
+            }
+
+            // Prefer 'sonnet' models over other types.
+            if ($aMatches[1] === 'sonnet' && $bMatches[1] !== 'sonnet') {
+                return -1;
+            }
+            if ($bMatches[1] === 'sonnet' && $aMatches[1] !== 'sonnet') {
+                return 1;
+            }
+
+            // Prefer later release dates.
+            $aDate = (int) $aMatches[4];
+            $bDate = (int) $bMatches[4];
+            if ($aDate > $bDate) {
+                return -1;
+            }
+            if ($bDate > $aDate) {
+                return 1;
+            }
+        }
+
+        // Fallback: Sort alphabetically.
+        return strcmp($a->getId(), $b->getId());
     }
 }

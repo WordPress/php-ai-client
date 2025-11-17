@@ -167,7 +167,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
 
         $modelsData = (array) $responseData['models'];
 
-        return array_values(
+        $models = array_values(
             array_map(
                 static function (array $modelData) use (
                     $geminiCapabilities,
@@ -234,5 +234,92 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                 $modelsData
             )
         );
+
+        usort($models, [$this, 'modelSortCallback']);
+
+        return $models;
+    }
+
+    /**
+     * Callback function for sorting models by ID, to be used with `usort()`.
+     *
+     * This method expresses preferences for certain models or model families within the provider by putting them
+     * earlier in the sorted list. The objective is not to be opinionated about which models are better, but to ensure
+     * that more commonly used, more recent, or flagship models are presented first to users.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelMetadata $a First model.
+     * @param ModelMetadata $b Second model.
+     * @return int Comparison result.
+     */
+    protected function modelSortCallback(ModelMetadata $a, ModelMetadata $b): int
+    {
+        $aId = $a->getId();
+        $bId = $b->getId();
+
+        // Prefer non-experimental models over experimental models.
+        if (str_contains($aId, '-exp') && !str_contains($bId, '-exp')) {
+            return 1;
+        }
+        if (str_contains($bId, '-exp') && !str_contains($aId, '-exp')) {
+            return -1;
+        }
+
+        // Prefer non-preview models over preview models.
+        if (str_contains($aId, '-preview') && !str_contains($bId, '-preview')) {
+            return 1;
+        }
+        if (str_contains($bId, '-preview') && !str_contains($aId, '-preview')) {
+            return -1;
+        }
+
+        // Prefer Gemini models over non-Gemini models.
+        if (str_starts_with($aId, 'gemini-') && !str_starts_with($bId, 'gemini-')) {
+            return -1;
+        }
+        if (str_starts_with($bId, 'gemini-') && !str_starts_with($aId, 'gemini-')) {
+            return 1;
+        }
+
+        // Prefer Gemini models with version numbers (e.g. 'gemini-2.5', 'gemini-2.0') over those without.
+        $aMatch = preg_match('/^gemini-([0-9.]+)(-[a-z0-9-]+)$/', $aId, $aMatches);
+        $bMatch = preg_match('/^gemini-([0-9.]+)(-[a-z0-9-]+)$/', $bId, $bMatches);
+        if ($aMatch && !$bMatch) {
+            return -1;
+        }
+        if ($bMatch && !$aMatch) {
+            return 1;
+        }
+        if ($aMatch && $bMatch) {
+            // Prefer later model versions.
+            $aVersion = $aMatches[1];
+            $bVersion = $bMatches[1];
+            if (version_compare($aVersion, $bVersion, '>')) {
+                return -1;
+            }
+            if (version_compare($bVersion, $aVersion, '>')) {
+                return 1;
+            }
+
+            // Prefer '-pro' models over other suffixes.
+            if ($aMatches[2] === '-pro' && $bMatches[2] !== '-pro') {
+                return -1;
+            }
+            if ($bMatches[2] === '-pro' && $aMatches[2] !== '-pro') {
+                return 1;
+            }
+
+            // Prefer '-flash' models over other suffixes.
+            if ($aMatches[2] === '-flash' && $bMatches[2] !== '-flash') {
+                return -1;
+            }
+            if ($bMatches[2] === '-flash' && $aMatches[2] !== '-flash') {
+                return 1;
+            }
+        }
+
+        // Fallback: Sort alphabetically.
+        return strcmp($a->getId(), $b->getId());
     }
 }
