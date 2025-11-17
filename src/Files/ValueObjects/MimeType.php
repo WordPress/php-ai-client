@@ -274,6 +274,7 @@ final class MimeType
      *
      * @param self|string $other The other MIME type to compare.
      * @return bool True if equal.
+     * @throws InvalidArgumentException If the other MIME type is invalid.
      */
     public function equals($other): bool
     {
