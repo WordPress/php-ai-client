@@ -150,7 +150,7 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
      * earlier in the sorted list. The objective is not to be opinionated about which models are better, but to ensure
      * that more commonly used, more recent, or flagship models are presented first to users.
      *
-     * @since n.e.x.t
+     * @since 0.2.1
      *
      * @param ModelMetadata $a First model.
      * @param ModelMetadata $b Second model.
