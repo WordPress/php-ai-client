@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\ApiBasedImplementation;
 
+use WordPress\AiClient\Providers\ApiBasedImplementation\Contracts\ApiBasedModelInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Http\Traits\WithRequestAuthenticationTrait;
-use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
@@ -23,7 +23,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  * @since 0.1.0
  */
 abstract class AbstractApiBasedModel implements
-    ModelInterface,
+    ApiBasedModelInterface,
     WithHttpTransporterInterface,
     WithRequestAuthenticationInterface
 {
