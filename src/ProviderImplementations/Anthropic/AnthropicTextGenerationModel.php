@@ -20,12 +20,8 @@ class AnthropicTextGenerationModel extends AbstractOpenAiCompatibleTextGeneratio
      *
      * @since 0.1.0
      */
-    protected function createRequest(
-        HttpMethodEnum $method,
-        string $path,
-        array $headers = [],
-        $data = null
-    ): Request {
+    protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
+    {
         return new Request(
             $method,
             AnthropicProvider::url($path),
