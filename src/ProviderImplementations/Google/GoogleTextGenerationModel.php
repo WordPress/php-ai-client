@@ -20,13 +20,18 @@ class GoogleTextGenerationModel extends AbstractOpenAiCompatibleTextGenerationMo
      *
      * @since 0.1.0
      */
-    protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
-    {
+    protected function createRequest(
+        HttpMethodEnum $method,
+        string $path,
+        array $headers = [],
+        $data = null
+    ): Request {
         return new Request(
             $method,
             GoogleProvider::url('openai/' . ltrim($path, '/')),
             $headers,
-            $data
+            $data,
+            $this->getRequestOptions()
         );
     }
 }

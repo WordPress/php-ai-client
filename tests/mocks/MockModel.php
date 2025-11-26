@@ -7,7 +7,6 @@ namespace WordPress\AiClient\Tests\mocks;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
-use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Http\Traits\WithRequestAuthenticationTrait;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
@@ -31,11 +30,6 @@ class MockModel implements ModelInterface, WithHttpTransporterInterface, WithReq
      * @var ModelConfig The model configuration.
      */
     private ModelConfig $config;
-
-    /**
-     * @var RequestOptions|null The request options.
-     */
-    private ?RequestOptions $requestOptions = null;
 
     /**
      * Constructor.
@@ -80,21 +74,5 @@ class MockModel implements ModelInterface, WithHttpTransporterInterface, WithReq
     public function setConfig(ModelConfig $config): void
     {
         $this->config = $config;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function setRequestOptions(RequestOptions $requestOptions): void
-    {
-        $this->requestOptions = $requestOptions;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getRequestOptions(): ?RequestOptions
-    {
-        return $this->requestOptions;
     }
 }

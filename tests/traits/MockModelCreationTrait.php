@@ -9,7 +9,6 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
-use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -143,7 +142,6 @@ trait MockModelCreationTrait
             private ProviderMetadata $providerMetadata;
             private GenerativeAiResult $result;
             private ModelConfig $config;
-            private ?RequestOptions $requestOptions = null;
 
             public function __construct(
                 ModelMetadata $metadata,
@@ -174,16 +172,6 @@ trait MockModelCreationTrait
             public function getConfig(): ModelConfig
             {
                 return $this->config;
-            }
-
-            public function setRequestOptions(RequestOptions $requestOptions): void
-            {
-                $this->requestOptions = $requestOptions;
-            }
-
-            public function getRequestOptions(): ?RequestOptions
-            {
-                return $this->requestOptions;
             }
 
             public function generateTextResult(array $prompt): GenerativeAiResult
@@ -226,7 +214,6 @@ trait MockModelCreationTrait
             private ProviderMetadata $providerMetadata;
             private GenerativeAiResult $result;
             private ModelConfig $config;
-            private ?RequestOptions $requestOptions = null;
 
             public function __construct(
                 ModelMetadata $metadata,
@@ -257,16 +244,6 @@ trait MockModelCreationTrait
             public function getConfig(): ModelConfig
             {
                 return $this->config;
-            }
-
-            public function setRequestOptions(RequestOptions $requestOptions): void
-            {
-                $this->requestOptions = $requestOptions;
-            }
-
-            public function getRequestOptions(): ?RequestOptions
-            {
-                return $this->requestOptions;
             }
 
             public function generateImageResult(array $prompt): GenerativeAiResult

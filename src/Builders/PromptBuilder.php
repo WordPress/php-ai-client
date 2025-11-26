@@ -13,6 +13,7 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModel;
 use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
@@ -1187,7 +1188,9 @@ class PromptBuilder
     }
 
     /**
-     * Binds configured request options to the model if present.
+     * Binds configured request options to the model if present and supported.
+     *
+     * Request options are only applicable to API-based models that make HTTP requests.
      *
      * @since n.e.x.t
      *
@@ -1196,7 +1199,7 @@ class PromptBuilder
      */
     private function bindModelRequestOptions(ModelInterface $model): void
     {
-        if ($this->requestOptions !== null) {
+        if ($this->requestOptions !== null && $model instanceof AbstractApiBasedModel) {
             $model->setRequestOptions($this->requestOptions);
         }
     }
