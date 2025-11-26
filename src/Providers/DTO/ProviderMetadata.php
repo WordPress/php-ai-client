@@ -18,7 +18,8 @@ use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
  * @phpstan-type ProviderMetadataArrayShape array{
  *     id: string,
  *     name: string,
- *     type: string
+ *     type: string,
+ *     credentialsUrl?: ?string
  * }
  *
  * @extends AbstractDataTransferObject<ProviderMetadataArrayShape>
@@ -28,6 +29,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     public const KEY_ID = 'id';
     public const KEY_NAME = 'name';
     public const KEY_TYPE = 'type';
+    public const KEY_CREDENTIALS_URL = 'credentialsUrl';
 
     /**
      * @var string The provider's unique identifier.
@@ -45,6 +47,11 @@ class ProviderMetadata extends AbstractDataTransferObject
     protected ProviderTypeEnum $type;
 
     /**
+     * @var string|null The URL where users can get credentials.
+     */
+    protected ?string $credentialsUrl;
+
+    /**
      * Constructor.
      *
      * @since 0.1.0
@@ -52,12 +59,14 @@ class ProviderMetadata extends AbstractDataTransferObject
      * @param string $id The provider's unique identifier.
      * @param string $name The provider's display name.
      * @param ProviderTypeEnum $type The provider type.
+     * @param string|null $credentialsUrl The URL where users can get credentials.
      */
-    public function __construct(string $id, string $name, ProviderTypeEnum $type)
+    public function __construct(string $id, string $name, ProviderTypeEnum $type, ?string $credentialsUrl = null)
     {
         $this->id = $id;
         $this->name = $name;
         $this->type = $type;
+        $this->credentialsUrl = $credentialsUrl;
     }
 
     /**
@@ -97,6 +106,18 @@ class ProviderMetadata extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the credentials URL.
+     *
+     * @since 0.1.0
+     *
+     * @return string|null The credentials URL.
+     */
+    public function getCredentialsUrl(): ?string
+    {
+        return $this->credentialsUrl;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -119,6 +140,10 @@ class ProviderMetadata extends AbstractDataTransferObject
                     'enum' => ProviderTypeEnum::getValues(),
                     'description' => 'The provider type (cloud, server, or client).',
                 ],
+                self::KEY_CREDENTIALS_URL => [
+                    'type' => 'string',
+                    'description' => 'The URL where users can get credentials.',
+                ],
             ],
             'required' => [self::KEY_ID, self::KEY_NAME, self::KEY_TYPE],
         ];
@@ -137,6 +162,7 @@ class ProviderMetadata extends AbstractDataTransferObject
             self::KEY_ID => $this->id,
             self::KEY_NAME => $this->name,
             self::KEY_TYPE => $this->type->value,
+            self::KEY_CREDENTIALS_URL => $this->credentialsUrl,
         ];
     }
 
@@ -152,7 +178,8 @@ class ProviderMetadata extends AbstractDataTransferObject
         return new self(
             $array[self::KEY_ID],
             $array[self::KEY_NAME],
-            ProviderTypeEnum::from($array[self::KEY_TYPE])
+            ProviderTypeEnum::from($array[self::KEY_TYPE]),
+            $array[self::KEY_CREDENTIALS_URL] ?? null
         );
     }
 }
