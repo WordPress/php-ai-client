@@ -13,6 +13,8 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Providers\ApiBasedImplementation\Contracts\ApiBasedModelInterface;
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -74,6 +76,11 @@ class PromptBuilder
      * @var ModelConfig The model configuration.
      */
     protected ModelConfig $modelConfig;
+
+    /**
+     * @var RequestOptions|null The request options for HTTP transport.
+     */
+    protected ?RequestOptions $requestOptions = null;
 
     // phpcs:disable Generic.Files.LineLength.TooLong
     /**
@@ -479,6 +486,20 @@ class PromptBuilder
     public function usingWebSearch(WebSearch $webSearch): self
     {
         $this->modelConfig->setWebSearch($webSearch);
+        return $this;
+    }
+
+    /**
+     * Sets the request options for HTTP transport.
+     *
+     * @since n.e.x.t
+     *
+     * @param RequestOptions $requestOptions The request options.
+     * @return self
+     */
+    public function usingRequestOptions(RequestOptions $requestOptions): self
+    {
+        $this->requestOptions = $requestOptions;
         return $this;
     }
 
@@ -1112,9 +1133,11 @@ class PromptBuilder
 
         if ($this->model !== null) {
             // Explicit model was provided via usingModel(); just update config and bind dependencies.
-            $this->model->setConfig($this->modelConfig);
-            $this->registry->bindModelDependencies($this->model);
-            return $this->model;
+            $model = $this->model;
+            $model->setConfig($this->modelConfig);
+            $this->registry->bindModelDependencies($model);
+            $this->bindModelRequestOptions($model);
+            return $model;
         }
 
         // Retrieve the candidate models map which satisfies the requirements.
@@ -1150,14 +1173,35 @@ class PromptBuilder
                 $firstMatchKey = key($matchingPreferences);
                 [$providerId, $modelId] = $candidateMap[$firstMatchKey];
 
-                return $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
+                $model = $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
+                $this->bindModelRequestOptions($model);
+                return $model;
             }
         }
 
         // No preference matched; fall back to the first candidate discovered.
         [$providerId, $modelId] = reset($candidateMap);
 
-        return $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
+        $model = $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
+        $this->bindModelRequestOptions($model);
+        return $model;
+    }
+
+    /**
+     * Binds configured request options to the model if present and supported.
+     *
+     * Request options are only applicable to API-based models that make HTTP requests.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $model The model to bind request options to.
+     * @return void
+     */
+    private function bindModelRequestOptions(ModelInterface $model): void
+    {
+        if ($this->requestOptions !== null && $model instanceof ApiBasedModelInterface) {
+            $model->setRequestOptions($this->requestOptions);
+        }
     }
 
     /**

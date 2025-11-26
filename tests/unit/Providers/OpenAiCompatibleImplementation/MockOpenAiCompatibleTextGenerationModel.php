@@ -82,7 +82,7 @@ class MockOpenAiCompatibleTextGenerationModel extends AbstractOpenAiCompatibleTe
         array $headers = [],
         $data = null
     ): Request {
-        return new Request($method, 'https://example.com/' . $path, $headers, $data);
+        return new Request($method, 'https://example.com/' . $path, $headers, $data, $this->getRequestOptions());
     }
 
     /**

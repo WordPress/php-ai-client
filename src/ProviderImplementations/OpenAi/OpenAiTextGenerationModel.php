@@ -26,7 +26,8 @@ class OpenAiTextGenerationModel extends AbstractOpenAiCompatibleTextGenerationMo
             $method,
             OpenAiProvider::url($path),
             $headers,
-            $data
+            $data,
+            $this->getRequestOptions()
         );
     }
 }
