@@ -9,6 +9,7 @@
  *   GOOGLE_API_KEY=123456 php cli.php 'Your prompt here' --providerId=google --modelId=gemini-2.5-flash
  *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai
  *   GOOGLE_API_KEY=123456 OPENAI_API_KEY=123456 php cli.php 'Your prompt here'
+ *   OPENAI_API_KEY=123456 php cli.php '["Embed this", "and this"]' --capability=embeddings --outputFormat=embeddings-json
  */
 
 declare(strict_types=1);
@@ -97,11 +98,32 @@ if (str_starts_with($promptInput, '{') || str_starts_with($promptInput, '[')) {
     }
 }
 
-// Provider ID, model ID, and output format.
+// Provider ID, model ID, and capability/output format.
 $providerId = $named_args['providerId'] ?? null;
 $modelId = $named_args['modelId'] ?? null;
 $modelPreference = $named_args['modelPreference'] ?? null;
-$outputFormat = $named_args['outputFormat'] ?? 'message-text';
+$capabilityInput = $named_args['capability'] ?? 'text';
+$capability = is_string($capabilityInput) ? strtolower($capabilityInput) : 'text';
+$validCapabilities = ['text', 'image', 'embeddings'];
+if (!in_array($capability, $validCapabilities, true)) {
+    logWarning(sprintf('Invalid capability "%s". Defaulting to "text".', (string) $capabilityInput));
+    $capability = 'text';
+}
+$defaultOutputFormat = 'message-text';
+if ($capability === 'image') {
+    $defaultOutputFormat = 'image-json';
+} elseif ($capability === 'embeddings') {
+    $defaultOutputFormat = 'embeddings-vectors';
+}
+$outputFormat = $named_args['outputFormat'] ?? $defaultOutputFormat;
+$imageOutputFormats = ['image-json', 'image-base64'];
+if ($capability === 'embeddings' && in_array($outputFormat, $imageOutputFormats, true)) {
+    logWarning('Image output formats are not supported for embeddings. Using embeddings-vectors.');
+    $outputFormat = 'embeddings-vectors';
+}
+if ($capability !== 'embeddings' && in_array($outputFormat, $imageOutputFormats, true)) {
+    $capability = 'image';
+}
 
 // Any model configuration options.
 $schema = ModelConfig::getJsonSchema()['properties'];
@@ -142,7 +164,8 @@ foreach ($named_args as $key => $value) {
 try {
     $modelConfig = ModelConfig::fromArray($model_config_data);
 
-    $promptBuilder = AiClient::prompt($promptInput);
+    $initialPrompt = $capability === 'embeddings' ? null : $promptInput;
+    $promptBuilder = AiClient::prompt($initialPrompt);
     $promptBuilder = $promptBuilder->usingModelConfig($modelConfig);
     if ($providerId && $modelId) {
         $providerClassName = AiClient::defaultRegistry()->getProviderClassName($providerId);
@@ -163,6 +186,9 @@ try {
         );
         $promptBuilder = $promptBuilder->usingModelPreference(...$modelPreference);
     }
+    if ($capability === 'embeddings') {
+        $promptBuilder = $promptBuilder->withEmbeddingInputs($promptInput);
+    }
 } catch (InvalidArgumentException $e) {
     logError('Invalid arguments while trying to set up prompt builder: ' . $e->getMessage());
 } catch (ResponseException $e) {
@@ -170,36 +196,60 @@ try {
 }
 
 try {
-    if ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
+    $generationAction = 'generate text result';
+    if ($capability === 'image') {
+        $generationAction = 'generate image result';
+    } elseif ($capability === 'embeddings') {
+        $generationAction = 'generate embeddings result';
+    }
+
+    if ($capability === 'image') {
         $result = $promptBuilder->generateImageResult();
+    } elseif ($capability === 'embeddings') {
+        $result = $promptBuilder->generateEmbeddingsResult();
     } else {
         $result = $promptBuilder->generateTextResult();
     }
 } catch (InvalidArgumentException $e) {
-    logError('Invalid arguments while trying to generate text result: ' . $e->getMessage());
+    logError('Invalid arguments while trying to ' . $generationAction . ': ' . $e->getMessage());
 } catch (ResponseException $e) {
-    logError('Request failed while trying to generate text result: ' . $e->getMessage());
+    logError('Request failed while trying to ' . $generationAction . ': ' . $e->getMessage());
 }
 
 logInfo("Using provider ID: \"{$result->getProviderMetadata()->getId()}\"");
 logInfo("Using model ID: \"{$result->getModelMetadata()->getId()}\"");
 
-switch ($outputFormat) {
-    case 'result-json':
-        $output = json_encode($result, JSON_PRETTY_PRINT);
-        break;
-    case 'candidates-json':
-        $output = json_encode($result->getCandidates(), JSON_PRETTY_PRINT);
-        break;
-    case 'image-json':
-        $output = json_encode($result->toFile(), JSON_PRETTY_PRINT);
-        break;
-    case 'image-base64':
-        $output = $result->toFile()->getBase64Data();
-        break;
-    case 'message-text':
-    default:
-        $output = $result->toText();
+if ($capability === 'embeddings') {
+    switch ($outputFormat) {
+        case 'embeddings-json':
+            $output = json_encode($result, JSON_PRETTY_PRINT);
+            break;
+        case 'embedding-first-vector':
+            $output = json_encode($result->toVector(), JSON_PRETTY_PRINT);
+            break;
+        case 'embeddings-vectors':
+        default:
+            $output = json_encode($result->toVectors(), JSON_PRETTY_PRINT);
+            break;
+    }
+} else {
+    switch ($outputFormat) {
+        case 'result-json':
+            $output = json_encode($result, JSON_PRETTY_PRINT);
+            break;
+        case 'candidates-json':
+            $output = json_encode($result->getCandidates(), JSON_PRETTY_PRINT);
+            break;
+        case 'image-json':
+            $output = json_encode($result->toFile(), JSON_PRETTY_PRINT);
+            break;
+        case 'image-base64':
+            $output = $result->toFile()->getBase64Data();
+            break;
+        case 'message-text':
+        default:
+            $output = $result->toText();
+    }
 }
 
 printOutput($output);

@@ -197,6 +197,23 @@ class ProviderRegistryTest extends TestCase
     }
 
     /**
+     * Tests discovery for embedding-capable models.
+     *
+     * @return void
+     */
+    public function testFindModelsMetadataForEmbeddingSupport(): void
+    {
+        $this->registry->registerProvider(MockProvider::class);
+
+        $requirements = new ModelRequirements([CapabilityEnum::embeddingGeneration()], []);
+        $results = $this->registry->findModelsMetadataForSupport($requirements);
+
+        $this->assertNotEmpty($results);
+        $embeddingModels = $results[0]->getModels();
+        $this->assertSame('mock-embedding-model', $embeddingModels[0]->getId());
+    }
+
+    /**
      * Tests findProviderModelsMetadataForSupport with unregistered provider.
      *
      * @return void

@@ -3390,4 +3390,61 @@ class PromptBuilderTest extends TestCase
         $this->assertTrue($config->getLogprobs());
         $this->assertEquals(3, $config->getTopLogprobs());
     }
+
+    /**
+     * Tests generating embeddings result with explicit embedding inputs.
+     */
+    public function testGenerateEmbeddingsResultWithExplicitInputs(): void
+    {
+        $embeddingResult = $this->createTestEmbeddingResult();
+        $mockModel = $this->createMockEmbeddingGenerationModel($embeddingResult);
+
+        $builder = new PromptBuilder($this->registry);
+        $builder->usingModel($mockModel)->withEmbeddingInputs('Doc 1', 'Doc 2');
+
+        $this->assertSame($embeddingResult, $builder->generateEmbeddingsResult());
+    }
+
+    /**
+     * Tests embedding generation falls back to existing prompt messages.
+     */
+    public function testGenerateEmbeddingsResultFallsBackToPromptMessages(): void
+    {
+        $embeddingResult = $this->createTestEmbeddingResult([[0.5, 0.6]]);
+        $mockModel = $this->createMockEmbeddingGenerationModel($embeddingResult);
+
+        $builder = new PromptBuilder($this->registry, 'Embed this text');
+        $builder->usingModel($mockModel);
+
+        $this->assertSame($embeddingResult, $builder->generateEmbeddingsResult());
+    }
+
+    /**
+     * Tests generating embedding operations via the builder.
+     */
+    public function testGenerateEmbeddingsOperation(): void
+    {
+        $operation = $this->createTestEmbeddingOperation();
+        $mockModel = $this->createMockEmbeddingOperationModel($operation);
+
+        $builder = new PromptBuilder($this->registry);
+        $builder->usingModel($mockModel)->withEmbeddingInputs('Doc for operation');
+
+        $this->assertSame($operation, $builder->generateEmbeddingsOperation());
+    }
+
+    /**
+     * Tests generateEmbeddings convenience helper.
+     */
+    public function testGenerateEmbeddingsHelperReturnsVectors(): void
+    {
+        $vectors = [[0.9, 0.1]];
+        $embeddingResult = $this->createTestEmbeddingResult($vectors);
+        $mockModel = $this->createMockEmbeddingGenerationModel($embeddingResult);
+
+        $builder = new PromptBuilder($this->registry);
+        $builder->usingModel($mockModel)->withEmbeddingInputs('Only doc');
+
+        $this->assertSame($vectors, $builder->generateEmbeddings());
+    }
 }

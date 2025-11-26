@@ -7,6 +7,7 @@ namespace WordPress\AiClient;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Operations\DTO\EmbeddingOperation;
 use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
 use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
 use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
@@ -16,6 +17,7 @@ use WordPress\AiClient\Providers\Http\HttpTransporterFactory;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 
 /**
@@ -296,6 +298,60 @@ class AiClient
     ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
         return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateSpeechResult();
+    }
+
+    /**
+     * Generates embeddings for the given input using the traditional API.
+     *
+     * @since 0.2.0
+     *
+     * @param Prompt $input The input to embed. Accepts strings, messages, or arrays of those types.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional model specification.
+     * @param ProviderRegistry|null $registry Optional custom registry.
+     * @return EmbeddingResult The embeddings result.
+     */
+    public static function generateEmbeddingsResult(
+        $input,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): EmbeddingResult {
+        self::validateModelOrConfigParameter($modelOrConfig);
+        $builder = self::prompt(null, $registry);
+        if ($modelOrConfig instanceof ModelInterface) {
+            $builder->usingModel($modelOrConfig);
+        } elseif ($modelOrConfig instanceof ModelConfig) {
+            $builder->usingModelConfig($modelOrConfig);
+        }
+
+        $builder->withEmbeddingInputs($input);
+        return $builder->generateEmbeddingsResult();
+    }
+
+    /**
+     * Generates an embeddings operation for asynchronous processing.
+     *
+     * @since 0.2.0
+     *
+     * @param Prompt $input The input to embed.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional model specification.
+     * @param ProviderRegistry|null $registry Optional custom registry.
+     * @return EmbeddingOperation The embeddings operation.
+     */
+    public static function generateEmbeddingsOperation(
+        $input,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): EmbeddingOperation {
+        self::validateModelOrConfigParameter($modelOrConfig);
+        $builder = self::prompt(null, $registry);
+        if ($modelOrConfig instanceof ModelInterface) {
+            $builder->usingModel($modelOrConfig);
+        } elseif ($modelOrConfig instanceof ModelConfig) {
+            $builder->usingModelConfig($modelOrConfig);
+        }
+
+        $builder->withEmbeddingInputs($input);
+        return $builder->generateEmbeddingsOperation();
     }
 
     /**

@@ -78,7 +78,13 @@ class MockProvider implements ProviderInterface
                     'Mock Text Model',
                     [CapabilityEnum::textGeneration()],
                     []
-                )
+                ),
+                'mock-embedding-model' => new ModelMetadata(
+                    'mock-embedding-model',
+                    'Mock Embedding Model',
+                    [CapabilityEnum::embeddingGeneration()],
+                    []
+                ),
             ];
 
             static::$modelMetadataDirectory = new MockModelMetadataDirectory($mockModels);

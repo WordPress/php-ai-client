@@ -54,6 +54,9 @@ class OpenAiProvider extends AbstractApiProvider
                     'OpenAI text to speech conversion model class is not yet implemented.'
                 );
             }
+            if ($capability->isEmbeddingGeneration()) {
+                return new OpenAiEmbeddingModel($modelMetadata, $providerMetadata);
+            }
         }
 
         throw new RuntimeException(

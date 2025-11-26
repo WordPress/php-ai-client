@@ -76,9 +76,35 @@ $imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in t
     ->generateImage();
 ```
 
+### Embedding generation using any compatible model
+
+```php
+use WordPress\AiClient\AiClient;
+
+$vectors = AiClient::prompt()
+    ->withEmbeddingInputs('Summarize this document', 'Summarize that document')
+    ->generateEmbeddings();
+
+// Or work with the detailed result object:
+$result = AiClient::prompt(['Embed this input'])
+    ->generateEmbeddingsResult();
+```
+
 See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php) and its public methods for all the ways you can configure the prompt.
 
 **More documentation is coming soon.**
+
+## CLI usage
+
+This repository ships with a thin CLI wrapper for quick experiments:
+
+```
+php cli.php 'Explain WordPress in one sentence'
+php cli.php 'Create a postcard photo of the WordPress logo' --outputFormat=image-json
+php cli.php '["Embed this document", "And this one"]' --capability=embeddings --outputFormat=embeddings-vectors
+```
+
+Available embedding output formats are `embeddings-vectors` (default), `embedding-first-vector`, and `embeddings-json`. Use `--capability=embeddings` to explicitly request embeddings while still supporting the existing image/text detection flags.
 
 ## Further reading
 

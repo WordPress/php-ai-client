@@ -5,18 +5,24 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\traits;
 
 use Generator;
+use WordPress\AiClient\Embeddings\DTO\Embedding;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
+use WordPress\AiClient\Operations\DTO\EmbeddingOperation;
+use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationOperationModelInterface;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
+use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
@@ -111,6 +117,65 @@ trait MockModelCreationTrait
             $name,
             [CapabilityEnum::imageGeneration()],
             []
+        );
+    }
+
+    /**
+     * Creates a test model metadata instance for embedding generation.
+     *
+     * @param string $id Optional model ID.
+     * @param string $name Optional model name.
+     * @return ModelMetadata
+     */
+    protected function createTestEmbeddingModelMetadata(
+        string $id = 'test-embedding-model',
+        string $name = 'Test Embedding Model'
+    ): ModelMetadata {
+        return new ModelMetadata(
+            $id,
+            $name,
+            [CapabilityEnum::embeddingGeneration()],
+            []
+        );
+    }
+
+    /**
+     * Creates a test embedding result.
+     *
+     * @param list<list<float>> $vectors Optional embedding vectors.
+     * @return EmbeddingResult
+     */
+    protected function createTestEmbeddingResult(array $vectors = [[0.1, 0.2], [0.3, 0.4]]): EmbeddingResult
+    {
+        $embeddings = array_map(
+            static fn(array $vector): Embedding => new Embedding($vector, count($vector)),
+            $vectors
+        );
+
+        $tokenUsage = new TokenUsage(10, 0, 10);
+        $providerMetadata = new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud());
+        $modelMetadata = $this->createTestEmbeddingModelMetadata();
+
+        return new EmbeddingResult(
+            'test-embedding-result',
+            $embeddings,
+            $tokenUsage,
+            $providerMetadata,
+            $modelMetadata
+        );
+    }
+
+    /**
+     * Creates a test embedding operation.
+     *
+     * @return EmbeddingOperation
+     */
+    protected function createTestEmbeddingOperation(): EmbeddingOperation
+    {
+        return new EmbeddingOperation(
+            'test-embedding-operation',
+            OperationStateEnum::succeeded(),
+            $this->createTestEmbeddingResult()
         );
     }
 
@@ -249,6 +314,140 @@ trait MockModelCreationTrait
             public function generateImageResult(array $prompt): GenerativeAiResult
             {
                 return $this->result;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock embedding generation model using an anonymous class.
+     *
+     * @param EmbeddingResult $result The result to return from generation.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @return ModelInterface&EmbeddingGenerationModelInterface The mock model.
+     */
+    protected function createMockEmbeddingGenerationModel(
+        EmbeddingResult $result,
+        ?ModelMetadata $metadata = null
+    ): ModelInterface {
+        $metadata = $metadata ?? $this->createTestEmbeddingModelMetadata();
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, EmbeddingGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private EmbeddingResult $result;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                EmbeddingResult $result
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->result = $result;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateEmbeddingsResult(array $input): EmbeddingResult
+            {
+                return $this->result;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock embedding generation operation model using an anonymous class.
+     *
+     * @param EmbeddingOperation $operation The operation to return.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @return ModelInterface&EmbeddingGenerationOperationModelInterface The mock model.
+     */
+    protected function createMockEmbeddingOperationModel(
+        EmbeddingOperation $operation,
+        ?ModelMetadata $metadata = null
+    ): ModelInterface {
+        $metadata = $metadata ?? $this->createTestEmbeddingModelMetadata();
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $operation
+        ) implements ModelInterface, EmbeddingGenerationOperationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private EmbeddingOperation $operation;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                EmbeddingOperation $operation
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->operation = $operation;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateEmbeddingsOperation(array $input): EmbeddingOperation
+            {
+                return $this->operation;
             }
         };
     }

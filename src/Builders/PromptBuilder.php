@@ -13,17 +13,21 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Operations\DTO\EmbeddingOperation;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationOperationModelInterface;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -54,6 +58,11 @@ class PromptBuilder
      * @var list<Message> The messages in the conversation.
      */
     protected array $messages = [];
+
+    /**
+     * @var list<Message> Embedding-specific input messages.
+     */
+    protected array $embeddingInputs = [];
 
     /**
      * @var ModelInterface|null The model to use for generation.
@@ -192,6 +201,25 @@ class PromptBuilder
     {
         // Prepend the history messages to the beginning of the messages array
         $this->messages = array_merge($messages, $this->messages);
+
+        return $this;
+    }
+
+    /**
+     * Adds embedding inputs.
+     *
+     * Accepts the same input shapes as the prompt constructor, or arrays of those shapes.
+     *
+     * @since 0.2.0
+     *
+     * @param mixed ...$inputs The embedding inputs to add.
+     * @return self
+     */
+    public function withEmbeddingInputs(...$inputs): self
+    {
+        foreach ($inputs as $input) {
+            $this->appendEmbeddingInput($input);
+        }
 
         return $this;
     }
@@ -667,7 +695,15 @@ class PromptBuilder
         }
 
         // Build requirements with the specified capability
-        $requirements = ModelRequirements::fromPromptData($intendedCapability, $this->messages, $this->modelConfig);
+        $messagesForRequirements = $this->messages;
+        if ($intendedCapability->isEmbeddingGeneration() && !empty($this->embeddingInputs)) {
+            $messagesForRequirements = $this->embeddingInputs;
+        }
+        $requirements = ModelRequirements::fromPromptData(
+            $intendedCapability,
+            $messagesForRequirements,
+            $this->modelConfig
+        );
 
         // If the model has been set, check if it meets the requirements
         if ($this->model !== null) {
@@ -859,10 +895,73 @@ class PromptBuilder
             throw new RuntimeException('Output modality "video" is not yet supported.');
         }
 
+        if ($capability->isEmbeddingGeneration()) {
+            throw new RuntimeException(
+                'Embedding generation results must be retrieved using generateEmbeddingsResult().'
+            );
+        }
+
         // TODO: Add support for other capabilities when interfaces are available
         throw new RuntimeException(
             sprintf('Capability "%s" is not yet supported for generation.', $capability->value)
         );
+    }
+
+    /**
+     * Generates embeddings for the configured inputs.
+     *
+     * @since 0.2.0
+     *
+     * @return EmbeddingResult The embedding result.
+     */
+    public function generateEmbeddingsResult(): EmbeddingResult
+    {
+        $inputs = $this->resolveEmbeddingInputs();
+        $model = $this->getConfiguredModel(CapabilityEnum::embeddingGeneration(), $inputs);
+
+        if (!$model instanceof EmbeddingGenerationModelInterface) {
+            throw new RuntimeException(
+                sprintf('Model "%s" does not support embedding generation.', $model->metadata()->getId())
+            );
+        }
+
+        return $model->generateEmbeddingsResult($inputs);
+    }
+
+    /**
+     * Generates an embeddings operation for asynchronous processing.
+     *
+     * @since 0.2.0
+     *
+     * @return EmbeddingOperation The embedding operation.
+     */
+    public function generateEmbeddingsOperation(): EmbeddingOperation
+    {
+        $inputs = $this->resolveEmbeddingInputs();
+        $model = $this->getConfiguredModel(CapabilityEnum::embeddingGeneration(), $inputs);
+
+        if (!$model instanceof EmbeddingGenerationOperationModelInterface) {
+            throw new RuntimeException(
+                sprintf(
+                    'Model "%s" does not support embedding generation operations.',
+                    $model->metadata()->getId()
+                )
+            );
+        }
+
+        return $model->generateEmbeddingsOperation($inputs);
+    }
+
+    /**
+     * Generates embeddings and returns their vector representations.
+     *
+     * @since 0.2.0
+     *
+     * @return list<list<float>> The embedding vectors.
+     */
+    public function generateEmbeddings(): array
+    {
+        return $this->generateEmbeddingsResult()->toVectors();
     }
 
     /**
@@ -1095,6 +1194,32 @@ class PromptBuilder
     }
 
     /**
+     * Normalizes embedding inputs into messages.
+     *
+     * @since 0.2.0
+     *
+     * @param mixed $input The embedding input to append.
+     * @return void
+     */
+    private function appendEmbeddingInput($input): void
+    {
+        if (
+            is_array($input)
+            && !Message::isArrayShape($input)
+            && !MessagePart::isArrayShape($input)
+            && array_is_list($input)
+        ) {
+            foreach ($input as $nestedInput) {
+                $this->appendEmbeddingInput($nestedInput);
+            }
+            return;
+        }
+
+        $message = $this->parseMessage($input, MessageRoleEnum::user());
+        $this->embeddingInputs[] = $message;
+    }
+
+    /**
      * Gets the model to use for generation.
      *
      * If a model has been explicitly set, validates it meets requirements and returns it.
@@ -1103,12 +1228,14 @@ class PromptBuilder
      * @since 0.1.0
      *
      * @param CapabilityEnum $capability The capability the model will be using.
+     * @param list<Message>|null $messageContext Optional custom message context for requirements inference.
      * @return ModelInterface The model to use.
      * @throws InvalidArgumentException If no suitable model is found or set model doesn't meet requirements.
      */
-    private function getConfiguredModel(CapabilityEnum $capability): ModelInterface
+    private function getConfiguredModel(CapabilityEnum $capability, ?array $messageContext = null): ModelInterface
     {
-        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
+        $messages = $messageContext ?? $this->messages;
+        $requirements = ModelRequirements::fromPromptData($capability, $messages, $this->modelConfig);
 
         if ($this->model !== null) {
             // Explicit model was provided via usingModel(); just update config and bind dependencies.
@@ -1396,6 +1523,23 @@ class PromptBuilder
                 'The last message must have content parts. Add content using withText() or similar methods.'
             );
         }
+    }
+
+    /**
+     * Resolves embedding inputs, falling back to the current prompt messages if none were specified.
+     *
+     * @since 0.2.0
+     *
+     * @return list<Message> The embedding input messages.
+     */
+    private function resolveEmbeddingInputs(): array
+    {
+        if (!empty($this->embeddingInputs)) {
+            return $this->embeddingInputs;
+        }
+
+        $this->validateMessages();
+        return $this->messages;
     }
 
     /**

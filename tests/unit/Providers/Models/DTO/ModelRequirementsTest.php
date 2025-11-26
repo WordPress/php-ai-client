@@ -632,4 +632,27 @@ class ModelRequirementsTest extends TestCase
         $this->assertTrue($hasMaxTokens, 'Max tokens option should be present');
         $this->assertTrue($hasTopP, 'Top P option should be present');
     }
+
+    /**
+     * Tests fromPromptData does not mark embeddings as requiring chat history.
+     *
+     * @return void
+     */
+    public function testFromPromptDataForEmbeddings(): void
+    {
+        $messages = [
+            new UserMessage([new MessagePart('First doc')]),
+            new UserMessage([new MessagePart('Second doc')]),
+        ];
+
+        $requirements = ModelRequirements::fromPromptData(
+            CapabilityEnum::embeddingGeneration(),
+            $messages,
+            new ModelConfig()
+        );
+
+        $capabilities = $requirements->getRequiredCapabilities();
+        $this->assertCount(1, $capabilities);
+        $this->assertTrue($capabilities[0]->isEmbeddingGeneration());
+    }
 }

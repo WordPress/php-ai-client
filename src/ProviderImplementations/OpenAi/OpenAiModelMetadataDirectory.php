@@ -164,6 +164,13 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(OptionEnum::outputSpeechVoice()),
             new SupportedOption(OptionEnum::customOptions()),
         ];
+        $embeddingCapabilities = [
+            CapabilityEnum::embeddingGeneration(),
+        ];
+        $embeddingOptions = [
+            new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
+            new SupportedOption(OptionEnum::customOptions()),
+        ];
 
         $modelsData = (array) $responseData['data'];
 
@@ -179,9 +186,15 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     $dalleImageOptions,
                     $gptImageOptions,
                     $ttsCapabilities,
-                    $ttsOptions
+                    $ttsOptions,
+                    $embeddingCapabilities,
+                    $embeddingOptions
                 ): ModelMetadata {
                     $modelId = $modelData['id'];
+                    /** @var list<CapabilityEnum> $modelCaps */
+                    $modelCaps = [];
+                    /** @var list<SupportedOption> $modelOptions */
+                    $modelOptions = [];
                     if (
                         str_starts_with($modelId, 'dall-e-') ||
                         str_starts_with($modelId, 'gpt-image-')
@@ -198,6 +211,9 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     ) {
                         $modelCaps = $ttsCapabilities;
                         $modelOptions = $ttsOptions;
+                    } elseif (str_contains($modelId, 'embedding')) {
+                        $modelCaps = $embeddingCapabilities;
+                        $modelOptions = $embeddingOptions;
                     } elseif (
                         (str_starts_with($modelId, 'gpt-') || str_starts_with($modelId, 'o1-'))
                         && !str_contains($modelId, '-instruct')

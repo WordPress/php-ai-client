@@ -742,4 +742,32 @@ class AiClientTest extends TestCase
         $this->expectExceptionMessageMatches('/No models found that support/');
         AiClient::generateResult($prompt, null, $this->createMockEmptyRegistry());
     }
+
+    /**
+     * Tests generateEmbeddingsResult with string input and provided model.
+     */
+    public function testGenerateEmbeddingsResultWithString(): void
+    {
+        $embeddingResult = $this->createTestEmbeddingResult();
+        $mockModel = $this->createMockEmbeddingGenerationModel($embeddingResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::generateEmbeddingsResult('Embed this text', $mockModel, $registry);
+
+        $this->assertSame($embeddingResult, $result);
+    }
+
+    /**
+     * Tests generateEmbeddingsOperation with provided model.
+     */
+    public function testGenerateEmbeddingsOperation(): void
+    {
+        $operation = $this->createTestEmbeddingOperation();
+        $mockModel = $this->createMockEmbeddingOperationModel($operation);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::generateEmbeddingsOperation('Operation doc', $mockModel, $registry);
+
+        $this->assertSame($operation, $result);
+    }
 }

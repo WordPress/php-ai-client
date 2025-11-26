@@ -154,7 +154,7 @@ class ModelRequirements extends AbstractDataTransferObject
         $inputModalities = [];
 
         // Check if we have chat history (multiple messages)
-        if (count($messages) > 1) {
+        if (!$capability->isEmbeddingGeneration() && count($messages) > 1) {
             $capabilities[] = CapabilityEnum::chatHistory();
         }
 
