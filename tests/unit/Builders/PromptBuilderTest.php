@@ -20,6 +20,7 @@ use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -105,6 +106,7 @@ class PromptBuilderTest extends TestCase
             private ProviderMetadata $providerMetadata;
             private GenerativeAiResult $result;
             private ModelConfig $config;
+            private ?RequestOptions $requestOptions = null;
 
             public function __construct(
                 ModelMetadata $metadata,
@@ -135,6 +137,16 @@ class PromptBuilderTest extends TestCase
             public function getConfig(): ModelConfig
             {
                 return $this->config;
+            }
+
+            public function setRequestOptions(RequestOptions $requestOptions): void
+            {
+                $this->requestOptions = $requestOptions;
+            }
+
+            public function getRequestOptions(): ?RequestOptions
+            {
+                return $this->requestOptions;
             }
 
             public function generateSpeechResult(array $prompt): GenerativeAiResult
@@ -168,6 +180,7 @@ class PromptBuilderTest extends TestCase
             private ProviderMetadata $providerMetadata;
             private GenerativeAiResult $result;
             private ModelConfig $config;
+            private ?RequestOptions $requestOptions = null;
 
             public function __construct(
                 ModelMetadata $metadata,
@@ -198,6 +211,16 @@ class PromptBuilderTest extends TestCase
             public function getConfig(): ModelConfig
             {
                 return $this->config;
+            }
+
+            public function setRequestOptions(RequestOptions $requestOptions): void
+            {
+                $this->requestOptions = $requestOptions;
+            }
+
+            public function getRequestOptions(): ?RequestOptions
+            {
+                return $this->requestOptions;
             }
 
             public function convertTextToSpeechResult(array $prompt): GenerativeAiResult
@@ -1916,6 +1939,7 @@ class PromptBuilderTest extends TestCase
             private ModelMetadata $metadata;
             private ProviderMetadata $providerMetadata;
             private ModelConfig $config;
+            private ?RequestOptions $requestOptions = null;
 
             public function __construct(
                 ModelMetadata $metadata,
@@ -1944,6 +1968,16 @@ class PromptBuilderTest extends TestCase
             public function getConfig(): ModelConfig
             {
                 return $this->config;
+            }
+
+            public function setRequestOptions(RequestOptions $requestOptions): void
+            {
+                $this->requestOptions = $requestOptions;
+            }
+
+            public function getRequestOptions(): ?RequestOptions
+            {
+                return $this->requestOptions;
             }
 
             public function generateTextResult(array $prompt): GenerativeAiResult
@@ -2110,6 +2144,7 @@ class PromptBuilderTest extends TestCase
             private ModelMetadata $metadata;
             private ProviderMetadata $providerMetadata;
             private ModelConfig $config;
+            private ?RequestOptions $requestOptions = null;
 
             public function __construct(
                 ModelMetadata $metadata,
@@ -2138,6 +2173,16 @@ class PromptBuilderTest extends TestCase
             public function getConfig(): ModelConfig
             {
                 return $this->config;
+            }
+
+            public function setRequestOptions(RequestOptions $requestOptions): void
+            {
+                $this->requestOptions = $requestOptions;
+            }
+
+            public function getRequestOptions(): ?RequestOptions
+            {
+                return $this->requestOptions;
             }
 
             public function generateTextResult(array $prompt): GenerativeAiResult

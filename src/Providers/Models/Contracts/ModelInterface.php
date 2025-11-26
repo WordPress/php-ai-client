@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Models\Contracts;
 
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
@@ -54,4 +55,23 @@ interface ModelInterface
      * @return ModelConfig Current model configuration.
      */
     public function getConfig(): ModelConfig;
+
+    /**
+     * Sets request options for HTTP transport.
+     *
+     * @since n.e.x.t
+     *
+     * @param RequestOptions $requestOptions Request options.
+     * @return void
+     */
+    public function setRequestOptions(RequestOptions $requestOptions): void;
+
+    /**
+     * Gets request options for HTTP transport.
+     *
+     * @since n.e.x.t
+     *
+     * @return RequestOptions|null Current request options, or null if not set.
+     */
+    public function getRequestOptions(): ?RequestOptions;
 }

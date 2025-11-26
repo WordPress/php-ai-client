@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Providers\ApiBasedImplementation;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Http\Traits\WithRequestAuthenticationTrait;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
@@ -43,6 +44,11 @@ abstract class AbstractApiBasedModel implements
      * @var ModelConfig The configuration for the model.
      */
     private ModelConfig $config;
+
+    /**
+     * @var RequestOptions|null The request options for HTTP transport.
+     */
+    private ?RequestOptions $requestOptions = null;
 
     /**
      * Constructor.
@@ -97,5 +103,25 @@ abstract class AbstractApiBasedModel implements
     final public function getConfig(): ModelConfig
     {
         return $this->config;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    final public function setRequestOptions(RequestOptions $requestOptions): void
+    {
+        $this->requestOptions = $requestOptions;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    final public function getRequestOptions(): ?RequestOptions
+    {
+        return $this->requestOptions;
     }
 }
