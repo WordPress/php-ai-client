@@ -26,7 +26,7 @@ class MockOpenAiCompatibleImageGenerationModel extends AbstractOpenAiCompatibleI
         array $headers = [],
         $data = null
     ): Request {
-        return new Request($method, $path, $headers, $data);
+        return new Request($method, $path, $headers, $data, $this->getRequestOptions());
     }
 
     /**
