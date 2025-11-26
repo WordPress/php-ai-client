@@ -62,7 +62,8 @@ class AnthropicProvider extends AbstractApiProvider
         return new ProviderMetadata(
             'anthropic',
             'Anthropic',
-            ProviderTypeEnum::cloud()
+            ProviderTypeEnum::cloud(),
+            'https://console.anthropic.com/settings/keys'
         );
     }
 

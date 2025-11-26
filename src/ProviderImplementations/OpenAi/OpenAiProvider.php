@@ -71,7 +71,8 @@ class OpenAiProvider extends AbstractApiProvider
         return new ProviderMetadata(
             'openai',
             'OpenAI',
-            ProviderTypeEnum::cloud()
+            ProviderTypeEnum::cloud(),
+            'https://platform.openai.com/api-keys'
         );
     }
 
