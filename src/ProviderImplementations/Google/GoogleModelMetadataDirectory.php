@@ -195,17 +195,19 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                             $modelOptions = $geminiLegacyOptions;
                         } else {
                             if (
+                                // Multimodal output models for image generation.
+                                str_ends_with($modelId, '-image') ||
+                                str_ends_with($modelId, '-image-preview') ||
+                                str_ends_with($modelId, '-image-generation') ||
+                                str_starts_with($modelId, 'gemini-2.0-flash-exp')
+                            ) {
+                                $modelOptions = $geminiMultimodalImageOutputOptions;
+                            } elseif (
                                 // Web search is supported by Gemini 2.0 and newer.
                                 str_starts_with($modelId, 'gemini-') &&
                                 ! str_starts_with($modelId, 'gemini-1.5-')
                             ) {
                                 $modelOptions = $geminiWebSearchOptions;
-                            } elseif (
-                                // New multimodal output model for image generation.
-                                str_contains($modelId, 'image-generation') ||
-                                str_starts_with($modelId, 'gemini-2.0-flash-exp')
-                            ) {
-                                $modelOptions = $geminiMultimodalImageOutputOptions;
                             } else {
                                 $modelOptions = $geminiOptions;
                             }
