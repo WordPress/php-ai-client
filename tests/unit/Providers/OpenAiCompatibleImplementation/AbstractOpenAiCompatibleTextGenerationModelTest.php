@@ -642,7 +642,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             [
                 'type' => 'image_url',
                 'image_url' => [
-                    'url' => $base64Image
+                    'url' => 'data:image/png;base64,' . $base64Image
                 ]
             ],
             $data
