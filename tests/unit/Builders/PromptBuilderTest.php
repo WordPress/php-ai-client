@@ -3390,4 +3390,123 @@ class PromptBuilderTest extends TestCase
         $this->assertTrue($config->getLogprobs());
         $this->assertEquals(3, $config->getTopLogprobs());
     }
+
+    /**
+     * Tests isSupported method with explicit capability.
+     *
+     * @return void
+     */
+    public function testIsSupportedWithExplicitCapability(): void
+    {
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+
+        // Mock registry to return a model supporting text generation
+        $this->registry->method('findModelsMetadataForSupport')
+            ->willReturn([$this->createMock(ProviderModelsMetadata::class)]);
+
+        $this->assertTrue($builder->isSupported(CapabilityEnum::textGeneration()));
+    }
+
+    /**
+     * Tests isSupported method with inferred capability from output modalities.
+     *
+     * @return void
+     */
+    public function testIsSupportedWithInferredCapability(): void
+    {
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->asOutputModalities(ModalityEnum::image());
+
+        // Mock registry to return a model supporting image generation
+        $this->registry->method('findModelsMetadataForSupport')
+            ->willReturn([$this->createMock(ProviderModelsMetadata::class)]);
+
+        // Should infer image generation capability
+        $this->assertTrue($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported method with inferred capability from model interfaces.
+     *
+     * @return void
+     */
+    public function testIsSupportedWithInferredCapabilityFromModel(): void
+    {
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::inputModalities(), [
+                [ModalityEnum::text()]
+            ])
+        ]);
+
+        $result = new GenerativeAiResult('test-id', [
+            new Candidate(
+                new ModelMessage([new MessagePart('Test')]),
+                FinishReasonEnum::stop()
+            )
+        ], new TokenUsage(10, 5, 15), $this->createTestProviderMetadata(), $this->createTestTextModelMetadata());
+
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModel($model);
+
+        // Should infer text generation capability from the model interface
+        $this->assertTrue($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported method when a model is explicitly set.
+     *
+     * @return void
+     */
+    public function testIsSupportedWithModelSet(): void
+    {
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('text-model');
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        // Mock getSupportedOptions to return required options
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::inputModalities(), [
+                [ModalityEnum::text()]
+            ])
+        ]);
+
+        $result = new GenerativeAiResult('test-id', [
+            new Candidate(
+                new ModelMessage([new MessagePart('Test')]),
+                FinishReasonEnum::stop()
+            )
+        ], new TokenUsage(10, 5, 15), $this->createTestProviderMetadata(), $this->createTestTextModelMetadata());
+
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModel($model);
+
+        $this->assertTrue($builder->isSupported(CapabilityEnum::textGeneration()));
+        $this->assertFalse($builder->isSupported(CapabilityEnum::imageGeneration()));
+    }
+
+    /**
+     * Tests isSupported method when no models support the requirements.
+     *
+     * @return void
+     */
+    public function testIsSupportedWithNoSupport(): void
+    {
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+
+        // Mock registry to return no models
+        $this->registry->method('findModelsMetadataForSupport')
+            ->willReturn([]);
+
+        $this->assertFalse($builder->isSupported(CapabilityEnum::textGeneration()));
+    }
 }

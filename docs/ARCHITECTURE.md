@@ -340,6 +340,7 @@ direction LR
             +convertTextToSpeeches(?int $candidateCount) File[]
             +generateSpeech() File
             +generateSpeeches(?int $candidateCount) File[]
+            +isSupported(?CapabilityEnum $capability) bool
             +isSupportedForTextGeneration() bool
             +isSupportedForImageGeneration() bool
             +isSupportedForTextToSpeechConversion() bool

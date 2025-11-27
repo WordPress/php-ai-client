@@ -108,7 +108,7 @@ abstract class AbstractApiBasedModel implements
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.3.0
      */
     final public function setRequestOptions(RequestOptions $requestOptions): void
     {
@@ -118,7 +118,7 @@ abstract class AbstractApiBasedModel implements
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.3.0
      */
     final public function getRequestOptions(): ?RequestOptions
     {

@@ -492,7 +492,7 @@ class PromptBuilder
     /**
      * Sets the request options for HTTP transport.
      *
-     * @since n.e.x.t
+     * @since 0.3.0
      *
      * @param RequestOptions $requestOptions The request options.
      * @return self
@@ -676,19 +676,31 @@ class PromptBuilder
      * Checks if the current prompt is supported by the selected model.
      *
      * @since 0.1.0
+     * @since 0.3.0 Method visibility changed to public.
      *
-     * @param CapabilityEnum|null $intendedCapability Optional capability to check support for.
+     * @param CapabilityEnum|null $capability Optional capability to check support for.
      * @return bool True if supported, false otherwise.
      */
-    private function isSupported(?CapabilityEnum $intendedCapability = null): bool
+    public function isSupported(?CapabilityEnum $capability = null): bool
     {
         // If no intended capability provided, infer from output modalities
-        if ($intendedCapability === null) {
-            $intendedCapability = $this->inferCapabilityFromOutputModalities();
+        if ($capability === null) {
+            // First try to infer from a specific model if one is set
+            if ($this->model !== null) {
+                $inferredCapability = $this->inferCapabilityFromModelInterfaces($this->model);
+                if ($inferredCapability !== null) {
+                    $capability = $inferredCapability;
+                }
+            }
+
+            // If still no capability, infer from output modalities
+            if ($capability === null) {
+                $capability = $this->inferCapabilityFromOutputModalities();
+            }
         }
 
         // Build requirements with the specified capability
-        $requirements = ModelRequirements::fromPromptData($intendedCapability, $this->messages, $this->modelConfig);
+        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
 
         // If the model has been set, check if it meets the requirements
         if ($this->model !== null) {
@@ -1192,7 +1204,7 @@ class PromptBuilder
      *
      * Request options are only applicable to API-based models that make HTTP requests.
      *
-     * @since n.e.x.t
+     * @since 0.3.0
      *
      * @param ModelInterface $model The model to bind request options to.
      * @return void

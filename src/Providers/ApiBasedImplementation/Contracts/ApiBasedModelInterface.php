@@ -13,14 +13,14 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
  * This interface extends ModelInterface to add request options support
  * for models that communicate with external APIs via HTTP.
  *
- * @since n.e.x.t
+ * @since 0.3.0
  */
 interface ApiBasedModelInterface extends ModelInterface
 {
     /**
      * Sets the request options for HTTP transport.
      *
-     * @since n.e.x.t
+     * @since 0.3.0
      *
      * @param RequestOptions $requestOptions The request options to use.
      * @return void
@@ -30,7 +30,7 @@ interface ApiBasedModelInterface extends ModelInterface
     /**
      * Gets the request options for HTTP transport.
      *
-     * @since n.e.x.t
+     * @since 0.3.0
      *
      * @return RequestOptions|null The request options, or null if not set.
      */
