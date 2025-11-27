@@ -492,7 +492,7 @@ class PromptBuilder
     /**
      * Sets the request options for HTTP transport.
      *
-     * @since n.e.x.t
+     * @since 0.3.0
      *
      * @param RequestOptions $requestOptions The request options.
      * @return self
@@ -676,7 +676,7 @@ class PromptBuilder
      * Checks if the current prompt is supported by the selected model.
      *
      * @since 0.1.0
-     * @since n.e.x.t Method visibility changed to public.
+     * @since 0.3.0 Method visibility changed to public.
      *
      * @param CapabilityEnum|null $capability Optional capability to check support for.
      * @return bool True if supported, false otherwise.
@@ -1204,7 +1204,7 @@ class PromptBuilder
      *
      * Request options are only applicable to API-based models that make HTTP requests.
      *
-     * @since n.e.x.t
+     * @since 0.3.0
      *
      * @param ModelInterface $model The model to bind request options to.
      * @return void
