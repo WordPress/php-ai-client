@@ -20,15 +20,7 @@ use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCo
 class OpenAiTextToSpeechConversionModel extends AbstractOpenAiCompatibleTextToSpeechConversionModel
 {
     /**
-     * Creates a request object for the OpenAI API.
-     *
-     * @since n.e.x.t
-     *
-     * @param HttpMethodEnum $method The HTTP method.
-     * @param string $path The API endpoint path, relative to the base URI.
-     * @param array<string, string|list<string>> $headers The request headers.
-     * @param string|array<string, mixed>|null $data The request data.
-     * @return Request The request object.
+     * {@inheritDoc}
      */
     protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
     {

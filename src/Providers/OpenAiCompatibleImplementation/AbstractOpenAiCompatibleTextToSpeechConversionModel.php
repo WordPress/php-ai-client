@@ -34,13 +34,6 @@ abstract class AbstractOpenAiCompatibleTextToSpeechConversionModel extends Abstr
     TextToSpeechConversionModelInterface
 {
     /**
-     * Default voice to use if none is specified.
-     *
-     * @since n.e.x.t
-     */
-    protected const DEFAULT_VOICE = 'alloy';
-
-    /**
      * Default output MIME type.
      *
      * @since n.e.x.t
@@ -132,8 +125,12 @@ abstract class AbstractOpenAiCompatibleTextToSpeechConversionModel extends Abstr
         $params = [
             'model' => $this->metadata()->getId(),
             'input' => $this->prepareInputParam($prompt),
-            'voice' => $config->getOutputSpeechVoice() ?? self::DEFAULT_VOICE,
         ];
+
+        $voice = $config->getOutputSpeechVoice();
+        if ($voice !== null) {
+            $params['voice'] = $voice;
+        }
 
         $outputMimeType = $config->getOutputMimeType();
         if ($outputMimeType !== null && isset(self::MIME_TYPE_TO_FORMAT[$outputMimeType])) {

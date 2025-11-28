@@ -189,8 +189,8 @@ class AbstractOpenAiCompatibleTextToSpeechConversionModelTest extends TestCase
         $this->assertEquals('tts-1', $params['model']);
         $this->assertArrayHasKey('input', $params);
         $this->assertEquals('Test speech text', $params['input']);
-        $this->assertArrayHasKey('voice', $params);
-        $this->assertEquals('alloy', $params['voice']);
+        // Voice is not set by the abstract class; concrete implementations add provider-specific defaults.
+        $this->assertArrayNotHasKey('voice', $params);
     }
 
     /**
