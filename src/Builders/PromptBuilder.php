@@ -1481,19 +1481,6 @@ class PromptBuilder
     }
 
     /**
-     * Includes a required option in the list if not already present.
-     *
-     * Checks if a RequiredOption with the same name already exists in the list.
-     * If not, adds the new option. Returns the updated list.
-     *
-     * @since 0.1.0
-     *
-     * @param list<RequiredOption> $options The existing list of required options.
-     * @param RequiredOption $option The option to potentially add.
-     * @return list<RequiredOption> The updated list of required options.
-     */
-
-    /**
      * Includes output modalities if not already present.
      *
      * Adds the given modalities to the output modalities list if they're not
