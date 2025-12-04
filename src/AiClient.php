@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient;
 
+use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
@@ -91,6 +92,11 @@ class AiClient
     private static ?ProviderRegistry $defaultRegistry = null;
 
     /**
+     * @var EventDispatcherInterface|null The event dispatcher for prompt lifecycle events.
+     */
+    private static ?EventDispatcherInterface $eventDispatcher = null;
+
+    /**
      * Gets the default provider registry instance.
      *
      * @since 0.1.0
@@ -112,6 +118,46 @@ class AiClient
         }
 
         return self::$defaultRegistry;
+    }
+
+    /**
+     * Sets the event dispatcher for prompt lifecycle events.
+     *
+     * The event dispatcher will be used to dispatch BeforePromptSentEvent and
+     * AfterPromptSentEvent during prompt generation.
+     *
+     * @since n.e.x.t
+     *
+     * @param EventDispatcherInterface|null $dispatcher The event dispatcher, or null to disable.
+     * @return void
+     */
+    public static function setEventDispatcher(?EventDispatcherInterface $dispatcher): void
+    {
+        self::$eventDispatcher = $dispatcher;
+    }
+
+    /**
+     * Gets the event dispatcher for prompt lifecycle events.
+     *
+     * @since n.e.x.t
+     *
+     * @return EventDispatcherInterface|null The event dispatcher, or null if not set.
+     */
+    public static function getEventDispatcher(): ?EventDispatcherInterface
+    {
+        return self::$eventDispatcher;
+    }
+
+    /**
+     * Checks if an event dispatcher is registered.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if an event dispatcher is set, false otherwise.
+     */
+    public static function hasEventDispatcher(): bool
+    {
+        return self::$eventDispatcher !== null;
     }
 
     /**

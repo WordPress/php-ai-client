@@ -7,12 +7,15 @@ namespace WordPress\AiClient\Tests\unit;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Events\AfterPromptSentEvent;
+use WordPress\AiClient\Events\BeforePromptSentEvent;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Tests\mocks\MockEventDispatcher;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
 /**
@@ -30,7 +33,8 @@ class AiClientTest extends TestCase
 
     protected function tearDown(): void
     {
-        // Tests use dependency injection - registry instances passed directly to methods
+        // Clean up static event dispatcher after each test
+        AiClient::setEventDispatcher(null);
     }
 
     /**
@@ -741,5 +745,89 @@ class AiClientTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/No models found that support/');
         AiClient::generateResult($prompt, null, $this->createMockEmptyRegistry());
+    }
+
+    /**
+     * Tests setEventDispatcher and getEventDispatcher methods.
+     */
+    public function testEventDispatcherGetterAndSetter(): void
+    {
+        // Initially null
+        $this->assertNull(AiClient::getEventDispatcher());
+
+        // Set a dispatcher
+        $dispatcher = new MockEventDispatcher();
+        AiClient::setEventDispatcher($dispatcher);
+
+        $this->assertSame($dispatcher, AiClient::getEventDispatcher());
+
+        // Set to null
+        AiClient::setEventDispatcher(null);
+        $this->assertNull(AiClient::getEventDispatcher());
+    }
+
+    /**
+     * Tests hasEventDispatcher method.
+     */
+    public function testHasEventDispatcher(): void
+    {
+        // Initially false
+        $this->assertFalse(AiClient::hasEventDispatcher());
+
+        // Set a dispatcher
+        $dispatcher = new MockEventDispatcher();
+        AiClient::setEventDispatcher($dispatcher);
+
+        $this->assertTrue(AiClient::hasEventDispatcher());
+
+        // Set to null
+        AiClient::setEventDispatcher(null);
+        $this->assertFalse(AiClient::hasEventDispatcher());
+    }
+
+    /**
+     * Tests that event dispatcher is passed to PromptBuilder via prompt() method.
+     */
+    public function testEventDispatcherIsPassedToPromptBuilder(): void
+    {
+        $dispatcher = new MockEventDispatcher();
+        AiClient::setEventDispatcher($dispatcher);
+
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockTextGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::generateTextResult('Test prompt', $mockModel, $registry);
+
+        $this->assertSame($expectedResult, $result);
+
+        // Verify events were dispatched
+        $beforeEvents = $dispatcher->getDispatchedEventsOfType(BeforePromptSentEvent::class);
+        $afterEvents = $dispatcher->getDispatchedEventsOfType(AfterPromptSentEvent::class);
+
+        $this->assertCount(1, $beforeEvents);
+        $this->assertCount(1, $afterEvents);
+    }
+
+    /**
+     * Tests that prompt() method creates builder with event dispatcher.
+     */
+    public function testPromptMethodPassesEventDispatcher(): void
+    {
+        $dispatcher = new MockEventDispatcher();
+        AiClient::setEventDispatcher($dispatcher);
+
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockTextGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::prompt('Test prompt', $registry)
+            ->usingModel($mockModel)
+            ->generateTextResult();
+
+        $this->assertSame($expectedResult, $result);
+
+        // Verify events were dispatched
+        $this->assertCount(2, $dispatcher->getDispatchedEvents());
     }
 }

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Builders;
 
+use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Events\AfterPromptSentEvent;
+use WordPress\AiClient\Events\BeforePromptSentEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -826,7 +829,42 @@ class PromptBuilder
 
         $model = $this->getConfiguredModel($capability);
 
+        // Dispatch BeforePromptSentEvent if dispatcher is set
+        $messages = $this->messages;
+        if (AiClient::hasEventDispatcher()) {
+            $beforeEvent = new BeforePromptSentEvent($messages, $model, $capability);
+            AiClient::getEventDispatcher()->dispatch($beforeEvent);
+            $messages = $beforeEvent->getMessages();
+        }
+
         // Route to the appropriate generation method based on capability
+        $result = $this->executeModelGeneration($model, $capability, $messages);
+
+        // Dispatch AfterPromptSentEvent if dispatcher is set
+        if (AiClient::hasEventDispatcher()) {
+            $afterEvent = new AfterPromptSentEvent($messages, $model, $capability, $result);
+            AiClient::getEventDispatcher()->dispatch($afterEvent);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Executes the model generation based on capability.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $model The model to use for generation.
+     * @param CapabilityEnum $capability The capability to use.
+     * @param list<Message> $messages The messages to send.
+     * @return GenerativeAiResult The generated result.
+     * @throws RuntimeException If the model doesn't support the required capability.
+     */
+    private function executeModelGeneration(
+        ModelInterface $model,
+        CapabilityEnum $capability,
+        array $messages
+    ): GenerativeAiResult {
         if ($capability->isTextGeneration()) {
             if (!$model instanceof TextGenerationModelInterface) {
                 throw new RuntimeException(
@@ -836,7 +874,7 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->generateTextResult($this->messages);
+            return $model->generateTextResult($messages);
         }
 
         if ($capability->isImageGeneration()) {
@@ -848,7 +886,7 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->generateImageResult($this->messages);
+            return $model->generateImageResult($messages);
         }
 
         if ($capability->isTextToSpeechConversion()) {
@@ -860,7 +898,7 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->convertTextToSpeechResult($this->messages);
+            return $model->convertTextToSpeechResult($messages);
         }
 
         if ($capability->isSpeechGeneration()) {
@@ -872,15 +910,13 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->generateSpeechResult($this->messages);
+            return $model->generateSpeechResult($messages);
         }
 
         if ($capability->isVideoGeneration()) {
-            // Video generation is not yet implemented
             throw new RuntimeException('Output modality "video" is not yet supported.');
         }
 
-        // TODO: Add support for other capabilities when interfaces are available
         throw new RuntimeException(
             sprintf('Capability "%s" is not yet supported for generation.', $capability->value)
         );
