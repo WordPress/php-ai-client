@@ -149,15 +149,25 @@ class AiClient
     }
 
     /**
-     * Checks if an event dispatcher is registered.
+     * Dispatches an event if an event dispatcher is registered.
+     *
+     * This is a convenience method that handles the null check internally,
+     * only dispatching if a dispatcher has been set via setEventDispatcher().
      *
      * @since n.e.x.t
      *
-     * @return bool True if an event dispatcher is set, false otherwise.
+     * @template T of object
+     * @param T $event The event to dispatch.
+     * @return T The event (potentially modified by listeners).
      */
-    public static function hasEventDispatcher(): bool
+    public static function dispatchEvent(object $event): object
     {
-        return self::$eventDispatcher !== null;
+        if (self::$eventDispatcher !== null) {
+            /** @var T */
+            return self::$eventDispatcher->dispatch($event);
+        }
+
+        return $event;
     }
 
     /**

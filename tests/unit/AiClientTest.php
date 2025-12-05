@@ -767,25 +767,6 @@ class AiClientTest extends TestCase
     }
 
     /**
-     * Tests hasEventDispatcher method.
-     */
-    public function testHasEventDispatcher(): void
-    {
-        // Initially false
-        $this->assertFalse(AiClient::hasEventDispatcher());
-
-        // Set a dispatcher
-        $dispatcher = new MockEventDispatcher();
-        AiClient::setEventDispatcher($dispatcher);
-
-        $this->assertTrue(AiClient::hasEventDispatcher());
-
-        // Set to null
-        AiClient::setEventDispatcher(null);
-        $this->assertFalse(AiClient::hasEventDispatcher());
-    }
-
-    /**
      * Tests that event dispatcher is passed to PromptBuilder via prompt() method.
      */
     public function testEventDispatcherIsPassedToPromptBuilder(): void
