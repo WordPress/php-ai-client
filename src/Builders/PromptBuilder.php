@@ -19,7 +19,6 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
-use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
@@ -1479,19 +1478,6 @@ class PromptBuilder
 
         return true;
     }
-
-    /**
-     * Includes a required option in the list if not already present.
-     *
-     * Checks if a RequiredOption with the same name already exists in the list.
-     * If not, adds the new option. Returns the updated list.
-     *
-     * @since 0.1.0
-     *
-     * @param list<RequiredOption> $options The existing list of required options.
-     * @param RequiredOption $option The option to potentially add.
-     * @return list<RequiredOption> The updated list of required options.
-     */
 
     /**
      * Includes output modalities if not already present.
