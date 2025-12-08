@@ -92,7 +92,7 @@ if (empty($positional_args[0])) {
 $promptInput = $positional_args[0];
 if (str_starts_with($promptInput, '{') || str_starts_with($promptInput, '[')) {
     $decodedInput = json_decode($promptInput, true);
-    if ($decodedInput) {
+    if (json_last_error() === JSON_ERROR_NONE) {
         $promptInput = $decodedInput;
     }
 }
