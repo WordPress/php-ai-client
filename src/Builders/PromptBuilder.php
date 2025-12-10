@@ -829,18 +829,17 @@ class PromptBuilder
 
         $model = $this->getConfiguredModel($capability);
 
-        // Dispatch BeforePromptSentEvent (allows message modification)
-        $beforeEvent = AiClient::dispatchEvent(
+        // Dispatch BeforeGenerateResultEvent
+        AiClient::dispatchEvent(
             new BeforeGenerateResultEvent($this->messages, $model, $capability)
         );
-        $messages = $beforeEvent->getMessages();
 
         // Route to the appropriate generation method based on capability
-        $result = $this->executeModelGeneration($model, $capability, $messages);
+        $result = $this->executeModelGeneration($model, $capability, $this->messages);
 
-        // Dispatch AfterPromptSentEvent
+        // Dispatch AfterGenerateResultEvent
         AiClient::dispatchEvent(
-            new AfterGenerateResultEvent($messages, $model, $capability, $result)
+            new AfterGenerateResultEvent($this->messages, $model, $capability, $result)
         );
 
         return $result;

@@ -63,21 +63,6 @@ class BeforeGenerateResultEvent
     }
 
     /**
-     * Sets the messages to be sent to the model.
-     *
-     * This allows listeners to modify the messages before they are sent.
-     *
-     * @since n.e.x.t
-     *
-     * @param list<Message> $messages The modified messages.
-     * @return void
-     */
-    public function setMessages(array $messages): void
-    {
-        $this->messages = $messages;
-    }
-
-    /**
      * Gets the model that will process the prompt.
      *
      * @since n.e.x.t

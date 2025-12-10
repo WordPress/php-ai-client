@@ -9,8 +9,6 @@ use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
-use WordPress\AiClient\Messages\DTO\MessagePart;
-use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Tests\mocks\MockEventDispatcher;
@@ -154,43 +152,6 @@ class PromptBuilderEventDispatchingTest extends TestCase
         $this->assertEquals(CapabilityEnum::textGeneration(), $event->getCapability());
         $this->assertSame($result, $event->getResult());
         $this->assertSame($returnedResult, $event->getResult());
-    }
-
-    /**
-     * Tests that BeforePromptSentEvent can modify messages.
-     *
-     * @return void
-     */
-    public function testBeforePromptSentEventCanModifyMessages(): void
-    {
-        AiClient::setEventDispatcher($this->dispatcher);
-
-        $result = $this->createTestResult();
-        $model = $this->createMockTextGenerationModel($result);
-
-        // Register a listener that modifies the messages
-        $modifiedMessages = [
-            new UserMessage([new MessagePart('Modified message')])
-        ];
-
-        $this->dispatcher->addListener(
-            BeforeGenerateResultEvent::class,
-            static function (BeforeGenerateResultEvent $event) use ($modifiedMessages): void {
-                $event->setMessages($modifiedMessages);
-            }
-        );
-
-        $builder = new PromptBuilder($this->registry, 'Original message');
-        $builder->usingModel($model);
-
-        $builder->generateTextResult();
-
-        // Verify the modification happened
-        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class);
-        $this->assertCount(1, $afterEvents);
-
-        $afterEvent = $afterEvents[0];
-        $this->assertSame($modifiedMessages, $afterEvent->getMessages());
     }
 
     /**

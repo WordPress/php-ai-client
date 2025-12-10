@@ -58,30 +58,6 @@ class BeforePromptSentEventTest extends TestCase
     }
 
     /**
-     * Tests message modification.
-     *
-     * @return void
-     */
-    public function testSetMessages(): void
-    {
-        $originalMessages = [
-            new UserMessage([new MessagePart('Original message')])
-        ];
-        $result = $this->createTestResult();
-        $model = $this->createMockTextGenerationModel($result);
-
-        $event = new BeforeGenerateResultEvent($originalMessages, $model, null);
-
-        $newMessages = [
-            new UserMessage([new MessagePart('Modified message')])
-        ];
-        $event->setMessages($newMessages);
-
-        $this->assertSame($newMessages, $event->getMessages());
-        $this->assertNotSame($originalMessages, $event->getMessages());
-    }
-
-    /**
      * Tests that the event can hold multiple messages.
      *
      * @return void
