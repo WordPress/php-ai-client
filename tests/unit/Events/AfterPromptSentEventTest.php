@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Events;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Events\AfterPromptSentEvent;
+use WordPress\AiClient\Events\AfterGenerateResultEvent;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
@@ -32,7 +32,7 @@ class AfterPromptSentEventTest extends TestCase
         $model = $this->createMockTextGenerationModel($result);
         $capability = CapabilityEnum::textGeneration();
 
-        $event = new AfterPromptSentEvent($messages, $model, $capability, $result);
+        $event = new AfterGenerateResultEvent($messages, $model, $capability, $result);
 
         $this->assertSame($messages, $event->getMessages());
         $this->assertSame($model, $event->getModel());
@@ -53,7 +53,7 @@ class AfterPromptSentEventTest extends TestCase
         $result = $this->createTestResult('Response');
         $model = $this->createMockTextGenerationModel($result);
 
-        $event = new AfterPromptSentEvent($messages, $model, null, $result);
+        $event = new AfterGenerateResultEvent($messages, $model, null, $result);
 
         $this->assertNull($event->getCapability());
     }
@@ -71,7 +71,7 @@ class AfterPromptSentEventTest extends TestCase
         $result = $this->createTestResult('Test response');
         $model = $this->createMockTextGenerationModel($result);
 
-        $event = new AfterPromptSentEvent(
+        $event = new AfterGenerateResultEvent(
             $messages,
             $model,
             CapabilityEnum::textGeneration(),

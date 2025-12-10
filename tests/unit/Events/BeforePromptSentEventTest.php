@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Events;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Events\BeforePromptSentEvent;
+use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
@@ -32,7 +32,7 @@ class BeforePromptSentEventTest extends TestCase
         $model = $this->createMockTextGenerationModel($result);
         $capability = CapabilityEnum::textGeneration();
 
-        $event = new BeforePromptSentEvent($messages, $model, $capability);
+        $event = new BeforeGenerateResultEvent($messages, $model, $capability);
 
         $this->assertSame($messages, $event->getMessages());
         $this->assertSame($model, $event->getModel());
@@ -52,7 +52,7 @@ class BeforePromptSentEventTest extends TestCase
         $result = $this->createTestResult();
         $model = $this->createMockTextGenerationModel($result);
 
-        $event = new BeforePromptSentEvent($messages, $model, null);
+        $event = new BeforeGenerateResultEvent($messages, $model, null);
 
         $this->assertNull($event->getCapability());
     }
@@ -70,7 +70,7 @@ class BeforePromptSentEventTest extends TestCase
         $result = $this->createTestResult();
         $model = $this->createMockTextGenerationModel($result);
 
-        $event = new BeforePromptSentEvent($originalMessages, $model, null);
+        $event = new BeforeGenerateResultEvent($originalMessages, $model, null);
 
         $newMessages = [
             new UserMessage([new MessagePart('Modified message')])
@@ -96,7 +96,7 @@ class BeforePromptSentEventTest extends TestCase
         $result = $this->createTestResult();
         $model = $this->createMockTextGenerationModel($result);
 
-        $event = new BeforePromptSentEvent($messages, $model, CapabilityEnum::textGeneration());
+        $event = new BeforeGenerateResultEvent($messages, $model, CapabilityEnum::textGeneration());
 
         $this->assertCount(3, $event->getMessages());
     }

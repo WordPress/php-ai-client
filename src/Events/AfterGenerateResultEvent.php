@@ -17,7 +17,7 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *
  * @since n.e.x.t
  */
-class AfterPromptSentEvent
+class AfterGenerateResultEvent
 {
     /**
      * @var list<Message> The messages that were sent to the model.

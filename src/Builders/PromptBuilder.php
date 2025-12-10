@@ -7,8 +7,8 @@ namespace WordPress\AiClient\Builders;
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
-use WordPress\AiClient\Events\AfterPromptSentEvent;
-use WordPress\AiClient\Events\BeforePromptSentEvent;
+use WordPress\AiClient\Events\AfterGenerateResultEvent;
+use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -831,7 +831,7 @@ class PromptBuilder
 
         // Dispatch BeforePromptSentEvent (allows message modification)
         $beforeEvent = AiClient::dispatchEvent(
-            new BeforePromptSentEvent($this->messages, $model, $capability)
+            new BeforeGenerateResultEvent($this->messages, $model, $capability)
         );
         $messages = $beforeEvent->getMessages();
 
@@ -840,7 +840,7 @@ class PromptBuilder
 
         // Dispatch AfterPromptSentEvent
         AiClient::dispatchEvent(
-            new AfterPromptSentEvent($messages, $model, $capability, $result)
+            new AfterGenerateResultEvent($messages, $model, $capability, $result)
         );
 
         return $result;

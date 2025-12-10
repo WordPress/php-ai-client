@@ -7,8 +7,8 @@ namespace WordPress\AiClient\Tests\unit;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
-use WordPress\AiClient\Events\AfterPromptSentEvent;
-use WordPress\AiClient\Events\BeforePromptSentEvent;
+use WordPress\AiClient\Events\AfterGenerateResultEvent;
+use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
@@ -783,8 +783,8 @@ class AiClientTest extends TestCase
         $this->assertSame($expectedResult, $result);
 
         // Verify events were dispatched
-        $beforeEvents = $dispatcher->getDispatchedEventsOfType(BeforePromptSentEvent::class);
-        $afterEvents = $dispatcher->getDispatchedEventsOfType(AfterPromptSentEvent::class);
+        $beforeEvents = $dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class);
+        $afterEvents = $dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class);
 
         $this->assertCount(1, $beforeEvents);
         $this->assertCount(1, $afterEvents);

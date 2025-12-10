@@ -17,7 +17,7 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  *
  * @since n.e.x.t
  */
-class BeforePromptSentEvent
+class BeforeGenerateResultEvent
 {
     /**
      * @var list<Message> The messages to be sent to the model.

@@ -7,8 +7,8 @@ namespace WordPress\AiClient\Tests\unit\Builders;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Builders\PromptBuilder;
-use WordPress\AiClient\Events\AfterPromptSentEvent;
-use WordPress\AiClient\Events\BeforePromptSentEvent;
+use WordPress\AiClient\Events\AfterGenerateResultEvent;
+use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
@@ -76,8 +76,8 @@ class PromptBuilderEventDispatchingTest extends TestCase
 
         $builder->generateTextResult();
 
-        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforePromptSentEvent::class);
-        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterPromptSentEvent::class);
+        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class);
+        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class);
 
         $this->assertCount(1, $beforeEvents);
         $this->assertCount(1, $afterEvents);
@@ -119,7 +119,7 @@ class PromptBuilderEventDispatchingTest extends TestCase
 
         $builder->generateTextResult();
 
-        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforePromptSentEvent::class);
+        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class);
         $this->assertCount(1, $beforeEvents);
 
         $event = $beforeEvents[0];
@@ -145,7 +145,7 @@ class PromptBuilderEventDispatchingTest extends TestCase
 
         $returnedResult = $builder->generateTextResult();
 
-        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterPromptSentEvent::class);
+        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class);
         $this->assertCount(1, $afterEvents);
 
         $event = $afterEvents[0];
@@ -174,8 +174,8 @@ class PromptBuilderEventDispatchingTest extends TestCase
         ];
 
         $this->dispatcher->addListener(
-            BeforePromptSentEvent::class,
-            static function (BeforePromptSentEvent $event) use ($modifiedMessages): void {
+            BeforeGenerateResultEvent::class,
+            static function (BeforeGenerateResultEvent $event) use ($modifiedMessages): void {
                 $event->setMessages($modifiedMessages);
             }
         );
@@ -186,7 +186,7 @@ class PromptBuilderEventDispatchingTest extends TestCase
         $builder->generateTextResult();
 
         // Verify the modification happened
-        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterPromptSentEvent::class);
+        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class);
         $this->assertCount(1, $afterEvents);
 
         $afterEvent = $afterEvents[0];
@@ -212,7 +212,7 @@ class PromptBuilderEventDispatchingTest extends TestCase
 
         $events = $this->dispatcher->getDispatchedEvents();
         $this->assertCount(2, $events);
-        $this->assertInstanceOf(BeforePromptSentEvent::class, $events[0]);
-        $this->assertInstanceOf(AfterPromptSentEvent::class, $events[1]);
+        $this->assertInstanceOf(BeforeGenerateResultEvent::class, $events[0]);
+        $this->assertInstanceOf(AfterGenerateResultEvent::class, $events[1]);
     }
 }
