@@ -123,8 +123,8 @@ class AiClient
     /**
      * Sets the event dispatcher for prompt lifecycle events.
      *
-     * The event dispatcher will be used to dispatch BeforePromptSentEvent and
-     * AfterPromptSentEvent during prompt generation.
+     * The event dispatcher will be used to dispatch BeforeGenerateResultEvent and
+     * AfterGenerateResultEvent during prompt generation.
      *
      * @since n.e.x.t
      *
@@ -146,28 +146,6 @@ class AiClient
     public static function getEventDispatcher(): ?EventDispatcherInterface
     {
         return self::$eventDispatcher;
-    }
-
-    /**
-     * Dispatches an event if an event dispatcher is registered.
-     *
-     * This is a convenience method that handles the null check internally,
-     * only dispatching if a dispatcher has been set via setEventDispatcher().
-     *
-     * @since n.e.x.t
-     *
-     * @template T of object
-     * @param T $event The event to dispatch.
-     * @return T The event (potentially modified by listeners).
-     */
-    public static function dispatchEvent(object $event): object
-    {
-        if (self::$eventDispatcher !== null) {
-            /** @var T */
-            return self::$eventDispatcher->dispatch($event);
-        }
-
-        return $event;
     }
 
     /**
@@ -227,7 +205,11 @@ class AiClient
      */
     public static function prompt($prompt = null, ?ProviderRegistry $registry = null): PromptBuilder
     {
-        return new PromptBuilder($registry ?? self::defaultRegistry(), $prompt);
+        return new PromptBuilder(
+            $registry ?? self::defaultRegistry(),
+            $prompt,
+            self::$eventDispatcher
+        );
     }
 
     /**

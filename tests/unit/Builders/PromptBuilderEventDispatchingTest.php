@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Builders;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
@@ -47,29 +46,16 @@ class PromptBuilderEventDispatchingTest extends TestCase
     }
 
     /**
-     * Cleans up after each test.
+     * Tests that events are dispatched when a dispatcher is injected.
      *
      * @return void
      */
-    protected function tearDown(): void
+    public function testEventsAreDispatchedWhenDispatcherIsInjected(): void
     {
-        // Clean up global event dispatcher
-        AiClient::setEventDispatcher(null);
-    }
-
-    /**
-     * Tests that events are dispatched when a dispatcher is set globally.
-     *
-     * @return void
-     */
-    public function testEventsAreDispatchedWhenDispatcherIsSet(): void
-    {
-        AiClient::setEventDispatcher($this->dispatcher);
-
         $result = $this->createTestResult();
         $model = $this->createMockTextGenerationModel($result);
 
-        $builder = new PromptBuilder($this->registry, 'Hello, world!');
+        $builder = new PromptBuilder($this->registry, 'Hello, world!', $this->dispatcher);
         $builder->usingModel($model);
 
         $builder->generateTextResult();
@@ -101,18 +87,16 @@ class PromptBuilderEventDispatchingTest extends TestCase
     }
 
     /**
-     * Tests that BeforePromptSentEvent contains correct data.
+     * Tests that BeforeGenerateResultEvent contains correct data.
      *
      * @return void
      */
-    public function testBeforePromptSentEventContainsCorrectData(): void
+    public function testBeforeGenerateResultEventContainsCorrectData(): void
     {
-        AiClient::setEventDispatcher($this->dispatcher);
-
         $result = $this->createTestResult();
         $model = $this->createMockTextGenerationModel($result);
 
-        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder = new PromptBuilder($this->registry, 'Test prompt', $this->dispatcher);
         $builder->usingModel($model);
 
         $builder->generateTextResult();
@@ -127,18 +111,16 @@ class PromptBuilderEventDispatchingTest extends TestCase
     }
 
     /**
-     * Tests that AfterPromptSentEvent contains correct data.
+     * Tests that AfterGenerateResultEvent contains correct data.
      *
      * @return void
      */
-    public function testAfterPromptSentEventContainsCorrectData(): void
+    public function testAfterGenerateResultEventContainsCorrectData(): void
     {
-        AiClient::setEventDispatcher($this->dispatcher);
-
         $result = $this->createTestResult('Generated response');
         $model = $this->createMockTextGenerationModel($result);
 
-        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder = new PromptBuilder($this->registry, 'Test prompt', $this->dispatcher);
         $builder->usingModel($model);
 
         $returnedResult = $builder->generateTextResult();
@@ -161,12 +143,10 @@ class PromptBuilderEventDispatchingTest extends TestCase
      */
     public function testEventsDispatchedInCorrectOrder(): void
     {
-        AiClient::setEventDispatcher($this->dispatcher);
-
         $result = $this->createTestResult();
         $model = $this->createMockTextGenerationModel($result);
 
-        $builder = new PromptBuilder($this->registry, 'Hello');
+        $builder = new PromptBuilder($this->registry, 'Hello', $this->dispatcher);
         $builder->usingModel($model);
 
         $builder->generateTextResult();

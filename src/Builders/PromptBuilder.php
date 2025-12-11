@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Builders;
 
-use WordPress\AiClient\AiClient;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
@@ -85,6 +85,11 @@ class PromptBuilder
      */
     protected ?RequestOptions $requestOptions = null;
 
+    /**
+     * @var EventDispatcherInterface|null The event dispatcher for prompt lifecycle events.
+     */
+    private ?EventDispatcherInterface $eventDispatcher = null;
+
     // phpcs:disable Generic.Files.LineLength.TooLong
     /**
      * Constructor.
@@ -93,12 +98,17 @@ class PromptBuilder
      *
      * @param ProviderRegistry $registry The provider registry for finding suitable models.
      * @param Prompt $prompt Optional initial prompt content.
+     * @param EventDispatcherInterface|null $eventDispatcher Optional event dispatcher for lifecycle events.
      */
     // phpcs:enable Generic.Files.LineLength.TooLong
-    public function __construct(ProviderRegistry $registry, $prompt = null)
-    {
+    public function __construct(
+        ProviderRegistry $registry,
+        $prompt = null,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
         $this->registry = $registry;
         $this->modelConfig = new ModelConfig();
+        $this->eventDispatcher = $eventDispatcher;
 
         if ($prompt === null) {
             return;
@@ -830,7 +840,7 @@ class PromptBuilder
         $model = $this->getConfiguredModel($capability);
 
         // Dispatch BeforeGenerateResultEvent
-        AiClient::dispatchEvent(
+        $this->dispatchEvent(
             new BeforeGenerateResultEvent($this->messages, $model, $capability)
         );
 
@@ -838,7 +848,7 @@ class PromptBuilder
         $result = $this->executeModelGeneration($model, $capability, $this->messages);
 
         // Dispatch AfterGenerateResultEvent
-        AiClient::dispatchEvent(
+        $this->dispatchEvent(
             new AfterGenerateResultEvent($this->messages, $model, $capability, $result)
         );
 
@@ -1552,6 +1562,21 @@ class PromptBuilder
         // Update if we have new modalities to add
         if (!empty($toAdd)) {
             $this->modelConfig->setOutputModalities(array_merge($existing, $toAdd));
+        }
+    }
+
+    /**
+     * Dispatches an event if an event dispatcher is registered.
+     *
+     * @since n.e.x.t
+     *
+     * @param object $event The event to dispatch.
+     * @return void
+     */
+    private function dispatchEvent(object $event): void
+    {
+        if ($this->eventDispatcher !== null) {
+            $this->eventDispatcher->dispatch($event);
         }
     }
 }
