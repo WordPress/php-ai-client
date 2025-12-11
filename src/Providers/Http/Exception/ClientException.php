@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Providers\Http\Exception;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
-use WordPress\AiClient\Providers\Http\Utilities\ErrorMessageExtractor;
+use WordPress\AiClient\Providers\Http\Util\ErrorMessageExtractor;
 
 /**
  * Exception thrown for 4xx HTTP client errors.

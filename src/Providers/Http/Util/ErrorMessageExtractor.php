@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers\Http\Utilities;
+namespace WordPress\AiClient\Providers\Http\Util;
 
 /**
  * Utility for extracting error messages from API response data.
@@ -11,6 +11,7 @@ namespace WordPress\AiClient\Providers\Http\Utilities;
  * to avoid code duplication across exception classes.
  *
  * @since 0.2.0
+ * @since n.e.x.t Moved from Utilities namespace to Util namespace.
  */
 class ErrorMessageExtractor
 {
@@ -31,6 +32,18 @@ class ErrorMessageExtractor
     {
         if (!is_array($data)) {
             return null;
+        }
+
+        // Handle [ { "error": { "message": "Error text" } } ]
+        if (
+            isset($data[0]) &&
+            is_array($data[0]) &&
+            isset($data[0]['error']) &&
+            is_array($data[0]['error']) &&
+            isset($data[0]['error']['message']) &&
+            is_string($data[0]['error']['message'])
+        ) {
+            return $data[0]['error']['message'];
         }
 
         // Handle { "error": { "message": "Error text" } }
