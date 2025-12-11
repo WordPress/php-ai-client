@@ -145,7 +145,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
      * @since 0.1.0
      *
      * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
-     * @return string The provider class name.
+     * @return class-string<ProviderInterface> The provider class name.
      * @throws InvalidArgumentException If the provider is not registered.
      */
     public function getProviderClassName(string $idOrClassName): string
