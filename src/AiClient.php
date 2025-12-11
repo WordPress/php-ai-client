@@ -263,7 +263,6 @@ class AiClient
         return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateTextResult();
     }
 
-
     /**
      * Generates an image using the traditional API approach.
      *

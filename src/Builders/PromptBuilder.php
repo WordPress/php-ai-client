@@ -919,10 +919,12 @@ class PromptBuilder
             return $model->generateSpeechResult($messages);
         }
 
+        // Video generation is not yet implemented
         if ($capability->isVideoGeneration()) {
             throw new RuntimeException('Output modality "video" is not yet supported.');
         }
 
+        // TODO: Add support for other capabilities when interfaces are available
         throw new RuntimeException(
             sprintf('Capability "%s" is not yet supported for generation.', $capability->value)
         );
