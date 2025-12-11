@@ -135,8 +135,8 @@ class ProviderRegistry implements WithHttpTransporterInterface
      */
     public function hasProvider(string $idOrClassName): bool
     {
-        return isset($this->registeredIdsToClassNames[$idOrClassName]) ||
-            isset($this->registeredClassNamesToIds[$idOrClassName]);
+        return $this->isRegisteredId($idOrClassName) ||
+            $this->isRegisteredClassName($idOrClassName);
     }
 
     /**
@@ -145,18 +145,18 @@ class ProviderRegistry implements WithHttpTransporterInterface
      * @since 0.1.0
      *
      * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
-     * @return string The provider class name.
+     * @return class-string<ProviderInterface> The provider class name.
      * @throws InvalidArgumentException If the provider is not registered.
      */
     public function getProviderClassName(string $idOrClassName): string
     {
         // If it's already a class name, return it
-        if (isset($this->registeredClassNamesToIds[$idOrClassName])) {
+        if ($this->isRegisteredClassName($idOrClassName)) {
             return $idOrClassName;
         }
 
         // If it's a registered ID, return its class name
-        if (isset($this->registeredIdsToClassNames[$idOrClassName])) {
+        if ($this->isRegisteredId($idOrClassName)) {
             return $this->registeredIdsToClassNames[$idOrClassName];
         }
 
@@ -178,12 +178,12 @@ class ProviderRegistry implements WithHttpTransporterInterface
     public function getProviderId(string $idOrClassName): string
     {
         // If it's already an ID, return it
-        if (isset($this->registeredIdsToClassNames[$idOrClassName])) {
+        if ($this->isRegisteredId($idOrClassName)) {
             return $idOrClassName;
         }
 
         // If it's a registered class name, return its ID
-        if (isset($this->registeredClassNamesToIds[$idOrClassName])) {
+        if ($this->isRegisteredClassName($idOrClassName)) {
             return $this->registeredClassNamesToIds[$idOrClassName];
         }
 
@@ -339,17 +339,20 @@ class ProviderRegistry implements WithHttpTransporterInterface
      */
     private function resolveProviderClassName(string $idOrClassName): string
     {
-        // Handle both ID and class name
-        $className = $this->registeredIdsToClassNames[$idOrClassName] ?? $idOrClassName;
-
-        if (!$this->hasProvider($idOrClassName)) {
-            throw new InvalidArgumentException(
-                sprintf('Provider not registered: %s', $idOrClassName)
-            );
+        // If it's already a class name, return it
+        if ($this->isRegisteredClassName($idOrClassName)) {
+            return $idOrClassName;
         }
 
-        // @phpstan-ignore-next-line return.type (Interface implementation guaranteed by registration validation)
-        return $className;
+        // If it's a registered ID, return its class name
+        if ($this->isRegisteredId($idOrClassName)) {
+            return $this->registeredIdsToClassNames[$idOrClassName];
+        }
+
+        // Not found
+        throw new InvalidArgumentException(
+            sprintf('Provider not registered: %s', $idOrClassName)
+        );
     }
 
     /**
@@ -533,6 +536,33 @@ class ProviderRegistry implements WithHttpTransporterInterface
         }
 
         return $authenticationClass::fromArray($authenticationData);
+    }
+
+    /**
+     * Checks if the given value is a registered provider class name.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $idOrClassName The value to check.
+     * @return bool True if it's a registered class name.
+     * @phpstan-assert-if-true class-string<ProviderInterface> $idOrClassName
+     */
+    private function isRegisteredClassName(string $idOrClassName): bool
+    {
+        return isset($this->registeredClassNamesToIds[$idOrClassName]);
+    }
+
+    /**
+     * Checks if the given value is a registered provider ID.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $idOrClassName The value to check.
+     * @return bool True if it's a registered provider ID.
+     */
+    private function isRegisteredId(string $idOrClassName): bool
+    {
+        return isset($this->registeredIdsToClassNames[$idOrClassName]);
     }
 
     /**
