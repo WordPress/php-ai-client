@@ -89,6 +89,8 @@ The AI Client supports PSR-14 event dispatching for prompt lifecycle events. Thi
 - `BeforeGenerateResultEvent` - Dispatched before a prompt is sent to the model
 - `AfterGenerateResultEvent` - Dispatched after a result is received from the model
 
+**Important:** Event listeners should not return a value, as they will be ignored. In order to modify data that is passed with the event object, you need to rely on setters on the event object. Any event data for which there are no setters on the event object is meant to be immutable or, in other words, read-only for the event listener.
+
 ### Connecting Your Event Dispatcher
 
 To enable event dispatching, pass any PSR-14 compatible `EventDispatcherInterface` to the client:
