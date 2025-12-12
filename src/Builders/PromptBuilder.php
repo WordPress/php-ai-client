@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Builders;
 
+use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Events\AfterGenerateResultEvent;
+use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -81,6 +84,11 @@ class PromptBuilder
      */
     protected ?RequestOptions $requestOptions = null;
 
+    /**
+     * @var EventDispatcherInterface|null The event dispatcher for prompt lifecycle events.
+     */
+    private ?EventDispatcherInterface $eventDispatcher = null;
+
     // phpcs:disable Generic.Files.LineLength.TooLong
     /**
      * Constructor.
@@ -89,12 +97,17 @@ class PromptBuilder
      *
      * @param ProviderRegistry $registry The provider registry for finding suitable models.
      * @param Prompt $prompt Optional initial prompt content.
+     * @param EventDispatcherInterface|null $eventDispatcher Optional event dispatcher for lifecycle events.
      */
     // phpcs:enable Generic.Files.LineLength.TooLong
-    public function __construct(ProviderRegistry $registry, $prompt = null)
-    {
+    public function __construct(
+        ProviderRegistry $registry,
+        $prompt = null,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
         $this->registry = $registry;
         $this->modelConfig = new ModelConfig();
+        $this->eventDispatcher = $eventDispatcher;
 
         if ($prompt === null) {
             return;
@@ -837,7 +850,38 @@ class PromptBuilder
 
         $model = $this->getConfiguredModel($capability);
 
+        // Dispatch BeforeGenerateResultEvent
+        $this->dispatchEvent(
+            new BeforeGenerateResultEvent($this->messages, $model, $capability)
+        );
+
         // Route to the appropriate generation method based on capability
+        $result = $this->executeModelGeneration($model, $capability, $this->messages);
+
+        // Dispatch AfterGenerateResultEvent
+        $this->dispatchEvent(
+            new AfterGenerateResultEvent($this->messages, $model, $capability, $result)
+        );
+
+        return $result;
+    }
+
+    /**
+     * Executes the model generation based on capability.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $model The model to use for generation.
+     * @param CapabilityEnum $capability The capability to use.
+     * @param list<Message> $messages The messages to send.
+     * @return GenerativeAiResult The generated result.
+     * @throws RuntimeException If the model doesn't support the required capability.
+     */
+    private function executeModelGeneration(
+        ModelInterface $model,
+        CapabilityEnum $capability,
+        array $messages
+    ): GenerativeAiResult {
         if ($capability->isTextGeneration()) {
             if (!$model instanceof TextGenerationModelInterface) {
                 throw new RuntimeException(
@@ -847,7 +891,7 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->generateTextResult($this->messages);
+            return $model->generateTextResult($messages);
         }
 
         if ($capability->isImageGeneration()) {
@@ -859,7 +903,7 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->generateImageResult($this->messages);
+            return $model->generateImageResult($messages);
         }
 
         if ($capability->isTextToSpeechConversion()) {
@@ -871,7 +915,7 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->convertTextToSpeechResult($this->messages);
+            return $model->convertTextToSpeechResult($messages);
         }
 
         if ($capability->isSpeechGeneration()) {
@@ -883,11 +927,11 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->generateSpeechResult($this->messages);
+            return $model->generateSpeechResult($messages);
         }
 
+        // Video generation is not yet implemented
         if ($capability->isVideoGeneration()) {
-            // Video generation is not yet implemented
             throw new RuntimeException('Output modality "video" is not yet supported.');
         }
 
@@ -1518,6 +1562,21 @@ class PromptBuilder
         // Update if we have new modalities to add
         if (!empty($toAdd)) {
             $this->modelConfig->setOutputModalities(array_merge($existing, $toAdd));
+        }
+    }
+
+    /**
+     * Dispatches an event if an event dispatcher is registered.
+     *
+     * @since n.e.x.t
+     *
+     * @param object $event The event to dispatch.
+     * @return void
+     */
+    private function dispatchEvent(object $event): void
+    {
+        if ($this->eventDispatcher !== null) {
+            $this->eventDispatcher->dispatch($event);
         }
     }
 }

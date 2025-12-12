@@ -22,17 +22,6 @@ class AiClientTest extends TestCase
 {
     use MockModelCreationTrait;
 
-    protected function setUp(): void
-    {
-        // Tests use dependency injection - registry instances passed directly to methods
-    }
-
-
-    protected function tearDown(): void
-    {
-        // Tests use dependency injection - registry instances passed directly to methods
-    }
-
     /**
      * Creates a mock registry that returns empty results for model discovery.
      *
