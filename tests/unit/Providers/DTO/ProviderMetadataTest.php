@@ -10,6 +10,7 @@ use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
+use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
 
 /**
  * @covers \WordPress\AiClient\Providers\DTO\ProviderMetadata
@@ -134,7 +135,8 @@ class ProviderMetadataTest extends TestCase
         $this->assertEquals('Anthropic', $array[ProviderMetadata::KEY_NAME]);
         $this->assertEquals('cloud', $array[ProviderMetadata::KEY_TYPE]);
         $this->assertNull($array[ProviderMetadata::KEY_CREDENTIALS_URL]);
-        $this->assertCount(4, $array);
+        $this->assertEquals(RequestAuthenticationMethod::API_KEY, $array[ProviderMetadata::KEY_AUTHENTICATION_METHOD]);
+        $this->assertCount(5, $array);
     }
 
     /**

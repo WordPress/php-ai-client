@@ -11,6 +11,7 @@ use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
+use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
@@ -66,7 +67,8 @@ class GoogleProvider extends AbstractApiProvider
             'google',
             'Google',
             ProviderTypeEnum::cloud(),
-            'https://aistudio.google.com/app/api-keys'
+            'https://aistudio.google.com/app/api-keys',
+            RequestAuthenticationMethod::apiKey()
         );
     }
 

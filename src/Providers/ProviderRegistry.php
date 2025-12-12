@@ -14,7 +14,6 @@ use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
-use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
@@ -443,11 +442,37 @@ class ProviderRegistry implements WithHttpTransporterInterface
      *
      * @param class-string<ProviderInterface> $className The provider class name.
      * @param RequestAuthenticationInterface $requestAuthentication The authentication instance.
+     *
+     * @throws InvalidArgumentException If the authentication instance is not of the expected type.
      */
     private function setRequestAuthenticationForProvider(
         string $className,
         RequestAuthenticationInterface $requestAuthentication
     ): void {
+        $authenticationMethod = $className::metadata()->getAuthenticationMethod();
+        $expectedClass = $authenticationMethod ? $authenticationMethod->getImplementationClass() : null;
+
+        if ($expectedClass === null) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Provider %s does not expect any authentication, but got %s.',
+                    $className,
+                    get_class($requestAuthentication)
+                )
+            );
+        }
+
+        if (!$requestAuthentication instanceof $expectedClass) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Provider %s expects authentication of type %s, but got %s.',
+                    $className,
+                    $expectedClass,
+                    get_class($requestAuthentication)
+                )
+            );
+        }
+
         $availability = $className::availability();
         if ($availability instanceof WithRequestAuthenticationInterface) {
             $availability->setRequestAuthentication($requestAuthentication);
@@ -478,14 +503,19 @@ class ProviderRegistry implements WithHttpTransporterInterface
     private function createDefaultProviderRequestAuthentication(
         string $className
     ): ?RequestAuthenticationInterface {
-        $providerId = $className::metadata()->getId();
+        $providerMetadata = $className::metadata();
+        $providerId = $providerMetadata->getId();
+        $authenticationMethod = $providerMetadata->getAuthenticationMethod();
 
-        /*
-         * For now, we assume API key authentication is used by default.
-         * In the future, this could be made more flexible by allowing the provider to express a specific type of
-         * request authentication to use.
-         */
-        $authenticationClass = ApiKeyRequestAuthentication::class;
+        if ($authenticationMethod === null) {
+            return null;
+        }
+
+        $authenticationClass = $authenticationMethod->getImplementationClass();
+        if ($authenticationClass === null) {
+            return null;
+        }
+
         $authenticationSchema = $authenticationClass::getJsonSchema();
 
         // Iterate over all JSON schema object properties to try to determine the necessary authentication data.
@@ -535,6 +565,8 @@ class ProviderRegistry implements WithHttpTransporterInterface
             }
         }
 
+        /** @var RequestAuthenticationInterface */
+        /** @var array<string, mixed> $authenticationData */
         return $authenticationClass::fromArray($authenticationData);
     }
 
