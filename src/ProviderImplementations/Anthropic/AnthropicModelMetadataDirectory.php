@@ -81,7 +81,7 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
         ];
         $anthropicOptions = [
             new SupportedOption(OptionEnum::systemInstruction()),
-            new SupportedOption(OptionEnum::candidateCount()),
+            new SupportedOption(OptionEnum::candidateCount(), [0, 1]),
             new SupportedOption(OptionEnum::maxTokens()),
             new SupportedOption(OptionEnum::temperature()),
             new SupportedOption(OptionEnum::topP()),
