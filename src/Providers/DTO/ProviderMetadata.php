@@ -81,10 +81,6 @@ class ProviderMetadata extends AbstractDataTransferObject
         $this->name = $name;
         $this->type = $type;
         $this->credentialsUrl = $credentialsUrl;
-
-        if ($authenticationMethod === null && $type->isCloud()) {
-            $authenticationMethod = RequestAuthenticationMethod::apiKey();
-        }
         $this->authenticationMethod = $authenticationMethod;
     }
 

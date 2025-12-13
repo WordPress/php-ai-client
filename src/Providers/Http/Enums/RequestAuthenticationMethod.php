@@ -29,17 +29,14 @@ class RequestAuthenticationMethod extends AbstractEnum
      *
      * @since n.e.x.t
      *
-     * @return class-string<RequestAuthenticationInterface&WithArrayTransformationInterface>|null The implementation
-     *                                                                                            class, or null if
-     *                                                                                            none.
+     * @return class-string<RequestAuthenticationInterface&WithArrayTransformationInterface> The implementation class.
+     *
      * @phpstan-ignore missingType.generics
      */
-    public function getImplementationClass(): ?string
+    public function getImplementationClass(): string
     {
-        if ($this->isApiKey()) {
-            return ApiKeyRequestAuthentication::class;
-        }
-
-        return null;
+        // At the moment, this is the only supported method.
+        // Once more methods are available, add conditionals here for each method.
+        return ApiKeyRequestAuthentication::class;
     }
 }

@@ -450,9 +450,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
         RequestAuthenticationInterface $requestAuthentication
     ): void {
         $authenticationMethod = $className::metadata()->getAuthenticationMethod();
-        $expectedClass = $authenticationMethod ? $authenticationMethod->getImplementationClass() : null;
-
-        if ($expectedClass === null) {
+        if ($authenticationMethod === null) {
             throw new InvalidArgumentException(
                 sprintf(
                     'Provider %s does not expect any authentication, but got %s.',
@@ -462,6 +460,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
             );
         }
 
+        $expectedClass = $authenticationMethod->getImplementationClass();
         if (!$requestAuthentication instanceof $expectedClass) {
             throw new InvalidArgumentException(
                 sprintf(
