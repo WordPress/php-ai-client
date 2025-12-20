@@ -6,7 +6,9 @@ namespace WordPress\AiClient\Tests\unit\Providers;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
+use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
@@ -15,9 +17,9 @@ use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Tests\mocks\MockHttpTransporter;
 use WordPress\AiClient\Tests\mocks\MockModel;
 use WordPress\AiClient\Tests\mocks\MockModelMetadataDirectory;
+use WordPress\AiClient\Tests\mocks\MockNoAuthProvider;
 use WordPress\AiClient\Tests\mocks\MockProvider;
 use WordPress\AiClient\Tests\mocks\MockProviderAvailability;
-use WordPress\AiClient\Tests\mocks\MockRequestAuthentication;
 
 /**
  * @covers \WordPress\AiClient\Providers\ProviderRegistry
@@ -310,7 +312,7 @@ class ProviderRegistryTest extends TestCase
         $mockTransporter = new MockHttpTransporter(); // Add this line
         $this->registry->setHttpTransporter($mockTransporter); // Add this line
 
-        $mockAuth = new MockRequestAuthentication('custom_token');
+        $mockAuth = new ApiKeyRequestAuthentication('custom_token');
         $mockAvailability = new MockProviderAvailability();
         $mockModelMetadataDirectory = new MockModelMetadataDirectory([
             'mock-text-model' => new ModelMetadata(
@@ -352,7 +354,7 @@ class ProviderRegistryTest extends TestCase
     public function testGetProviderRequestAuthentication(): void
     {
         $this->registry->registerProvider(MockProvider::class);
-        $mockAuth = new MockRequestAuthentication('another_token');
+        $mockAuth = new ApiKeyRequestAuthentication('custom_token');
         $this->registry->setProviderRequestAuthentication('mock', $mockAuth);
 
         $retrievedAuth = $this->registry->getProviderRequestAuthentication('mock');
@@ -497,7 +499,7 @@ class ProviderRegistryTest extends TestCase
     {
         // Register provider and set authentication
         $this->registry->registerProvider(MockProvider::class);
-        $authentication = new MockRequestAuthentication('test-api-key');
+        $authentication = new ApiKeyRequestAuthentication('test-api-key');
         $this->registry->setProviderRequestAuthentication('mock', $authentication);
 
         // Set HTTP transporter (required by registry)
@@ -589,5 +591,50 @@ class ProviderRegistryTest extends TestCase
         $this->expectExceptionMessage('HttpTransporterInterface instance not set');
 
         $this->registry->bindModelDependencies($modelInstance);
+    }
+
+    /**
+     * Tests setProviderRequestAuthentication throws exception when provider expects specific auth type but gets
+     * another.
+     *
+     * @return void
+     */
+    public function testSetProviderRequestAuthenticationThrowsExceptionForInvalidType(): void
+    {
+        $this->registry->registerProvider(MockProvider::class);
+
+        $invalidAuth = new class implements RequestAuthenticationInterface {
+            public function authenticateRequest(Request $request): Request
+            {
+                return $request;
+            }
+
+            public static function getJsonSchema(): array
+            {
+                return [];
+            }
+        };
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/expects authentication of type .*ApiKeyRequestAuthentication, but got/');
+
+        $this->registry->setProviderRequestAuthentication('mock', $invalidAuth);
+    }
+
+    /**
+     * Tests setProviderRequestAuthentication throws exception when provider does not expect authentication.
+     *
+     * @return void
+     */
+    public function testSetProviderRequestAuthenticationThrowsExceptionWhenNotExpected(): void
+    {
+        $this->registry->registerProvider(MockNoAuthProvider::class);
+
+        $auth = new ApiKeyRequestAuthentication('key');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/does not expect any authentication, but got/');
+
+        $this->registry->setProviderRequestAuthentication('no-auth', $auth);
     }
 }

@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Providers\DTO;
 
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
+use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
 
 /**
  * Represents metadata about an AI provider.
@@ -19,7 +20,8 @@ use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
  *     id: string,
  *     name: string,
  *     type: string,
- *     credentialsUrl?: ?string
+ *     credentialsUrl?: ?string,
+ *     authenticationMethod?: ?string
  * }
  *
  * @extends AbstractDataTransferObject<ProviderMetadataArrayShape>
@@ -30,6 +32,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     public const KEY_NAME = 'name';
     public const KEY_TYPE = 'type';
     public const KEY_CREDENTIALS_URL = 'credentialsUrl';
+    public const KEY_AUTHENTICATION_METHOD = 'authenticationMethod';
 
     /**
      * @var string The provider's unique identifier.
@@ -52,6 +55,11 @@ class ProviderMetadata extends AbstractDataTransferObject
     protected ?string $credentialsUrl;
 
     /**
+     * @var RequestAuthenticationMethod|null The authentication method.
+     */
+    protected ?RequestAuthenticationMethod $authenticationMethod;
+
+    /**
      * Constructor.
      *
      * @since 0.1.0
@@ -60,13 +68,20 @@ class ProviderMetadata extends AbstractDataTransferObject
      * @param string $name The provider's display name.
      * @param ProviderTypeEnum $type The provider type.
      * @param string|null $credentialsUrl The URL where users can get credentials.
+     * @param RequestAuthenticationMethod|null $authenticationMethod The authentication method.
      */
-    public function __construct(string $id, string $name, ProviderTypeEnum $type, ?string $credentialsUrl = null)
-    {
+    public function __construct(
+        string $id,
+        string $name,
+        ProviderTypeEnum $type,
+        ?string $credentialsUrl = null,
+        ?RequestAuthenticationMethod $authenticationMethod = null
+    ) {
         $this->id = $id;
         $this->name = $name;
         $this->type = $type;
         $this->credentialsUrl = $credentialsUrl;
+        $this->authenticationMethod = $authenticationMethod;
     }
 
     /**
@@ -118,6 +133,18 @@ class ProviderMetadata extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the authentication method.
+     *
+     * @since n.e.x.t
+     *
+     * @return RequestAuthenticationMethod|null The authentication method.
+     */
+    public function getAuthenticationMethod(): ?RequestAuthenticationMethod
+    {
+        return $this->authenticationMethod;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -144,6 +171,11 @@ class ProviderMetadata extends AbstractDataTransferObject
                     'type' => 'string',
                     'description' => 'The URL where users can get credentials.',
                 ],
+                self::KEY_AUTHENTICATION_METHOD => [
+                    'type' => ['string', 'null'],
+                    'enum' => array_merge(RequestAuthenticationMethod::getValues(), [null]),
+                    'description' => 'The authentication method.',
+                ],
             ],
             'required' => [self::KEY_ID, self::KEY_NAME, self::KEY_TYPE],
         ];
@@ -163,6 +195,7 @@ class ProviderMetadata extends AbstractDataTransferObject
             self::KEY_NAME => $this->name,
             self::KEY_TYPE => $this->type->value,
             self::KEY_CREDENTIALS_URL => $this->credentialsUrl,
+            self::KEY_AUTHENTICATION_METHOD => $this->authenticationMethod ? $this->authenticationMethod->value : null,
         ];
     }
 
@@ -179,7 +212,10 @@ class ProviderMetadata extends AbstractDataTransferObject
             $array[self::KEY_ID],
             $array[self::KEY_NAME],
             ProviderTypeEnum::from($array[self::KEY_TYPE]),
-            $array[self::KEY_CREDENTIALS_URL] ?? null
+            $array[self::KEY_CREDENTIALS_URL] ?? null,
+            isset($array[self::KEY_AUTHENTICATION_METHOD])
+                ? RequestAuthenticationMethod::from($array[self::KEY_AUTHENTICATION_METHOD])
+                : null
         );
     }
 }

@@ -11,6 +11,7 @@ use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
+use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
@@ -72,7 +73,8 @@ class OpenAiProvider extends AbstractApiProvider
             'openai',
             'OpenAI',
             ProviderTypeEnum::cloud(),
-            'https://platform.openai.com/api-keys'
+            'https://platform.openai.com/api-keys',
+            RequestAuthenticationMethod::apiKey()
         );
     }
 

@@ -134,7 +134,8 @@ class ProviderMetadataTest extends TestCase
         $this->assertEquals('Anthropic', $array[ProviderMetadata::KEY_NAME]);
         $this->assertEquals('cloud', $array[ProviderMetadata::KEY_TYPE]);
         $this->assertNull($array[ProviderMetadata::KEY_CREDENTIALS_URL]);
-        $this->assertCount(4, $array);
+        $this->assertNull($array[ProviderMetadata::KEY_AUTHENTICATION_METHOD]);
+        $this->assertCount(5, $array);
     }
 
     /**
