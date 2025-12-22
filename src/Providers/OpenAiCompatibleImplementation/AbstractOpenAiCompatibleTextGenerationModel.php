@@ -621,7 +621,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             $tokenUsage = new TokenUsage(0, 0, 0);
         }
 
-        // Use any other data from the response as provider metadata.
+        // Use any other data from the response as provider-specific response metadata.
         $additionalData = $responseData;
         unset($additionalData['id'], $additionalData['choices'], $additionalData['usage']);
 

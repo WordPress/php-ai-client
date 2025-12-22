@@ -100,6 +100,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(OptionEnum::maxTokens()),
             new SupportedOption(OptionEnum::temperature()),
             new SupportedOption(OptionEnum::topP()),
+            new SupportedOption(OptionEnum::topK()),
             new SupportedOption(OptionEnum::stopSequences()),
             new SupportedOption(OptionEnum::presencePenalty()),
             new SupportedOption(OptionEnum::frequencyPenalty()),
