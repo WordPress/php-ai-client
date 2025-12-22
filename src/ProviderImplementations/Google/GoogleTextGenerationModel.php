@@ -25,7 +25,6 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
-use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
  * Class for a Google text generation model.
@@ -703,23 +702,6 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
                     null,
                     $partData['functionCall']['name'],
                     $partData['functionCall']['args']
-                )
-            );
-        }
-        if (isset($partData['functionResponse'])) {
-            if (
-                !is_array($partData['functionResponse']) ||
-                !isset($partData['functionResponse']['name']) ||
-                !is_string($partData['functionResponse']['name']) ||
-                !isset($partData['functionResponse']['response'])
-            ) {
-                throw new InvalidArgumentException('Part has an invalid functionResponse shape.');
-            }
-            return new MessagePart(
-                new FunctionResponse(
-                    '', // TODO: Ideally this should be `null`, but that's currently not supported.
-                    $partData['functionResponse']['name'],
-                    $partData['functionResponse']['response']
                 )
             );
         }
