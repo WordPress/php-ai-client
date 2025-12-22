@@ -116,10 +116,6 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(OptionEnum::functionDeclarations()),
             new SupportedOption(OptionEnum::customOptions()),
         ];
-        $geminiLegacyOptions = array_merge($geminiBaseOptions, [
-            new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
-            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
-        ]);
         $geminiOptions = array_merge($geminiBaseOptions, [
             new SupportedOption(
                 OptionEnum::inputModalities(),
@@ -130,8 +126,6 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                 ]
             ),
             new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
-        ]);
-        $geminiWebSearchOptions = array_merge($geminiOptions, [
             new SupportedOption(OptionEnum::webSearch()),
         ]);
         $geminiMultimodalImageOutputOptions = array_merge($geminiBaseOptions, [
@@ -176,9 +170,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                 static function (array $modelData) use (
                     $geminiCapabilities,
                     $geminiMultimodalImageOutputCapabilities,
-                    $geminiLegacyOptions,
                     $geminiOptions,
-                    $geminiWebSearchOptions,
                     $geminiMultimodalImageOutputOptions,
                     $imagenCapabilities,
                     $imagenOptions
@@ -194,29 +186,16 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     ) {
                         $modelCaps = $geminiCapabilities;
                         if (
-                            str_starts_with($modelId, 'gemini-1.0') ||
-                            str_starts_with($modelId, 'gemini-pro') // 'gemini-pro' without version refers to 1.0.
+                            // Multimodal output models for image generation.
+                            str_ends_with($modelId, '-image') ||
+                            str_ends_with($modelId, '-image-preview') ||
+                            str_ends_with($modelId, '-image-generation') ||
+                            str_starts_with($modelId, 'gemini-2.0-flash-exp')
                         ) {
-                            $modelOptions = $geminiLegacyOptions;
+                            $modelCaps = $geminiMultimodalImageOutputCapabilities;
+                            $modelOptions = $geminiMultimodalImageOutputOptions;
                         } else {
-                            if (
-                                // Multimodal output models for image generation.
-                                str_ends_with($modelId, '-image') ||
-                                str_ends_with($modelId, '-image-preview') ||
-                                str_ends_with($modelId, '-image-generation') ||
-                                str_starts_with($modelId, 'gemini-2.0-flash-exp')
-                            ) {
-                                $modelCaps = $geminiMultimodalImageOutputCapabilities;
-                                $modelOptions = $geminiMultimodalImageOutputOptions;
-                            } elseif (
-                                // Web search is supported by Gemini 2.0 and newer.
-                                str_starts_with($modelId, 'gemini-') &&
-                                ! str_starts_with($modelId, 'gemini-1.5-')
-                            ) {
-                                $modelOptions = $geminiWebSearchOptions;
-                            } else {
-                                $modelOptions = $geminiOptions;
-                            }
+                            $modelOptions = $geminiOptions;
                         }
                     } elseif (
                         isset($modelData['supportedGenerationMethods']) &&
