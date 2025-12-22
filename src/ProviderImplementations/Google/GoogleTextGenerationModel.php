@@ -10,6 +10,7 @@ use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModel;
@@ -301,6 +302,12 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     {
         $type = $part->getType();
         if ($type->isText()) {
+            if ($part->getChannel()->isThought()) {
+                return [
+                    'text'    => $part->getText(),
+                    'thought' => true,
+                ];
+            }
             return [
                 'text' => $part->getText(),
             ];
@@ -663,6 +670,9 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
         if (isset($partData['text'])) {
             if (!is_string($partData['text'])) {
                 throw new InvalidArgumentException('Part has an invalid text shape.');
+            }
+            if (isset($partData['thought']) && $partData['thought']) {
+                return new MessagePart($partData['text'], MessagePartChannelEnum::thought());
             }
             return new MessagePart($partData['text']);
         }
