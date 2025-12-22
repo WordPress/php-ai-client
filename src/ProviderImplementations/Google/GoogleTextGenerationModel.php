@@ -179,7 +179,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
         $outputMimeType = $config->getOutputMimeType();
         if ($outputMimeType) {
             $generationConfig['responseMimeType'] = $outputMimeType;
-            if ('application/json' === $outputMimeType) {
+            if ($outputMimeType === 'application/json') {
                 $outputSchema = $config->getOutputSchema();
                 if ($outputSchema) {
                     $generationConfig['responseSchema'] = $outputSchema;
