@@ -486,19 +486,6 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests prepareSizeParam() with square orientation and incompatible aspect ratio.
-     *
-     * @return void
-     */
-    public function testPrepareSizeParamSquareIncompatibleAspectRatio(): void
-    {
-        $model = $this->createModel();
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The aspect ratio "3:2" is not compatible with the square orientation.');
-        $model->exposePrepareSizeParam(MediaOrientationEnum::square(), '3:2');
-    }
-
-    /**
      * Tests prepareSizeParam() with landscape orientation and compatible aspect ratio.
      *
      * @return void
@@ -511,19 +498,6 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests prepareSizeParam() with landscape orientation and incompatible aspect ratio.
-     *
-     * @return void
-     */
-    public function testPrepareSizeParamLandscapeIncompatibleAspectRatio(): void
-    {
-        $model = $this->createModel();
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The aspect ratio "2:3" is not compatible with the landscape orientation.');
-        $model->exposePrepareSizeParam(MediaOrientationEnum::landscape(), '2:3');
-    }
-
-    /**
      * Tests prepareSizeParam() with portrait orientation and compatible aspect ratio.
      *
      * @return void
@@ -533,19 +507,6 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $model = $this->createModel();
         $size = $model->exposePrepareSizeParam(MediaOrientationEnum::portrait(), '2:3');
         $this->assertEquals('1024x1536', $size);
-    }
-
-    /**
-     * Tests prepareSizeParam() with portrait orientation and incompatible aspect ratio.
-     *
-     * @return void
-     */
-    public function testPrepareSizeParamPortraitIncompatibleAspectRatio(): void
-    {
-        $model = $this->createModel();
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The aspect ratio "3:2" is not compatible with the portrait orientation.');
-        $model->exposePrepareSizeParam(MediaOrientationEnum::portrait(), '3:2');
     }
 
     /**

@@ -94,6 +94,11 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             CapabilityEnum::textGeneration(),
             CapabilityEnum::chatHistory(),
         ];
+        $geminiMultimodalImageOutputCapabilities = [
+            CapabilityEnum::textGeneration(),
+            CapabilityEnum::imageGeneration(),
+            CapabilityEnum::chatHistory(),
+        ];
         $geminiBaseOptions = [
             new SupportedOption(OptionEnum::systemInstruction()),
             new SupportedOption(OptionEnum::candidateCount()),
@@ -157,12 +162,10 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(OptionEnum::outputFileType(), [FileTypeEnum::inline()]),
             new SupportedOption(OptionEnum::outputMediaOrientation(), [
                 MediaOrientationEnum::square(),
-                // The following orientations are normally supported, but not when using the OpenAI compatible endpoint.
-                // MediaOrientationEnum::landscape(),
-                // MediaOrientationEnum::portrait(),
+                MediaOrientationEnum::landscape(),
+                MediaOrientationEnum::portrait(),
             ]),
-            // Aspect ratio is normally supported, but not when using the OpenAI compatible endpoint.
-            // new SupportedOption(OptionEnum::outputMediaAspectRatio(), ['1:1', '16:9', '4:3', '9:16', '3:4']),
+            new SupportedOption(OptionEnum::outputMediaAspectRatio(), ['1:1', '16:9', '4:3', '9:16', '3:4']),
             new SupportedOption(OptionEnum::customOptions()),
         ];
 
@@ -172,6 +175,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             array_map(
                 static function (array $modelData) use (
                     $geminiCapabilities,
+                    $geminiMultimodalImageOutputCapabilities,
                     $geminiLegacyOptions,
                     $geminiOptions,
                     $geminiWebSearchOptions,
@@ -202,6 +206,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                                 str_ends_with($modelId, '-image-generation') ||
                                 str_starts_with($modelId, 'gemini-2.0-flash-exp')
                             ) {
+                                $modelCaps = $geminiMultimodalImageOutputCapabilities;
                                 $modelOptions = $geminiMultimodalImageOutputOptions;
                             } elseif (
                                 // Web search is supported by Gemini 2.0 and newer.

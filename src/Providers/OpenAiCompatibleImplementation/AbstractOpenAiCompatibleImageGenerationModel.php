@@ -51,7 +51,9 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
     ImageGenerationModelInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since 0.1.0
      */
     public function generateImageResult(array $prompt): GenerativeAiResult
     {
@@ -194,26 +196,6 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
      */
     protected function prepareSizeParam(?MediaOrientationEnum $orientation, ?string $aspectRatio): string
     {
-        // If both values are set, validate that they are compatible.
-        if ($orientation !== null && $aspectRatio !== null) {
-            if ($orientation->isSquare() && $aspectRatio !== '1:1') {
-                throw new InvalidArgumentException(
-                    'The aspect ratio "' . $aspectRatio . '" is not compatible with the square orientation.'
-                );
-            }
-            $aspectRatioParts = explode(':', $aspectRatio);
-            if ($orientation->isLandscape() && $aspectRatioParts[0] <= $aspectRatioParts[1]) {
-                throw new InvalidArgumentException(
-                    'The aspect ratio "' . $aspectRatio . '" is not compatible with the landscape orientation.'
-                );
-            }
-            if ($orientation->isPortrait() && $aspectRatioParts[0] >= $aspectRatioParts[1]) {
-                throw new InvalidArgumentException(
-                    'The aspect ratio "' . $aspectRatio . '" is not compatible with the portrait orientation.'
-                );
-            }
-        }
-
         // Use aspect ratio if set, as it is more specific.
         if ($aspectRatio !== null) {
             switch ($aspectRatio) {
@@ -337,7 +319,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
             $tokenUsage = new TokenUsage(0, 0, 0);
         }
 
-        // Use any other data from the response as provider metadata.
+        // Use any other data from the response as provider-specific response metadata.
         $providerMetadata = $responseData;
         unset($providerMetadata['id'], $providerMetadata['data'], $providerMetadata['usage']);
 
