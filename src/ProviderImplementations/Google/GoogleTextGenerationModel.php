@@ -570,17 +570,29 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
         $message = $this->parseResponseCandidateMessage($messageData, $index);
 
         switch ($candidateData['finishReason']) {
-            case 'stop':
+            case 'STOP':
+                /*
+                 * Google API doesn't make a difference between regular stop vs because of tool calls.
+                 * So we have to check ourselves.
+                 */
                 $finishReason = FinishReasonEnum::stop();
+                foreach ($message->getParts() as $messagePart) {
+                    if ($messagePart->getType()->isFunctionCall()) {
+                        $finishReason = FinishReasonEnum::toolCalls();
+                        break;
+                    }
+                }
                 break;
-            case 'length':
+            case 'MAX_TOKENS':
                 $finishReason = FinishReasonEnum::length();
                 break;
-            case 'content_filter':
+            case 'IMAGE_SAFETY':
+            case 'RECITATION':
+            case 'SAFETY':
+            case 'BLOCKLIST':
+            case 'PROHIBITED_CONTENT':
+            case 'SPII':
                 $finishReason = FinishReasonEnum::contentFilter();
-                break;
-            case 'tool_calls':
-                $finishReason = FinishReasonEnum::toolCalls();
                 break;
             default:
                 throw ResponseException::fromInvalidData(
