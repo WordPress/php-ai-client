@@ -41,14 +41,14 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
  *     finishReason?: string
  * }
  * @phpstan-type UsageData array{
- *     prompt_tokens?: int,
- *     completion_tokens?: int,
- *     total_tokens?: int
+ *     promptTokenCount?: int,
+ *     candidatesTokenCount?: int,
+ *     thoughtsTokenCount?: int
  * }
  * @phpstan-type ResponseData array{
  *     id?: string,
  *     candidates?: list<CandidateData>,
- *     usage?: UsageData
+ *     usageMetadata?: UsageData
  * }
  */
 class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGenerationModelInterface
@@ -510,13 +510,13 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
 
         $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
 
-        if (isset($responseData['usage']) && is_array($responseData['usage'])) {
-            $usage = $responseData['usage'];
+        if (isset($responseData['usageMetadata']) && is_array($responseData['usageMetadata'])) {
+            $usage = $responseData['usageMetadata'];
 
             $tokenUsage = new TokenUsage(
-                $usage['prompt_tokens'] ?? 0,
-                $usage['completion_tokens'] ?? 0,
-                $usage['total_tokens'] ?? 0
+                $usage['promptTokenCount'] ?? 0,
+                $usage['candidatesTokenCount'] ?? 0,
+                ($usage['candidatesTokenCount'] ?? 0) + ($usage['thoughtsTokenCount'] ?? 0)
             );
         } else {
             $tokenUsage = new TokenUsage(0, 0, 0);
@@ -524,7 +524,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
 
         // Use any other data from the response as provider-specific response metadata.
         $additionalData = $responseData;
-        unset($additionalData['id'], $additionalData['candidates'], $additionalData['usage']);
+        unset($additionalData['id'], $additionalData['candidates'], $additionalData['usageMetadata']);
 
         return new GenerativeAiResult(
             $id,
