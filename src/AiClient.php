@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\SimpleCache\CacheInterface;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
@@ -97,6 +98,11 @@ class AiClient
     private static ?EventDispatcherInterface $eventDispatcher = null;
 
     /**
+     * @var CacheInterface|null The PSR-16 cache for storing and retrieving cached data.
+     */
+    private static ?CacheInterface $cache = null;
+
+    /**
      * Gets the default provider registry instance.
      *
      * @since 0.1.0
@@ -146,6 +152,34 @@ class AiClient
     public static function getEventDispatcher(): ?EventDispatcherInterface
     {
         return self::$eventDispatcher;
+    }
+
+    /**
+     * Sets the PSR-16 cache for storing and retrieving cached data.
+     *
+     * The cache can be used to store AI responses and other data to avoid
+     * redundant API calls and improve performance.
+     *
+     * @since n.e.x.t
+     *
+     * @param CacheInterface|null $cache The PSR-16 cache instance, or null to disable caching.
+     * @return void
+     */
+    public static function setCache(?CacheInterface $cache): void
+    {
+        self::$cache = $cache;
+    }
+
+    /**
+     * Gets the PSR-16 cache instance.
+     *
+     * @since n.e.x.t
+     *
+     * @return CacheInterface|null The cache instance, or null if not set.
+     */
+    public static function getCache(): ?CacheInterface
+    {
+        return self::$cache;
     }
 
     /**

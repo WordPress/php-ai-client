@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
+use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModelMetadataDirectory;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
@@ -20,6 +21,8 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  * providers that have adopted OpenAI's models API specification as a standard interface.
  *
  * @since 0.1.0
+ *
+ * @phpstan-import-type ModelMetadataArrayShape from ModelMetadata
  */
 abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractApiBasedModelMetadataDirectory
 {
@@ -30,6 +33,19 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
      */
     protected function sendListModelsRequest(): array
     {
+        $cache = AiClient::getCache();
+        $cacheKey = $this->getCacheKey();
+
+        // Try to get cached data.
+        if ($cache !== null) {
+            $cachedData = $cache->get($cacheKey);
+            if (is_array($cachedData)) {
+                /** @var array<string, ModelMetadataArrayShape> $cachedData */
+                return $this->hydrateModelMetadataMap($cachedData);
+            }
+        }
+
+        // Fetch from API.
         $httpTransporter = $this->getHttpTransporter();
 
         $request = $this->createRequest(HttpMethodEnum::GET(), 'models');
@@ -43,6 +59,61 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
         $modelMetadataMap = [];
         foreach ($modelsMetadataList as $modelMetadata) {
             $modelMetadataMap[$modelMetadata->getId()] = $modelMetadata;
+        }
+
+        // Store in cache.
+        if ($cache !== null) {
+            $cache->set($cacheKey, $this->dehydrateModelMetadataMap($modelMetadataMap));
+        }
+
+        return $modelMetadataMap;
+    }
+
+    /**
+     * Gets the cache key for this directory.
+     *
+     * The cache key is unique per child class to ensure different providers
+     * don't share cached model data.
+     *
+     * @since n.e.x.t
+     *
+     * @return string The cache key.
+     */
+    protected function getCacheKey(): string
+    {
+        return 'ai_client_models_' . md5(static::class);
+    }
+
+    /**
+     * Converts a model metadata map to an array format suitable for caching.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, ModelMetadata> $modelMetadataMap The model metadata map.
+     * @return array<string, array<string, mixed>> The dehydrated data.
+     */
+    private function dehydrateModelMetadataMap(array $modelMetadataMap): array
+    {
+        $data = [];
+        foreach ($modelMetadataMap as $modelId => $modelMetadata) {
+            $data[$modelId] = $modelMetadata->toArray();
+        }
+        return $data;
+    }
+
+    /**
+     * Converts cached array data back to a model metadata map.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, ModelMetadataArrayShape> $cachedData The cached data.
+     * @return array<string, ModelMetadata> The hydrated model metadata map.
+     */
+    private function hydrateModelMetadataMap(array $cachedData): array
+    {
+        $modelMetadataMap = [];
+        foreach ($cachedData as $modelId => $modelData) {
+            $modelMetadataMap[$modelId] = ModelMetadata::fromArray($modelData);
         }
         return $modelMetadataMap;
     }

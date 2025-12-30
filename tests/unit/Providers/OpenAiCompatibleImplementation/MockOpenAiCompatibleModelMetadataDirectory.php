@@ -10,6 +10,7 @@ use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCompatibleModelMetadataDirectory;
 
 /**
@@ -33,28 +34,36 @@ class MockOpenAiCompatibleModelMetadataDirectory extends AbstractOpenAiCompatibl
     private array $mockModels;
 
     /**
-     * @var callable
+     * @var callable|null
      */
     private $modelMetadataStubFactory;
+
+    /**
+     * @var bool Whether to use real ModelMetadata objects instead of stubs.
+     */
+    private bool $useRealModelMetadata;
 
     /**
      * Constructor.
      *
      * @param HttpTransporterInterface&\PHPUnit\Framework\MockObject\MockObject $mockHttpTransporter
      * @param RequestAuthenticationInterface&\PHPUnit\Framework\MockObject\MockObject $mockRequestAuthentication
-     * @param callable $modelMetadataStubFactory
+     * @param callable|null $modelMetadataStubFactory Factory for creating stubs (null to use real objects).
      * @param array<string, ModelMetadata> $mockModels
+     * @param bool $useRealModelMetadata Whether to use real ModelMetadata objects.
      */
     public function __construct(
         $mockHttpTransporter,
         $mockRequestAuthentication,
-        callable $modelMetadataStubFactory,
-        array $mockModels = []
+        ?callable $modelMetadataStubFactory = null,
+        array $mockModels = [],
+        bool $useRealModelMetadata = false
     ) {
         $this->mockHttpTransporter = $mockHttpTransporter;
         $this->mockRequestAuthentication = $mockRequestAuthentication;
         $this->modelMetadataStubFactory = $modelMetadataStubFactory;
         $this->mockModels = $mockModels;
+        $this->useRealModelMetadata = $useRealModelMetadata;
     }
 
     /**
@@ -95,12 +104,31 @@ class MockOpenAiCompatibleModelMetadataDirectory extends AbstractOpenAiCompatibl
         if (isset($data['data']) && is_array($data['data'])) {
             foreach ($data['data'] as $modelData) {
                 if (isset($modelData['id']) && is_string($modelData['id'])) {
-                    $factory = $this->modelMetadataStubFactory;
-                    $modelMetadata = $factory($modelData['id']);
-                    $modelsMetadata[] = $modelMetadata;
+                    if ($this->useRealModelMetadata) {
+                        $modelsMetadata[] = $this->createRealModelMetadata($modelData['id']);
+                    } elseif ($this->modelMetadataStubFactory !== null) {
+                        $factory = $this->modelMetadataStubFactory;
+                        $modelsMetadata[] = $factory($modelData['id']);
+                    }
                 }
             }
         }
         return $modelsMetadata;
+    }
+
+    /**
+     * Creates a real ModelMetadata instance.
+     *
+     * @param string $modelId The model ID.
+     * @return ModelMetadata The model metadata.
+     */
+    private function createRealModelMetadata(string $modelId): ModelMetadata
+    {
+        return new ModelMetadata(
+            $modelId,
+            ucfirst($modelId),
+            [CapabilityEnum::textGeneration()],
+            []
+        );
     }
 }
