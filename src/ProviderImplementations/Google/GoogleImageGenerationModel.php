@@ -192,13 +192,13 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
     {
         if (count($messages) !== 1) {
             throw new InvalidArgumentException(
-                'The API only supports a single user message as prompt.'
+                'The API requires a single user message as prompt.'
             );
         }
         $message = $messages[0];
         if (!$message->getRole()->isUser()) {
             throw new InvalidArgumentException(
-                'The API only supports a user message as prompt.'
+                'The API requires a user message as prompt.'
             );
         }
 
@@ -212,7 +212,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
 
         if ($text === null) {
             throw new InvalidArgumentException(
-                'The API only supports a single text message part as prompt.'
+                'The API requires a single text message part as prompt.'
             );
         }
 

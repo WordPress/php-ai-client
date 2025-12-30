@@ -433,7 +433,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The API only supports a single user message as prompt.');
+        $this->expectExceptionMessage('The API requires a single user message as prompt.');
 
         $model->exposePreparePromptParam($messages);
     }
@@ -449,7 +449,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The API only supports a user message as prompt.');
+        $this->expectExceptionMessage('The API requires a user message as prompt.');
 
         $model->exposePreparePromptParam([$message]);
     }
@@ -468,7 +468,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The API only supports a single text message part as prompt.');
+        $this->expectExceptionMessage('The API requires a single text message part as prompt.');
 
         $model->exposePreparePromptParam([$message]);
     }
