@@ -314,7 +314,7 @@ class OpenAiTextGenerationModelTest extends TestCase
     {
         $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Run some code')])];
         $config = new ModelConfig();
-        $config->setCustomOptions(['code_interpreter' => true]);
+        $config->setCustomOptions(['codeInterpreter' => true]);
         $model = $this->createModel($config);
 
         $params = $model->exposePrepareGenerateTextParams($prompt);
@@ -325,22 +325,21 @@ class OpenAiTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests prepareGenerateTextParams() with image generation via customOptions.
+     * Tests prepareGenerateTextParams() with image generation throws exception (not yet supported).
      *
      * @return void
      */
-    public function testPrepareGenerateTextParamsWithImageGeneration(): void
+    public function testPrepareGenerateTextParamsWithImageGenerationThrowsException(): void
     {
         $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Generate an image')])];
         $config = new ModelConfig();
-        $config->setCustomOptions(['image_generation' => true]);
+        $config->setCustomOptions(['imageGeneration' => true]);
         $model = $this->createModel($config);
 
-        $params = $model->exposePrepareGenerateTextParams($prompt);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The imageGeneration option is not yet supported');
 
-        $this->assertArrayHasKey('tools', $params);
-        $toolTypes = array_column($params['tools'], 'type');
-        $this->assertContains('image_generation', $toolTypes);
+        $model->exposePrepareGenerateTextParams($prompt);
     }
 
     /**

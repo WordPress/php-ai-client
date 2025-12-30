@@ -158,8 +158,17 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
         $customOptions = $config->getCustomOptions();
 
         // Check for built-in tools via customOptions.
-        $codeInterpreter = isset($customOptions['code_interpreter']) && $customOptions['code_interpreter'];
-        $imageGeneration = isset($customOptions['image_generation']) && $customOptions['image_generation'];
+        $codeInterpreter = !empty($customOptions['codeInterpreter']);
+        $imageGeneration = !empty($customOptions['imageGeneration']);
+
+        // TODO: Implement multimodal output support for image_generation tool.
+        // This requires parsing image_generation_call outputs and returning them as file parts.
+        if ($imageGeneration) {
+            throw new RuntimeException(
+                'The imageGeneration option is not yet supported for text generation models. '
+                . 'Use the ImageGenerationModelInterface instead.'
+            );
+        }
 
         if (is_array($functionDeclarations) || $webSearch || $codeInterpreter || $imageGeneration) {
             $params['tools'] = $this->prepareToolsParam(
@@ -176,7 +185,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
          * Skip the built-in tool options we've already processed.
          */
         foreach ($customOptions as $key => $value) {
-            if ($key === 'code_interpreter' || $key === 'image_generation') {
+            if ($key === 'codeInterpreter' || $key === 'imageGeneration') {
                 continue;
             }
             if (isset($params[$key])) {
@@ -413,7 +422,10 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
         }
 
         if ($codeInterpreter) {
-            $tools[] = ['type' => 'code_interpreter'];
+            $tools[] = [
+                'type' => 'code_interpreter',
+                'container' => ['type' => 'auto'],
+            ];
         }
 
         if ($imageGeneration) {
