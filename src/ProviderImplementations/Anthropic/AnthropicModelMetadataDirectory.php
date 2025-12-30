@@ -36,7 +36,7 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {
         /*
-         * Since we're calling the primary Anthropic API models endpoint here, we need to use the Anthropic specific
+         * Since we're calling the Anthropic API here, we need to use the Anthropic specific
          * API key authentication class.
          */
         $requestAuthentication = parent::getRequestAuthentication();

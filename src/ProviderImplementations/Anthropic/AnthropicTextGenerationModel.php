@@ -12,6 +12,8 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModel;
+use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
@@ -48,6 +50,24 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  */
 class AnthropicTextGenerationModel extends AbstractApiBasedModel implements TextGenerationModelInterface
 {
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public function getRequestAuthentication(): RequestAuthenticationInterface
+    {
+        /*
+         * Since we're calling the Anthropic API here, we need to use the Anthropic specific
+         * API key authentication class.
+         */
+        $requestAuthentication = parent::getRequestAuthentication();
+        if (!$requestAuthentication instanceof ApiKeyRequestAuthentication) {
+            return $requestAuthentication;
+        }
+        return new AnthropicApiKeyRequestAuthentication($requestAuthentication->getApiKey());
+    }
+
     /**
      * {@inheritDoc}
      *
@@ -117,6 +137,9 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
         $maxTokens = $config->getMaxTokens();
         if ($maxTokens !== null) {
             $params['max_tokens'] = $maxTokens;
+        } else {
+            // The 'max_tokens' parameter is required in the Anthropic API, so we need a default.
+            $params['max_tokens'] = 4096;
         }
 
         $temperature = $config->getTemperature();
