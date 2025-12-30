@@ -14,6 +14,8 @@ use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModel;
+use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
@@ -54,6 +56,24 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
  */
 class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGenerationModelInterface
 {
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public function getRequestAuthentication(): RequestAuthenticationInterface
+    {
+        /*
+         * Since we're calling the Google API here, we need to use the Google specific
+         * API key authentication class.
+         */
+        $requestAuthentication = parent::getRequestAuthentication();
+        if (!$requestAuthentication instanceof ApiKeyRequestAuthentication) {
+            return $requestAuthentication;
+        }
+        return new GoogleApiKeyRequestAuthentication($requestAuthentication->getApiKey());
+    }
+
     /**
      * {@inheritDoc}
      *

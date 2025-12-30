@@ -43,8 +43,8 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {
         /*
-         * Since we're calling the primary Google API models endpoint here, we need to use the Google specific API key
-         * authentication class.
+         * Since we're calling the Google API here, we need to use the Google specific
+         * API key authentication class.
          */
         $requestAuthentication = parent::getRequestAuthentication();
         if (!$requestAuthentication instanceof ApiKeyRequestAuthentication) {
