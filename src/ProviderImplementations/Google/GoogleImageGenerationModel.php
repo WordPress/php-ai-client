@@ -12,6 +12,8 @@ use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModel;
+use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
@@ -55,6 +57,24 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
      *
      * @since n.e.x.t
      */
+    public function getRequestAuthentication(): RequestAuthenticationInterface
+    {
+        /*
+         * Since we're calling the Google API here, we need to use the Google specific
+         * API key authentication class.
+         */
+        $requestAuthentication = parent::getRequestAuthentication();
+        if (!$requestAuthentication instanceof ApiKeyRequestAuthentication) {
+            return $requestAuthentication;
+        }
+        return new GoogleApiKeyRequestAuthentication($requestAuthentication->getApiKey());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
     public function generateImageResult(array $prompt): GenerativeAiResult
     {
         /*
@@ -65,6 +85,8 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
         if (str_starts_with($this->metadata()->getId(), 'gemini-')) {
             $multimodalOutputModel = new GoogleTextGenerationModel($this->metadata(), $this->providerMetadata());
             $multimodalOutputModel->setConfig($this->getConfig());
+            $multimodalOutputModel->setHttpTransporter($this->getHttpTransporter());
+            $multimodalOutputModel->setRequestAuthentication($this->getRequestAuthentication());
             $requestOptions = $this->getRequestOptions();
             if ($requestOptions) {
                 $multimodalOutputModel->setRequestOptions($requestOptions);
