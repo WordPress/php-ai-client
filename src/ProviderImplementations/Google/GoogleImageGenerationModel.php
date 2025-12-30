@@ -41,6 +41,12 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *     id?: string,
  *     predictions?: list<PredictionData>
  * }
+ * @phpstan-type RequestParams array{
+ *     instances: list<array{prompt: string}>,
+ *     parameters: array{sampleCount: int, outputOptions?: array{mimeType: string}},
+ *     aspectRatio?: string,
+ *     ...
+ * }
  */
 class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageGenerationModelInterface
 {
@@ -86,14 +92,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
         ResponseUtil::throwIfNotSuccessful($response);
         return $this->parseResponseToGenerativeAiResult(
             $response,
-            isset($params['parameters']) &&
-            is_array($params['parameters']) &&
-            isset($params['parameters']['outputOptions']) &&
-            is_array($params['parameters']['outputOptions']) &&
-            isset($params['parameters']['outputOptions']['mimeType']) &&
-            is_string($params['parameters']['outputOptions']['mimeType']) ?
-                $params['parameters']['outputOptions']['mimeType'] :
-                'image/png'
+            $params['parameters']['outputOptions']['mimeType'] ?? 'image/png'
         );
     }
 
@@ -105,7 +104,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
      * @param list<Message> $prompt The prompt to generate an image for. Either a single message or a list of messages
      *                              from a chat. However as of today, Google image generation endpoints only support a
      *                              single user message.
-     * @return array<string, mixed> The parameters for the API request.
+     * @return RequestParams The parameters for the API request.
      */
     protected function prepareGenerateImageParams(array $prompt): array
     {
@@ -140,43 +139,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
             $params['aspectRatio'] = $this->prepareAspectRatioParam($outputMediaOrientation, $outputMediaAspectRatio);
         }
 
-        /*
-         * Any custom options are added to the parameters as well.
-         * This allows developers to pass other options that may be more niche or not yet supported by the SDK.
-         */
-        $customOptions = $config->getCustomOptions();
-        foreach ($customOptions as $key => $value) {
-            // Special case: Support custom values as part of `parameters`.
-            if (str_starts_with($key, 'parameters.')) {
-                $key = substr($key, strlen('parameters.'));
-                if (!isset($params['parameters']) || !is_array($params['parameters'])) {
-                    $params['parameters'] = [$key => $value];
-                    continue;
-                }
-                if (isset($params['parameters'][$key])) {
-                    throw new InvalidArgumentException(
-                        sprintf(
-                            'The custom parameters option "%s" conflicts with an existing parameter.',
-                            $key
-                        )
-                    );
-                }
-                $params['parameters'][$key] = $value;
-                continue;
-            }
-
-            if (isset($params[$key])) {
-                throw new InvalidArgumentException(
-                    sprintf(
-                        'The custom option "%s" conflicts with an existing parameter.',
-                        $key
-                    )
-                );
-            }
-            $params[$key] = $value;
-        }
-
-        return $params;
+        return $this->applyCustomOptions($params, $config->getCustomOptions());
     }
 
     /**
@@ -245,6 +208,56 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
             }
         }
         return '1:1';
+    }
+
+    /**
+     * Applies custom options to the given parameters array.
+     *
+     * This allows developers to pass options that may be more niche or not yet supported by the SDK.
+     * Custom options with a `parameters.` prefix are added nested within the `parameters` key.
+     *
+     * @since n.e.x.t
+     *
+     * @template T of array<string, mixed>
+     * @param T $params The base parameters.
+     * @param array<string, mixed> $customOptions The custom options to apply.
+     * @return T The parameters with custom options applied.
+     */
+    private function applyCustomOptions(array $params, array $customOptions): array
+    {
+        foreach ($customOptions as $key => $value) {
+            // Special case: Support custom values as part of `parameters`.
+            if (str_starts_with($key, 'parameters.')) {
+                $key = substr($key, strlen('parameters.'));
+                if (!isset($params['parameters']) || !is_array($params['parameters'])) {
+                    $params['parameters'] = [$key => $value];
+                    continue;
+                }
+                if (isset($params['parameters'][$key])) {
+                    throw new InvalidArgumentException(
+                        sprintf(
+                            'The custom parameters option "%s" conflicts with an existing parameter.',
+                            $key
+                        )
+                    );
+                }
+                $params['parameters'][$key] = $value;
+                continue;
+            }
+
+            if (isset($params[$key])) {
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'The custom option "%s" conflicts with an existing parameter.',
+                        $key
+                    )
+                );
+            }
+            $params[$key] = $value;
+        }
+
+        /** @var T */
+        return $params;
     }
 
     /**
