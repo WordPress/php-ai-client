@@ -9,6 +9,10 @@
  *   GOOGLE_API_KEY=123456 php cli.php 'Your prompt here' --providerId=google --modelId=gemini-2.5-flash
  *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai
  *   GOOGLE_API_KEY=123456 OPENAI_API_KEY=123456 php cli.php 'Your prompt here'
+ *
+ * For large prompts (e.g., with images), use stdin or file input:
+ *   cat prompt.json | php cli.php - --providerId=openai --modelId=gpt-4o
+ *   php cli.php @prompt.json --providerId=openai --modelId=gpt-4o
  */
 
 declare(strict_types=1);
@@ -89,7 +93,23 @@ if (empty($positional_args[0])) {
 }
 
 // Prompt input. Allow complex input as a JSON string.
+// Use "-" to read from stdin, or "@/path/to/file" to read from a file.
 $promptInput = $positional_args[0];
+if ($promptInput === '-') {
+    $promptInput = file_get_contents('php://stdin');
+    if ($promptInput === false) {
+        logError('Failed to read prompt from stdin.');
+    }
+} elseif (str_starts_with($promptInput, '@')) {
+    $filePath = substr($promptInput, 1);
+    if (!file_exists($filePath)) {
+        logError("Prompt file not found: {$filePath}");
+    }
+    $promptInput = file_get_contents($filePath);
+    if ($promptInput === false) {
+        logError("Failed to read prompt from file: {$filePath}");
+    }
+}
 if (str_starts_with($promptInput, '{') || str_starts_with($promptInput, '[')) {
     $decodedInput = json_decode($promptInput, true);
     if (json_last_error() === JSON_ERROR_NONE) {
