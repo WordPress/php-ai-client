@@ -170,12 +170,12 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
             );
         }
 
-        if (is_array($functionDeclarations) || $webSearch || $codeInterpreter || $imageGeneration) {
+        if (is_array($functionDeclarations) || $webSearch || $codeInterpreter) {
             $params['tools'] = $this->prepareToolsParam(
                 $functionDeclarations,
                 $webSearch,
                 $codeInterpreter,
-                $imageGeneration
+                false // imageGeneration not yet supported
             );
         }
 
