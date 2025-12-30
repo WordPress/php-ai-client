@@ -629,6 +629,12 @@ class ModelConfig extends AbstractDataTransferObject
      */
     public function setOutputMediaOrientation(MediaOrientationEnum $outputMediaOrientation): void
     {
+        if ($this->outputMediaAspectRatio) {
+            $this->validateMediaOrientationAspectRatioCompatibility(
+                $outputMediaOrientation,
+                $this->outputMediaAspectRatio
+            );
+        }
         $this->outputMediaOrientation = $outputMediaOrientation;
     }
 
@@ -660,6 +666,12 @@ class ModelConfig extends AbstractDataTransferObject
                 'Output media aspect ratio must be in the format "width:height" (e.g. 3:2, 16:9).'
             );
         }
+        if ($this->outputMediaOrientation) {
+            $this->validateMediaOrientationAspectRatioCompatibility(
+                $this->outputMediaOrientation,
+                $outputMediaAspectRatio
+            );
+        }
         $this->outputMediaAspectRatio = $outputMediaAspectRatio;
     }
 
@@ -673,6 +685,36 @@ class ModelConfig extends AbstractDataTransferObject
     public function getOutputMediaAspectRatio(): ?string
     {
         return $this->outputMediaAspectRatio;
+    }
+
+    /**
+     * Validates that the given media orientation and aspect ratio values do not conflict with each other.
+     *
+     * @since n.e.x.t
+     *
+     * @param MediaOrientationEnum $orientation The desired media orientation.
+     * @param string $aspectRatio The desired media aspect ratio.
+     */
+    protected function validateMediaOrientationAspectRatioCompatibility(
+        MediaOrientationEnum $orientation,
+        string $aspectRatio
+    ): void {
+        if ($orientation->isSquare() && $aspectRatio !== '1:1') {
+            throw new InvalidArgumentException(
+                'The aspect ratio "' . $aspectRatio . '" is not compatible with the square orientation.'
+            );
+        }
+        $aspectRatioParts = explode(':', $aspectRatio);
+        if ($orientation->isLandscape() && $aspectRatioParts[0] <= $aspectRatioParts[1]) {
+            throw new InvalidArgumentException(
+                'The aspect ratio "' . $aspectRatio . '" is not compatible with the landscape orientation.'
+            );
+        }
+        if ($orientation->isPortrait() && $aspectRatioParts[0] >= $aspectRatioParts[1]) {
+            throw new InvalidArgumentException(
+                'The aspect ratio "' . $aspectRatio . '" is not compatible with the portrait orientation.'
+            );
+        }
     }
 
     /**
