@@ -313,6 +313,13 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     {
         $type = $part->getType();
         if ($type->isText()) {
+            /*
+             * The OpenAI Chat Completions API spec does not support annotating thought parts as input,
+             * so we instead skip them.
+             */
+            if ($part->getChannel()->isThought()) {
+                return null;
+            }
             return [
                 'type' => 'text',
                 'text' => $part->getText(),

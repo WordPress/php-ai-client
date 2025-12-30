@@ -1304,4 +1304,19 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         $this->assertNull($part);
     }
+
+    /**
+     * Tests getMessagePartContentData() with text part in thought channel.
+     *
+     * @return void
+     */
+    public function testGetMessagePartContentDataThoughtPart(): void
+    {
+        $part = new MessagePart('Thinking...', MessagePartChannelEnum::thought());
+        $model = $this->createModel();
+        $data = $model->exposeGetMessagePartContentData($part);
+
+        // Should be skipped because OpenAI API doesn't support receiving thoughts.
+        $this->assertNull($data);
+    }
 }
