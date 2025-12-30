@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\Unit\ProviderImplementations\OpenAi;
+namespace WordPress\AiClient\Tests\unit\ProviderImplementations\OpenAi;
 
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\DTO\Message;
