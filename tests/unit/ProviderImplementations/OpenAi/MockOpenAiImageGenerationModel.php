@@ -105,25 +105,14 @@ class MockOpenAiImageGenerationModel extends OpenAiImageGenerationModel
     }
 
     /**
-     * Exposes getHostModelForImageGeneration for testing.
+     * Exposes isGptImageModel for testing.
      *
      * @param string $modelId
-     * @return string
+     * @return bool
      */
-    public function exposeGetHostModelForImageGeneration(string $modelId): string
+    public function exposeIsGptImageModel(string $modelId): bool
     {
-        return $this->getHostModelForImageGeneration($modelId);
-    }
-
-    /**
-     * Exposes prepareImageGenerationTool for testing.
-     *
-     * @param string $modelId
-     * @return array<string, mixed>
-     */
-    public function exposePrepareImageGenerationTool(string $modelId): array
-    {
-        return $this->prepareImageGenerationTool($modelId);
+        return $this->isGptImageModel($modelId);
     }
 
     /**
@@ -140,36 +129,28 @@ class MockOpenAiImageGenerationModel extends OpenAiImageGenerationModel
     /**
      * Exposes prepareSizeParam for testing.
      *
+     * @param string $modelId
      * @param MediaOrientationEnum|null $orientation
      * @param string|null $aspectRatio
      * @return string
      */
-    public function exposePrepareSize(?MediaOrientationEnum $orientation, ?string $aspectRatio): string
-    {
-        return $this->prepareSizeParam($orientation, $aspectRatio);
+    public function exposePrepareSize(
+        string $modelId,
+        ?MediaOrientationEnum $orientation,
+        ?string $aspectRatio
+    ): string {
+        return $this->prepareSizeParam($modelId, $orientation, $aspectRatio);
     }
 
     /**
-     * Exposes parseOutputItemToCandidate for testing.
+     * Exposes parseImageDataToCandidate for testing.
      *
-     * @param array<string, mixed> $outputItem
-     * @param int $index
-     * @return Candidate|null
-     */
-    public function exposeParseOutputItemToCandidate(array $outputItem, int $index): ?Candidate
-    {
-        return $this->parseOutputItemToCandidate($outputItem, $index);
-    }
-
-    /**
-     * Exposes parseImageGenerationCallToCandidate for testing.
-     *
-     * @param array<string, mixed> $outputItem
+     * @param array<string, mixed> $imageData
      * @param int $index
      * @return Candidate
      */
-    public function exposeParseImageGenerationCallToCandidate(array $outputItem, int $index): Candidate
+    public function exposeParseImageDataToCandidate(array $imageData, int $index): Candidate
     {
-        return $this->parseImageGenerationCallToCandidate($outputItem, $index);
+        return $this->parseImageDataToCandidate($imageData, $index);
     }
 }

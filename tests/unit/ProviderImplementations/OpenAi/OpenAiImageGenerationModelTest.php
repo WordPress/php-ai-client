@@ -61,10 +61,16 @@ class OpenAiImageGenerationModelTest extends TestCase
      * Creates a mock instance of OpenAiImageGenerationModel.
      *
      * @param ModelConfig|null $modelConfig
+     * @param string $modelId
      * @return MockOpenAiImageGenerationModel
      */
-    private function createModel(?ModelConfig $modelConfig = null): MockOpenAiImageGenerationModel
-    {
+    private function createModel(
+        ?ModelConfig $modelConfig = null,
+        string $modelId = 'gpt-image-1'
+    ): MockOpenAiImageGenerationModel {
+        $this->modelMetadata = $this->createStub(ModelMetadata::class);
+        $this->modelMetadata->method('getId')->willReturn($modelId);
+
         $model = new MockOpenAiImageGenerationModel(
             $this->modelMetadata,
             $this->providerMetadata,
@@ -95,18 +101,11 @@ class OpenAiImageGenerationModelTest extends TestCase
             200,
             [],
             json_encode([
-                'id' => 'resp_img_123',
-                'status' => 'completed',
-                'output' => [
+                'created' => 1234567890,
+                'data' => [
                     [
-                        'type' => 'image_generation_call',
-                        'result' => self::VALID_BASE64_IMAGE,
+                        'b64_json' => self::VALID_BASE64_IMAGE,
                     ],
-                ],
-                'usage' => [
-                    'input_tokens' => 50,
-                    'output_tokens' => 1000,
-                    'total_tokens' => 1050,
                 ],
             ])
         );
@@ -125,7 +124,7 @@ class OpenAiImageGenerationModelTest extends TestCase
         $result = $model->generateImageResult($prompt);
 
         $this->assertInstanceOf(GenerativeAiResult::class, $result);
-        $this->assertEquals('resp_img_123', $result->getId());
+        $this->assertEquals('img-1234567890', $result->getId());
         $this->assertCount(1, $result->getCandidates());
         $candidate = $result->getCandidates()[0];
         $this->assertEquals(FinishReasonEnum::stop(), $candidate->getFinishReason());
@@ -166,68 +165,25 @@ class OpenAiImageGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests getHostModelForImageGeneration() method.
+     * Tests isGptImageModel() method.
      *
      * @return void
      */
-    public function testGetHostModelForImageGeneration(): void
+    public function testIsGptImageModel(): void
     {
         $model = $this->createModel();
 
-        // For gpt-image-* models, should return gpt-4o as host.
-        $this->assertEquals('gpt-4o', $model->exposeGetHostModelForImageGeneration('gpt-image-1'));
-        $this->assertEquals('gpt-4o', $model->exposeGetHostModelForImageGeneration('gpt-image-1-mini'));
+        // GPT image models should return true.
+        $this->assertTrue($model->exposeIsGptImageModel('gpt-image-1'));
+        $this->assertTrue($model->exposeIsGptImageModel('gpt-image-1-mini'));
+        $this->assertTrue($model->exposeIsGptImageModel('gpt-image-1.5'));
 
-        // For other models, should return the model itself.
-        $this->assertEquals('gpt-4o', $model->exposeGetHostModelForImageGeneration('gpt-4o'));
-        $this->assertEquals('gpt-5', $model->exposeGetHostModelForImageGeneration('gpt-5'));
-    }
+        // DALL-E models should return false.
+        $this->assertFalse($model->exposeIsGptImageModel('dall-e-2'));
+        $this->assertFalse($model->exposeIsGptImageModel('dall-e-3'));
 
-    /**
-     * Tests prepareImageGenerationTool() with gpt-image model.
-     *
-     * @return void
-     */
-    public function testPrepareImageGenerationToolWithGptImageModel(): void
-    {
-        $model = $this->createModel();
-
-        $tool = $model->exposePrepareImageGenerationTool('gpt-image-1');
-
-        $this->assertEquals('image_generation', $tool['type']);
-        $this->assertEquals('gpt-image-1', $tool['model']);
-    }
-
-    /**
-     * Tests prepareImageGenerationTool() with size configuration.
-     *
-     * @return void
-     */
-    public function testPrepareImageGenerationToolWithSize(): void
-    {
-        $config = new ModelConfig();
-        $config->setOutputMediaAspectRatio('16:9');
-        $model = $this->createModel($config);
-
-        $tool = $model->exposePrepareImageGenerationTool('gpt-image-1');
-
-        $this->assertEquals('1792x1024', $tool['size']);
-    }
-
-    /**
-     * Tests prepareImageGenerationTool() with output format.
-     *
-     * @return void
-     */
-    public function testPrepareImageGenerationToolWithOutputFormat(): void
-    {
-        $config = new ModelConfig();
-        $config->setOutputMimeType('image/webp');
-        $model = $this->createModel($config);
-
-        $tool = $model->exposePrepareImageGenerationTool('gpt-image-1');
-
-        $this->assertEquals('webp', $tool['output_format']);
+        // Other models should return false.
+        $this->assertFalse($model->exposeIsGptImageModel('gpt-4o'));
     }
 
     /**
@@ -281,31 +237,85 @@ class OpenAiImageGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests prepareSizeParam() with aspect ratios.
+     * Tests prepareSizeParam() with GPT image model aspect ratios.
      *
      * @return void
      */
-    public function testPrepareSizeParamWithAspectRatios(): void
+    public function testPrepareSizeParamWithGptImageModelAspectRatios(): void
     {
         $model = $this->createModel();
 
-        $this->assertEquals('1024x1024', $model->exposePrepareSize(null, '1:1'));
-        $this->assertEquals('1792x1024', $model->exposePrepareSize(null, '16:9'));
-        $this->assertEquals('1024x1792', $model->exposePrepareSize(null, '9:16'));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize('gpt-image-1', null, '1:1'));
+        $this->assertEquals('1536x1024', $model->exposePrepareSize('gpt-image-1', null, '3:2'));
+        $this->assertEquals('1024x1536', $model->exposePrepareSize('gpt-image-1', null, '2:3'));
     }
 
     /**
-     * Tests prepareSizeParam() with orientations.
+     * Tests prepareSizeParam() with GPT image model orientations.
      *
      * @return void
      */
-    public function testPrepareSizeParamWithOrientations(): void
+    public function testPrepareSizeParamWithGptImageModelOrientations(): void
     {
         $model = $this->createModel();
 
-        $this->assertEquals('1792x1024', $model->exposePrepareSize(MediaOrientationEnum::landscape(), null));
-        $this->assertEquals('1024x1792', $model->exposePrepareSize(MediaOrientationEnum::portrait(), null));
-        $this->assertEquals('1024x1024', $model->exposePrepareSize(MediaOrientationEnum::square(), null));
+        $landscape = MediaOrientationEnum::landscape();
+        $portrait = MediaOrientationEnum::portrait();
+        $square = MediaOrientationEnum::square();
+
+        $this->assertEquals('1536x1024', $model->exposePrepareSize('gpt-image-1', $landscape, null));
+        $this->assertEquals('1024x1536', $model->exposePrepareSize('gpt-image-1', $portrait, null));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize('gpt-image-1', $square, null));
+    }
+
+    /**
+     * Tests prepareSizeParam() with DALL-E 3 aspect ratios.
+     *
+     * @return void
+     */
+    public function testPrepareSizeParamWithDalle3AspectRatios(): void
+    {
+        $model = $this->createModel();
+
+        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-3', null, '1:1'));
+        $this->assertEquals('1792x1024', $model->exposePrepareSize('dall-e-3', null, '7:4'));
+        $this->assertEquals('1024x1792', $model->exposePrepareSize('dall-e-3', null, '4:7'));
+    }
+
+    /**
+     * Tests prepareSizeParam() with DALL-E 3 orientations.
+     *
+     * @return void
+     */
+    public function testPrepareSizeParamWithDalle3Orientations(): void
+    {
+        $model = $this->createModel();
+
+        $landscape = MediaOrientationEnum::landscape();
+        $portrait = MediaOrientationEnum::portrait();
+        $square = MediaOrientationEnum::square();
+
+        $this->assertEquals('1792x1024', $model->exposePrepareSize('dall-e-3', $landscape, null));
+        $this->assertEquals('1024x1792', $model->exposePrepareSize('dall-e-3', $portrait, null));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-3', $square, null));
+    }
+
+    /**
+     * Tests prepareSizeParam() with DALL-E 2 (only supports square).
+     *
+     * @return void
+     */
+    public function testPrepareSizeParamWithDalle2(): void
+    {
+        $model = $this->createModel();
+
+        $landscape = MediaOrientationEnum::landscape();
+        $portrait = MediaOrientationEnum::portrait();
+
+        // DALL-E 2 only supports square images.
+        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-2', null, '1:1'));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-2', $landscape, null));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-2', $portrait, null));
     }
 
     /**
@@ -317,21 +327,21 @@ class OpenAiImageGenerationModelTest extends TestCase
     {
         $model = $this->createModel();
 
-        $this->assertEquals('1024x1024', $model->exposePrepareSize(null, null));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize('gpt-image-1', null, null));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-3', null, null));
     }
 
     /**
-     * Tests parseImageGenerationCallToCandidate() method.
+     * Tests parseImageDataToCandidate() method.
      *
      * @return void
      */
-    public function testParseImageGenerationCallToCandidate(): void
+    public function testParseImageDataToCandidate(): void
     {
         $model = $this->createModel();
 
-        $candidate = $model->exposeParseImageGenerationCallToCandidate([
-            'type' => 'image_generation_call',
-            'result' => self::VALID_BASE64_IMAGE,
+        $candidate = $model->exposeParseImageDataToCandidate([
+            'b64_json' => self::VALID_BASE64_IMAGE,
         ], 0);
 
         $this->assertNotNull($candidate);
@@ -346,19 +356,18 @@ class OpenAiImageGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests parseImageGenerationCallToCandidate() with custom MIME type.
+     * Tests parseImageDataToCandidate() with custom MIME type.
      *
      * @return void
      */
-    public function testParseImageGenerationCallToCandidateWithCustomMimeType(): void
+    public function testParseImageDataToCandidateWithCustomMimeType(): void
     {
         $config = new ModelConfig();
         $config->setOutputMimeType('image/jpeg');
         $model = $this->createModel($config);
 
-        $candidate = $model->exposeParseImageGenerationCallToCandidate([
-            'type' => 'image_generation_call',
-            'result' => self::VALID_BASE64_IMAGE,
+        $candidate = $model->exposeParseImageDataToCandidate([
+            'b64_json' => self::VALID_BASE64_IMAGE,
         ], 0);
 
         $file = $candidate->getMessage()->getParts()[0]->getFile();
@@ -367,20 +376,57 @@ class OpenAiImageGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests parseOutputItemToCandidate() skips non-image output.
+     * Tests prepareGenerateImageParams() for GPT image model.
      *
      * @return void
      */
-    public function testParseOutputItemToCandidateSkipsNonImageOutput(): void
+    public function testPrepareGenerateImageParamsForGptImageModel(): void
     {
-        $model = $this->createModel();
+        $config = new ModelConfig();
+        $config->setOutputMimeType('image/webp');
+        $model = $this->createModel($config, 'gpt-image-1');
 
-        $result = $model->exposeParseOutputItemToCandidate([
-            'type' => 'message',
-            'role' => 'assistant',
-            'content' => [],
-        ], 0);
+        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Generate a cat')])];
+        $params = $model->exposePrepareGenerateImageParams($prompt);
 
-        $this->assertNull($result);
+        $this->assertEquals('gpt-image-1', $params['model']);
+        $this->assertEquals('Generate a cat', $params['prompt']);
+        $this->assertEquals('webp', $params['output_format']);
+        $this->assertArrayNotHasKey('response_format', $params);
+    }
+
+    /**
+     * Tests prepareGenerateImageParams() for DALL-E model.
+     *
+     * @return void
+     */
+    public function testPrepareGenerateImageParamsForDalleModel(): void
+    {
+        $model = $this->createModel(null, 'dall-e-3');
+
+        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Generate a cat')])];
+        $params = $model->exposePrepareGenerateImageParams($prompt);
+
+        $this->assertEquals('dall-e-3', $params['model']);
+        $this->assertEquals('Generate a cat', $params['prompt']);
+        $this->assertEquals('b64_json', $params['response_format']);
+        $this->assertArrayNotHasKey('output_format', $params);
+    }
+
+    /**
+     * Tests prepareGenerateImageParams() with size configuration.
+     *
+     * @return void
+     */
+    public function testPrepareGenerateImageParamsWithSizeConfig(): void
+    {
+        $config = new ModelConfig();
+        $config->setOutputMediaAspectRatio('3:2');
+        $model = $this->createModel($config, 'gpt-image-1');
+
+        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Generate a cat')])];
+        $params = $model->exposePrepareGenerateImageParams($prompt);
+
+        $this->assertEquals('1536x1024', $params['size']);
     }
 }

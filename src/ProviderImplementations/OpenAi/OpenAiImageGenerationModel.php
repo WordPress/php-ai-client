@@ -23,33 +23,21 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
 /**
- * Class for an OpenAI image generation model using the Responses API.
+ * Class for an OpenAI image generation model using the Images API.
  *
- * This uses the Responses API with the built-in image_generation tool.
+ * This uses the Images API directly to generate images with GPT image models
+ * (gpt-image-1, etc.) and DALL-E models (dall-e-2, dall-e-3).
  *
  * @since n.e.x.t
  *
- * @phpstan-type ImageGenerationCallData array{
- *     type: string,
- *     result?: string
- * }
- * @phpstan-type OutputItemData array{
- *     type: string,
- *     id?: string,
- *     role?: string,
- *     status?: string,
- *     content?: list<array<string, mixed>>
- * }
- * @phpstan-type UsageData array{
- *     input_tokens?: int,
- *     output_tokens?: int,
- *     total_tokens?: int
+ * @phpstan-type ImageData array{
+ *     b64_json?: string,
+ *     url?: string,
+ *     revised_prompt?: string
  * }
  * @phpstan-type ResponseData array{
- *     id?: string,
- *     status?: string,
- *     output?: list<OutputItemData>,
- *     usage?: UsageData
+ *     created?: int,
+ *     data?: list<ImageData>
  * }
  */
 class OpenAiImageGenerationModel extends AbstractApiBasedModel implements ImageGenerationModelInterface
@@ -67,7 +55,7 @@ class OpenAiImageGenerationModel extends AbstractApiBasedModel implements ImageG
 
         $request = new Request(
             HttpMethodEnum::POST(),
-            OpenAiProvider::url('responses'),
+            OpenAiProvider::url('images/generations'),
             ['Content-Type' => 'application/json'],
             $params,
             $this->getRequestOptions()
@@ -95,15 +83,24 @@ class OpenAiImageGenerationModel extends AbstractApiBasedModel implements ImageG
         $config = $this->getConfig();
         $modelId = $this->metadata()->getId();
 
-        // The Responses API with image_generation tool requires a model that supports it.
-        // We use a capable model like gpt-4o to process the request with the image_generation tool.
         $params = [
-            'model' => $this->getHostModelForImageGeneration($modelId),
-            'input' => $this->preparePromptParam($prompt),
-            'tools' => [
-                $this->prepareImageGenerationTool($modelId),
-            ],
+            'model' => $modelId,
+            'prompt' => $this->preparePromptParam($prompt),
         ];
+
+        // Add size configuration if available.
+        $outputMediaOrientation = $config->getOutputMediaOrientation();
+        $outputMediaAspectRatio = $config->getOutputMediaAspectRatio();
+        if ($outputMediaOrientation !== null || $outputMediaAspectRatio !== null) {
+            $params['size'] = $this->prepareSizeParam($modelId, $outputMediaOrientation, $outputMediaAspectRatio);
+        }
+
+        // Add model-specific parameters.
+        if ($this->isGptImageModel($modelId)) {
+            $this->addGptImageModelParams($params, $config);
+        } else {
+            $this->addDalleModelParams($params);
+        }
 
         /*
          * Any custom options are added to the parameters as well.
@@ -126,66 +123,53 @@ class OpenAiImageGenerationModel extends AbstractApiBasedModel implements ImageG
     }
 
     /**
-     * Gets the host model to use for image generation requests.
-     *
-     * The image_generation tool runs within a host model's context. For dedicated
-     * image generation models like gpt-image-1, we use a capable host model.
+     * Adds GPT image model specific parameters to the request.
      *
      * @since n.e.x.t
      *
-     * @param string $modelId The requested model ID.
-     * @return string The host model ID to use for the request.
+     * @param array<string, mixed> $params The parameters array to modify.
+     * @param \WordPress\AiClient\Providers\Models\DTO\ModelConfig $config The model configuration.
      */
-    protected function getHostModelForImageGeneration(string $modelId): string
+    protected function addGptImageModelParams(array &$params, $config): void
     {
-        // If this is a gpt-image-* model, we need a host model to run the tool.
-        // Otherwise, the model itself can host the image_generation tool.
-        if (str_starts_with($modelId, 'gpt-image-')) {
-            return 'gpt-4o';
-        }
-        return $modelId;
-    }
-
-    /**
-     * Prepares the image_generation tool configuration.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $modelId The model ID for image generation.
-     * @return array<string, mixed> The tool configuration.
-     */
-    protected function prepareImageGenerationTool(string $modelId): array
-    {
-        $config = $this->getConfig();
-        $tool = ['type' => 'image_generation'];
-
-        // If a specific image model is requested, include it in the tool config.
-        if (str_starts_with($modelId, 'gpt-image-')) {
-            $tool['model'] = $modelId;
-        }
-
-        // Add size configuration if available.
-        $outputMediaOrientation = $config->getOutputMediaOrientation();
-        $outputMediaAspectRatio = $config->getOutputMediaAspectRatio();
-        if ($outputMediaOrientation !== null || $outputMediaAspectRatio !== null) {
-            $tool['size'] = $this->prepareSizeParam($outputMediaOrientation, $outputMediaAspectRatio);
-        }
-
         // Add output format configuration if available.
         $outputMimeType = $config->getOutputMimeType();
         if ($outputMimeType !== null) {
-            // Map MIME type to OpenAI format.
             $formatMap = [
                 'image/png' => 'png',
                 'image/jpeg' => 'jpeg',
                 'image/webp' => 'webp',
             ];
             if (isset($formatMap[$outputMimeType])) {
-                $tool['output_format'] = $formatMap[$outputMimeType];
+                $params['output_format'] = $formatMap[$outputMimeType];
             }
         }
+    }
 
-        return $tool;
+    /**
+     * Adds DALL-E model specific parameters to the request.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, mixed> $params The parameters array to modify.
+     */
+    protected function addDalleModelParams(array &$params): void
+    {
+        // DALL-E models need response_format set to b64_json to get base64 data.
+        $params['response_format'] = 'b64_json';
+    }
+
+    /**
+     * Checks if the given model ID is a GPT image model.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $modelId The model ID to check.
+     * @return bool True if it's a GPT image model, false otherwise.
+     */
+    protected function isGptImageModel(string $modelId): bool
+    {
+        return str_starts_with($modelId, 'gpt-image-');
     }
 
     /**
@@ -228,7 +212,29 @@ class OpenAiImageGenerationModel extends AbstractApiBasedModel implements ImageG
     }
 
     /**
-     * Prepares the size parameter for the image generation tool.
+     * Prepares the size parameter for the image generation request.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $modelId The model ID.
+     * @param MediaOrientationEnum|null $orientation The desired media orientation.
+     * @param string|null $aspectRatio The desired media aspect ratio.
+     * @return string The size parameter value.
+     */
+    protected function prepareSizeParam(
+        string $modelId,
+        ?MediaOrientationEnum $orientation,
+        ?string $aspectRatio
+    ): string {
+        if ($this->isGptImageModel($modelId)) {
+            return $this->prepareGptImageSizeParam($orientation, $aspectRatio);
+        }
+
+        return $this->prepareDalleSizeParam($modelId, $orientation, $aspectRatio);
+    }
+
+    /**
+     * Prepares the size parameter for GPT image models.
      *
      * @since n.e.x.t
      *
@@ -236,16 +242,14 @@ class OpenAiImageGenerationModel extends AbstractApiBasedModel implements ImageG
      * @param string|null $aspectRatio The desired media aspect ratio.
      * @return string The size parameter value.
      */
-    protected function prepareSizeParam(?MediaOrientationEnum $orientation, ?string $aspectRatio): string
+    protected function prepareGptImageSizeParam(?MediaOrientationEnum $orientation, ?string $aspectRatio): string
     {
         // If aspect ratio is provided, map it to OpenAI size format.
         if ($aspectRatio !== null) {
             $aspectRatioMap = [
                 '1:1' => '1024x1024',
-                '16:9' => '1792x1024',
-                '9:16' => '1024x1792',
-                '4:3' => '1024x768',
-                '3:4' => '768x1024',
+                '3:2' => '1536x1024',
+                '2:3' => '1024x1536',
             ];
             if (isset($aspectRatioMap[$aspectRatio])) {
                 return $aspectRatioMap[$aspectRatio];
@@ -255,11 +259,64 @@ class OpenAiImageGenerationModel extends AbstractApiBasedModel implements ImageG
         // Map orientation to size.
         if ($orientation !== null) {
             if ($orientation->isLandscape()) {
-                return '1792x1024';
+                return '1536x1024';
             }
             if ($orientation->isPortrait()) {
-                return '1024x1792';
+                return '1024x1536';
             }
+        }
+
+        // Default to square.
+        return '1024x1024';
+    }
+
+    /**
+     * Prepares the size parameter for DALL-E models.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $modelId The model ID (dall-e-2 or dall-e-3).
+     * @param MediaOrientationEnum|null $orientation The desired media orientation.
+     * @param string|null $aspectRatio The desired media aspect ratio.
+     * @return string The size parameter value.
+     */
+    protected function prepareDalleSizeParam(
+        string $modelId,
+        ?MediaOrientationEnum $orientation,
+        ?string $aspectRatio
+    ): string {
+        $isDalle3 = $modelId === 'dall-e-3';
+
+        // If aspect ratio is provided, map it to size.
+        if ($aspectRatio !== null) {
+            if ($isDalle3) {
+                $aspectRatioMap = [
+                    '1:1' => '1024x1024',
+                    '7:4' => '1792x1024',
+                    '4:7' => '1024x1792',
+                ];
+            } else {
+                // DALL-E 2 only supports square images at various resolutions.
+                $aspectRatioMap = [
+                    '1:1' => '1024x1024',
+                ];
+            }
+            if (isset($aspectRatioMap[$aspectRatio])) {
+                return $aspectRatioMap[$aspectRatio];
+            }
+        }
+
+        // Map orientation to size.
+        if ($orientation !== null) {
+            if ($isDalle3) {
+                if ($orientation->isLandscape()) {
+                    return '1792x1024';
+                }
+                if ($orientation->isPortrait()) {
+                    return '1024x1792';
+                }
+            }
+            // DALL-E 2 only supports square, so orientation doesn't change the size.
         }
 
         // Default to square.
@@ -279,49 +336,39 @@ class OpenAiImageGenerationModel extends AbstractApiBasedModel implements ImageG
         /** @var ResponseData $responseData */
         $responseData = $response->getData();
 
-        if (!isset($responseData['output']) || !$responseData['output']) {
-            throw ResponseException::fromMissingData($this->providerMetadata()->getName(), 'output');
+        if (!isset($responseData['data']) || !$responseData['data']) {
+            throw ResponseException::fromMissingData($this->providerMetadata()->getName(), 'data');
         }
-        if (!is_array($responseData['output']) || !array_is_list($responseData['output'])) {
+        if (!is_array($responseData['data']) || !array_is_list($responseData['data'])) {
             throw ResponseException::fromInvalidData(
                 $this->providerMetadata()->getName(),
-                'output',
+                'data',
                 'The value must be an indexed array.'
             );
         }
 
         $candidates = [];
-        foreach ($responseData['output'] as $index => $outputItem) {
-            if (!is_array($outputItem) || array_is_list($outputItem)) {
+        foreach ($responseData['data'] as $index => $imageData) {
+            if (!is_array($imageData) || array_is_list($imageData)) {
                 throw ResponseException::fromInvalidData(
                     $this->providerMetadata()->getName(),
-                    "output[{$index}]",
+                    "data[{$index}]",
                     'The value must be an associative array.'
                 );
             }
 
-            $candidate = $this->parseOutputItemToCandidate($outputItem, $index);
-            if ($candidate !== null) {
-                $candidates[] = $candidate;
-            }
+            $candidates[] = $this->parseImageDataToCandidate($imageData, $index);
         }
 
-        $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
+        // The Images API doesn't return an ID, so we generate one from the created timestamp.
+        $id = isset($responseData['created']) ? 'img-' . $responseData['created'] : '';
 
-        if (isset($responseData['usage']) && is_array($responseData['usage'])) {
-            $usage = $responseData['usage'];
-            $tokenUsage = new TokenUsage(
-                $usage['input_tokens'] ?? 0,
-                $usage['output_tokens'] ?? 0,
-                $usage['total_tokens'] ?? (($usage['input_tokens'] ?? 0) + ($usage['output_tokens'] ?? 0))
-            );
-        } else {
-            $tokenUsage = new TokenUsage(0, 0, 0);
-        }
+        // The Images API doesn't return token usage.
+        $tokenUsage = new TokenUsage(0, 0, 0);
 
         // Use any other data from the response as provider-specific response metadata.
         $additionalData = $responseData;
-        unset($additionalData['id'], $additionalData['output'], $additionalData['usage']);
+        unset($additionalData['data'], $additionalData['created']);
 
         return new GenerativeAiResult(
             $id,
@@ -334,47 +381,24 @@ class OpenAiImageGenerationModel extends AbstractApiBasedModel implements ImageG
     }
 
     /**
-     * Parses a single output item from the API response into a Candidate object.
+     * Parses image data from the API response into a Candidate object.
      *
      * @since n.e.x.t
      *
-     * @param OutputItemData $outputItem The output item data from the API response.
-     * @param int $index The index of the output item in the output array.
-     * @return Candidate|null The parsed candidate, or null if the output item should be skipped.
-     */
-    protected function parseOutputItemToCandidate(array $outputItem, int $index): ?Candidate
-    {
-        $type = $outputItem['type'] ?? '';
-
-        // Handle image_generation_call output type.
-        if ($type === 'image_generation_call') {
-            return $this->parseImageGenerationCallToCandidate($outputItem, $index);
-        }
-
-        // Skip other output types.
-        return null;
-    }
-
-    /**
-     * Parses an image_generation_call output item into a Candidate object.
-     *
-     * @since n.e.x.t
-     *
-     * @param ImageGenerationCallData $outputItem The output item data.
-     * @param int $index The index of the output item.
+     * @param ImageData $imageData The image data from the API response.
+     * @param int $index The index of the image in the data array.
      * @return Candidate The parsed candidate.
      */
-    protected function parseImageGenerationCallToCandidate(array $outputItem, int $index): Candidate
+    protected function parseImageDataToCandidate(array $imageData, int $index): Candidate
     {
-        if (!isset($outputItem['result']) || !is_string($outputItem['result'])) {
+        if (!isset($imageData['b64_json']) || !is_string($imageData['b64_json'])) {
             throw ResponseException::fromMissingData(
                 $this->providerMetadata()->getName(),
-                "output[{$index}].result"
+                "data[{$index}].b64_json"
             );
         }
 
-        // The result is base64-encoded image data.
-        $base64Data = $outputItem['result'];
+        $base64Data = $imageData['b64_json'];
 
         // Determine MIME type from config or default to PNG.
         $config = $this->getConfig();
