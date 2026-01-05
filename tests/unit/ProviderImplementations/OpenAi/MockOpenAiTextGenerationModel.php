@@ -158,16 +158,14 @@ class MockOpenAiTextGenerationModel extends OpenAiTextGenerationModel
      * @param list<FunctionDeclaration>|null $functionDeclarations
      * @param WebSearch|null $webSearch
      * @param bool $codeInterpreter
-     * @param bool $imageGeneration
      * @return list<array<string, mixed>>
      */
     public function exposePrepareToolsParam(
         ?array $functionDeclarations,
         ?WebSearch $webSearch,
-        bool $codeInterpreter = false,
-        bool $imageGeneration = false
+        bool $codeInterpreter = false
     ): array {
-        return $this->prepareToolsParam($functionDeclarations, $webSearch, $codeInterpreter, $imageGeneration);
+        return $this->prepareToolsParam($functionDeclarations, $webSearch, $codeInterpreter);
     }
 
     /**

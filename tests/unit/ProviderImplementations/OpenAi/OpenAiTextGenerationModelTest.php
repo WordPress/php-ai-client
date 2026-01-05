@@ -325,21 +325,21 @@ class OpenAiTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests prepareGenerateTextParams() with image generation throws exception (not yet supported).
+     * Tests prepareGenerateTextParams() with previous_response_id for conversation state.
      *
      * @return void
      */
-    public function testPrepareGenerateTextParamsWithImageGenerationThrowsException(): void
+    public function testPrepareGenerateTextParamsWithPreviousResponseId(): void
     {
-        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Generate an image')])];
+        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Continue the conversation')])];
         $config = new ModelConfig();
-        $config->setCustomOptions(['imageGeneration' => true]);
+        $config->setCustomOptions(['previous_response_id' => 'resp_abc123']);
         $model = $this->createModel($config);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('The imageGeneration option is not yet supported');
+        $params = $model->exposePrepareGenerateTextParams($prompt);
 
-        $model->exposePrepareGenerateTextParams($prompt);
+        $this->assertArrayHasKey('previous_response_id', $params);
+        $this->assertEquals('resp_abc123', $params['previous_response_id']);
     }
 
     /**
@@ -470,16 +470,14 @@ class OpenAiTextGenerationModelTest extends TestCase
         $tools = $model->exposePrepareToolsParam(
             [$functionDeclaration],
             $webSearch,
-            true,
             true
         );
 
-        $this->assertCount(4, $tools);
+        $this->assertCount(3, $tools);
         $toolTypes = array_column($tools, 'type');
         $this->assertContains('function', $toolTypes);
         $this->assertContains('web_search', $toolTypes);
         $this->assertContains('code_interpreter', $toolTypes);
-        $this->assertContains('image_generation', $toolTypes);
     }
 
     /**

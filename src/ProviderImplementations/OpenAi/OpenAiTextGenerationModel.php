@@ -157,35 +157,38 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
         $webSearch = $config->getWebSearch();
         $customOptions = $config->getCustomOptions();
 
+        /*
+         * Handle previous_response_id for conversation state.
+         *
+         * This allows chaining responses together for multi-turn conversations without
+         * resending the entire conversation history. Pass the response ID from a previous
+         * call to continue the conversation.
+         *
+         * @see https://platform.openai.com/docs/guides/conversation-state
+         */
+        if (!empty($customOptions['previous_response_id'])) {
+            $params['previous_response_id'] = $customOptions['previous_response_id'];
+        }
+
         // Check for built-in tools via customOptions.
         $codeInterpreter = !empty($customOptions['codeInterpreter']);
-        $imageGeneration = !empty($customOptions['imageGeneration']);
-
-        // TODO: Implement multimodal output support for image_generation tool.
-        // This requires parsing image_generation_call outputs and returning them as file parts.
-        if ($imageGeneration) {
-            throw new RuntimeException(
-                'The imageGeneration option is not yet supported for text generation models. '
-                . 'Use the ImageGenerationModelInterface instead.'
-            );
-        }
 
         if (is_array($functionDeclarations) || $webSearch || $codeInterpreter) {
             $params['tools'] = $this->prepareToolsParam(
                 $functionDeclarations,
                 $webSearch,
-                $codeInterpreter,
-                false // imageGeneration not yet supported
+                $codeInterpreter
             );
         }
 
         /*
          * Any custom options are added to the parameters as well.
          * This allows developers to pass other options that may be more niche or not yet supported by the SDK.
-         * Skip the built-in tool options we've already processed.
+         * Skip options we've already processed explicitly.
          */
+        $processedCustomOptions = ['codeInterpreter', 'previous_response_id'];
         foreach ($customOptions as $key => $value) {
-            if ($key === 'codeInterpreter' || $key === 'imageGeneration') {
+            if (in_array($key, $processedCustomOptions, true)) {
                 continue;
             }
             if (isset($params[$key])) {
@@ -392,14 +395,12 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
      * @param list<FunctionDeclaration>|null $functionDeclarations The function declarations, or null if none.
      * @param WebSearch|null $webSearch The web search config, or null if none.
      * @param bool $codeInterpreter Whether to include the code interpreter tool.
-     * @param bool $imageGeneration Whether to include the image generation tool.
      * @return list<array<string, mixed>> The prepared tools parameter.
      */
     protected function prepareToolsParam(
         ?array $functionDeclarations,
         ?WebSearch $webSearch,
-        bool $codeInterpreter = false,
-        bool $imageGeneration = false
+        bool $codeInterpreter = false
     ): array {
         $tools = [];
 
@@ -426,10 +427,6 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
                 'type' => 'code_interpreter',
                 'container' => ['type' => 'auto'],
             ];
-        }
-
-        if ($imageGeneration) {
-            $tools[] = ['type' => 'image_generation'];
         }
 
         return $tools;
