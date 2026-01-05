@@ -79,10 +79,18 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
 
         $params = $this->prepareGenerateTextParams($prompt);
 
+        $headers = ['Content-Type' => 'application/json'];
+
+        // Add beta header for structured outputs if JSON schema output is requested.
+        $config = $this->getConfig();
+        if ('application/json' === $config->getOutputMimeType() && $config->getOutputSchema()) {
+            $headers['anthropic-beta'] = 'structured-outputs-2025-11-13';
+        }
+
         $request = new Request(
             HttpMethodEnum::POST(),
             AnthropicProvider::url('messages'),
-            ['Content-Type' => 'application/json'],
+            $headers,
             $params,
             $this->getRequestOptions()
         );
