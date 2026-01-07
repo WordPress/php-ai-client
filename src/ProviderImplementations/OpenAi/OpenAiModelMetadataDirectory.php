@@ -89,6 +89,8 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::image()],
                     [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::audio()],
+                    [ModalityEnum::text(), ModalityEnum::document()],
+                    [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::document()],
                 ]
             ),
             new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
@@ -100,6 +102,8 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::image()],
                     [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::audio()],
+                    [ModalityEnum::text(), ModalityEnum::document()],
+                    [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::document()],
                 ]
             ),
             new SupportedOption(
