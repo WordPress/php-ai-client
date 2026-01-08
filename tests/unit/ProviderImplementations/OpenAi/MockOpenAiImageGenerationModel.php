@@ -83,12 +83,14 @@ class MockOpenAiImageGenerationModel extends OpenAiImageGenerationModel
     /**
      * {@inheritDoc}
      */
-    public function parseResponseToGenerativeAiResult(Response $response): GenerativeAiResult
-    {
+    protected function parseResponseToGenerativeAiResult(
+        Response $response,
+        string $expectedMimeType = 'image/png'
+    ): GenerativeAiResult {
         if ($this->mockGenerativeAiResult) {
             return $this->mockGenerativeAiResult;
         }
-        return parent::parseResponseToGenerativeAiResult($response);
+        return parent::parseResponseToGenerativeAiResult($response, $expectedMimeType);
     }
 
     // Expose protected methods for testing.
@@ -129,28 +131,30 @@ class MockOpenAiImageGenerationModel extends OpenAiImageGenerationModel
     /**
      * Exposes prepareSizeParam for testing.
      *
-     * @param string $modelId
      * @param MediaOrientationEnum|null $orientation
      * @param string|null $aspectRatio
      * @return string
      */
     public function exposePrepareSize(
-        string $modelId,
         ?MediaOrientationEnum $orientation,
         ?string $aspectRatio
     ): string {
-        return $this->prepareSizeParam($modelId, $orientation, $aspectRatio);
+        return $this->prepareSizeParam($orientation, $aspectRatio);
     }
 
     /**
-     * Exposes parseImageDataToCandidate for testing.
+     * Exposes parseResponseChoiceToCandidate for testing.
      *
-     * @param array<string, mixed> $imageData
+     * @param array<string, mixed> $choiceData
      * @param int $index
+     * @param string $expectedMimeType
      * @return Candidate
      */
-    public function exposeParseImageDataToCandidate(array $imageData, int $index): Candidate
-    {
-        return $this->parseImageDataToCandidate($imageData, $index);
+    public function exposeParseResponseChoiceToCandidate(
+        array $choiceData,
+        int $index,
+        string $expectedMimeType = 'image/png'
+    ): Candidate {
+        return $this->parseResponseChoiceToCandidate($choiceData, $index, $expectedMimeType);
     }
 }

@@ -243,11 +243,11 @@ class OpenAiImageGenerationModelTest extends TestCase
      */
     public function testPrepareSizeParamWithGptImageModelAspectRatios(): void
     {
-        $model = $this->createModel();
+        $model = $this->createModel(null, 'gpt-image-1');
 
-        $this->assertEquals('1024x1024', $model->exposePrepareSize('gpt-image-1', null, '1:1'));
-        $this->assertEquals('1536x1024', $model->exposePrepareSize('gpt-image-1', null, '3:2'));
-        $this->assertEquals('1024x1536', $model->exposePrepareSize('gpt-image-1', null, '2:3'));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize(null, '1:1'));
+        $this->assertEquals('1536x1024', $model->exposePrepareSize(null, '3:2'));
+        $this->assertEquals('1024x1536', $model->exposePrepareSize(null, '2:3'));
     }
 
     /**
@@ -257,15 +257,15 @@ class OpenAiImageGenerationModelTest extends TestCase
      */
     public function testPrepareSizeParamWithGptImageModelOrientations(): void
     {
-        $model = $this->createModel();
+        $model = $this->createModel(null, 'gpt-image-1');
 
         $landscape = MediaOrientationEnum::landscape();
         $portrait = MediaOrientationEnum::portrait();
         $square = MediaOrientationEnum::square();
 
-        $this->assertEquals('1536x1024', $model->exposePrepareSize('gpt-image-1', $landscape, null));
-        $this->assertEquals('1024x1536', $model->exposePrepareSize('gpt-image-1', $portrait, null));
-        $this->assertEquals('1024x1024', $model->exposePrepareSize('gpt-image-1', $square, null));
+        $this->assertEquals('1536x1024', $model->exposePrepareSize($landscape, null));
+        $this->assertEquals('1024x1536', $model->exposePrepareSize($portrait, null));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize($square, null));
     }
 
     /**
@@ -275,11 +275,11 @@ class OpenAiImageGenerationModelTest extends TestCase
      */
     public function testPrepareSizeParamWithDalle3AspectRatios(): void
     {
-        $model = $this->createModel();
+        $model = $this->createModel(null, 'dall-e-3');
 
-        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-3', null, '1:1'));
-        $this->assertEquals('1792x1024', $model->exposePrepareSize('dall-e-3', null, '7:4'));
-        $this->assertEquals('1024x1792', $model->exposePrepareSize('dall-e-3', null, '4:7'));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize(null, '1:1'));
+        $this->assertEquals('1792x1024', $model->exposePrepareSize(null, '7:4'));
+        $this->assertEquals('1024x1792', $model->exposePrepareSize(null, '4:7'));
     }
 
     /**
@@ -289,15 +289,15 @@ class OpenAiImageGenerationModelTest extends TestCase
      */
     public function testPrepareSizeParamWithDalle3Orientations(): void
     {
-        $model = $this->createModel();
+        $model = $this->createModel(null, 'dall-e-3');
 
         $landscape = MediaOrientationEnum::landscape();
         $portrait = MediaOrientationEnum::portrait();
         $square = MediaOrientationEnum::square();
 
-        $this->assertEquals('1792x1024', $model->exposePrepareSize('dall-e-3', $landscape, null));
-        $this->assertEquals('1024x1792', $model->exposePrepareSize('dall-e-3', $portrait, null));
-        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-3', $square, null));
+        $this->assertEquals('1792x1024', $model->exposePrepareSize($landscape, null));
+        $this->assertEquals('1024x1792', $model->exposePrepareSize($portrait, null));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize($square, null));
     }
 
     /**
@@ -307,15 +307,15 @@ class OpenAiImageGenerationModelTest extends TestCase
      */
     public function testPrepareSizeParamWithDalle2(): void
     {
-        $model = $this->createModel();
+        $model = $this->createModel(null, 'dall-e-2');
 
         $landscape = MediaOrientationEnum::landscape();
         $portrait = MediaOrientationEnum::portrait();
 
         // DALL-E 2 only supports square images.
-        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-2', null, '1:1'));
-        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-2', $landscape, null));
-        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-2', $portrait, null));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize(null, '1:1'));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize($landscape, null));
+        $this->assertEquals('1024x1024', $model->exposePrepareSize($portrait, null));
     }
 
     /**
@@ -325,22 +325,23 @@ class OpenAiImageGenerationModelTest extends TestCase
      */
     public function testPrepareSizeParamDefaultsToSquare(): void
     {
-        $model = $this->createModel();
+        $gptModel = $this->createModel(null, 'gpt-image-1');
+        $dalleModel = $this->createModel(null, 'dall-e-3');
 
-        $this->assertEquals('1024x1024', $model->exposePrepareSize('gpt-image-1', null, null));
-        $this->assertEquals('1024x1024', $model->exposePrepareSize('dall-e-3', null, null));
+        $this->assertEquals('1024x1024', $gptModel->exposePrepareSize(null, null));
+        $this->assertEquals('1024x1024', $dalleModel->exposePrepareSize(null, null));
     }
 
     /**
-     * Tests parseImageDataToCandidate() method.
+     * Tests parseResponseChoiceToCandidate() method.
      *
      * @return void
      */
-    public function testParseImageDataToCandidate(): void
+    public function testParseResponseChoiceToCandidate(): void
     {
         $model = $this->createModel();
 
-        $candidate = $model->exposeParseImageDataToCandidate([
+        $candidate = $model->exposeParseResponseChoiceToCandidate([
             'b64_json' => self::VALID_BASE64_IMAGE,
         ], 0);
 
@@ -356,19 +357,17 @@ class OpenAiImageGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests parseImageDataToCandidate() with custom MIME type.
+     * Tests parseResponseChoiceToCandidate() with custom MIME type.
      *
      * @return void
      */
-    public function testParseImageDataToCandidateWithCustomMimeType(): void
+    public function testParseResponseChoiceToCandidateWithCustomMimeType(): void
     {
-        $config = new ModelConfig();
-        $config->setOutputMimeType('image/jpeg');
-        $model = $this->createModel($config);
+        $model = $this->createModel();
 
-        $candidate = $model->exposeParseImageDataToCandidate([
+        $candidate = $model->exposeParseResponseChoiceToCandidate([
             'b64_json' => self::VALID_BASE64_IMAGE,
-        ], 0);
+        ], 0, 'image/jpeg');
 
         $file = $candidate->getMessage()->getParts()[0]->getFile();
         $this->assertNotNull($file);
