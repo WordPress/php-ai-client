@@ -157,19 +157,6 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
         $webSearch = $config->getWebSearch();
         $customOptions = $config->getCustomOptions();
 
-        /*
-         * Handle previous_response_id for conversation state.
-         *
-         * This allows chaining responses together for multi-turn conversations without
-         * resending the entire conversation history. Pass the response ID from a previous
-         * call to continue the conversation.
-         *
-         * @see https://platform.openai.com/docs/guides/conversation-state
-         */
-        if (!empty($customOptions['previous_response_id'])) {
-            $params['previous_response_id'] = $customOptions['previous_response_id'];
-        }
-
         // Check for built-in tools via customOptions.
         $codeInterpreter = !empty($customOptions['codeInterpreter']);
 
@@ -186,7 +173,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
          * This allows developers to pass other options that may be more niche or not yet supported by the SDK.
          * Skip options we've already processed explicitly.
          */
-        $processedCustomOptions = ['codeInterpreter', 'previous_response_id'];
+        $processedCustomOptions = ['codeInterpreter'];
         foreach ($customOptions as $key => $value) {
             if (in_array($key, $processedCustomOptions, true)) {
                 continue;
@@ -332,25 +319,24 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
                 ];
             }
             // Else, it is an inline file.
-            $fileBase64Data = $file->getBase64Data();
-            if (!$fileBase64Data) {
+            $dataUri = $file->getDataUri();
+            if (!$dataUri) {
                 // This should be impossible due to class internals, but still needs to be checked.
                 throw new RuntimeException(
                     'The inline file must contain base64 data.'
                 );
             }
-            $mimeType = $file->getMimeType();
             if ($file->isImage()) {
                 return [
                     'type' => 'input_image',
-                    'image_url' => "data:{$mimeType};base64,{$fileBase64Data}",
+                    'image_url' => $dataUri,
                 ];
             }
             // For other file types (like PDF), use input_file.
             return [
                 'type' => 'input_file',
                 'filename' => 'file',
-                'file_data' => "data:{$mimeType};base64,{$fileBase64Data}",
+                'file_data' => $dataUri,
             ];
         }
         if ($type->isFunctionCall()) {
