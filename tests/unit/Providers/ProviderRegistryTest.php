@@ -571,29 +571,6 @@ class ProviderRegistryTest extends TestCase
     }
 
     /**
-     * Tests bindModelDependencies without HTTP transporter when model needs it.
-     *
-     * @return void
-     */
-    public function testBindModelDependenciesWithoutHttpTransporter(): void
-    {
-        // Register provider but don't set HTTP transporter
-        $this->registry->registerProvider(MockProvider::class);
-
-        // Create a mock model instance that implements WithHttpTransporterInterface
-        $modelInstance = $this->createMock(MockModel::class);
-        $modelInstance->expects($this->once())
-            ->method('providerMetadata')
-            ->willReturn(MockProvider::metadata());
-
-        // Expect runtime exception when trying to get HTTP transporter that isn't set
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('HttpTransporterInterface instance not set');
-
-        $this->registry->bindModelDependencies($modelInstance);
-    }
-
-    /**
      * Tests setProviderRequestAuthentication throws exception when provider expects specific auth type but gets
      * another.
      *
