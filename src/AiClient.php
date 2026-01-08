@@ -107,7 +107,7 @@ class AiClient
         if (self::$defaultRegistry === null) {
             $registry = new ProviderRegistry();
 
-            // Set up default HTTP transporter and register built-in providers.
+            // Register built-in providers.
             $registry->registerProvider(AnthropicProvider::class);
             $registry->registerProvider(GoogleProvider::class);
             $registry->registerProvider(OpenAiProvider::class);
