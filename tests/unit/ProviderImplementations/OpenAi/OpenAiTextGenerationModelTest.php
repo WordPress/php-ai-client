@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\ProviderImplementations\OpenAi;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -19,6 +20,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 use WordPress\AiClient\Tools\DTO\WebSearch;
@@ -195,7 +197,7 @@ class OpenAiTextGenerationModelTest extends TestCase
         $this->assertEquals('gpt-4o', $params['model']);
         $this->assertArrayHasKey('input', $params);
         $this->assertCount(1, $params['input']);
-        $this->assertEquals('message', $params['input'][0]['type']);
+        $this->assertArrayNotHasKey('type', $params['input'][0]);
         $this->assertEquals('user', $params['input'][0]['role']);
         $this->assertCount(1, $params['input'][0]['content']);
         $this->assertEquals('input_text', $params['input'][0]['content'][0]['type']);
@@ -435,21 +437,64 @@ class OpenAiTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests getMessagePartData() with function response.
+     * Tests getMessageInputItem() with function response message.
      *
      * @return void
      */
-    public function testGetMessagePartDataWithFunctionResponse(): void
+    public function testGetMessageInputItemWithFunctionResponse(): void
     {
         $model = $this->createModel();
         $functionResponse = new FunctionResponse('call_123', 'get_weather', ['temperature' => 72]);
         $part = new MessagePart($functionResponse);
+        $message = new Message(MessageRoleEnum::user(), [$part]);
 
-        $data = $model->exposeGetMessagePartData($part);
+        $data = $model->exposeGetMessageInputItem($message);
 
+        $this->assertNotNull($data);
         $this->assertEquals('function_call_output', $data['type']);
         $this->assertEquals('call_123', $data['call_id']);
         $this->assertEquals('{"temperature":72}', $data['output']);
+    }
+
+    /**
+     * Tests getMessageInputItem() with function call message.
+     *
+     * @return void
+     */
+    public function testGetMessageInputItemWithFunctionCall(): void
+    {
+        $model = $this->createModel();
+        $functionCall = new FunctionCall('call_456', 'search', ['query' => 'test']);
+        $part = new MessagePart($functionCall);
+        $message = new Message(MessageRoleEnum::model(), [$part]);
+
+        $data = $model->exposeGetMessageInputItem($message);
+
+        $this->assertNotNull($data);
+        $this->assertEquals('function_call', $data['type']);
+        $this->assertEquals('call_456', $data['call_id']);
+        $this->assertEquals('search', $data['name']);
+        $this->assertEquals('{"query":"test"}', $data['arguments']);
+    }
+
+    /**
+     * Tests getMessageInputItem() throws exception for mixed function call message.
+     *
+     * @return void
+     */
+    public function testGetMessageInputItemThrowsForMixedFunctionCallMessage(): void
+    {
+        $model = $this->createModel();
+        $functionCall = new FunctionCall('call_456', 'search', ['query' => 'test']);
+        $message = new Message(MessageRoleEnum::model(), [
+            new MessagePart('Some text'),
+            new MessagePart($functionCall),
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('A function call message must contain only one part.');
+
+        $model->exposeGetMessageInputItem($message);
     }
 
     /**

@@ -218,31 +218,67 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
      * @since n.e.x.t
      *
      * @param Message $message The message to convert.
-     * @return array<string, mixed>|null The input item, or null if the message should be skipped.
+     * @return array<string, mixed>|null The input item, or null if the message is empty.
+     * @throws InvalidArgumentException If a function call/response message contains multiple parts.
      */
     protected function getMessageInputItem(Message $message): ?array
     {
         $parts = $message->getParts();
-        $content = [];
-        $functionOutputs = [];
 
-        foreach ($parts as $part) {
-            $partData = $this->getMessagePartData($part);
-            if ($partData !== null) {
-                // Function call outputs are handled separately.
-                if (isset($partData['type']) && $partData['type'] === 'function_call_output') {
-                    $functionOutputs[] = $partData;
-                } else {
-                    $content[] = $partData;
-                }
-            }
+        if (empty($parts)) {
+            return null;
         }
 
-        // If there are function outputs, return them as separate items (they're top-level in the input array).
-        if (!empty($functionOutputs)) {
-            // Function outputs are returned directly, not wrapped in a message.
-            // For now, we only return the first one (the caller should handle multiple).
-            return $functionOutputs[0];
+        $content = [];
+        foreach ($parts as $part) {
+            $type = $part->getType();
+
+            // Function call message → return as function_call item.
+            if ($type->isFunctionCall()) {
+                if (count($parts) > 1) {
+                    throw new InvalidArgumentException(
+                        'A function call message must contain only one part.'
+                    );
+                }
+                $functionCall = $part->getFunctionCall();
+                if (!$functionCall) {
+                    throw new RuntimeException(
+                        'The function_call typed message part must contain a function call.'
+                    );
+                }
+                return [
+                    'type' => 'function_call',
+                    'call_id' => $functionCall->getId(),
+                    'name' => $functionCall->getName(),
+                    'arguments' => json_encode($functionCall->getArgs()),
+                ];
+            }
+
+            // Function response message → return as function_call_output item.
+            if ($type->isFunctionResponse()) {
+                if (count($parts) > 1) {
+                    throw new InvalidArgumentException(
+                        'A function response message must contain only one part.'
+                    );
+                }
+                $functionResponse = $part->getFunctionResponse();
+                if (!$functionResponse) {
+                    throw new RuntimeException(
+                        'The function_response typed message part must contain a function response.'
+                    );
+                }
+                return [
+                    'type' => 'function_call_output',
+                    'call_id' => $functionResponse->getId(),
+                    'output' => json_encode($functionResponse->getResponse()),
+                ];
+            }
+
+            // Regular content part.
+            $partData = $this->getMessagePartData($part);
+            if ($partData !== null) {
+                $content[] = $partData;
+            }
         }
 
         if (empty($content)) {
@@ -250,7 +286,6 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
         }
 
         return [
-            'type' => 'message',
             'role' => $this->getMessageRoleString($message->getRole()),
             'content' => $content,
         ];
@@ -339,31 +374,12 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
                 'file_data' => $dataUri,
             ];
         }
-        if ($type->isFunctionCall()) {
-            // Function calls in input are typically from assistant messages in conversation history.
-            // The Responses API handles this differently - we include them as part of the message.
-            $functionCall = $part->getFunctionCall();
-            if (!$functionCall) {
-                throw new RuntimeException(
-                    'The function_call typed message part must contain a function call.'
-                );
-            }
-            // Skip function calls in input - they're part of the conversation flow.
-            return null;
-        }
-        if ($type->isFunctionResponse()) {
-            $functionResponse = $part->getFunctionResponse();
-            if (!$functionResponse) {
-                // This should be impossible due to class internals, but still needs to be checked.
-                throw new RuntimeException(
-                    'The function_response typed message part must contain a function response.'
-                );
-            }
-            return [
-                'type' => 'function_call_output',
-                'call_id' => $functionResponse->getId(),
-                'output' => json_encode($functionResponse->getResponse()),
-            ];
+        // Function calls and responses are handled at the message level in getMessageInputItem().
+        // They should not appear as parts mixed with other content types.
+        if ($type->isFunctionCall() || $type->isFunctionResponse()) {
+            throw new InvalidArgumentException(
+                'Function calls and responses must be in their own message, not mixed with other content.'
+            );
         }
         throw new InvalidArgumentException(
             sprintf(
