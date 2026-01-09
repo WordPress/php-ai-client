@@ -9,6 +9,7 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Tools\DTO\CodeExecution;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
@@ -21,6 +22,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  *
  * @since 0.1.0
  *
+ * @phpstan-import-type CodeExecutionArrayShape from CodeExecution
  * @phpstan-import-type FunctionDeclarationArrayShape from FunctionDeclaration
  * @phpstan-import-type WebSearchArrayShape from WebSearch
  *
@@ -39,6 +41,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  *     topLogprobs?: int,
  *     functionDeclarations?: list<FunctionDeclarationArrayShape>,
  *     webSearch?: WebSearchArrayShape,
+ *     codeExecution?: CodeExecutionArrayShape,
  *     outputFileType?: string,
  *     outputMimeType?: string,
  *     outputSchema?: array<string, mixed>,
@@ -66,6 +69,7 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_TOP_LOGPROBS = 'topLogprobs';
     public const KEY_FUNCTION_DECLARATIONS = 'functionDeclarations';
     public const KEY_WEB_SEARCH = 'webSearch';
+    public const KEY_CODE_EXECUTION = 'codeExecution';
     public const KEY_OUTPUT_FILE_TYPE = 'outputFileType';
     public const KEY_OUTPUT_MIME_TYPE = 'outputMimeType';
     public const KEY_OUTPUT_SCHEMA = 'outputSchema';
@@ -150,6 +154,11 @@ class ModelConfig extends AbstractDataTransferObject
      * @var WebSearch|null Web search configuration for the model.
      */
     protected ?WebSearch $webSearch = null;
+
+    /**
+     * @var CodeExecution|null Code execution configuration for the model.
+     */
+    protected ?CodeExecution $codeExecution = null;
 
     /**
      * @var FileTypeEnum|null Output file type.
@@ -541,6 +550,30 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Sets the code execution configuration.
+     *
+     * @since n.e.x.t
+     *
+     * @param CodeExecution $codeExecution The code execution configuration.
+     */
+    public function setCodeExecution(CodeExecution $codeExecution): void
+    {
+        $this->codeExecution = $codeExecution;
+    }
+
+    /**
+     * Gets the code execution configuration.
+     *
+     * @since n.e.x.t
+     *
+     * @return CodeExecution|null The code execution configuration.
+     */
+    public function getCodeExecution(): ?CodeExecution
+    {
+        return $this->codeExecution;
+    }
+
+    /**
      * Sets the output file type.
      *
      * @since 0.1.0
@@ -857,6 +890,7 @@ class ModelConfig extends AbstractDataTransferObject
                     'description' => 'Function declarations available to the model.',
                 ],
                 self::KEY_WEB_SEARCH => WebSearch::getJsonSchema(),
+                self::KEY_CODE_EXECUTION => CodeExecution::getJsonSchema(),
                 self::KEY_OUTPUT_FILE_TYPE => [
                     'type' => 'string',
                     'enum' => FileTypeEnum::getValues(),
@@ -972,6 +1006,10 @@ class ModelConfig extends AbstractDataTransferObject
             $data[self::KEY_WEB_SEARCH] = $this->webSearch->toArray();
         }
 
+        if ($this->codeExecution !== null) {
+            $data[self::KEY_CODE_EXECUTION] = $this->codeExecution->toArray();
+        }
+
         if ($this->outputFileType !== null) {
             $data[self::KEY_OUTPUT_FILE_TYPE] = $this->outputFileType->value;
         }
@@ -1075,6 +1113,10 @@ class ModelConfig extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_WEB_SEARCH])) {
             $config->setWebSearch(WebSearch::fromArray($array[self::KEY_WEB_SEARCH]));
+        }
+
+        if (isset($array[self::KEY_CODE_EXECUTION])) {
+            $config->setCodeExecution(CodeExecution::fromArray($array[self::KEY_CODE_EXECUTION]));
         }
 
         if (isset($array[self::KEY_OUTPUT_FILE_TYPE])) {

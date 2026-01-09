@@ -20,6 +20,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tools\DTO\CodeExecution;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -312,11 +313,11 @@ class OpenAiTextGenerationModelTest extends TestCase
      *
      * @return void
      */
-    public function testPrepareGenerateTextParamsWithCodeInterpreter(): void
+    public function testPrepareGenerateTextParamsWithCodeExecution(): void
     {
         $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Run some code')])];
         $config = new ModelConfig();
-        $config->setCustomOptions(['codeInterpreter' => true]);
+        $config->setCodeExecution(new CodeExecution());
         $model = $this->createModel($config);
 
         $params = $model->exposePrepareGenerateTextParams($prompt);
@@ -511,11 +512,12 @@ class OpenAiTextGenerationModelTest extends TestCase
             ['type' => 'object']
         );
         $webSearch = new WebSearch();
+        $codeExecution = new CodeExecution();
 
         $tools = $model->exposePrepareToolsParam(
             [$functionDeclaration],
             $webSearch,
-            true
+            $codeExecution
         );
 
         $this->assertCount(3, $tools);

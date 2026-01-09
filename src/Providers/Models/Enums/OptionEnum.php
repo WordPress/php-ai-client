@@ -40,6 +40,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * @method static self topLogprobs() Creates an instance for TOP_LOGPROBS option.
  * @method static self topP() Creates an instance for TOP_P option.
  * @method static self webSearch() Creates an instance for WEB_SEARCH option.
+ * @method static self codeExecution() Creates an instance for CODE_EXECUTION option.
  * @method bool isCandidateCount() Checks if the option is CANDIDATE_COUNT.
  * @method bool isCustomOptions() Checks if the option is CUSTOM_OPTIONS.
  * @method bool isFrequencyPenalty() Checks if the option is FREQUENCY_PENALTY.
@@ -61,6 +62,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * @method bool isTopLogprobs() Checks if the option is TOP_LOGPROBS.
  * @method bool isTopP() Checks if the option is TOP_P.
  * @method bool isWebSearch() Checks if the option is WEB_SEARCH.
+ * @method bool isCodeExecution() Checks if the option is CODE_EXECUTION.
  *
  * @since 0.1.0
  */

@@ -16,6 +16,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tools\DTO\CodeExecution;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
@@ -157,15 +158,15 @@ class MockOpenAiTextGenerationModel extends OpenAiTextGenerationModel
      *
      * @param list<FunctionDeclaration>|null $functionDeclarations
      * @param WebSearch|null $webSearch
-     * @param bool $codeInterpreter
+     * @param CodeExecution|null $codeExecution
      * @return list<array<string, mixed>>
      */
     public function exposePrepareToolsParam(
         ?array $functionDeclarations,
         ?WebSearch $webSearch,
-        bool $codeInterpreter = false
+        ?CodeExecution $codeExecution = null
     ): array {
-        return $this->prepareToolsParam($functionDeclarations, $webSearch, $codeInterpreter);
+        return $this->prepareToolsParam($functionDeclarations, $webSearch, $codeExecution);
     }
 
     /**

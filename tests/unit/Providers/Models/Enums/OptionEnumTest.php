@@ -51,6 +51,7 @@ class OptionEnumTest extends TestCase
             'TOP_LOGPROBS' => 'topLogprobs',
             'FUNCTION_DECLARATIONS' => 'functionDeclarations',
             'WEB_SEARCH' => 'webSearch',
+            'CODE_EXECUTION' => 'codeExecution',
             'OUTPUT_FILE_TYPE' => 'outputFileType',
             'OUTPUT_MIME_TYPE' => 'outputMimeType',
             'OUTPUT_SCHEMA' => 'outputSchema',

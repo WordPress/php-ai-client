@@ -21,6 +21,7 @@ use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tools\DTO\CodeExecution;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\WebSearch;
@@ -155,29 +156,22 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
 
         $functionDeclarations = $config->getFunctionDeclarations();
         $webSearch = $config->getWebSearch();
+        $codeExecution = $config->getCodeExecution();
         $customOptions = $config->getCustomOptions();
 
-        // Check for built-in tools via customOptions.
-        $codeInterpreter = !empty($customOptions['codeInterpreter']);
-
-        if (is_array($functionDeclarations) || $webSearch || $codeInterpreter) {
+        if (is_array($functionDeclarations) || $webSearch || $codeExecution) {
             $params['tools'] = $this->prepareToolsParam(
                 $functionDeclarations,
                 $webSearch,
-                $codeInterpreter
+                $codeExecution
             );
         }
 
         /*
          * Any custom options are added to the parameters as well.
          * This allows developers to pass other options that may be more niche or not yet supported by the SDK.
-         * Skip options we've already processed explicitly.
          */
-        $processedCustomOptions = ['codeInterpreter'];
         foreach ($customOptions as $key => $value) {
-            if (in_array($key, $processedCustomOptions, true)) {
-                continue;
-            }
             if (isset($params[$key])) {
                 throw new InvalidArgumentException(
                     sprintf(
@@ -396,13 +390,13 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
      *
      * @param list<FunctionDeclaration>|null $functionDeclarations The function declarations, or null if none.
      * @param WebSearch|null $webSearch The web search config, or null if none.
-     * @param bool $codeInterpreter Whether to include the code interpreter tool.
+     * @param CodeExecution|null $codeExecution The code execution config, or null if none.
      * @return list<array<string, mixed>> The prepared tools parameter.
      */
     protected function prepareToolsParam(
         ?array $functionDeclarations,
         ?WebSearch $webSearch,
-        bool $codeInterpreter = false
+        ?CodeExecution $codeExecution = null
     ): array {
         $tools = [];
 
@@ -424,10 +418,18 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
             $tools[] = $webSearchTool;
         }
 
-        if ($codeInterpreter) {
+        if ($codeExecution) {
+            $containerId = $codeExecution->getContainerId();
+            if ($containerId !== null) {
+                // Use a specific container by ID.
+                $container = ['type' => 'container', 'container_id' => $containerId];
+            } else {
+                // Use auto mode with optional custom options (e.g., memory_limit).
+                $container = array_merge(['type' => 'auto'], $codeExecution->getCustomOptions());
+            }
             $tools[] = [
                 'type' => 'code_interpreter',
-                'container' => ['type' => 'auto'],
+                'container' => $container,
             ];
         }
 
