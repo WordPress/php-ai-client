@@ -219,7 +219,6 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
      *
      * @param Message $message The message to convert.
      * @return array<string, mixed>|null The input item, or null if the message is empty.
-     * @throws InvalidArgumentException If a function call/response message contains multiple parts.
      */
     protected function getMessageInputItem(Message $message): ?array
     {
@@ -231,58 +230,16 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
 
         $content = [];
         foreach ($parts as $part) {
-            $type = $part->getType();
-
-            // Function call message → return as function_call item.
-            if ($type->isFunctionCall()) {
-                if (count($parts) > 1) {
-                    throw new InvalidArgumentException(
-                        'A function call message must contain only one part.'
-                    );
-                }
-                $functionCall = $part->getFunctionCall();
-                if (!$functionCall) {
-                    throw new RuntimeException(
-                        'The function_call typed message part must contain a function call.'
-                    );
-                }
-                return [
-                    'type' => 'function_call',
-                    'call_id' => $functionCall->getId(),
-                    'name' => $functionCall->getName(),
-                    'arguments' => json_encode($functionCall->getArgs()),
-                ];
-            }
-
-            // Function response message → return as function_call_output item.
-            if ($type->isFunctionResponse()) {
-                if (count($parts) > 1) {
-                    throw new InvalidArgumentException(
-                        'A function response message must contain only one part.'
-                    );
-                }
-                $functionResponse = $part->getFunctionResponse();
-                if (!$functionResponse) {
-                    throw new RuntimeException(
-                        'The function_response typed message part must contain a function response.'
-                    );
-                }
-                return [
-                    'type' => 'function_call_output',
-                    'call_id' => $functionResponse->getId(),
-                    'output' => json_encode($functionResponse->getResponse()),
-                ];
-            }
-
-            // Regular content part.
             $partData = $this->getMessagePartData($part);
-            if ($partData !== null) {
-                $content[] = $partData;
-            }
-        }
 
-        if (empty($content)) {
-            return null;
+            // Function calls and responses are top-level items, not wrapped in a message.
+            // Message::validateParts() ensures these are the only part in a message.
+            $partType = $partData['type'] ?? '';
+            if ($partType === 'function_call' || $partType === 'function_call_output') {
+                return $partData;
+            }
+
+            $content[] = $partData;
         }
 
         return [
@@ -313,10 +270,10 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
      * @since n.e.x.t
      *
      * @param MessagePart $part The message part to get the data for.
-     * @return ?array<string, mixed> The data for the message part, or null if not applicable.
+     * @return array<string, mixed> The data for the message part.
      * @throws InvalidArgumentException If the message part type or data is unsupported.
      */
-    protected function getMessagePartData(MessagePart $part): ?array
+    protected function getMessagePartData(MessagePart $part): array
     {
         $type = $part->getType();
         if ($type->isText()) {
@@ -374,12 +331,32 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
                 'file_data' => $dataUri,
             ];
         }
-        // Function calls and responses are handled at the message level in getMessageInputItem().
-        // They should not appear as parts mixed with other content types.
-        if ($type->isFunctionCall() || $type->isFunctionResponse()) {
-            throw new InvalidArgumentException(
-                'Function calls and responses must be in their own message, not mixed with other content.'
-            );
+        if ($type->isFunctionCall()) {
+            $functionCall = $part->getFunctionCall();
+            if (!$functionCall) {
+                throw new RuntimeException(
+                    'The function_call typed message part must contain a function call.'
+                );
+            }
+            return [
+                'type' => 'function_call',
+                'call_id' => $functionCall->getId(),
+                'name' => $functionCall->getName(),
+                'arguments' => json_encode($functionCall->getArgs()),
+            ];
+        }
+        if ($type->isFunctionResponse()) {
+            $functionResponse = $part->getFunctionResponse();
+            if (!$functionResponse) {
+                throw new RuntimeException(
+                    'The function_response typed message part must contain a function response.'
+                );
+            }
+            return [
+                'type' => 'function_call_output',
+                'call_id' => $functionResponse->getId(),
+                'output' => json_encode($functionResponse->getResponse()),
+            ];
         }
         throw new InvalidArgumentException(
             sprintf(

@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Messages\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -103,35 +104,28 @@ class MessageTest extends TestCase
     }
 
     /**
-     * Tests complex message with all part types.
+     * Tests complex message with multiple content types (text and files).
      *
      * @return void
      */
-    public function testComplexMessageWithAllPartTypes(): void
+    public function testComplexMessageWithMultipleContentTypes(): void
     {
-        // Test with user role since it can have function responses but not function calls
+        // Test user message with text and files
         $role = MessageRoleEnum::user();
         $parts = [
             new MessagePart('I need help with searching.'),
-            new MessagePart(new FunctionResponse('search_123', 'webSearch', ['results' => ['item1', 'item2']])),
             new MessagePart('Here is additional information:'),
             new MessagePart(new File('data:text/plain;base64,SGVsbG8=', 'text/plain')),
         ];
 
         $message = new Message($role, $parts);
 
-        $this->assertCount(4, $message->getParts());
+        $this->assertCount(3, $message->getParts());
+        $this->assertEquals('I need help with searching.', $message->getParts()[0]->getText());
+        $this->assertEquals('Here is additional information:', $message->getParts()[1]->getText());
+        $this->assertInstanceOf(File::class, $message->getParts()[2]->getFile());
 
-        // Verify each part type
-        $this->assertEquals(
-            'I need help with searching.',
-            $message->getParts()[0]->getText()
-        );
-        $this->assertInstanceOf(FunctionResponse::class, $message->getParts()[1]->getFunctionResponse());
-        $this->assertEquals('Here is additional information:', $message->getParts()[2]->getText());
-        $this->assertInstanceOf(File::class, $message->getParts()[3]->getFile());
-
-        // Also test model role with function calls
+        // Test model message with text and function calls (model can combine these)
         $modelRole = MessageRoleEnum::model();
         $modelParts = [
             new MessagePart('I\'ll help you with that. Let me search for the information.'),
@@ -143,6 +137,33 @@ class MessageTest extends TestCase
 
         $this->assertCount(3, $modelMessage->getParts());
         $this->assertInstanceOf(FunctionCall::class, $modelMessage->getParts()[1]->getFunctionCall());
+    }
+
+    /**
+     * Tests that function response must be the only part in a message.
+     *
+     * @return void
+     */
+    public function testFunctionResponseMustBeSinglePart(): void
+    {
+        // Valid: function response as the only part
+        $validMessage = new Message(
+            MessageRoleEnum::user(),
+            [new MessagePart(new FunctionResponse('func_123', 'search', ['result' => 'data']))]
+        );
+        $this->assertCount(1, $validMessage->getParts());
+
+        // Invalid: function response mixed with other content
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Function response parts must be the only part in a message.');
+
+        new Message(
+            MessageRoleEnum::user(),
+            [
+                new MessagePart('Some text'),
+                new MessagePart(new FunctionResponse('func_123', 'search', ['result' => 'data'])),
+            ]
+        );
     }
 
     /**

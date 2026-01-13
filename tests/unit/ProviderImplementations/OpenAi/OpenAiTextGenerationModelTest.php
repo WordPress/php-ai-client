@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\ProviderImplementations\OpenAi;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -475,26 +474,6 @@ class OpenAiTextGenerationModelTest extends TestCase
         $this->assertEquals('call_456', $data['call_id']);
         $this->assertEquals('search', $data['name']);
         $this->assertEquals('{"query":"test"}', $data['arguments']);
-    }
-
-    /**
-     * Tests getMessageInputItem() throws exception for mixed function call message.
-     *
-     * @return void
-     */
-    public function testGetMessageInputItemThrowsForMixedFunctionCallMessage(): void
-    {
-        $model = $this->createModel();
-        $functionCall = new FunctionCall('call_456', 'search', ['query' => 'test']);
-        $message = new Message(MessageRoleEnum::model(), [
-            new MessagePart('Some text'),
-            new MessagePart($functionCall),
-        ]);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('A function call message must contain only one part.');
-
-        $model->exposeGetMessageInputItem($message);
     }
 
     /**

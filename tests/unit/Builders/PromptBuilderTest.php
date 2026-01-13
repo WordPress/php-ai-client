@@ -2514,14 +2514,12 @@ class PromptBuilderTest extends TestCase
     {
         $file1 = new File('https://example.com/img1.jpg', 'image/jpeg');
         $file2 = new File('https://example.com/audio.mp3', 'audio/mp3');
-        $functionResponse = new FunctionResponse('func1', 'getData', ['result' => 'data']);
 
         $builder = new PromptBuilder($this->registry);
         $builder->withText('Analyze this data:')
                 ->withFile($file1)
                 ->withText(' and this audio:')
                 ->withFile($file2)
-                ->withFunctionResponse($functionResponse)
                 ->withHistory(
                     new UserMessage([new MessagePart('Previous question')]),
                     new ModelMessage([new MessagePart('Previous answer')])
@@ -2543,13 +2541,12 @@ class PromptBuilderTest extends TestCase
 
         // Check current message being built (now at the end)
         $currentParts = $messages[2]->getParts();
-        $this->assertCount(6, $currentParts); // text, image, text, audio, function response, final text
+        $this->assertCount(5, $currentParts); // text, image, text, audio, final text
         $this->assertEquals('Analyze this data:', $currentParts[0]->getText());
         $this->assertSame($file1, $currentParts[1]->getFile());
         $this->assertEquals(' and this audio:', $currentParts[2]->getText());
         $this->assertSame($file2, $currentParts[3]->getFile());
-        $this->assertSame($functionResponse, $currentParts[4]->getFunctionResponse());
-        $this->assertEquals(' Final instruction', $currentParts[5]->getText());
+        $this->assertEquals(' Final instruction', $currentParts[4]->getText());
     }
 
     /**

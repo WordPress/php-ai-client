@@ -145,9 +145,9 @@ class MockOpenAiTextGenerationModel extends OpenAiTextGenerationModel
      * Exposes getMessagePartData for testing.
      *
      * @param MessagePart $part
-     * @return array<string, mixed>|null
+     * @return array<string, mixed>
      */
-    public function exposeGetMessagePartData(MessagePart $part): ?array
+    public function exposeGetMessagePartData(MessagePart $part): array
     {
         return $this->getMessagePartData($part);
     }
