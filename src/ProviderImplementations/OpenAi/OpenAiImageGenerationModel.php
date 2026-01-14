@@ -47,13 +47,15 @@ class OpenAiImageGenerationModel extends AbstractOpenAiCompatibleImageGeneration
     protected function prepareGenerateImageParams(array $prompt): array
     {
         $params = parent::prepareGenerateImageParams($prompt);
-        $modelId = $this->metadata()->getId();
 
-        // GPT image models use output_format, DALL-E uses response_format.
-        if ($this->isGptImageModel($modelId)) {
-            // For GPT image models, convert response_format to the appropriate format.
-            // The parent sets response_format, but GPT models don't need it.
+        /*
+         * Only the newer 'gpt-image-' models support passing a MIME type ('output_format').
+         * Conversely, they do not support 'response_format', but always return a base64 encoded image.
+         */
+        if ($this->isGptImageModel($this->metadata()->getId())) {
             unset($params['response_format']);
+        } else {
+            unset($params['output_format']);
         }
 
         return $params;
