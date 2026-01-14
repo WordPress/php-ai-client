@@ -15,14 +15,14 @@ use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCo
  * This uses the Images API directly to generate images with GPT image models
  * (gpt-image-1, etc.) and DALL-E models (dall-e-2, dall-e-3).
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class OpenAiImageGenerationModel extends AbstractOpenAiCompatibleImageGenerationModel
 {
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected function createRequest(
         HttpMethodEnum $method,
@@ -42,7 +42,7 @@ class OpenAiImageGenerationModel extends AbstractOpenAiCompatibleImageGeneration
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     protected function prepareGenerateImageParams(array $prompt): array
     {
