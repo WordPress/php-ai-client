@@ -140,33 +140,6 @@ class MessageTest extends TestCase
     }
 
     /**
-     * Tests that function response must be the only part in a message.
-     *
-     * @return void
-     */
-    public function testFunctionResponseMustBeSinglePart(): void
-    {
-        // Valid: function response as the only part
-        $validMessage = new Message(
-            MessageRoleEnum::user(),
-            [new MessagePart(new FunctionResponse('func_123', 'search', ['result' => 'data']))]
-        );
-        $this->assertCount(1, $validMessage->getParts());
-
-        // Invalid: function response mixed with other content
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Function response parts must be the only part in a message.');
-
-        new Message(
-            MessageRoleEnum::user(),
-            [
-                new MessagePart('Some text'),
-                new MessagePart(new FunctionResponse('func_123', 'search', ['result' => 'data'])),
-            ]
-        );
-    }
-
-    /**
      * Tests JSON schema.
      *
      * @return void

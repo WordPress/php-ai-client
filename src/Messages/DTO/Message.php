@@ -106,8 +106,6 @@ class Message extends AbstractDataTransferObject
      */
     private function validateParts(): void
     {
-        $partCount = count($this->parts);
-
         foreach ($this->parts as $part) {
             $type = $part->getType();
 
@@ -120,14 +118,6 @@ class Message extends AbstractDataTransferObject
             if ($this->role->isModel() && $type->isFunctionResponse()) {
                 throw new InvalidArgumentException(
                     'Model messages cannot contain function responses.'
-                );
-            }
-
-            // Function responses must be the only part in a message.
-            // (Function calls from model can be combined with text.)
-            if ($type->isFunctionResponse() && $partCount > 1) {
-                throw new InvalidArgumentException(
-                    'Function response parts must be the only part in a message.'
                 );
             }
         }

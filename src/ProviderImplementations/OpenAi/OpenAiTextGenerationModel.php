@@ -193,6 +193,8 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
      */
     protected function prepareInputParam(array $messages): array
     {
+        $this->validateMessages($messages);
+
         $input = [];
         foreach ($messages as $message) {
             $inputItem = $this->getMessageInputItem($message);
@@ -201,6 +203,46 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
             }
         }
         return $input;
+    }
+
+    /**
+     * Validates that the messages are appropriate for the OpenAI Responses API.
+     *
+     * The OpenAI Responses API requires function calls and function responses to be
+     * sent as top-level input items rather than nested in message content. As such,
+     * they must be the only part in a message.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<Message> $messages The messages to validate.
+     * @return void
+     * @throws InvalidArgumentException If validation fails.
+     */
+    protected function validateMessages(array $messages): void
+    {
+        foreach ($messages as $message) {
+            $parts = $message->getParts();
+
+            if (count($parts) <= 1) {
+                continue;
+            }
+
+            foreach ($parts as $part) {
+                $type = $part->getType();
+
+                if ($type->isFunctionCall()) {
+                    throw new InvalidArgumentException(
+                        'Function call parts must be the only part in a message for the OpenAI Responses API.'
+                    );
+                }
+
+                if ($type->isFunctionResponse()) {
+                    throw new InvalidArgumentException(
+                        'Function response parts must be the only part in a message for the OpenAI Responses API.'
+                    );
+                }
+            }
+        }
     }
 
     /**
@@ -224,7 +266,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
             $partData = $this->getMessagePartData($part);
 
             // Function calls and responses are top-level items, not wrapped in a message.
-            // Message::validateParts() ensures these are the only part in a message.
+            // validateMessages() ensures these are the only part in a message.
             $partType = $partData['type'] ?? '';
             if ($partType === 'function_call' || $partType === 'function_call_output') {
                 return $partData;

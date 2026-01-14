@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\ProviderImplementations\OpenAi;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -455,6 +456,54 @@ class OpenAiTextGenerationModelTest extends TestCase
         $this->assertEquals('call_456', $data['call_id']);
         $this->assertEquals('search', $data['name']);
         $this->assertEquals('{"query":"test"}', $data['arguments']);
+    }
+
+    /**
+     * Tests that function response must be the only part in a message for OpenAI.
+     *
+     * @return void
+     */
+    public function testValidateMessagesRejectsFunctionResponseMixedWithText(): void
+    {
+        $model = $this->createModel();
+        $messages = [
+            new Message(
+                MessageRoleEnum::user(),
+                [
+                    new MessagePart('Some text'),
+                    new MessagePart(new FunctionResponse('func_123', 'search', ['result' => 'data'])),
+                ]
+            ),
+        ];
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Function response parts must be the only part in a message for the OpenAI Responses API.');
+
+        $model->exposePrepareInputParam($messages);
+    }
+
+    /**
+     * Tests that function call must be the only part in a message for OpenAI.
+     *
+     * @return void
+     */
+    public function testValidateMessagesRejectsFunctionCallMixedWithText(): void
+    {
+        $model = $this->createModel();
+        $messages = [
+            new Message(
+                MessageRoleEnum::model(),
+                [
+                    new MessagePart('Some text'),
+                    new MessagePart(new FunctionCall('call_123', 'search', ['query' => 'test'])),
+                ]
+            ),
+        ];
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Function call parts must be the only part in a message for the OpenAI Responses API.');
+
+        $model->exposePrepareInputParam($messages);
     }
 
     /**
