@@ -305,7 +305,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
             $candidates[] = $this->parseResponseChoiceToCandidate($choiceData, $index, $expectedMimeType);
         }
 
-        $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
+        $id = $this->getResultId($responseData);
 
         if (isset($responseData['usage']) && is_array($responseData['usage'])) {
             $usage = $responseData['usage'];
@@ -366,5 +366,20 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
         $message = new Message(MessageRoleEnum::model(), $parts);
 
         return new Candidate($message, FinishReasonEnum::stop());
+    }
+
+    /**
+     * Extracts the result ID from the API response data.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, mixed> $responseData The response data from the API.
+     * @return string The result ID.
+     */
+    protected function getResultId(array $responseData): string
+    {
+        return isset($responseData['id']) && is_string($responseData['id'])
+            ? $responseData['id']
+            : '';
     }
 }

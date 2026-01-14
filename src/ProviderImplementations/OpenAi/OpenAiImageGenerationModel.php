@@ -6,12 +6,8 @@ namespace WordPress\AiClient\ProviderImplementations\OpenAi;
 
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Providers\Http\DTO\Request;
-use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
-use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCompatibleImageGenerationModel;
-use WordPress\AiClient\Results\DTO\GenerativeAiResult;
-use WordPress\AiClient\Results\DTO\TokenUsage;
 
 /**
  * Class for an OpenAI image generation model using the Images API.
@@ -20,11 +16,6 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
  * (gpt-image-1, etc.) and DALL-E models (dall-e-2, dall-e-3).
  *
  * @since n.e.x.t
- *
- * @phpstan-type ImageResponseData array{
- *     created?: int,
- *     data?: list<array{url?: string, b64_json?: string}>
- * }
  */
 class OpenAiImageGenerationModel extends AbstractOpenAiCompatibleImageGenerationModel
 {
@@ -87,59 +78,14 @@ class OpenAiImageGenerationModel extends AbstractOpenAiCompatibleImageGeneration
     /**
      * {@inheritDoc}
      *
-     * Overrides the parent to handle OpenAI's `created` timestamp instead of `id`.
-     *
      * @since n.e.x.t
      */
-    protected function parseResponseToGenerativeAiResult(
-        Response $response,
-        string $expectedMimeType = 'image/png'
-    ): GenerativeAiResult {
-        /** @var ImageResponseData $responseData */
-        $responseData = $response->getData();
-
-        if (!isset($responseData['data']) || !$responseData['data']) {
-            throw ResponseException::fromMissingData($this->providerMetadata()->getName(), 'data');
-        }
-        if (!is_array($responseData['data']) || !array_is_list($responseData['data'])) {
-            throw ResponseException::fromInvalidData(
-                $this->providerMetadata()->getName(),
-                'data',
-                'The value must be an indexed array.'
-            );
-        }
-
-        $candidates = [];
-        foreach ($responseData['data'] as $index => $choiceData) {
-            if (!is_array($choiceData) || array_is_list($choiceData)) {
-                throw ResponseException::fromInvalidData(
-                    $this->providerMetadata()->getName(),
-                    "data[{$index}]",
-                    'The value must be an associative array.'
-                );
-            }
-
-            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData, $index, $expectedMimeType);
-        }
-
+    protected function getResultId(array $responseData): string
+    {
         // The Images API returns `created` timestamp instead of `id`.
-        $id = isset($responseData['created']) ? 'img-' . $responseData['created'] : '';
-
-        // The Images API doesn't return token usage.
-        $tokenUsage = new TokenUsage(0, 0, 0);
-
-        // Use any other data from the response as provider-specific response metadata.
-        $additionalData = $responseData;
-        unset($additionalData['data'], $additionalData['created']);
-
-        return new GenerativeAiResult(
-            $id,
-            $candidates,
-            $tokenUsage,
-            $this->providerMetadata(),
-            $this->metadata(),
-            $additionalData
-        );
+        return isset($responseData['created']) && is_int($responseData['created'])
+            ? 'img-' . $responseData['created']
+            : '';
     }
 
     /**
