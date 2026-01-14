@@ -307,25 +307,6 @@ class OpenAiTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests prepareGenerateTextParams() with code interpreter via customOptions.
-     *
-     * @return void
-     */
-    public function testPrepareGenerateTextParamsWithCodeInterpreter(): void
-    {
-        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Run some code')])];
-        $config = new ModelConfig();
-        $config->setCustomOptions(['codeInterpreter' => true]);
-        $model = $this->createModel($config);
-
-        $params = $model->exposePrepareGenerateTextParams($prompt);
-
-        $this->assertArrayHasKey('tools', $params);
-        $toolTypes = array_column($params['tools'], 'type');
-        $this->assertContains('code_interpreter', $toolTypes);
-    }
-
-    /**
      * Tests prepareGenerateTextParams() with previous_response_id for conversation state.
      *
      * @return void
@@ -477,11 +458,11 @@ class OpenAiTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests prepareToolsParam() with all tool types.
+     * Tests prepareToolsParam() with function declarations and web search.
      *
      * @return void
      */
-    public function testPrepareToolsParamWithAllTools(): void
+    public function testPrepareToolsParamWithFunctionAndWebSearch(): void
     {
         $model = $this->createModel();
         $functionDeclaration = new FunctionDeclaration(
@@ -493,15 +474,13 @@ class OpenAiTextGenerationModelTest extends TestCase
 
         $tools = $model->exposePrepareToolsParam(
             [$functionDeclaration],
-            $webSearch,
-            true
+            $webSearch
         );
 
-        $this->assertCount(3, $tools);
+        $this->assertCount(2, $tools);
         $toolTypes = array_column($tools, 'type');
         $this->assertContains('function', $toolTypes);
         $this->assertContains('web_search', $toolTypes);
-        $this->assertContains('code_interpreter', $toolTypes);
     }
 
     /**

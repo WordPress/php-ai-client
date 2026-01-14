@@ -157,27 +157,18 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
         $webSearch = $config->getWebSearch();
         $customOptions = $config->getCustomOptions();
 
-        // Check for built-in tools via customOptions.
-        $codeInterpreter = !empty($customOptions['codeInterpreter']);
-
-        if (is_array($functionDeclarations) || $webSearch || $codeInterpreter) {
+        if (is_array($functionDeclarations) || $webSearch) {
             $params['tools'] = $this->prepareToolsParam(
                 $functionDeclarations,
-                $webSearch,
-                $codeInterpreter
+                $webSearch
             );
         }
 
         /*
          * Any custom options are added to the parameters as well.
          * This allows developers to pass other options that may be more niche or not yet supported by the SDK.
-         * Skip options we've already processed explicitly.
          */
-        $processedCustomOptions = ['codeInterpreter'];
         foreach ($customOptions as $key => $value) {
-            if (in_array($key, $processedCustomOptions, true)) {
-                continue;
-            }
             if (isset($params[$key])) {
                 throw new InvalidArgumentException(
                     sprintf(
@@ -373,13 +364,11 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
      *
      * @param list<FunctionDeclaration>|null $functionDeclarations The function declarations, or null if none.
      * @param WebSearch|null $webSearch The web search config, or null if none.
-     * @param bool $codeInterpreter Whether to include the code interpreter tool.
      * @return list<array<string, mixed>> The prepared tools parameter.
      */
     protected function prepareToolsParam(
         ?array $functionDeclarations,
-        ?WebSearch $webSearch,
-        bool $codeInterpreter = false
+        ?WebSearch $webSearch
     ): array {
         $tools = [];
 
@@ -399,13 +388,6 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
             // Note: The OpenAI Responses API web_search tool may have different filtering options.
             // For now, we use the basic form.
             $tools[] = $webSearchTool;
-        }
-
-        if ($codeInterpreter) {
-            $tools[] = [
-                'type' => 'code_interpreter',
-                'container' => ['type' => 'auto'],
-            ];
         }
 
         return $tools;
