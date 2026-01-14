@@ -477,7 +477,9 @@ class OpenAiTextGenerationModelTest extends TestCase
         ];
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Function response parts must be the only part in a message for the OpenAI Responses API.');
+        $this->expectExceptionMessage(
+            'Function response parts must be the only part in a message for the OpenAI Responses API.'
+        );
 
         $model->exposePrepareInputParam($messages);
     }
@@ -501,7 +503,9 @@ class OpenAiTextGenerationModelTest extends TestCase
         ];
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Function call parts must be the only part in a message for the OpenAI Responses API.');
+        $this->expectExceptionMessage(
+            'Function call parts must be the only part in a message for the OpenAI Responses API.'
+        );
 
         $model->exposePrepareInputParam($messages);
     }
