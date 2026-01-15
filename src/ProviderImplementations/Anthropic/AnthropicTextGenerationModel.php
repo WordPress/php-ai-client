@@ -278,8 +278,23 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
                 );
             }
             if ($file->isRemote()) {
+                $fileUrl = $file->getUrl();
+                if (!$fileUrl) {
+                    throw new RuntimeException(
+                        'The remote file must contain a URL.'
+                    );
+                }
+                if ($file->isDocument()) {
+                    return [
+                        'type' => 'document',
+                        'source' => [
+                            'type' => 'url',
+                            'url' => $fileUrl,
+                        ],
+                    ];
+                }
                 throw new InvalidArgumentException(
-                    'Unsupported file type: The API only supports inline files.'
+                    'Unsupported file type: The API only supports inline files for non-document types.'
                 );
             }
             // Else, it is an inline file.
@@ -298,6 +313,16 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
                         'media_type' => $file->getMimeType(),
                         'data' => $fileBase64Data,
                     ),
+                ];
+            }
+            if ($file->isDocument()) {
+                return [
+                    'type' => 'document',
+                    'source' => [
+                        'type' => 'base64',
+                        'media_type' => $file->getMimeType(),
+                        'data' => $fileBase64Data,
+                    ],
                 ];
             }
             throw new InvalidArgumentException(
