@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Common\Contracts\CachesDataInterface;
+use WordPress\AiClient\Common\Traits\WithDataCachingTrait;
 use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModelMetadataDirectory;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
@@ -24,8 +26,18 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  *
  * @phpstan-import-type ModelMetadataArrayShape from ModelMetadata
  */
-abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractApiBasedModelMetadataDirectory
+abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractApiBasedModelMetadataDirectory implements
+    CachesDataInterface
 {
+    use WithDataCachingTrait;
+
+    /**
+     * The cache key suffix for the models list.
+     *
+     * @var string
+     */
+    private const MODELS_CACHE_KEY = 'models';
+
     /**
      * {@inheritDoc}
      *
@@ -33,16 +45,11 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
      */
     protected function sendListModelsRequest(): array
     {
-        $cache = AiClient::getCache();
-        $cacheKey = $this->getCacheKey();
-
         // Try to get cached data.
-        if ($cache !== null) {
-            $cachedData = $cache->get($cacheKey);
-            if (is_array($cachedData)) {
-                /** @var array<string, ModelMetadataArrayShape> $cachedData */
-                return $this->hydrateModelMetadataMap($cachedData);
-            }
+        $cachedData = $this->getCache(self::MODELS_CACHE_KEY);
+        if (is_array($cachedData)) {
+            /** @var array<string, ModelMetadataArrayShape> $cachedData */
+            return $this->hydrateModelMetadataMap($cachedData);
         }
 
         // Fetch from API.
@@ -61,27 +68,30 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
             $modelMetadataMap[$modelMetadata->getId()] = $modelMetadata;
         }
 
-        // Store in cache.
-        if ($cache !== null) {
-            $cache->set($cacheKey, $this->dehydrateModelMetadataMap($modelMetadataMap));
-        }
+        // Store in cache for 1 day.
+        $this->setCache(self::MODELS_CACHE_KEY, $this->dehydrateModelMetadataMap($modelMetadataMap), 86400);
 
         return $modelMetadataMap;
     }
 
     /**
-     * Gets the cache key for this directory.
-     *
-     * The cache key is unique per child class to ensure different providers
-     * don't share cached model data.
+     * {@inheritDoc}
      *
      * @since n.e.x.t
-     *
-     * @return string The cache key.
      */
-    protected function getCacheKey(): string
+    public function invalidateCaches(): void
     {
-        return 'ai_client_models_' . AiClient::VERSION . '_' . md5(static::class);
+        $this->clearCache(self::MODELS_CACHE_KEY);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    protected function getBaseCacheKey(): string
+    {
+        return 'ai_client_' . AiClient::VERSION . '_' . md5(static::class);
     }
 
     /**
