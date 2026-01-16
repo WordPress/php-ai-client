@@ -95,6 +95,8 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
                 [
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::image()],
+                    [ModalityEnum::text(), ModalityEnum::document()],
+                    [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::document()],
                 ]
             ),
             new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
