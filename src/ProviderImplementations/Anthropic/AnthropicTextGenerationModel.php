@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\ProviderImplementations\Anthropic;
 
-use Generator;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -79,10 +78,18 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
 
         $params = $this->prepareGenerateTextParams($prompt);
 
+        $headers = ['Content-Type' => 'application/json'];
+
+        // Add beta header for structured outputs if JSON schema output is requested.
+        $config = $this->getConfig();
+        if ('application/json' === $config->getOutputMimeType() && $config->getOutputSchema()) {
+            $headers['anthropic-beta'] = 'structured-outputs-2025-11-13';
+        }
+
         $request = new Request(
             HttpMethodEnum::POST(),
             AnthropicProvider::url('messages'),
-            ['Content-Type' => 'application/json'],
+            $headers,
             $params,
             $this->getRequestOptions()
         );
@@ -94,21 +101,6 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
         $response = $httpTransporter->send($request);
         ResponseUtil::throwIfNotSuccessful($response);
         return $this->parseResponseToGenerativeAiResult($response);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @since n.e.x.t
-     */
-    final public function streamGenerateTextResult(array $prompt): Generator
-    {
-        $params = $this->prepareGenerateTextParams($prompt);
-
-        // TODO: Implement streaming support.
-        throw new RuntimeException(
-            'Streaming is not yet implemented.'
-        );
     }
 
     /**
@@ -270,8 +262,23 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
                 );
             }
             if ($file->isRemote()) {
+                $fileUrl = $file->getUrl();
+                if (!$fileUrl) {
+                    throw new RuntimeException(
+                        'The remote file must contain a URL.'
+                    );
+                }
+                if ($file->isDocument()) {
+                    return [
+                        'type' => 'document',
+                        'source' => [
+                            'type' => 'url',
+                            'url' => $fileUrl,
+                        ],
+                    ];
+                }
                 throw new InvalidArgumentException(
-                    'Unsupported file type: The API only supports inline files.'
+                    'Unsupported file type: The API only supports inline files for non-document types.'
                 );
             }
             // Else, it is an inline file.
@@ -290,6 +297,16 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
                         'media_type' => $file->getMimeType(),
                         'data' => $fileBase64Data,
                     ),
+                ];
+            }
+            if ($file->isDocument()) {
+                return [
+                    'type' => 'document',
+                    'source' => [
+                        'type' => 'base64',
+                        'media_type' => $file->getMimeType(),
+                        'data' => $fileBase64Data,
+                    ],
                 ];
             }
             throw new InvalidArgumentException(

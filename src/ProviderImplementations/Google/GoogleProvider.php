@@ -41,6 +41,18 @@ class GoogleProvider extends AbstractApiProvider
         ModelMetadata $modelMetadata,
         ProviderMetadata $providerMetadata
     ): ModelInterface {
+        /*
+         * Temporary workaround: We don't have a clean way of returning multimodal output model classes yet,
+         * currently the implementations are separated by capability. There are a few Google models that support both
+         * text and image generation, so if we detect that the model supports image generation, we'll return the image
+         * generation model class in that case, because it's far more likely that users want to use those models for
+         * image generation. We will have to revisit that in the near future for a proper solution.
+         */
+        $capabilitiesStringList = $modelMetadata->toArray()[ModelMetadata::KEY_SUPPORTED_CAPABILITIES];
+        if (in_array('image_generation', $capabilitiesStringList, true)) {
+            return new GoogleImageGenerationModel($modelMetadata, $providerMetadata);
+        }
+
         $capabilities = $modelMetadata->getSupportedCapabilities();
         foreach ($capabilities as $capability) {
             if ($capability->isTextGeneration()) {

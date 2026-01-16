@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\ProviderImplementations\Google;
 
-use Generator;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
@@ -14,6 +13,8 @@ use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModel;
+use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
@@ -59,6 +60,24 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
      *
      * @since n.e.x.t
      */
+    public function getRequestAuthentication(): RequestAuthenticationInterface
+    {
+        /*
+         * Since we're calling the Google API here, we need to use the Google specific
+         * API key authentication class.
+         */
+        $requestAuthentication = parent::getRequestAuthentication();
+        if (!$requestAuthentication instanceof ApiKeyRequestAuthentication) {
+            return $requestAuthentication;
+        }
+        return new GoogleApiKeyRequestAuthentication($requestAuthentication->getApiKey());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
     final public function generateTextResult(array $prompt): GenerativeAiResult
     {
         $httpTransporter = $this->getHttpTransporter();
@@ -80,21 +99,6 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
         $response = $httpTransporter->send($request);
         ResponseUtil::throwIfNotSuccessful($response);
         return $this->parseResponseToGenerativeAiResult($response);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @since n.e.x.t
-     */
-    final public function streamGenerateTextResult(array $prompt): Generator
-    {
-        $params = $this->prepareGenerateTextParams($prompt);
-
-        // TODO: Implement streaming support.
-        throw new RuntimeException(
-            'Streaming is not yet implemented.'
-        );
     }
 
     /**
