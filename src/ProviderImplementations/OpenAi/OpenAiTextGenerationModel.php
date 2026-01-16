@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\ProviderImplementations\OpenAi;
 
-use Generator;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -85,19 +84,6 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
         $response = $httpTransporter->send($request);
         ResponseUtil::throwIfNotSuccessful($response);
         return $this->parseResponseToGenerativeAiResult($response);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @since n.e.x.t
-     */
-    final public function streamGenerateTextResult(array $prompt): Generator
-    {
-        // TODO: Implement streaming support.
-        throw new RuntimeException(
-            'Streaming is not yet implemented for OpenAI Responses API.'
-        );
     }
 
     /**
