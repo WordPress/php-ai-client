@@ -6,7 +6,6 @@ namespace WordPress\AiClient\Tests\unit\ProviderImplementations\OpenAi;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
-use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -162,23 +161,6 @@ class OpenAiTextGenerationModelTest extends TestCase
         $this->expectExceptionMessage('Bad Request (400) - Invalid parameter.');
 
         $model->generateTextResult($prompt);
-    }
-
-    /**
-     * Tests streamGenerateTextResult() method throws RuntimeException.
-     *
-     * @return void
-     */
-    public function testStreamGenerateTextResultThrowsException(): void
-    {
-        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Hello')])];
-        $model = $this->createModel();
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Streaming is not yet implemented for OpenAI Responses API.');
-
-        $generator = $model->streamGenerateTextResult($prompt);
-        $generator->current();
     }
 
     /**
