@@ -32,6 +32,15 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *
  * @since 0.1.0
  *
+ * @phpstan-type ImageGenerationParams array{
+ *     model: string,
+ *     prompt: string,
+ *     n?: int,
+ *     response_format?: string,
+ *     output_format?: string|null,
+ *     size?: string,
+ *     ...
+ * }
  * @phpstan-type ChoiceData array{
  *     url?: string,
  *     b64_json?: string
@@ -90,7 +99,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
      * @param list<Message> $prompt The prompt to generate an image for. Either a single message or a list of messages
      *                              from a chat. However as of today, OpenAI compatible image generation endpoints only
      *                              support a single user message.
-     * @return array<string, mixed> The parameters for the API request.
+     * @return ImageGenerationParams The parameters for the API request.
      */
     protected function prepareGenerateImageParams(array $prompt): array
     {
@@ -142,6 +151,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
             $params[$key] = $value;
         }
 
+        /** @var ImageGenerationParams $params */
         return $params;
     }
 
