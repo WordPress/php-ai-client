@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\ProviderImplementations\Google;
 
-use Generator;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
@@ -100,21 +99,6 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
         $response = $httpTransporter->send($request);
         ResponseUtil::throwIfNotSuccessful($response);
         return $this->parseResponseToGenerativeAiResult($response);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @since n.e.x.t
-     */
-    final public function streamGenerateTextResult(array $prompt): Generator
-    {
-        $params = $this->prepareGenerateTextParams($prompt);
-
-        // TODO: Implement streaming support.
-        throw new RuntimeException(
-            'Streaming is not yet implemented.'
-        );
     }
 
     /**
