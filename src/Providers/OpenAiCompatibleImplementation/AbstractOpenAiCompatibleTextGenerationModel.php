@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
-use Generator;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -92,21 +91,6 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         $response = $httpTransporter->send($request);
         $this->throwIfNotSuccessful($response);
         return $this->parseResponseToGenerativeAiResult($response);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @since 0.1.0
-     */
-    final public function streamGenerateTextResult(array $prompt): Generator
-    {
-        $params = $this->prepareGenerateTextParams($prompt);
-
-        // TODO: Implement streaming support.
-        throw new RuntimeException(
-            'Streaming is not yet implemented.'
-        );
     }
 
     /**
@@ -628,7 +612,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             $tokenUsage = new TokenUsage(0, 0, 0);
         }
 
-        // Use any other data from the response as provider metadata.
+        // Use any other data from the response as provider-specific response metadata.
         $additionalData = $responseData;
         unset($additionalData['id'], $additionalData['choices'], $additionalData['usage']);
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\traits;
 
-use Generator;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
@@ -177,11 +176,6 @@ trait MockModelCreationTrait
             public function generateTextResult(array $prompt): GenerativeAiResult
             {
                 return $this->result;
-            }
-
-            public function streamGenerateTextResult(array $prompt): Generator
-            {
-                yield $this->result;
             }
         };
     }

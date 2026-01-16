@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
+use InvalidArgumentException;
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
@@ -702,5 +703,35 @@ class ModelConfigTest extends TestCase
         // Test round-trip with custom options set via setCustomOption
         $restored = ModelConfig::fromArray($array);
         $this->assertEquals($customOptions, $restored->getCustomOptions());
+    }
+
+    public function testMediaOrientationAspectRatioCompatibilitySquare(): void
+    {
+        $config = new ModelConfig();
+        $config->setOutputMediaAspectRatio('3:2');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The aspect ratio "3:2" is not compatible with the square orientation.');
+        $config->setOutputMediaOrientation(MediaOrientationEnum::square());
+    }
+
+    public function testMediaOrientationAspectRatioCompatibilityLandscape(): void
+    {
+        $config = new ModelConfig();
+        $config->setOutputMediaOrientation(MediaOrientationEnum::landscape());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The aspect ratio "2:3" is not compatible with the landscape orientation.');
+        $config->setOutputMediaAspectRatio('2:3');
+    }
+
+    public function testMediaOrientationAspectRatioCompatibilityPortrait(): void
+    {
+        $config = new ModelConfig();
+        $config->setOutputMediaOrientation(MediaOrientationEnum::portrait());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The aspect ratio "3:2" is not compatible with the portrait orientation.');
+        $config->setOutputMediaAspectRatio('3:2');
     }
 }

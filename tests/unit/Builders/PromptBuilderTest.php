@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Builders;
 
-use Generator;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -1950,11 +1949,6 @@ class PromptBuilderTest extends TestCase
             {
                 throw new RuntimeException('No candidates were generated');
             }
-
-            public function streamGenerateTextResult(array $prompt): Generator
-            {
-                yield from [];
-            }
         };
 
         $builder = new PromptBuilder($this->registry, 'Generate text');
@@ -2143,11 +2137,6 @@ class PromptBuilderTest extends TestCase
             public function generateTextResult(array $prompt): GenerativeAiResult
             {
                 throw new RuntimeException('No text was generated from any candidates');
-            }
-
-            public function streamGenerateTextResult(array $prompt): Generator
-            {
-                yield from [];
             }
         };
 

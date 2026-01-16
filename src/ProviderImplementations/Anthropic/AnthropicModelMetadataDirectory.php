@@ -36,7 +36,7 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {
         /*
-         * Since we're calling the primary Anthropic API models endpoint here, we need to use the Anthropic specific
+         * Since we're calling the Anthropic API here, we need to use the Anthropic specific
          * API key authentication class.
          */
         $requestAuthentication = parent::getRequestAuthentication();
@@ -81,15 +81,11 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
         ];
         $anthropicOptions = [
             new SupportedOption(OptionEnum::systemInstruction()),
-            new SupportedOption(OptionEnum::candidateCount(), [0, 1]),
             new SupportedOption(OptionEnum::maxTokens()),
             new SupportedOption(OptionEnum::temperature()),
             new SupportedOption(OptionEnum::topP()),
+            new SupportedOption(OptionEnum::topK()),
             new SupportedOption(OptionEnum::stopSequences()),
-            new SupportedOption(OptionEnum::presencePenalty()),
-            new SupportedOption(OptionEnum::frequencyPenalty()),
-            new SupportedOption(OptionEnum::logprobs()),
-            new SupportedOption(OptionEnum::topLogprobs()),
             new SupportedOption(OptionEnum::outputMimeType(), ['text/plain', 'application/json']),
             new SupportedOption(OptionEnum::outputSchema()),
             new SupportedOption(OptionEnum::functionDeclarations()),
@@ -99,6 +95,8 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
                 [
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::image()],
+                    [ModalityEnum::text(), ModalityEnum::document()],
+                    [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::document()],
                 ]
             ),
             new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),

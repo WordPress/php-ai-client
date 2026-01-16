@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\TextGeneration\Contracts;
 
-use Generator;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 
@@ -26,14 +25,4 @@ interface TextGenerationModelInterface
      * @return GenerativeAiResult Result containing generated text.
      */
     public function generateTextResult(array $prompt): GenerativeAiResult;
-
-    /**
-     * Streams text generation from a prompt.
-     *
-     * @since 0.1.0
-     *
-     * @param list<Message> $prompt Array of messages containing the text generation prompt.
-     * @return Generator<GenerativeAiResult> Generator yielding partial results.
-     */
-    public function streamGenerateTextResult(array $prompt): Generator;
 }
