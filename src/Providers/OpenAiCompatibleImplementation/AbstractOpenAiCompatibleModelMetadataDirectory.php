@@ -79,9 +79,9 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
      *
      * @since n.e.x.t
      */
-    public function invalidateCaches(): void
+    protected function getCachedKeys(): array
     {
-        $this->clearCache(self::MODELS_CACHE_KEY);
+        return [self::MODELS_CACHE_KEY];
     }
 
     /**

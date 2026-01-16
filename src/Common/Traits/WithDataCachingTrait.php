@@ -14,6 +14,15 @@ use WordPress\AiClient\AiClient;
 trait WithDataCachingTrait
 {
     /**
+     * Gets the cache key suffixes managed by this object.
+     *
+     * @since n.e.x.t
+     *
+     * @return list<string> The cache key suffixes.
+     */
+    abstract protected function getCachedKeys(): array;
+
+    /**
      * Gets the base cache key for this object.
      *
      * The base cache key is used as a prefix for all cache keys managed by this object.
@@ -62,6 +71,20 @@ trait WithDataCachingTrait
         }
 
         return $cache->set($this->buildCacheKey($key), $value, $ttl);
+    }
+
+    /**
+     * Invalidates all caches managed by this object.
+     *
+     * @since n.e.x.t
+     *
+     * @return void
+     */
+    public function invalidateCaches(): void
+    {
+        foreach ($this->getCachedKeys() as $key) {
+            $this->clearCache($key);
+        }
     }
 
     /**
