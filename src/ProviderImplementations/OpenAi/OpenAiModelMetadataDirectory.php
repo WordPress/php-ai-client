@@ -75,6 +75,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(OptionEnum::outputMimeType(), ['text/plain', 'application/json']),
             new SupportedOption(OptionEnum::outputSchema()),
             new SupportedOption(OptionEnum::functionDeclarations()),
+            new SupportedOption(OptionEnum::webSearch()),
             new SupportedOption(OptionEnum::customOptions()),
         ];
         $gptOptions = array_merge($gptBaseOptions, [
@@ -88,6 +89,8 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::image()],
                     [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::audio()],
+                    [ModalityEnum::text(), ModalityEnum::document()],
+                    [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::document()],
                 ]
             ),
             new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
@@ -99,6 +102,8 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     [ModalityEnum::text()],
                     [ModalityEnum::text(), ModalityEnum::image()],
                     [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::audio()],
+                    [ModalityEnum::text(), ModalityEnum::document()],
+                    [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::document()],
                 ]
             ),
             new SupportedOption(

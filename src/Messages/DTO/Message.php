@@ -107,13 +107,15 @@ class Message extends AbstractDataTransferObject
     private function validateParts(): void
     {
         foreach ($this->parts as $part) {
-            if ($this->role->isUser() && $part->getType()->isFunctionCall()) {
+            $type = $part->getType();
+
+            if ($this->role->isUser() && $type->isFunctionCall()) {
                 throw new InvalidArgumentException(
                     'User messages cannot contain function calls.'
                 );
             }
 
-            if ($this->role->isModel() && $part->getType()->isFunctionResponse()) {
+            if ($this->role->isModel() && $type->isFunctionResponse()) {
                 throw new InvalidArgumentException(
                     'Model messages cannot contain function responses.'
                 );

@@ -380,19 +380,20 @@ class MessageBuilderTest extends TestCase
      */
     public function testValidationAllowsValidCombinations(): void
     {
-        // User message with function response - should work
+        // User message with function response only - should work
+        // (Function responses must be the only part in a message)
         $functionResponse = new FunctionResponse('resp_id', 'test', ['result' => 'ok']);
         $builder1 = new MessageBuilder();
         $message1 = $builder1
             ->usingUserRole()
-            ->withText('Here is the result:')
             ->withFunctionResponse($functionResponse)
             ->get();
 
         $this->assertTrue($message1->getRole()->isUser());
-        $this->assertCount(2, $message1->getParts());
+        $this->assertCount(1, $message1->getParts());
 
-        // Model message with function call - should work
+        // Model message with text and function call - should work
+        // (Model can combine text with function calls)
         $functionCall = new FunctionCall(null, 'test', ['param' => 'value']);
         $builder2 = new MessageBuilder();
         $message2 = $builder2
