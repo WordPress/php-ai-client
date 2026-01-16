@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers;
 
+use Http\Discovery\Exception\NotFoundException as DiscoveryNotFoundException;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
@@ -14,6 +15,7 @@ use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\HttpTransporterFactory;
 use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
@@ -85,14 +87,26 @@ class ProviderRegistry implements WithHttpTransporterInterface
         // If there is already a HTTP transporter instance set, hook it up to the provider as needed.
         try {
             $httpTransporter = $this->getHttpTransporter();
-            $this->setHttpTransporterForProvider($className, $httpTransporter);
         } catch (RuntimeException $e) {
             /*
              * If this fails, it's okay. There is no defined sequence between setting the HTTP transporter in the
              * registry and registering providers in it, so it might be that the transporter is set later. It will be
              * hooked up then.
-             * Therefore we can simply ignore this exception.
+             * But for now we can ignore this exception and attempt to set the default HTTP transporter, if possible.
              */
+            try {
+                $this->setHttpTransporter(HttpTransporterFactory::createTransporter());
+            } catch (DiscoveryNotFoundException $e) {
+                /*
+                 * If no HTTP client implementation can be discovered yet, we can ignore this for now.
+                 * It might be set later, so it's not a hard error at this point.
+                 * We'll try again the next time a provider is registered, or maybe by that time an explicit
+                 * HTTP transporter will have been set.
+                 */
+            }
+        }
+        if (isset($httpTransporter)) {
+            $this->setHttpTransporterForProvider($className, $httpTransporter);
         }
 
         // Hook up the request authentication instance, using a default if not set.
