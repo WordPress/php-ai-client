@@ -52,7 +52,7 @@ class OpenAiImageGenerationModel extends AbstractOpenAiCompatibleImageGeneration
          * Only the newer 'gpt-image-' models support passing a MIME type ('output_format').
          * Conversely, they do not support 'response_format', but always return a base64 encoded image.
          */
-        if ($this->isGptImageModel($this->metadata()->getId())) {
+        if ($this->isGptImageModel($params['model'])) {
             unset($params['response_format']);
         } else {
             unset($params['output_format']);
