@@ -81,7 +81,7 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
      */
     protected function getCacheKey(): string
     {
-        return 'ai_client_models_' . md5(static::class);
+        return 'ai_client_models_' . AiClient::VERSION . '_' . md5(static::class);
     }
 
     /**

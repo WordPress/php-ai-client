@@ -88,6 +88,11 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 class AiClient
 {
     /**
+     * @var string The version of the AI Client.
+     */
+    public const VERSION = '0.3.0';
+
+    /**
      * @var ProviderRegistry|null The default provider registry instance.
      */
     private static ?ProviderRegistry $defaultRegistry = null;

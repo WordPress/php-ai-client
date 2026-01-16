@@ -134,7 +134,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
         $cache = new MockCache();
 
         // Seed the cache with model data.
-        $cacheKey = 'ai_client_models_' . md5(MockOpenAiCompatibleModelMetadataDirectory::class);
+        $cacheKey = 'ai_client_models_' . AiClient::VERSION . '_' . md5(MockOpenAiCompatibleModelMetadataDirectory::class);
         $cachedData = [
             'cached-model-a' => [
                 'id' => 'cached-model-a',
@@ -215,7 +215,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
         $setOperations = $cache->getOperationsOfType('set');
         $this->assertCount(1, $setOperations);
 
-        $cacheKey = 'ai_client_models_' . md5(MockOpenAiCompatibleModelMetadataDirectory::class);
+        $cacheKey = 'ai_client_models_' . AiClient::VERSION . '_' . md5(MockOpenAiCompatibleModelMetadataDirectory::class);
         $this->assertEquals($cacheKey, $setOperations[0]['key']);
 
         // Verify cached data structure.
@@ -273,7 +273,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
         AiClient::setCache($cache);
 
         // Seed cache for the first directory class.
-        $cacheKey1 = 'ai_client_models_' . md5(MockOpenAiCompatibleModelMetadataDirectory::class);
+        $cacheKey1 = 'ai_client_models_' . AiClient::VERSION . '_' . md5(MockOpenAiCompatibleModelMetadataDirectory::class);
         $cachedData1 = [
             'first-provider-model' => [
                 'id' => 'first-provider-model',
@@ -285,7 +285,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
         $cache->seed($cacheKey1, $cachedData1);
 
         // Seed cache for the second directory class with different data.
-        $cacheKey2 = 'ai_client_models_' . md5(AnotherMockOpenAiCompatibleModelMetadataDirectory::class);
+        $cacheKey2 = 'ai_client_models_' . AiClient::VERSION . '_' . md5(AnotherMockOpenAiCompatibleModelMetadataDirectory::class);
         $cachedData2 = [
             'second-provider-model' => [
                 'id' => 'second-provider-model',
@@ -342,7 +342,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
         AiClient::setCache($cache);
 
         // Seed cache with invalid data (not an array).
-        $cacheKey = 'ai_client_models_' . md5(MockOpenAiCompatibleModelMetadataDirectory::class);
+        $cacheKey = 'ai_client_models_' . AiClient::VERSION . '_' . md5(MockOpenAiCompatibleModelMetadataDirectory::class);
         $cache->seed($cacheKey, 'invalid-string-data');
 
         $response = new Response(200, [], '{"data": [{"id": "fresh-model"}]}');
