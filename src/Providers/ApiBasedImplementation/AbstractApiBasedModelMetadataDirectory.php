@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\ApiBasedImplementation;
 
+use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Common\Contracts\CachesDataInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Traits\WithDataCachingTrait;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
@@ -20,15 +23,21 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 abstract class AbstractApiBasedModelMetadataDirectory implements
     ModelMetadataDirectoryInterface,
     WithHttpTransporterInterface,
-    WithRequestAuthenticationInterface
+    WithRequestAuthenticationInterface,
+    CachesDataInterface
 {
     use WithHttpTransporterTrait;
     use WithRequestAuthenticationTrait;
+    use WithDataCachingTrait;
 
     /**
-     * @var ?array<string, ModelMetadata> Map of model ID to model metadata, effectively for caching.
+     * The cache key suffix for the models list.
+     *
+     * @since n.e.x.t
+     *
+     * @var string
      */
-    private ?array $modelMetadataMap = null;
+    private const MODELS_CACHE_KEY = 'models';
 
     /**
      * {@inheritDoc}
@@ -77,10 +86,32 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
      */
     private function getModelMetadataMap(): array
     {
-        if ($this->modelMetadataMap === null) {
-            $this->modelMetadataMap = $this->sendListModelsRequest();
-        }
-        return $this->modelMetadataMap;
+        /** @var array<string, ModelMetadata> */
+        return $this->cached(
+            self::MODELS_CACHE_KEY,
+            fn () => $this->sendListModelsRequest(),
+            86400
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    protected function getCachedKeys(): array
+    {
+        return [self::MODELS_CACHE_KEY];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    protected function getBaseCacheKey(): string
+    {
+        return 'ai_client_' . AiClient::VERSION . '_' . md5(static::class);
     }
 
     /**

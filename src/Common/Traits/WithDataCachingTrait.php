@@ -7,12 +7,24 @@ namespace WordPress\AiClient\Common\Traits;
 use WordPress\AiClient\AiClient;
 
 /**
- * Trait for objects that cache data using PSR-16 cache.
+ * Trait for objects that cache data using PSR-16 cache with in-memory fallback.
+ *
+ * When a PSR-16 cache is configured via AiClient::setCache(), data is stored persistently.
+ * Otherwise, data is cached in-memory for the duration of the request.
  *
  * @since n.e.x.t
  */
 trait WithDataCachingTrait
 {
+    /**
+     * In-memory cache used when no PSR-16 cache is configured.
+     *
+     * @since n.e.x.t
+     *
+     * @var array<string, mixed>
+     */
+    private array $localCache = [];
+
     /**
      * Gets the cache key suffixes managed by this object.
      *
@@ -35,6 +47,49 @@ trait WithDataCachingTrait
     abstract protected function getBaseCacheKey(): string;
 
     /**
+     * Checks if a value exists in the cache.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $key The cache key suffix (will be appended to the base key).
+     * @return bool True if the value exists in cache, false otherwise.
+     */
+    protected function hasCache(string $key): bool
+    {
+        $fullKey = $this->buildCacheKey($key);
+
+        $cache = AiClient::getCache();
+        if ($cache !== null) {
+            return $cache->has($fullKey);
+        }
+
+        return array_key_exists($fullKey, $this->localCache);
+    }
+
+    /**
+     * Gets a value from the cache, or computes and caches it if not present.
+     *
+     * @since n.e.x.t
+     *
+     * @param string                 $key      The cache key suffix (will be appended to the base key).
+     * @param callable               $callback The callback to compute the value if not cached.
+     * @param int|\DateInterval|null $ttl      The TTL for the cache entry, or null for default.
+     *                                         Ignored for local cache.
+     * @return mixed The cached or computed value.
+     */
+    protected function cached(string $key, callable $callback, $ttl = null)
+    {
+        if ($this->hasCache($key)) {
+            return $this->getCache($key);
+        }
+
+        $value = $callback();
+        $this->setCache($key, $value, $ttl);
+
+        return $value;
+    }
+
+    /**
      * Gets a value from the cache.
      *
      * @since n.e.x.t
@@ -45,12 +100,14 @@ trait WithDataCachingTrait
      */
     protected function getCache(string $key, $default = null)
     {
+        $fullKey = $this->buildCacheKey($key);
+
         $cache = AiClient::getCache();
-        if ($cache === null) {
-            return $default;
+        if ($cache !== null) {
+            return $cache->get($fullKey, $default);
         }
 
-        return $cache->get($this->buildCacheKey($key), $default);
+        return $this->localCache[$fullKey] ?? $default;
     }
 
     /**
@@ -60,17 +117,20 @@ trait WithDataCachingTrait
      *
      * @param string                $key   The cache key suffix (will be appended to the base key).
      * @param mixed                 $value The value to cache.
-     * @param int|\DateInterval|null $ttl   The TTL for the cache entry, or null for default.
-     * @return bool True on success, false on failure or if no cache is configured.
+     * @param int|\DateInterval|null $ttl   The TTL for the cache entry, or null for default. Ignored for local cache.
+     * @return bool True on success, false on failure.
      */
     protected function setCache(string $key, $value, $ttl = null): bool
     {
+        $fullKey = $this->buildCacheKey($key);
+
         $cache = AiClient::getCache();
-        if ($cache === null) {
-            return false;
+        if ($cache !== null) {
+            return $cache->set($fullKey, $value, $ttl);
         }
 
-        return $cache->set($this->buildCacheKey($key), $value, $ttl);
+        $this->localCache[$fullKey] = $value;
+        return true;
     }
 
     /**
@@ -93,16 +153,19 @@ trait WithDataCachingTrait
      * @since n.e.x.t
      *
      * @param string $key The cache key suffix (will be appended to the base key).
-     * @return bool True on success, false on failure or if no cache is configured.
+     * @return bool True on success, false on failure.
      */
     protected function clearCache(string $key): bool
     {
+        $fullKey = $this->buildCacheKey($key);
+
         $cache = AiClient::getCache();
-        if ($cache === null) {
-            return false;
+        if ($cache !== null) {
+            return $cache->delete($fullKey);
         }
 
-        return $cache->delete($this->buildCacheKey($key));
+        unset($this->localCache[$fullKey]);
+        return true;
     }
 
     /**

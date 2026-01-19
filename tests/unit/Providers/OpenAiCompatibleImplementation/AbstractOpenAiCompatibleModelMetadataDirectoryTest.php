@@ -133,22 +133,22 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
     {
         $cache = new MockCache();
 
-        // Seed the cache with model data.
+        // Seed the cache with ModelMetadata objects.
         $cacheKey = 'ai_client_' . AiClient::VERSION . '_'
             . md5(MockOpenAiCompatibleModelMetadataDirectory::class) . '_models';
         $cachedData = [
-            'cached-model-a' => [
+            'cached-model-a' => ModelMetadata::fromArray([
                 'id' => 'cached-model-a',
                 'name' => 'Cached Model A',
                 'supportedCapabilities' => ['text_generation'],
                 'supportedOptions' => [],
-            ],
-            'cached-model-b' => [
+            ]),
+            'cached-model-b' => ModelMetadata::fromArray([
                 'id' => 'cached-model-b',
                 'name' => 'Cached Model B',
                 'supportedCapabilities' => ['text_generation'],
                 'supportedOptions' => [],
-            ],
+            ]),
         ];
         $cache->seed($cacheKey, $cachedData);
 
@@ -220,12 +220,13 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
             . md5(MockOpenAiCompatibleModelMetadataDirectory::class) . '_models';
         $this->assertEquals($cacheKey, $setOperations[0]['key']);
 
-        // Verify cached data structure.
+        // Verify cached data structure (ModelMetadata objects).
         $cachedData = $cache->peek($cacheKey);
         $this->assertIsArray($cachedData);
         $this->assertArrayHasKey('api-model-a', $cachedData);
         $this->assertArrayHasKey('api-model-b', $cachedData);
-        $this->assertEquals('api-model-a', $cachedData['api-model-a']['id']);
+        $this->assertInstanceOf(ModelMetadata::class, $cachedData['api-model-a']);
+        $this->assertEquals('api-model-a', $cachedData['api-model-a']->getId());
     }
 
     /**
@@ -274,16 +275,16 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
         $cache = new MockCache();
         AiClient::setCache($cache);
 
-        // Seed cache for the first directory class.
+        // Seed cache for the first directory class with ModelMetadata objects.
         $cacheKey1 = 'ai_client_' . AiClient::VERSION . '_'
             . md5(MockOpenAiCompatibleModelMetadataDirectory::class) . '_models';
         $cachedData1 = [
-            'first-provider-model' => [
+            'first-provider-model' => ModelMetadata::fromArray([
                 'id' => 'first-provider-model',
                 'name' => 'First Provider Model',
                 'supportedCapabilities' => ['text_generation'],
                 'supportedOptions' => [],
-            ],
+            ]),
         ];
         $cache->seed($cacheKey1, $cachedData1);
 
@@ -291,12 +292,12 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
         $cacheKey2 = 'ai_client_' . AiClient::VERSION . '_'
             . md5(AnotherMockOpenAiCompatibleModelMetadataDirectory::class) . '_models';
         $cachedData2 = [
-            'second-provider-model' => [
+            'second-provider-model' => ModelMetadata::fromArray([
                 'id' => 'second-provider-model',
                 'name' => 'Second Provider Model',
                 'supportedCapabilities' => ['text_generation'],
                 'supportedOptions' => [],
-            ],
+            ]),
         ];
         $cache->seed($cacheKey2, $cachedData2);
 
@@ -333,47 +334,5 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
 
         $this->assertCount(1, $models2);
         $this->assertEquals('second-provider-model', $models2[0]->getId());
-    }
-
-    /**
-     * Tests that cache is bypassed when cached data is not an array.
-     *
-     * @return void
-     */
-    public function testCacheBypassedWhenCachedDataIsInvalid(): void
-    {
-        $cache = new MockCache();
-        AiClient::setCache($cache);
-
-        // Seed cache with invalid data (not an array).
-        $cacheKey = 'ai_client_' . AiClient::VERSION . '_'
-            . md5(MockOpenAiCompatibleModelMetadataDirectory::class) . '_models';
-        $cache->seed($cacheKey, 'invalid-string-data');
-
-        $response = new Response(200, [], '{"data": [{"id": "fresh-model"}]}');
-
-        $this->mockRequestAuthentication
-            ->expects($this->once())
-            ->method('authenticateRequest')
-            ->willReturnArgument(0);
-
-        // API should be called because cached data is invalid.
-        $this->mockHttpTransporter
-            ->expects($this->once())
-            ->method('send')
-            ->willReturn($response);
-
-        $directory = new MockOpenAiCompatibleModelMetadataDirectory(
-            $this->mockHttpTransporter,
-            $this->mockRequestAuthentication,
-            null,
-            [],
-            true
-        );
-
-        $modelsMetadata = $directory->listModelMetadata();
-
-        $this->assertCount(1, $modelsMetadata);
-        $this->assertEquals('fresh-model', $modelsMetadata[0]->getId());
     }
 }

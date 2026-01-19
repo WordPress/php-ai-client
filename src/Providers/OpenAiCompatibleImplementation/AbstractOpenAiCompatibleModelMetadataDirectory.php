@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
-use WordPress\AiClient\AiClient;
-use WordPress\AiClient\Common\Contracts\CachesDataInterface;
-use WordPress\AiClient\Common\Traits\WithDataCachingTrait;
 use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModelMetadataDirectory;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
@@ -23,21 +20,9 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  * providers that have adopted OpenAI's models API specification as a standard interface.
  *
  * @since 0.1.0
- *
- * @phpstan-import-type ModelMetadataArrayShape from ModelMetadata
  */
-abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractApiBasedModelMetadataDirectory implements
-    CachesDataInterface
+abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractApiBasedModelMetadataDirectory
 {
-    use WithDataCachingTrait;
-
-    /**
-     * The cache key suffix for the models list.
-     *
-     * @var string
-     */
-    private const MODELS_CACHE_KEY = 'models';
-
     /**
      * {@inheritDoc}
      *
@@ -45,14 +30,6 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
      */
     protected function sendListModelsRequest(): array
     {
-        // Try to get cached data.
-        $cachedData = $this->getCache(self::MODELS_CACHE_KEY);
-        if (is_array($cachedData)) {
-            /** @var array<string, ModelMetadataArrayShape> $cachedData */
-            return $this->hydrateModelMetadataMap($cachedData);
-        }
-
-        // Fetch from API.
         $httpTransporter = $this->getHttpTransporter();
 
         $request = $this->createRequest(HttpMethodEnum::GET(), 'models');
@@ -60,71 +37,14 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
         $response = $httpTransporter->send($request);
 
         $this->throwIfNotSuccessful($response);
+
         $modelsMetadataList = $this->parseResponseToModelMetadataList($response);
 
-        // Parse list to map.
         $modelMetadataMap = [];
         foreach ($modelsMetadataList as $modelMetadata) {
             $modelMetadataMap[$modelMetadata->getId()] = $modelMetadata;
         }
 
-        // Store in cache for 1 day.
-        $this->setCache(self::MODELS_CACHE_KEY, $this->dehydrateModelMetadataMap($modelMetadataMap), 86400);
-
-        return $modelMetadataMap;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @since n.e.x.t
-     */
-    protected function getCachedKeys(): array
-    {
-        return [self::MODELS_CACHE_KEY];
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @since n.e.x.t
-     */
-    protected function getBaseCacheKey(): string
-    {
-        return 'ai_client_' . AiClient::VERSION . '_' . md5(static::class);
-    }
-
-    /**
-     * Converts a model metadata map to an array format suitable for caching.
-     *
-     * @since n.e.x.t
-     *
-     * @param array<string, ModelMetadata> $modelMetadataMap The model metadata map.
-     * @return array<string, array<string, mixed>> The dehydrated data.
-     */
-    private function dehydrateModelMetadataMap(array $modelMetadataMap): array
-    {
-        $data = [];
-        foreach ($modelMetadataMap as $modelId => $modelMetadata) {
-            $data[$modelId] = $modelMetadata->toArray();
-        }
-        return $data;
-    }
-
-    /**
-     * Converts cached array data back to a model metadata map.
-     *
-     * @since n.e.x.t
-     *
-     * @param array<string, ModelMetadataArrayShape> $cachedData The cached data.
-     * @return array<string, ModelMetadata> The hydrated model metadata map.
-     */
-    private function hydrateModelMetadataMap(array $cachedData): array
-    {
-        $modelMetadataMap = [];
-        foreach ($cachedData as $modelId => $modelData) {
-            $modelMetadataMap[$modelId] = ModelMetadata::fromArray($modelData);
-        }
         return $modelMetadataMap;
     }
 
