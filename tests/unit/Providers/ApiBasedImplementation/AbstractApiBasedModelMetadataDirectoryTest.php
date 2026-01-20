@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 class AbstractApiBasedModelMetadataDirectoryTest extends TestCase
 {
     /**
-     * @var ModelMetadata[]
+     * @var array<string, ModelMetadata>
      */
     private array $mockModels;
 

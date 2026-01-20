@@ -37,13 +37,14 @@ abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractAp
         $response = $httpTransporter->send($request);
 
         $this->throwIfNotSuccessful($response);
+
         $modelsMetadataList = $this->parseResponseToModelMetadataList($response);
 
-        // Parse list to map.
         $modelMetadataMap = [];
         foreach ($modelsMetadataList as $modelMetadata) {
             $modelMetadataMap[$modelMetadata->getId()] = $modelMetadata;
         }
+
         return $modelMetadataMap;
     }
 
