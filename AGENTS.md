@@ -56,16 +56,6 @@ The project's architecture is heavily inspired by the Vercel AI SDK and is desig
 
 For a more detailed overview, refer to the `docs/ARCHITECTURE.md` file.
 
-## Directory Structure
-
-*   `src/`: Contains the main source code for the client.
-    *   `src/Builders/`: Home to the fluent API builders (`PromptBuilder`, `MessageBuilder`).
-    *   `src/Providers/`: Contains the contracts and base classes for AI providers and models.
-    *   `src/ProviderImplementations/`: Contains the concrete implementations for specific AI providers like Google, OpenAI, and Anthropic.
-    *   `src/Providers/Http/`: Contains the HTTP communication layer, including the `HttpTransporter`.
-*   `tests/`: Contains the test suite for the project.
-*   `docs/`: Contains the project's documentation, including architecture, requirements, and a glossary.
-
 ## Agent Guidelines
 
 ### Naming conventions
