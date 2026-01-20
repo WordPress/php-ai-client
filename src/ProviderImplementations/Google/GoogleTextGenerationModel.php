@@ -32,7 +32,7 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
  * Class for a Google text generation model.
  *
  * @since 0.1.0
- * @since n.e.x.t Enhanced to use Google's primary API instead of OpenAI compatibility layer.
+ * @since 0.4.0 Enhanced to use Google's primary API instead of OpenAI compatibility layer.
  *
  * @phpstan-type MessageData array{
  *     role?: string,
@@ -58,7 +58,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      */
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {
@@ -76,7 +76,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      */
     final public function generateTextResult(array $prompt): GenerativeAiResult
     {
@@ -104,7 +104,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Prepares the given prompt and the model configuration into parameters for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<Message> $prompt The prompt to generate text for. Either a single message or a list of messages
      *                              from a chat.
@@ -256,7 +256,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Prepares the contents parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<Message> $messages The messages to prepare.
      * @return list<array<string, mixed>> The prepared contents parameter.
@@ -280,7 +280,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Returns the Google API specific role string for the given message role.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param MessageRoleEnum $role The message role.
      * @return string The role for the API request.
@@ -296,7 +296,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Returns the Google API specific data for a message part.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param MessagePart $part The message part to get the data for.
      * @return ?array<string, mixed> The data for the message part, or null if not applicable.
@@ -411,7 +411,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Prepares the response modalities parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param array<ModalityEnum> $modalities The modalities to prepare.
      * @return list<string> The prepared modalities parameter.
@@ -441,7 +441,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Prepares the function declarations parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<FunctionDeclaration> $functionDeclarations The function declarations.
      * @return list<array<string, mixed>> The prepared tools parameter.
@@ -464,7 +464,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Removes the `additionalProperties` key from the schema, including child schemas.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param array<string, mixed> $schema The schema to remove the `additionalProperties` key from.
      * @return array<string, mixed> The schema without the `additionalProperties` key.
@@ -486,7 +486,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Parses the response from the API endpoint to a generative AI result.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param Response $response The response from the API endpoint.
      * @return GenerativeAiResult The parsed generative AI result.
@@ -550,7 +550,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Parses a single candidate from the API response into a Candidate object.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param CandidateData $candidateData The candidate data from the API response.
      * @param int $index The index of the candidate in the candidates array.
@@ -619,7 +619,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Parses the message from a candidate in the API response.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param MessageData $messageData The message data from the API response.
      * @param int $index The index of the candidate in the candidates array.
@@ -664,7 +664,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Parses a message part from a candidate in the API response.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param array<string, mixed> $partData The message part data from the API response.
      * @return MessagePart The parsed message part.

@@ -12,14 +12,14 @@ use WordPress\AiClient\AiClient;
  * When a PSR-16 cache is configured via AiClient::setCache(), data is stored persistently.
  * Otherwise, data is cached in-memory for the duration of the request.
  *
- * @since n.e.x.t
+ * @since 0.4.0
  */
 trait WithDataCachingTrait
 {
     /**
      * In-memory cache used when no PSR-16 cache is configured.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @var array<string, mixed>
      */
@@ -28,7 +28,7 @@ trait WithDataCachingTrait
     /**
      * Gets the cache key suffixes managed by this object.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return list<string> The cache key suffixes.
      */
@@ -40,7 +40,7 @@ trait WithDataCachingTrait
      * The base cache key is used as a prefix for all cache keys managed by this object.
      * It should be unique to the implementing class to avoid cache key collisions.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return string The base cache key.
      */
@@ -49,7 +49,7 @@ trait WithDataCachingTrait
     /**
      * Checks if a value exists in the cache.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param string $key The cache key suffix (will be appended to the base key).
      * @return bool True if the value exists in cache, false otherwise.
@@ -69,7 +69,7 @@ trait WithDataCachingTrait
     /**
      * Gets a value from the cache, or computes and caches it if not present.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param string                 $key      The cache key suffix (will be appended to the base key).
      * @param callable               $callback The callback to compute the value if not cached.
@@ -92,7 +92,7 @@ trait WithDataCachingTrait
     /**
      * Gets a value from the cache.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param string $key     The cache key suffix (will be appended to the base key).
      * @param mixed  $default The default value to return if the key does not exist.
@@ -113,7 +113,7 @@ trait WithDataCachingTrait
     /**
      * Sets a value in the cache.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param string                $key   The cache key suffix (will be appended to the base key).
      * @param mixed                 $value The value to cache.
@@ -136,7 +136,7 @@ trait WithDataCachingTrait
     /**
      * Invalidates all caches managed by this object.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return void
      */
@@ -150,7 +150,7 @@ trait WithDataCachingTrait
     /**
      * Clears a value from the cache.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param string $key The cache key suffix (will be appended to the base key).
      * @return bool True on success, false on failure.
@@ -171,7 +171,7 @@ trait WithDataCachingTrait
     /**
      * Builds the full cache key by combining the base key with the suffix.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param string $key The cache key suffix.
      * @return string The full cache key.

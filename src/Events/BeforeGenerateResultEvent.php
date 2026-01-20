@@ -15,7 +15,7 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  * are sent to the model. The event is not stoppable, meaning the model call
  * will always proceed regardless of listener actions.
  *
- * @since n.e.x.t
+ * @since 0.4.0
  */
 class BeforeGenerateResultEvent
 {
@@ -37,7 +37,7 @@ class BeforeGenerateResultEvent
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<Message> $messages The messages to be sent to the model.
      * @param ModelInterface $model The model that will process the prompt.
@@ -53,7 +53,7 @@ class BeforeGenerateResultEvent
     /**
      * Gets the messages to be sent to the model.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return list<Message> The messages.
      */
@@ -65,7 +65,7 @@ class BeforeGenerateResultEvent
     /**
      * Gets the model that will process the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return ModelInterface The model.
      */
@@ -77,7 +77,7 @@ class BeforeGenerateResultEvent
     /**
      * Gets the capability being used for generation.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return CapabilityEnum|null The capability, or null if not specified.
      */

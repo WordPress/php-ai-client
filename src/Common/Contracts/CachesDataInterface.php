@@ -7,14 +7,14 @@ namespace WordPress\AiClient\Common\Contracts;
 /**
  * Interface for objects that cache data.
  *
- * @since n.e.x.t
+ * @since 0.4.0
  */
 interface CachesDataInterface
 {
     /**
      * Invalidates all caches managed by this object.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return void
      */

@@ -27,7 +27,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
 /**
  * Class for an OpenAI text generation model using the Responses API.
  *
- * @since n.e.x.t
+ * @since 0.4.0
  *
  * @phpstan-type OutputContentData array{
  *     type: string,
@@ -61,7 +61,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      */
     final public function generateTextResult(array $prompt): GenerativeAiResult
     {
@@ -89,7 +89,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Prepares the given prompt and the model configuration into parameters for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<Message> $prompt The prompt to generate text for. Either a single message or a list of messages
      *                              from a chat.
@@ -172,7 +172,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Prepares the input parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<Message> $messages The messages to prepare.
      * @return list<array<string, mixed>> The prepared input parameter.
@@ -198,7 +198,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
      * sent as top-level input items rather than nested in message content. As such,
      * they must be the only part in a message.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<Message> $messages The messages to validate.
      * @return void
@@ -234,7 +234,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Converts a Message object to a Responses API input item.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param Message $message The message to convert.
      * @return array<string, mixed>|null The input item, or null if the message is empty.
@@ -270,7 +270,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Returns the OpenAI API specific role string for the given message role.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param MessageRoleEnum $role The message role.
      * @return string The role for the API request.
@@ -286,7 +286,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Returns the OpenAI API specific data for a message part.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param MessagePart $part The message part to get the data for.
      * @return array<string, mixed> The data for the message part.
@@ -388,7 +388,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Prepares the tools parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<FunctionDeclaration>|null $functionDeclarations The function declarations, or null if none.
      * @param WebSearch|null $webSearch The web search config, or null if none.
@@ -424,7 +424,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Parses the response from the API endpoint to a generative AI result.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param Response $response The response from the API endpoint.
      * @return GenerativeAiResult The parsed generative AI result.
@@ -491,7 +491,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Parses a single output item from the API response into a Candidate object.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param OutputItemData $outputItem The output item data from the API response.
      * @param int $index The index of the output item in the output array.
@@ -519,7 +519,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Parses a message output item into a Candidate object.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param OutputItemData $outputItem The output item data.
      * @param int $index The index of the output item.
@@ -567,7 +567,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Parses a function_call output item into a Candidate object.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param OutputItemData $outputItem The output item data.
      * @param int $index The index of the output item.
@@ -611,7 +611,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Parses an output content item into a MessagePart.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param array<string, mixed> $contentItem The content item data.
      * @return MessagePart|null The parsed message part, or null to skip.
@@ -661,7 +661,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Parses the response status to a finish reason.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param string $status The response status.
      * @param bool $hasFunctionCalls Whether the response contains function calls.

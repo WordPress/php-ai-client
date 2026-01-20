@@ -32,7 +32,7 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  * as for more traditional image generation models such as Imagen.
  *
  * @since 0.1.0
- * @since n.e.x.t Enhanced to use Google's primary API instead of OpenAI compatibility layer.
+ * @since 0.4.0 Enhanced to use Google's primary API instead of OpenAI compatibility layer.
  *
  * @phpstan-type PredictionData array{
  *     bytesBase64Encoded?: string,
@@ -55,7 +55,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      */
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {
@@ -73,7 +73,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      */
     public function generateImageResult(array $prompt): GenerativeAiResult
     {
@@ -121,7 +121,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
     /**
      * Prepares the given prompt and the model configuration into parameters for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<Message> $prompt The prompt to generate an image for. Either a single message or a list of messages
      *                              from a chat. However as of today, Google image generation endpoints only support a
@@ -167,7 +167,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
     /**
      * Prepares the prompt parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<Message> $messages The messages to prepare. However as of today, Google image generation endpoints
      *                                only support a single user message.
@@ -207,7 +207,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
     /**
      * Prepares the aspect ratio parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param MediaOrientationEnum|null $orientation The desired media orientation.
      * @param string|null $aspectRatio The desired media aspect ratio.
@@ -238,7 +238,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
      * This allows developers to pass options that may be more niche or not yet supported by the SDK.
      * Custom options with a `parameters.` prefix are added nested within the `parameters` key.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @template T of array<string, mixed>
      * @param T $params The base parameters.
@@ -285,7 +285,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
     /**
      * Parses the response from the API endpoint to a generative AI result.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param Response $response The response from the API endpoint.
      * @param string   $expectedMimeType The expected MIME type the response is in.
@@ -340,7 +340,7 @@ class GoogleImageGenerationModel extends AbstractApiBasedModel implements ImageG
     /**
      * Parses a single prediction from the API response into a Candidate object.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param PredictionData $predictionData The prediction data from the API response.
      * @param int $index The index of the prediction in the predictions array.

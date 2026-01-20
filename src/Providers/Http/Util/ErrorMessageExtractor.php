@@ -11,7 +11,7 @@ namespace WordPress\AiClient\Providers\Http\Util;
  * to avoid code duplication across exception classes.
  *
  * @since 0.2.0
- * @since n.e.x.t Moved from Utilities namespace to Util namespace.
+ * @since 0.4.0 Moved from Utilities namespace to Util namespace.
  */
 class ErrorMessageExtractor
 {
