@@ -586,7 +586,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Checks if the given value is a registered provider class name.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param string $idOrClassName The value to check.
      * @return bool True if it's a registered class name.
@@ -600,7 +600,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
     /**
      * Checks if the given value is a registered provider ID.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param string $idOrClassName The value to check.
      * @return bool True if it's a registered provider ID.

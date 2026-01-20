@@ -869,7 +869,7 @@ class PromptBuilder
     /**
      * Executes the model generation based on capability.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param ModelInterface $model The model to use for generation.
      * @param CapabilityEnum $capability The capability to use.
@@ -1568,7 +1568,7 @@ class PromptBuilder
     /**
      * Dispatches an event if an event dispatcher is registered.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param object $event The event to dispatch.
      * @return void

@@ -690,7 +690,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Validates that the given media orientation and aspect ratio values do not conflict with each other.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param MediaOrientationEnum $orientation The desired media orientation.
      * @param string $aspectRatio The desired media aspect ratio.

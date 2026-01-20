@@ -12,7 +12,7 @@ use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 /**
  * Enum for request authentication methods.
  *
- * @since n.e.x.t
+ * @since 0.4.0
  *
  * @method static self apiKey() Creates an instance for API_KEY method.
  * @method bool isApiKey() Checks if the method is API_KEY.
@@ -27,7 +27,7 @@ class RequestAuthenticationMethod extends AbstractEnum
     /**
      * Gets the implementation class for the authentication method.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return class-string<RequestAuthenticationInterface&WithArrayTransformationInterface> The implementation class.
      *

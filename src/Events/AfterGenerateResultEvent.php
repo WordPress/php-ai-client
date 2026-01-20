@@ -15,7 +15,7 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  * This event allows listeners to inspect the result of the model call for logging,
  * analytics, or other post-processing purposes. The result object is immutable.
  *
- * @since n.e.x.t
+ * @since 0.4.0
  */
 class AfterGenerateResultEvent
 {
@@ -42,7 +42,7 @@ class AfterGenerateResultEvent
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<Message> $messages The messages that were sent to the model.
      * @param ModelInterface $model The model that processed the prompt.
@@ -64,7 +64,7 @@ class AfterGenerateResultEvent
     /**
      * Gets the messages that were sent to the model.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return list<Message> The messages.
      */
@@ -76,7 +76,7 @@ class AfterGenerateResultEvent
     /**
      * Gets the model that processed the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return ModelInterface The model.
      */
@@ -88,7 +88,7 @@ class AfterGenerateResultEvent
     /**
      * Gets the capability that was used for generation.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return CapabilityEnum|null The capability, or null if not specified.
      */
@@ -100,7 +100,7 @@ class AfterGenerateResultEvent
     /**
      * Gets the result from the model.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return GenerativeAiResult The result.
      */

@@ -135,7 +135,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     /**
      * Gets the authentication method.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return RequestAuthenticationMethod|null The authentication method.
      */

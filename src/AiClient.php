@@ -89,7 +89,7 @@ class AiClient
     /**
      * @var string The version of the AI Client.
      */
-    public const VERSION = '0.3.0';
+    public const VERSION = '0.4.0';
 
     /**
      * @var ProviderRegistry|null The default provider registry instance.
@@ -135,7 +135,7 @@ class AiClient
      * The event dispatcher will be used to dispatch BeforeGenerateResultEvent and
      * AfterGenerateResultEvent during prompt generation.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param EventDispatcherInterface|null $dispatcher The event dispatcher, or null to disable.
      * @return void
@@ -148,7 +148,7 @@ class AiClient
     /**
      * Gets the event dispatcher for prompt lifecycle events.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return EventDispatcherInterface|null The event dispatcher, or null if not set.
      */
@@ -163,7 +163,7 @@ class AiClient
      * The cache can be used to store AI responses and other data to avoid
      * redundant API calls and improve performance.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param CacheInterface|null $cache The PSR-16 cache instance, or null to disable caching.
      * @return void
@@ -176,7 +176,7 @@ class AiClient
     /**
      * Gets the PSR-16 cache instance.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @return CacheInterface|null The cache instance, or null if not set.
      */

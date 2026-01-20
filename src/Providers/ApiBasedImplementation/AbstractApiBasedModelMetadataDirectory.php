@@ -33,7 +33,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     /**
      * The cache key suffix for the models list.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @var string
      */
@@ -97,7 +97,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      */
     protected function getCachedKeys(): array
     {
@@ -107,7 +107,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      */
     protected function getBaseCacheKey(): string
     {

@@ -64,7 +64,7 @@ class OpenAiImageGenerationModel extends AbstractOpenAiCompatibleImageGeneration
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      */
     protected function prepareSizeParam(?MediaOrientationEnum $orientation, ?string $aspectRatio): string
     {
@@ -80,7 +80,7 @@ class OpenAiImageGenerationModel extends AbstractOpenAiCompatibleImageGeneration
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      */
     protected function getResultId(array $responseData): string
     {
@@ -93,7 +93,7 @@ class OpenAiImageGenerationModel extends AbstractOpenAiCompatibleImageGeneration
     /**
      * Checks if the given model ID is a GPT image model.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param string $modelId The model ID to check.
      * @return bool True if it's a GPT image model, false otherwise.
@@ -106,7 +106,7 @@ class OpenAiImageGenerationModel extends AbstractOpenAiCompatibleImageGeneration
     /**
      * Prepares the size parameter for GPT image models.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param MediaOrientationEnum|null $orientation The desired media orientation.
      * @param string|null $aspectRatio The desired media aspect ratio.
@@ -143,7 +143,7 @@ class OpenAiImageGenerationModel extends AbstractOpenAiCompatibleImageGeneration
     /**
      * Prepares the size parameter for DALL-E models.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param string $modelId The model ID (dall-e-2 or dall-e-3).
      * @param MediaOrientationEnum|null $orientation The desired media orientation.

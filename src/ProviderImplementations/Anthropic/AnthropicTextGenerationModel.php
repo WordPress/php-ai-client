@@ -31,7 +31,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  * Class for an Anthropic text generation model.
  *
  * @since 0.1.0
- * @since n.e.x.t Enhanced to use Anthropic's primary API instead of OpenAI compatibility layer.
+ * @since 0.4.0 Enhanced to use Anthropic's primary API instead of OpenAI compatibility layer.
  *
  * @phpstan-type UsageData array{
  *     input_tokens?: int,
@@ -52,7 +52,7 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      */
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {
@@ -70,7 +70,7 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      */
     final public function generateTextResult(array $prompt): GenerativeAiResult
     {
@@ -106,7 +106,7 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
     /**
      * Prepares the given prompt and the model configuration into parameters for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<Message> $prompt The prompt to generate text for. Either a single message or a list of messages
      *                              from a chat.
@@ -192,7 +192,7 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
     /**
      * Prepares the messages parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<Message> $messages The messages to prepare.
      * @return list<array<string, mixed>> The prepared messages parameter.
@@ -216,7 +216,7 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
     /**
      * Returns the Anthropic API specific role string for the given message role.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param MessageRoleEnum $role The message role.
      * @return string The role for the API request.
@@ -232,7 +232,7 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
     /**
      * Returns the Anthropic API specific data for a message part.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param MessagePart $part The message part to get the data for.
      * @return ?array<string, mixed> The data for the message part, or null if not applicable.
@@ -356,7 +356,7 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
     /**
      * Prepares the tools parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param list<FunctionDeclaration>|null $functionDeclarations The function declarations, or null if none.
      * @param WebSearch|null $webSearch The web search config, or null if none.
@@ -392,7 +392,7 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
     /**
      * Parses the response from the API endpoint to a generative AI result.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param Response $response The response from the API endpoint.
      * @return GenerativeAiResult The parsed generative AI result.
@@ -508,7 +508,7 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
     /**
      * Parses a message part from the content in the API response.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param array<string, mixed> $partData The message part data from the API response.
      * @return MessagePart|null The parsed message part, or null to ignore.

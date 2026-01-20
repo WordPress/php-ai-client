@@ -381,7 +381,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
     /**
      * Extracts the result ID from the API response data.
      *
-     * @since n.e.x.t
+     * @since 0.4.0
      *
      * @param array<string, mixed> $responseData The response data from the API.
      * @return string The result ID.
