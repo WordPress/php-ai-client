@@ -753,10 +753,11 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
      */
     public function testGetMessagePartToolCallDataEmptyArguments(): void
     {
+        // Note: FunctionCall normalizes [] to null, so this tests the null-handling path.
         $functionCall = new FunctionCall(
             'call_1',
             'list_capabilities',
-            [] // Empty arguments array
+            [] // Empty arguments array (normalized to null by FunctionCall)
         );
         $part = new MessagePart($functionCall);
         $model = $this->createModel();
@@ -768,6 +769,32 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             'function' => [
                 'name' => 'list_capabilities',
                 'arguments' => '{}', // Should be empty object, not empty array
+            ],
+        ], $data);
+    }
+
+    /**
+     * Tests getMessagePartToolCallData() with null arguments (should encode as empty object).
+     *
+     * @return void
+     */
+    public function testGetMessagePartToolCallDataNullArguments(): void
+    {
+        $functionCall = new FunctionCall(
+            'call_1',
+            'list_capabilities',
+            null
+        );
+        $part = new MessagePart($functionCall);
+        $model = $this->createModel();
+        $data = $model->exposeGetMessagePartToolCallData($part);
+
+        $this->assertEquals([
+            'type' => 'function',
+            'id' => 'call_1',
+            'function' => [
+                'name' => 'list_capabilities',
+                'arguments' => '{}', // null args should be encoded as empty object
             ],
         ], $data);
     }

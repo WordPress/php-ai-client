@@ -324,11 +324,16 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
                     'The function_call typed message part must contain a function call.'
                 );
             }
+            // Ensure null becomes empty object for Anthropic's API which expects an object.
+            $input = $functionCall->getArgs();
+            if ($input === null) {
+                $input = new \stdClass();
+            }
             return [
                 'type' => 'tool_use',
                 'id' => $functionCall->getId(),
                 'name' => $functionCall->getName(),
-                'input' => $functionCall->getArgs(),
+                'input' => $input,
             ];
         }
         if ($type->isFunctionResponse()) {
