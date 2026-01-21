@@ -75,6 +75,32 @@ Note that `list<string>` and `string[]` _are not_ the same. The latter is an ali
 
 All code must be backward compatible with PHP 7.4, which is the minimum required PHP version for this project.
 
+## Running Tests
+
+### Unit Tests
+
+```bash
+composer test:unit
+```
+
+### Integration Tests
+
+Integration tests make real API calls and require provider API keys. Create a `.env` file in the project root:
+
+```
+OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=...
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Then run:
+
+```bash
+composer test:integration
+```
+
+Tests for providers without keys will be skipped automatically.
+
 ## Branch naming conventions
 
 There are a few protected branch naming conventions:
