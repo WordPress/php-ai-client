@@ -120,7 +120,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
 
         $systemInstruction = $config->getSystemInstruction();
         if ($systemInstruction) {
-            $params['systemInstruction'] = $systemInstruction;
+            $params['systemInstruction'] = $this->prepareSystemInstructionParam($systemInstruction);
         }
 
         $generationConfig = [];
@@ -406,6 +406,25 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
                 $type
             )
         );
+    }
+
+    /**
+     * Prepares the system instruction parameter for the API request.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $systemInstruction The system instruction to prepare.
+     * @return array<string, mixed> The prepared system instruction parameter.
+     */
+    protected function prepareSystemInstructionParam(string $systemInstruction): array
+    {
+        return [
+            'parts' => [
+                [
+                    'text' => $systemInstruction,
+                ],
+            ],
+        ];
     }
 
     /**
