@@ -120,7 +120,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
 
         $systemInstruction = $config->getSystemInstruction();
         if ($systemInstruction) {
-            $params['system'] = $systemInstruction;
+            $params['systemInstruction'] = $systemInstruction;
         }
 
         $generationConfig = [];
