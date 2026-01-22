@@ -96,6 +96,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
              */
             try {
                 $this->setHttpTransporter(HttpTransporterFactory::createTransporter());
+                $httpTransporter = $this->getHttpTransporter();
             } catch (DiscoveryNotFoundException $e) {
                 /*
                  * If no HTTP client implementation can be discovered yet, we can ignore this for now.
