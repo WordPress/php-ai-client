@@ -1221,6 +1221,29 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests usingRegion method.
+     *
+     * @return void
+     */
+    public function testUsingRegion(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->usingRegion('us-west-2');
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $customOptions = $config->getCustomOptions();
+        $this->assertArrayHasKey('region', $customOptions);
+        $this->assertEquals('us-west-2', $customOptions['region']);
+    }
+
+    /**
      * Tests usingCandidateCount method.
      *
      * @return void

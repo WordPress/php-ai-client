@@ -376,7 +376,9 @@ class AwsBedrockTextGenerationModel extends AbstractApiBasedModel implements Tex
         }
 
         $messageData = $responseData['output']['message'];
-        $role = MessageRoleEnum::from($messageData['role'] ?? 'assistant');
+        $roleString = $messageData['role'] ?? 'assistant';
+        // Bedrock uses 'assistant', map to 'model' for SDK
+        $role = $roleString === 'assistant' ? MessageRoleEnum::model() : MessageRoleEnum::from($roleString);
 
         // Parse content parts
         $parts = [];
