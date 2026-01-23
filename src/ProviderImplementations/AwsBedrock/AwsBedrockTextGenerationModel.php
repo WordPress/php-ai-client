@@ -91,7 +91,7 @@ class AwsBedrockTextGenerationModel extends AbstractApiBasedModel implements Tex
         // Build request
         $request = new Request(
             HttpMethodEnum::POST(),
-            AwsBedrockProvider::url("model/{$modelId}/converse", $region),
+            AwsBedrockProvider::runtimeUrl("model/{$modelId}/converse", $region),
             ['Content-Type' => 'application/json'],
             $params,
             $this->getRequestOptions()
@@ -112,18 +112,17 @@ class AwsBedrockTextGenerationModel extends AbstractApiBasedModel implements Tex
      *
      * @since n.e.x.t
      *
-     * @return string The AWS region, defaults to 'us-east-1'.
+     * @return string The AWS region, defaults to 'us-east-1' when not provided or set via environment.
      */
     protected function getRegion(): string
     {
         $customOptions = $this->getConfig()->getCustomOptions();
         $region = $customOptions['region'] ?? null;
-
-        if (is_string($region)) {
-            return $region;
+        if (!is_string($region) || $region === '') {
+            $region = null;
         }
 
-        return 'us-east-1';
+        return AwsBedrockProvider::resolveRegion($region);
     }
 
     /**

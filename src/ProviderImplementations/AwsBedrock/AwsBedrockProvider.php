@@ -22,6 +22,9 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  */
 class AwsBedrockProvider extends AbstractApiProvider
 {
+    public const DEFAULT_REGION = 'us-east-1';
+    public const ENV_REGION = 'AWS_BEDROCK_REGION';
+
     /**
      * {@inheritDoc}
      *
@@ -29,21 +32,42 @@ class AwsBedrockProvider extends AbstractApiProvider
      */
     protected static function baseUrl(): string
     {
-        return 'https://bedrock-runtime.us-east-1.amazonaws.com';
+        return static::controlPlaneUrl();
     }
 
     /**
-     * Constructs a URL for the given path and optional region.
+     * Constructs a control plane URL for the given path and optional region.
      *
      * @since n.e.x.t
      *
      * @param string      $path   The path to append to the base URL. Default empty string.
-     * @param string|null $region The AWS region to use, or null for default (us-east-1).
+     * @param string|null $region The AWS region to use, or null for default.
      * @return string The constructed URL.
      */
-    public static function url(string $path = '', ?string $region = null): string
+    public static function controlPlaneUrl(string $path = '', ?string $region = null): string
     {
-        $region = $region ?? 'us-east-1';
+        $region = static::resolveRegion($region);
+        $baseUrl = "https://bedrock.{$region}.amazonaws.com";
+
+        if ($path === '') {
+            return $baseUrl;
+        }
+
+        return $baseUrl . '/' . ltrim($path, '/');
+    }
+
+    /**
+     * Constructs a runtime URL for the given path and optional region.
+     *
+     * @since n.e.x.t
+     *
+     * @param string      $path   The path to append to the base URL. Default empty string.
+     * @param string|null $region The AWS region to use, or null for default.
+     * @return string The constructed URL.
+     */
+    public static function runtimeUrl(string $path = '', ?string $region = null): string
+    {
+        $region = static::resolveRegion($region);
         $baseUrl = "https://bedrock-runtime.{$region}.amazonaws.com";
 
         if ($path === '') {
@@ -51,6 +75,46 @@ class AwsBedrockProvider extends AbstractApiProvider
         }
 
         return $baseUrl . '/' . ltrim($path, '/');
+    }
+
+    /**
+     * Constructs a control plane URL for the given path and optional region.
+     *
+     * @since n.e.x.t
+     *
+     * @param string      $path   The path to append to the base URL. Default empty string.
+     * @param string|null $region The AWS region to use, or null for default.
+     * @return string The constructed URL.
+     */
+    public static function url(string $path = '', ?string $region = null): string
+    {
+        return static::controlPlaneUrl($path, $region);
+    }
+
+    /**
+     * Resolves the AWS region from an explicit value, environment variable, or default.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|null $region The explicit region to use, if provided.
+     * @return string The resolved region.
+     */
+    public static function resolveRegion(?string $region = null): string
+    {
+        if (is_string($region) && $region !== '') {
+            return $region;
+        }
+
+        $envRegion = getenv(self::ENV_REGION);
+        if ($envRegion === false && defined(self::ENV_REGION)) {
+            $envRegion = constant(self::ENV_REGION);
+        }
+
+        if (is_string($envRegion) && $envRegion !== '') {
+            return $envRegion;
+        }
+
+        return self::DEFAULT_REGION;
     }
 
     /**

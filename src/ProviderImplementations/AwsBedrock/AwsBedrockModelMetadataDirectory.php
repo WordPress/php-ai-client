@@ -71,7 +71,7 @@ class AwsBedrockModelMetadataDirectory extends AbstractApiBasedModelMetadataDire
     {
         $request = new Request(
             HttpMethodEnum::GET(),
-            AwsBedrockProvider::url('foundation-models'),
+            AwsBedrockProvider::controlPlaneUrl('foundation-models'),
             ['Content-Type' => 'application/json']
         );
 
