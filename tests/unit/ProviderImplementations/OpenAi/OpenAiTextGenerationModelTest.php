@@ -181,9 +181,9 @@ class OpenAiTextGenerationModelTest extends TestCase
         $this->assertCount(1, $params['input']);
         $this->assertArrayNotHasKey('type', $params['input'][0]);
         $this->assertEquals('user', $params['input'][0]['role']);
-        $this->assertCount(1, $params['input'][0]['content']);
-        $this->assertEquals('input_text', $params['input'][0]['content'][0]['type']);
-        $this->assertEquals('Test message', $params['input'][0]['content'][0]['text']);
+        // Text-only messages should have content as a plain string, not an array
+        $this->assertIsString($params['input'][0]['content']);
+        $this->assertEquals('Test message', $params['input'][0]['content']);
     }
 
     /**
