@@ -247,6 +247,15 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
             return null;
         }
 
+        // Special handling for text-only messages: send text directly as a string
+        if (count($parts) === 1 && $parts[0]->getType()->isText()) {
+            $text = $parts[0]->getText();
+            return [
+                'role' => $this->getMessageRoleString($message->getRole()),
+                'content' => $text, // Send text directly as a string
+            ];
+        }
+
         $content = [];
         foreach ($parts as $part) {
             $partData = $this->getMessagePartData($part);
