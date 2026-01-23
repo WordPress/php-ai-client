@@ -22,7 +22,18 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  */
 class AwsBedrockProvider extends AbstractApiProvider
 {
+    /**
+     * The default AWS region to use.
+     *
+     * @var string Default AWS region.
+     */
     public const DEFAULT_REGION = 'us-east-1';
+
+    /**
+     * The environment variable name for the AWS region.
+     *
+     * @var string The environment variable name.
+     */
     public const ENV_REGION = 'AWS_BEDROCK_REGION';
 
     /**

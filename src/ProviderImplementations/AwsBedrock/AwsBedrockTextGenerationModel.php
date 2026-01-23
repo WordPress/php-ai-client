@@ -264,7 +264,7 @@ class AwsBedrockTextGenerationModel extends AbstractApiBasedModel implements Tex
                 'image' => [
                     'format' => $this->getImageFormat($mimeType),
                     'source' => [
-                        'bytes' => base64_decode($base64Data)
+                        'bytes' => $base64Data
                     ]
                 ]
             ];
@@ -277,7 +277,7 @@ class AwsBedrockTextGenerationModel extends AbstractApiBasedModel implements Tex
                     'format' => $this->getDocumentFormat($mimeType),
                     'name' => 'document',
                     'source' => [
-                        'bytes' => base64_decode($base64Data)
+                        'bytes' => $base64Data
                     ]
                 ]
             ];
