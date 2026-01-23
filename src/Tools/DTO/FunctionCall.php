@@ -57,14 +57,7 @@ class FunctionCall extends AbstractDataTransferObject
 
         $this->id = $id;
         $this->name = $name;
-        /*
-         * Normalize empty arrays to null.
-         * When AI providers return `args: {}` (empty JSON object), PHP's
-         * json_decode('{}', true) converts it to an empty array [].
-         * Since function arguments are always JSON objects (named parameters),
-         * an empty object semantically means "no arguments", which should be null.
-         */
-        $this->args = is_array($args) && count($args) === 0 ? null : $args;
+        $this->args = $args;
     }
 
     /**

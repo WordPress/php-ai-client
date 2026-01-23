@@ -588,10 +588,16 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
             );
         }
 
-        $args = [];
+        /*
+         * Parse and normalize function arguments.
+         * OpenAI returns arguments as a JSON string. An empty object "{}"
+         * decodes to an empty array, which semantically means "no arguments"
+         * and should be normalized to null.
+         */
+        $args = null;
         if (isset($outputItem['arguments']) && is_string($outputItem['arguments'])) {
             $decoded = json_decode($outputItem['arguments'], true);
-            if (is_array($decoded)) {
+            if (is_array($decoded) && count($decoded) > 0) {
                 $args = $decoded;
             }
         }
@@ -637,10 +643,16 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
                 throw new InvalidArgumentException('Content has an invalid function_call shape.');
             }
 
-            $args = [];
+            /*
+             * Parse and normalize function arguments.
+             * OpenAI returns arguments as a JSON string. An empty object "{}"
+             * decodes to an empty array, which semantically means "no arguments"
+             * and should be normalized to null.
+             */
+            $args = null;
             if (isset($contentItem['arguments']) && is_string($contentItem['arguments'])) {
                 $decoded = json_decode($contentItem['arguments'], true);
-                if (is_array($decoded)) {
+                if (is_array($decoded) && count($decoded) > 0) {
                     $args = $decoded;
                 }
             }

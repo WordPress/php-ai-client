@@ -80,22 +80,6 @@ class FunctionCallTest extends TestCase
     }
 
     /**
-     * Tests that empty array args are normalized to null.
-     *
-     * When AI providers return `args: {}` (empty JSON object), PHP's
-     * json_decode('{}', true) converts it to an empty array [].
-     * This should be normalized to null to represent "no arguments".
-     *
-     * @return void
-     */
-    public function testEmptyArrayArgsNormalizedToNull(): void
-    {
-        $functionCall = new FunctionCall('func_123', 'getTime', []);
-
-        $this->assertNull($functionCall->getArgs());
-    }
-
-    /**
      * Tests that creating without ID or name throws exception.
      *
      * @return void
