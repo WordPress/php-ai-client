@@ -12,8 +12,10 @@ The following commands are available for development and can be run using Compos
 *   `composer phpcs`: Runs PHP_CodeSniffer to check for coding standards violations.
 *   `composer phpcbf`: Automatically fixes coding standards violations that can be fixed automatically.
 *   `composer phpstan`: Runs PHPStan for static analysis.
-*   `composer test`: Runs the PHPUnit test suite (this is an alias for `composer phpunit`).
-*   `composer phpunit`: Runs the PHPUnit test suite.
+*   `composer test`: Runs the unit test suite (this is an alias for `composer test:unit`).
+*   `composer test:unit`: Runs the unit test suite.
+*   `composer test:integration`: Runs the integration test suite (requires API keys).
+*   `composer phpunit`: Runs all tests (unit and integration).
 
 ## Coding Standards & Compatibility Constraints
 
@@ -42,7 +44,17 @@ The project uses custom exceptions for error handling. When appropriate, throw a
 
 ### Testing
 
-The project uses PHPUnit for unit testing. Test files are located in the `tests/` directory and mirror the structure of the `src/` directory. The test suite is executed by running `composer phpunit`. The `tests/mocks` directory contains mock implementations for testing purposes, and `tests/traits` contains reusable testing traits. All new code requires corresponding unit tests.
+The project uses PHPUnit for testing. Tests are organized into two suites:
+
+*   **Unit tests** (`tests/unit/`): Fast, isolated tests that mirror the structure of the `src/` directory. Run with `composer test:unit`.
+*   **Integration tests** (`tests/integration/`): Tests that make real API calls to AI providers (OpenAI, Google, Anthropic). Run with `composer test:integration`. These require API keys configured in a `.env` file.
+
+Supporting test infrastructure:
+
+*   `tests/mocks/`: Mock implementations for testing purposes.
+*   `tests/traits/`: Reusable testing traits.
+
+All new code requires corresponding unit tests.
 
 ## Project Architecture Overview
 
