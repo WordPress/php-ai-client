@@ -10,6 +10,7 @@ use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
+use WordPress\AiClient\ProviderImplementations\AwsBedrock\AwsBedrockProvider;
 use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
 use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
@@ -120,6 +121,7 @@ class AiClient
 
             // Register built-in providers.
             $registry->registerProvider(AnthropicProvider::class);
+            $registry->registerProvider(AwsBedrockProvider::class);
             $registry->registerProvider(GoogleProvider::class);
             $registry->registerProvider(OpenAiProvider::class);
 
