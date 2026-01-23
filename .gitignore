@@ -39,3 +39,11 @@ GEMINI.md
 
 .idea/
 .vscode/
+
+############
+## Environment
+############
+
+.env
+.env.local
+.env.*.local
