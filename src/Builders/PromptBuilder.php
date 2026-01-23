@@ -516,6 +516,24 @@ class PromptBuilder
     }
 
     /**
+     * Sets the cloud provider region.
+     *
+     * This is a provider-specific configuration option used by regional cloud AI platforms
+     * (e.g., AWS Bedrock, Google Vertex AI, Azure OpenAI) to determine which regional
+     * endpoint to use. Ignored by providers that don't use regional endpoints.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $region The cloud region identifier (e.g., 'us-east-1', 'us-central1', 'eastus').
+     * @return self
+     */
+    public function usingRegion(string $region): self
+    {
+        $this->modelConfig->setCustomOption('region', $region);
+        return $this;
+    }
+
+    /**
      * Sets the top log probabilities configuration.
      *
      * If $topLogprobs is null, enables log probabilities.
