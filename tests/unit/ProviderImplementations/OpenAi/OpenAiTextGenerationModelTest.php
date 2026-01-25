@@ -357,7 +357,7 @@ class OpenAiTextGenerationModelTest extends TestCase
         $model = $this->createModel();
         $part = new MessagePart('Hello world');
 
-        $data = $model->exposeGetMessagePartData($part);
+        $data = $model->exposeGetMessagePartData($part, MessageRoleEnum::user());
 
         $this->assertEquals('input_text', $data['type']);
         $this->assertEquals('Hello world', $data['text']);
@@ -374,7 +374,7 @@ class OpenAiTextGenerationModelTest extends TestCase
         $file = new File('https://example.com/image.png', 'image/png');
         $part = new MessagePart($file);
 
-        $data = $model->exposeGetMessagePartData($part);
+        $data = $model->exposeGetMessagePartData($part, MessageRoleEnum::user());
 
         $this->assertEquals('input_image', $data['type']);
         $this->assertEquals('https://example.com/image.png', $data['image_url']);
@@ -393,7 +393,7 @@ class OpenAiTextGenerationModelTest extends TestCase
         $file = new File($b64, 'image/png');
         $part = new MessagePart($file);
 
-        $data = $model->exposeGetMessagePartData($part);
+        $data = $model->exposeGetMessagePartData($part, MessageRoleEnum::user());
 
         $this->assertEquals('input_image', $data['type']);
         $this->assertStringStartsWith('data:image/png;base64,', $data['image_url']);
