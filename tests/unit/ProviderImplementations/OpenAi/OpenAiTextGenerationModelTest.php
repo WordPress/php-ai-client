@@ -364,6 +364,22 @@ class OpenAiTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests getMessagePartData() with text part.
+     *
+     * @return void
+     */
+    public function testGetMessagePartDataWithModelText(): void
+    {
+        $model = $this->createModel();
+        $part = new MessagePart('Hello world');
+
+        $data = $model->exposeGetMessagePartData($part, MessageRoleEnum::model());
+
+        $this->assertEquals('output_text', $data['type']);
+        $this->assertEquals('Hello world', $data['text']);
+    }
+
+    /**
      * Tests getMessagePartData() with remote image.
      *
      * @return void
