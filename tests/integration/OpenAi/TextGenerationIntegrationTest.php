@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\integration\OpenAi;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tests\integration\traits\IntegrationTestTrait;
 
@@ -41,6 +42,32 @@ class TextGenerationIntegrationTest extends TestCase
 
         $this->assertInstanceOf(GenerativeAiResult::class, $result);
         $this->assertStringContainsStringIgnoringCase('hello', $result->toText());
+    }
+
+    /**
+     * Tests text generation with a simple multi-turn chat.
+     */
+    public function testMultiTurnTextGeneration(): void
+    {
+        $result = AiClient::prompt([
+            Message::fromArray([
+                'role' => 'user',
+                'parts' => [['text' => 'When was WordPress first released?']],
+            ]),
+            Message::fromArray([
+                'role' => 'model',
+                'parts' => [['text' => 'In 2003.']],
+            ]),
+            Message::fromArray([
+                'role' => 'user',
+                'parts' => [['text' => 'Who created it?']],
+            ]),
+        ])
+            ->usingProvider('openai')
+            ->generateTextResult();
+
+        $this->assertInstanceOf(GenerativeAiResult::class, $result);
+        $this->assertStringContainsStringIgnoringCase('Matt Mullenweg', $result->toText());
     }
 
     /**
