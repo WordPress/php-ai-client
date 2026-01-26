@@ -247,9 +247,10 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
             return null;
         }
 
+        $role = $message->getRole();
         $content = [];
         foreach ($parts as $part) {
-            $partData = $this->getMessagePartData($part);
+            $partData = $this->getMessagePartData($part, $role);
 
             // Function calls and responses are top-level items, not wrapped in a message.
             // validateMessages() ensures these are the only part in a message.
@@ -262,7 +263,7 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
         }
 
         return [
-            'role' => $this->getMessageRoleString($message->getRole()),
+            'role' => $this->getMessageRoleString($role),
             'content' => $content,
         ];
     }
@@ -289,15 +290,16 @@ class OpenAiTextGenerationModel extends AbstractApiBasedModel implements TextGen
      * @since 0.4.0
      *
      * @param MessagePart $part The message part to get the data for.
+     * @param MessageRoleEnum $role The role of the message containing the part.
      * @return array<string, mixed> The data for the message part.
      * @throws InvalidArgumentException If the message part type or data is unsupported.
      */
-    protected function getMessagePartData(MessagePart $part): array
+    protected function getMessagePartData(MessagePart $part, MessageRoleEnum $role): array
     {
         $type = $part->getType();
         if ($type->isText()) {
             return [
-                'type' => 'input_text',
+                'type' => $role->isModel() ? 'output_text' : 'input_text',
                 'text' => $part->getText(),
             ];
         }
