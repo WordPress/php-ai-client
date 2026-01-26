@@ -47,7 +47,7 @@ The project uses custom exceptions for error handling. When appropriate, throw a
 The project uses PHPUnit for testing. Tests are organized into two suites:
 
 *   **Unit tests** (`tests/unit/`): Fast, isolated tests that mirror the structure of the `src/` directory. Run with `composer test:unit`.
-*   **Integration tests** (`tests/integration/`): Tests that make real API calls to AI providers (OpenAI, Google, Anthropic). Run with `composer test:integration`. These require API keys configured in a `.env` file.
+*   **Integration tests** (`tests/integration/`): Tests that make real API calls to AI providers (OpenAI, Google, Anthropic). Run with `composer test:integration`. These require API keys configured in a `.env` file, and running them will incur cost with these providers.
 
 Supporting test infrastructure:
 
