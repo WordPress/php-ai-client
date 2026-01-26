@@ -742,18 +742,15 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
             if (
                 !is_array($partData['functionCall']) ||
                 !isset($partData['functionCall']['name']) ||
-                !is_string($partData['functionCall']['name']) ||
-                !isset($partData['functionCall']['args'])
+                !is_string($partData['functionCall']['name'])
             ) {
                 throw new InvalidArgumentException('Part has an invalid functionCall shape.');
             }
             /*
-             * Normalize empty object/array to null.
-             * Google returns `args: {}` for functions with no arguments,
-             * which becomes an empty array after json_decode. Semantically,
-             * an empty object means "no arguments".
+             * Google may omit `args` for no-argument functions, or return `args: {}`.
+             * Normalize both cases to null.
              */
-            $args = $partData['functionCall']['args'];
+            $args = $partData['functionCall']['args'] ?? null;
             if (is_array($args) && count($args) === 0) {
                 $args = null;
             }
