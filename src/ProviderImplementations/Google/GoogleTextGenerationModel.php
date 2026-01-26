@@ -370,16 +370,16 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
                     'The function_call typed message part must contain a function call.'
                 );
             }
-            // Ensure null becomes empty object for Google's API which expects an object.
+            $functionCallData = [
+                'name' => $functionCall->getName(),
+            ];
+            // Only include args if present; Google's API accepts omitting args for no-argument functions.
             $args = $functionCall->getArgs();
-            if ($args === null) {
-                $args = new \stdClass();
+            if ($args !== null) {
+                $functionCallData['args'] = $args;
             }
             return [
-                'functionCall' => [
-                    'name' => $functionCall->getName(),
-                    'args' => $args,
-                ],
+                'functionCall' => $functionCallData,
             ];
         }
         if ($type->isFunctionResponse()) {
