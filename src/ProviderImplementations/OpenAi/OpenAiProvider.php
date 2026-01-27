@@ -50,10 +50,7 @@ class OpenAiProvider extends AbstractApiProvider
                 return new OpenAiImageGenerationModel($modelMetadata, $providerMetadata);
             }
             if ($capability->isTextToSpeechConversion()) {
-                // TODO: Implement OpenAiTextToSpeechConversionModel.
-                throw new RuntimeException(
-                    'OpenAI text to speech conversion model class is not yet implemented.'
-                );
+                return new OpenAiTextToSpeechConversionModel($modelMetadata, $providerMetadata);
             }
         }
 
