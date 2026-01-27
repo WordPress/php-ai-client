@@ -399,14 +399,15 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             $args = $functionCall->getArgs();
 
             /*
-             * Ensure empty arrays become empty objects for JSON encoding.
+             * Ensure null or empty arrays become empty objects for JSON encoding.
              * While in theory the JSON schema could also dictate a type of
              * 'array', in practice function arguments are typically of type
              * 'object'. More importantly, the OpenAI API specification seems
              * to expect that, and does not support passing arrays as the root
-             * value.
+             * value. The null check handles the case where FunctionCall normalizes
+             * empty arrays to null.
              */
-            if (is_array($args) && count($args) === 0) {
+            if ($args === null || (is_array($args) && count($args) === 0)) {
                 $args = new \stdClass();
             }
 

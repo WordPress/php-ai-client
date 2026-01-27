@@ -324,11 +324,16 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
                     'The function_call typed message part must contain a function call.'
                 );
             }
+            // Ensure null becomes empty object for Anthropic's API which expects an object.
+            $input = $functionCall->getArgs();
+            if ($input === null) {
+                $input = new \stdClass();
+            }
             return [
                 'type' => 'tool_use',
                 'id' => $functionCall->getId(),
                 'name' => $functionCall->getName(),
-                'input' => $functionCall->getArgs(),
+                'input' => $input,
             ];
         }
         if ($type->isFunctionResponse()) {
@@ -368,10 +373,22 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
 
         if (is_array($functionDeclarations)) {
             foreach ($functionDeclarations as $functionDeclaration) {
+                /*
+                 * Anthropic requires input_schema to always be present, even for
+                 * functions with no parameters. Use an empty object schema in that case.
+                 */
+                $inputSchema = $functionDeclaration->getParameters();
+                if ($inputSchema === null) {
+                    $inputSchema = [
+                        'type' => 'object',
+                        'properties' => new \stdClass(),
+                    ];
+                }
+
                 $tools[] = array_filter([
                     'name' => $functionDeclaration->getName(),
                     'description' => $functionDeclaration->getDescription(),
-                    'input_schema' => $functionDeclaration->getParameters(),
+                    'input_schema' => $inputSchema,
                 ]);
             }
         }
@@ -540,11 +557,21 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
                 ) {
                     throw new InvalidArgumentException('Part has an invalid tool_use shape.');
                 }
+                /*
+                 * Normalize empty object/array to null.
+                 * Anthropic returns `input: {}` for functions with no arguments,
+                 * which becomes an empty array after json_decode. Semantically,
+                 * an empty object means "no arguments".
+                 */
+                $args = $partData['input'];
+                if (is_array($args) && count($args) === 0) {
+                    $args = null;
+                }
                 return new MessagePart(
                     new FunctionCall(
                         $partData['id'],
                         $partData['name'],
-                        $partData['input']
+                        $args
                     )
                 );
             case 'redacted_thinking':

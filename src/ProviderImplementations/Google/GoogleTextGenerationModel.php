@@ -370,11 +370,16 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
                     'The function_call typed message part must contain a function call.'
                 );
             }
+            $functionCallData = [
+                'name' => $functionCall->getName(),
+            ];
+            // Only include args if present; Google's API accepts omitting args for no-argument functions.
+            $args = $functionCall->getArgs();
+            if ($args !== null) {
+                $functionCallData['args'] = $args;
+            }
             return [
-                'functionCall' => [
-                    'name' => $functionCall->getName(),
-                    'args' => $functionCall->getArgs(),
-                ],
+                'functionCall' => $functionCallData,
             ];
         }
         if ($type->isFunctionResponse()) {
@@ -737,16 +742,23 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
             if (
                 !is_array($partData['functionCall']) ||
                 !isset($partData['functionCall']['name']) ||
-                !is_string($partData['functionCall']['name']) ||
-                !isset($partData['functionCall']['args'])
+                !is_string($partData['functionCall']['name'])
             ) {
                 throw new InvalidArgumentException('Part has an invalid functionCall shape.');
+            }
+            /*
+             * Google may omit `args` for no-argument functions, or return `args: {}`.
+             * Normalize both cases to null.
+             */
+            $args = $partData['functionCall']['args'] ?? null;
+            if (is_array($args) && count($args) === 0) {
+                $args = null;
             }
             return new MessagePart(
                 new FunctionCall(
                     null,
                     $partData['functionCall']['name'],
-                    $partData['functionCall']['args']
+                    $args
                 )
             );
         }
