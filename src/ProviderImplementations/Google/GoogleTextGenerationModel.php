@@ -416,7 +416,7 @@ class GoogleTextGenerationModel extends AbstractApiBasedModel implements TextGen
     /**
      * Prepares the system instruction parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.4.1
      *
      * @param string $systemInstruction The system instruction to prepare.
      * @return array<string, mixed> The prepared system instruction parameter.
