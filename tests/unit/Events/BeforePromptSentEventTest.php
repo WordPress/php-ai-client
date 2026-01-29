@@ -76,4 +76,36 @@ class BeforePromptSentEventTest extends TestCase
 
         $this->assertCount(3, $event->getMessages());
     }
+
+    /**
+     * Tests that cloning the event creates independent message copies.
+     *
+     * @return void
+     */
+    public function testCloneClonesMessages(): void
+    {
+        $messages = [
+            new UserMessage([new MessagePart('First message')]),
+            new UserMessage([new MessagePart('Second message')]),
+        ];
+        $result = $this->createTestResult();
+        $model = $this->createMockTextGenerationModel($result);
+        $capability = CapabilityEnum::textGeneration();
+
+        $original = new BeforeGenerateResultEvent($messages, $model, $capability);
+        $cloned = clone $original;
+
+        // Messages should be different instances
+        $originalMessages = $original->getMessages();
+        $clonedMessages = $cloned->getMessages();
+        foreach ($originalMessages as $index => $originalMessage) {
+            $this->assertNotSame($originalMessage, $clonedMessages[$index]);
+        }
+
+        // Model should be the same instance (service objects are not cloned)
+        $this->assertSame($original->getModel(), $cloned->getModel());
+
+        // Capability enum should be the same instance (enums are singletons)
+        $this->assertSame($original->getCapability(), $cloned->getCapability());
+    }
 }

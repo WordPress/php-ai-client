@@ -491,4 +491,19 @@ class File extends AbstractDataTransferObject
             throw new InvalidArgumentException('File requires either url or base64Data.');
         }
     }
+
+    /**
+     * Performs a deep clone of the file.
+     *
+     * This method ensures that the MimeType value object is cloned to prevent
+     * any shared references between the original and cloned file.
+     *
+     * @since 0.4.1
+     *
+     * @return void
+     */
+    public function __clone(): void
+    {
+        $this->mimeType = clone $this->mimeType;
+    }
 }

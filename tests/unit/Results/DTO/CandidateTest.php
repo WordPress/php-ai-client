@@ -388,4 +388,28 @@ class CandidateTest extends TestCase
         );
         $this->assertImplementsArrayTransformation($candidate);
     }
+
+    /**
+     * Tests that cloning the candidate creates an independent message copy.
+     *
+     * @return void
+     */
+    public function testCloneClonesMessage(): void
+    {
+        $message = new ModelMessage([new MessagePart('Test response')]);
+        $original = new Candidate($message, FinishReasonEnum::stop());
+        $cloned = clone $original;
+
+        // Message should be a different instance
+        $this->assertNotSame($original->getMessage(), $cloned->getMessage());
+
+        // FinishReason enum should be the same instance (enums are singletons)
+        $this->assertSame($original->getFinishReason(), $cloned->getFinishReason());
+
+        // But the content should be equivalent
+        $this->assertEquals(
+            $original->getMessage()->getParts()[0]->getText(),
+            $cloned->getMessage()->getParts()[0]->getText()
+        );
+    }
 }

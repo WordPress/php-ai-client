@@ -571,4 +571,24 @@ class FileTest extends TestCase
         $this->assertTrue($urlFileNoMime->isRemote());
         $this->assertFalse($urlFileNoMime->isInline());
     }
+
+    /**
+     * Tests that cloning File creates an independent MimeType copy.
+     *
+     * @return void
+     */
+    public function testCloneClonesMimeType(): void
+    {
+        $original = new File('https://example.com/document.pdf', 'application/pdf');
+        $cloned = clone $original;
+
+        // MimeType object should be a different instance
+        $this->assertNotSame($original->getMimeTypeObject(), $cloned->getMimeTypeObject());
+
+        // But the string value should be equivalent
+        $this->assertEquals($original->getMimeType(), $cloned->getMimeType());
+
+        // FileType enum should be the same instance (enums are singletons)
+        $this->assertSame($original->getFileType(), $cloned->getFileType());
+    }
 }

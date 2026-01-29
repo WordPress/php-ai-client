@@ -217,4 +217,23 @@ class ModelMetadata extends AbstractDataTransferObject
             )
         );
     }
+
+    /**
+     * Performs a deep clone of the model metadata.
+     *
+     * This method ensures that supported option objects are cloned to prevent
+     * modifications to the cloned metadata from affecting the original.
+     *
+     * @since 0.4.1
+     *
+     * @return void
+     */
+    public function __clone(): void
+    {
+        $clonedOptions = [];
+        foreach ($this->supportedOptions as $option) {
+            $clonedOptions[] = clone $option;
+        }
+        $this->supportedOptions = $clonedOptions;
+    }
 }

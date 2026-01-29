@@ -85,4 +85,24 @@ class BeforeGenerateResultEvent
     {
         return $this->capability;
     }
+
+    /**
+     * Performs a deep clone of the event.
+     *
+     * This method ensures that message objects are cloned to prevent
+     * modifications to the cloned event from affecting the original.
+     * The model object is not cloned as it is a service object.
+     *
+     * @since 0.4.1
+     *
+     * @return void
+     */
+    public function __clone(): void
+    {
+        $clonedMessages = [];
+        foreach ($this->messages as $message) {
+            $clonedMessages[] = clone $message;
+        }
+        $this->messages = $clonedMessages;
+    }
 }

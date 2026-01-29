@@ -318,4 +318,27 @@ class MessagePart extends AbstractDataTransferObject
             );
         }
     }
+
+    /**
+     * Performs a deep clone of the message part.
+     *
+     * This method ensures that nested objects (file, function call, function response)
+     * are cloned to prevent modifications to the cloned part from affecting the original.
+     *
+     * @since 0.4.1
+     *
+     * @return void
+     */
+    public function __clone(): void
+    {
+        if ($this->file !== null) {
+            $this->file = clone $this->file;
+        }
+        if ($this->functionCall !== null) {
+            $this->functionCall = clone $this->functionCall;
+        }
+        if ($this->functionResponse !== null) {
+            $this->functionResponse = clone $this->functionResponse;
+        }
+    }
 }

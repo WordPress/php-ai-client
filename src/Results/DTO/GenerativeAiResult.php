@@ -513,4 +513,26 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
             $array[self::KEY_ADDITIONAL_DATA] ?? []
         );
     }
+
+    /**
+     * Performs a deep clone of the result.
+     *
+     * This method ensures that all nested objects (candidates, token usage, metadata)
+     * are cloned to prevent modifications to the cloned result from affecting the original.
+     *
+     * @since 0.4.1
+     *
+     * @return void
+     */
+    public function __clone(): void
+    {
+        $clonedCandidates = [];
+        foreach ($this->candidates as $candidate) {
+            $clonedCandidates[] = clone $candidate;
+        }
+        $this->candidates = $clonedCandidates;
+        $this->tokenUsage = clone $this->tokenUsage;
+        $this->providerMetadata = clone $this->providerMetadata;
+        $this->modelMetadata = clone $this->modelMetadata;
+    }
 }

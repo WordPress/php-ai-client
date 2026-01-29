@@ -959,4 +959,41 @@ class GenerativeAiResultTest extends TestCase
         );
         $this->assertImplementsArrayTransformation($result);
     }
+
+    /**
+     * Tests that cloning the result creates independent nested object copies.
+     *
+     * @return void
+     */
+    public function testCloneClonesNestedObjects(): void
+    {
+        $message = new ModelMessage([new MessagePart('Test response')]);
+        $candidate = new Candidate($message, FinishReasonEnum::stop(), 10);
+        $tokenUsage = new TokenUsage(10, 20, 30);
+
+        $original = new GenerativeAiResult(
+            'test-id',
+            [$candidate],
+            $tokenUsage,
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
+        $cloned = clone $original;
+
+        // Candidates should be different instances
+        $this->assertNotSame($original->getCandidates()[0], $cloned->getCandidates()[0]);
+
+        // TokenUsage should be a different instance
+        $this->assertNotSame($original->getTokenUsage(), $cloned->getTokenUsage());
+
+        // ProviderMetadata should be a different instance
+        $this->assertNotSame($original->getProviderMetadata(), $cloned->getProviderMetadata());
+
+        // ModelMetadata should be a different instance
+        $this->assertNotSame($original->getModelMetadata(), $cloned->getModelMetadata());
+
+        // But the data should be equivalent
+        $this->assertEquals($original->getId(), $cloned->getId());
+        $this->assertEquals($original->toText(), $cloned->toText());
+    }
 }
