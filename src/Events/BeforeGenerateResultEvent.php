@@ -94,10 +94,8 @@ class BeforeGenerateResultEvent
      * The model object is not cloned as it is a service object.
      *
      * @since 0.4.1
-     *
-     * @return void
      */
-    public function __clone(): void
+    public function __clone()
     {
         $clonedMessages = [];
         foreach ($this->messages as $message) {

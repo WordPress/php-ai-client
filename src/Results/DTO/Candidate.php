@@ -141,10 +141,8 @@ class Candidate extends AbstractDataTransferObject
      * modifications to the cloned candidate from affecting the original.
      *
      * @since 0.4.1
-     *
-     * @return void
      */
-    public function __clone(): void
+    public function __clone()
     {
         $this->message = clone $this->message;
     }

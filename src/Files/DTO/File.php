@@ -499,10 +499,8 @@ class File extends AbstractDataTransferObject
      * any shared references between the original and cloned file.
      *
      * @since 0.4.1
-     *
-     * @return void
      */
-    public function __clone(): void
+    public function __clone()
     {
         $this->mimeType = clone $this->mimeType;
     }

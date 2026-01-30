@@ -521,10 +521,8 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      * are cloned to prevent modifications to the cloned result from affecting the original.
      *
      * @since 0.4.1
-     *
-     * @return void
      */
-    public function __clone(): void
+    public function __clone()
     {
         $clonedCandidates = [];
         foreach ($this->candidates as $candidate) {

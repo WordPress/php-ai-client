@@ -201,10 +201,8 @@ class Message extends AbstractDataTransferObject
      * modifications to the cloned message from affecting the original.
      *
      * @since 0.4.1
-     *
-     * @return void
      */
-    public function __clone(): void
+    public function __clone()
     {
         $clonedParts = [];
         foreach ($this->parts as $part) {

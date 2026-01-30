@@ -225,10 +225,8 @@ class ModelMetadata extends AbstractDataTransferObject
      * modifications to the cloned metadata from affecting the original.
      *
      * @since 0.4.1
-     *
-     * @return void
      */
-    public function __clone(): void
+    public function __clone()
     {
         $clonedOptions = [];
         foreach ($this->supportedOptions as $option) {

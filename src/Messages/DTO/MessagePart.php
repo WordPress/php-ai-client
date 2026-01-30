@@ -326,10 +326,8 @@ class MessagePart extends AbstractDataTransferObject
      * are cloned to prevent modifications to the cloned part from affecting the original.
      *
      * @since 0.4.1
-     *
-     * @return void
      */
-    public function __clone(): void
+    public function __clone()
     {
         if ($this->file !== null) {
             $this->file = clone $this->file;
