@@ -10,8 +10,8 @@ The main additional aspect that the Vercel AI SDK does not cater for easily is f
 
 For the implementer facing API surface, two alternative APIs are available:
 
-* A fluent API is used as the primary means of using the AI client SDK, for easy-to-read code by chaining declarative methods.
-* A traditional method based API inspired by the Vercel AI SDK, which is more aligned with traditional WordPress patterns such as passing an array of arguments.
+- A fluent API is used as the primary means of using the AI client SDK, for easy-to-read code by chaining declarative methods.
+- A traditional method based API inspired by the Vercel AI SDK, which is more aligned with traditional WordPress patterns such as passing an array of arguments.
 
 ### Code examples
 
@@ -20,12 +20,14 @@ The following examples indicate how this SDK could eventually be used.
 #### Generate text using any suitable model from any provider (most basic example)
 
 ##### Fluent API
+
 ```php
 $text = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->generateText();
 ```
 
 ##### Traditional API
+
 ```php
 $text = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.'
@@ -35,6 +37,7 @@ $text = AiClient::generateTextResult(
 #### Generate text using a Google model
 
 ##### Fluent API
+
 ```php
 $text = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->usingModel(Google::model('gemini-2.5-flash'))
@@ -42,6 +45,7 @@ $text = AiClient::prompt('Write a 2-verse poem about PHP.')
 ```
 
 ##### Traditional API
+
 ```php
 $text = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.',
@@ -52,6 +56,7 @@ $text = AiClient::generateTextResult(
 #### Generate multiple text candidates using an Anthropic model
 
 ##### Fluent API
+
 ```php
 $texts = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->usingModel(Anthropic::model('claude-3.7-sonnet'))
@@ -59,6 +64,7 @@ $texts = AiClient::prompt('Write a 2-verse poem about PHP.')
 ```
 
 ##### Traditional API
+
 ```php
 $texts = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.',
@@ -72,6 +78,7 @@ $texts = AiClient::generateTextResult(
 #### Generate an image using any suitable OpenAI model
 
 ##### Fluent API
+
 ```php
 $imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Caribbean sea.')
     ->usingProvider('openai')
@@ -79,6 +86,7 @@ $imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in t
 ```
 
 ##### Traditional API
+
 ```php
 $modelsMetadata = AiClient::defaultRegistry()->findProviderModelsMetadataForSupport(
     'openai',
@@ -96,12 +104,14 @@ $imageFile = AiClient::generateImageResult(
 #### Generate an image using any suitable model from any provider
 
 ##### Fluent API
+
 ```php
 $imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in the Caribbean sea.')
     ->generateImage();
 ```
 
 ##### Traditional API
+
 ```php
 $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     new ModelRequirements([CapabilityEnum::IMAGE_GENERATION])
@@ -120,6 +130,7 @@ $imageFile = AiClient::generateImageResult(
 _Note: This does effectively the exact same as [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example), but more verbosely. In other words, if you omit the model parameter, the SDK will do this internally._
 
 ##### Fluent API
+
 ```php
 $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     new ModelRequirements([CapabilityEnum::TEXT_GENERATION])
@@ -136,6 +147,7 @@ $text = AiClient::prompt('Write a 2-verse poem about PHP.')
 ```
 
 ##### Traditional API
+
 ```php
 $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     new ModelRequirements([CapabilityEnum::TEXT_GENERATION])
@@ -154,6 +166,7 @@ $text = AiClient::generateTextResult(
 _Note: Since this omits the model parameter, the SDK will automatically determine which models are suitable and use any of them, similar to [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example). Since it knows the input includes an image, it can internally infer that the model needs to not only support `CapabilityEnum::TEXT_GENERATION`, but also `OptionEnum::INPUT_MODALITIES => ['text', 'image']`._
 
 ##### Fluent API
+
 ```php
 $text = AiClient::prompt('Generate alternative text for this image.')
     ->withInlineImage($base64Blob, 'image/png')
@@ -161,6 +174,7 @@ $text = AiClient::prompt('Generate alternative text for this image.')
 ```
 
 ##### Traditional API
+
 ```php
 $text = AiClient::generateTextResult(
     [
@@ -180,6 +194,7 @@ $text = AiClient::generateTextResult(
 _Note: Similarly to the previous example, even without specifying the model here, the SDK will be able to infer required model capabilities because it can detect that multiple chat messages are passed. Therefore it will internally only consider models that support `CapabilityEnum::TEXT_GENERATION` as well as `CapabilityEnum::CHAT_HISTORY`._
 
 ##### Fluent API
+
 ```php
 $text = AiClient::prompt()
     ->withHistory(
@@ -191,6 +206,7 @@ $text = AiClient::prompt()
 ```
 
 ##### Traditional API
+
 ```php
 $text = AiClient::generateTextResult(
     [
@@ -215,6 +231,7 @@ $text = AiClient::generateTextResult(
 _Note: Unlike the previous two examples, to require JSON output it is necessary to go the verbose route, since it is impossible for the SDK to detect whether you require JSON output purely from the prompt input. Therefore this code example contains the logic to manually search for suitable models and then use one of them for the task._
 
 ##### Fluent API
+
 ```php
 $text = AiClient::prompt('Transform the following CSV content into a JSON array of row data.')
     ->asJsonResponse()
@@ -236,6 +253,7 @@ $text = AiClient::prompt('Transform the following CSV content into a JSON array 
 ```
 
 ##### Traditional API
+
 ```php
 $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
     new ModelRequirements(
@@ -832,7 +850,6 @@ Whenever request options are present, the transporter enriches the PSR-18 call p
 
 `ClientWithOptionsInterface` is a lightweight extension point for HTTP clients that already support per-request configuration. By implementing it, a client (for example, a wrapper around Guzzle or the WordPress AI Client’s richer transporter) can accept a `RequestOptions` instance directly through `sendRequestWithOptions()`. The transporter prefers this pathway, falling back to Guzzle detection or plain PSR-18 `sendRequest()` when the interface is not implemented, keeping the core agnostic while still allowing rich integrations.
 
-
 ### Details: Class diagram for AI extenders
 
 ```mermaid
@@ -908,7 +925,7 @@ direction LR
         class HttpTransporterInterface {
             +send(Request $request, ?RequestOptions $options) Response
         }
-        interface ClientWithOptionsInterface {
+        class ClientWithOptionsInterface {
             +sendRequestWithOptions(RequestInterface $request, RequestOptions $options) ResponseInterface
         }
         class RequestAuthenticationInterface {
@@ -1140,6 +1157,7 @@ direction LR
     <<interface>> SpeechGenerationOperationModelInterface
     <<interface>> EmbeddingGenerationOperationModelInterface
     <<interface>> HttpTransporterInterface
+    <<interface>> ClientWithOptionsInterface
     <<interface>> WithHttpTransporterInterface
     <<interface>> RequestAuthenticationInterface
     <<interface>> WithRequestAuthenticationInterface
