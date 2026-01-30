@@ -193,4 +193,21 @@ class Message extends AbstractDataTransferObject
             throw new InvalidArgumentException('Invalid message role: ' . $role->value);
         }
     }
+
+    /**
+     * Performs a deep clone of the message.
+     *
+     * This method ensures that message part objects are cloned to prevent
+     * modifications to the cloned message from affecting the original.
+     *
+     * @since 0.4.1
+     */
+    public function __clone()
+    {
+        $clonedParts = [];
+        foreach ($this->parts as $part) {
+            $clonedParts[] = clone $part;
+        }
+        $this->parts = $clonedParts;
+    }
 }

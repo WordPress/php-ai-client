@@ -81,4 +81,34 @@ class AfterPromptSentEventTest extends TestCase
         $this->assertSame($result, $event->getResult());
         $this->assertCount(1, $event->getResult()->getCandidates());
     }
+
+    /**
+     * Tests that cloning the event creates independent message and result copies.
+     *
+     * @return void
+     */
+    public function testCloneClonesMessagesAndResult(): void
+    {
+        $messages = [
+            new UserMessage([new MessagePart('Hello, world!')]),
+        ];
+        $result = $this->createTestResult('Test response');
+        $model = $this->createMockTextGenerationModel($result);
+        $capability = CapabilityEnum::textGeneration();
+
+        $original = new AfterGenerateResultEvent($messages, $model, $capability, $result);
+        $cloned = clone $original;
+
+        // Messages should be different instances
+        $this->assertNotSame($original->getMessages()[0], $cloned->getMessages()[0]);
+
+        // Result should be a different instance
+        $this->assertNotSame($original->getResult(), $cloned->getResult());
+
+        // Model should be the same instance (service objects are not cloned)
+        $this->assertSame($original->getModel(), $cloned->getModel());
+
+        // Capability enum should be the same instance (enums are singletons)
+        $this->assertSame($original->getCapability(), $cloned->getCapability());
+    }
 }

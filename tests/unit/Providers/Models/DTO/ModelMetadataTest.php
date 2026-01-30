@@ -450,4 +450,38 @@ class ModelMetadataTest extends TestCase
             $metadata
         );
     }
+
+    /**
+     * Tests that cloning creates independent SupportedOption copies.
+     *
+     * @return void
+     */
+    public function testCloneClonesSupportedOptions(): void
+    {
+        $options = [
+            new SupportedOption(OptionEnum::temperature(), [0.0, 0.5, 1.0]),
+            new SupportedOption(OptionEnum::maxTokens(), null),
+        ];
+        $original = new ModelMetadata(
+            'test-model',
+            'Test Model',
+            [CapabilityEnum::textGeneration()],
+            $options
+        );
+        $cloned = clone $original;
+
+        // SupportedOptions should be different instances
+        $originalOptions = $original->getSupportedOptions();
+        $clonedOptions = $cloned->getSupportedOptions();
+        foreach ($originalOptions as $index => $originalOption) {
+            $this->assertNotSame($originalOption, $clonedOptions[$index]);
+        }
+
+        // Capabilities (enums) should be the same instances
+        $originalCaps = $original->getSupportedCapabilities();
+        $clonedCaps = $cloned->getSupportedCapabilities();
+        foreach ($originalCaps as $index => $cap) {
+            $this->assertSame($cap, $clonedCaps[$index]);
+        }
+    }
 }

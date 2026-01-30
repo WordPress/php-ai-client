@@ -440,4 +440,50 @@ class MessagePartTest extends TestCase
 
         MessagePart::fromArray($json);
     }
+
+    /**
+     * Tests that cloning MessagePart with File creates an independent File copy.
+     *
+     * @return void
+     */
+    public function testCloneClonesFile(): void
+    {
+        $file = new File('https://example.com/image.png', 'image/png');
+        $original = new MessagePart($file);
+        $cloned = clone $original;
+
+        $this->assertNotSame($original->getFile(), $cloned->getFile());
+
+        // Type and channel enums should be the same instance
+        $this->assertSame($original->getType(), $cloned->getType());
+        $this->assertSame($original->getChannel(), $cloned->getChannel());
+    }
+
+    /**
+     * Tests that cloning MessagePart with FunctionCall creates an independent copy.
+     *
+     * @return void
+     */
+    public function testCloneClonesFunctionCall(): void
+    {
+        $functionCall = new FunctionCall('call_123', 'testFunction', ['param' => 'value']);
+        $original = new MessagePart($functionCall);
+        $cloned = clone $original;
+
+        $this->assertNotSame($original->getFunctionCall(), $cloned->getFunctionCall());
+    }
+
+    /**
+     * Tests that cloning MessagePart with FunctionResponse creates an independent copy.
+     *
+     * @return void
+     */
+    public function testCloneClonesFunctionResponse(): void
+    {
+        $functionResponse = new FunctionResponse('resp_123', 'testFunction', ['result' => 42]);
+        $original = new MessagePart($functionResponse);
+        $cloned = clone $original;
+
+        $this->assertNotSame($original->getFunctionResponse(), $cloned->getFunctionResponse());
+    }
 }

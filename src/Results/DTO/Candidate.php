@@ -133,4 +133,17 @@ class Candidate extends AbstractDataTransferObject
             FinishReasonEnum::from($array[self::KEY_FINISH_REASON])
         );
     }
+
+    /**
+     * Performs a deep clone of the candidate.
+     *
+     * This method ensures that the message object is cloned to prevent
+     * modifications to the cloned candidate from affecting the original.
+     *
+     * @since 0.4.1
+     */
+    public function __clone()
+    {
+        $this->message = clone $this->message;
+    }
 }

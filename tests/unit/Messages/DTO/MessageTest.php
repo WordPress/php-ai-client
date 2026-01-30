@@ -500,4 +500,29 @@ class MessageTest extends TestCase
 
         new Message(MessageRoleEnum::user(), $parts);
     }
+
+    /**
+     * Tests that cloning the message creates independent part copies.
+     *
+     * @return void
+     */
+    public function testCloneClonesParts(): void
+    {
+        $parts = [
+            new MessagePart('First part'),
+            new MessagePart('Second part'),
+        ];
+        $original = new Message(MessageRoleEnum::user(), $parts);
+        $cloned = clone $original;
+
+        // Parts should be different instances
+        $originalParts = $original->getParts();
+        $clonedParts = $cloned->getParts();
+        foreach ($originalParts as $index => $originalPart) {
+            $this->assertNotSame($originalPart, $clonedParts[$index]);
+        }
+
+        // Role enum should be the same instance (enums are singletons)
+        $this->assertSame($original->getRole(), $cloned->getRole());
+    }
 }
