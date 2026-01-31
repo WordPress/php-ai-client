@@ -200,7 +200,7 @@ class Message extends AbstractDataTransferObject
      * This method ensures that message part objects are cloned to prevent
      * modifications to the cloned message from affecting the original.
      *
-     * @since 0.4.1
+     * @since 0.4.2
      */
     public function __clone()
     {
