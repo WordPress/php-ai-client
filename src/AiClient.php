@@ -9,9 +9,6 @@ use Psr\SimpleCache\CacheInterface;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
-use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
-use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
-use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
@@ -116,14 +113,7 @@ class AiClient
     public static function defaultRegistry(): ProviderRegistry
     {
         if (self::$defaultRegistry === null) {
-            $registry = new ProviderRegistry();
-
-            // Register built-in providers.
-            $registry->registerProvider(AnthropicProvider::class);
-            $registry->registerProvider(GoogleProvider::class);
-            $registry->registerProvider(OpenAiProvider::class);
-
-            self::$defaultRegistry = $registry;
+            self::$defaultRegistry = new ProviderRegistry();
         }
 
         return self::$defaultRegistry;
