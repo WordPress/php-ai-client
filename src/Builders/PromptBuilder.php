@@ -125,6 +125,36 @@ class PromptBuilder
     }
 
     /**
+     * Creates a deep clone of this builder.
+     *
+     * Clones all mutable state including messages, model configuration, and request options.
+     * Service objects (registry, model, event dispatcher) are intentionally NOT cloned
+     * as they are shared dependencies.
+     *
+     * @since 0.4.2
+     */
+    public function __clone()
+    {
+        // Deep clone messages array (Message has __clone)
+        $clonedMessages = [];
+        foreach ($this->messages as $message) {
+            $clonedMessages[] = clone $message;
+        }
+        $this->messages = $clonedMessages;
+
+        // Clone model config (ModelConfig has __clone)
+        $this->modelConfig = clone $this->modelConfig;
+
+        // Clone request options if set (contains only primitives)
+        if ($this->requestOptions !== null) {
+            $this->requestOptions = clone $this->requestOptions;
+        }
+
+        // Note: $registry, $model, and $eventDispatcher are service objects
+        // and are intentionally NOT cloned - they should be shared references.
+    }
+
+    /**
      * Adds text to the current message.
      *
      * @since 0.1.0

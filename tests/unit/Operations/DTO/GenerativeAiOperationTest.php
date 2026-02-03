@@ -544,4 +544,65 @@ class GenerativeAiOperationTest extends TestCase
         );
         $this->assertImplementsArrayTransformation($operation);
     }
+
+    /**
+     * Tests that cloning creates an independent result reference.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentResultReference(): void
+    {
+        $modelMessage = new ModelMessage([
+            new MessagePart('Test content')
+        ]);
+        $candidate = new Candidate(
+            $modelMessage,
+            FinishReasonEnum::stop(),
+            25
+        );
+        $tokenUsage = new TokenUsage(10, 25, 35);
+        $result = new GenerativeAiResult(
+            'result_clone_test',
+            [$candidate],
+            $tokenUsage,
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
+
+        $original = new GenerativeAiOperation(
+            'op_clone_test',
+            OperationStateEnum::succeeded(),
+            $result
+        );
+
+        $cloned = clone $original;
+
+        // Result should be different instances
+        $this->assertNotSame($original->getResult(), $cloned->getResult());
+
+        // But values should be equivalent
+        $this->assertEquals(
+            $original->getResult()->getId(),
+            $cloned->getResult()->getId()
+        );
+    }
+
+    /**
+     * Tests that cloning works correctly when result is null.
+     *
+     * @return void
+     */
+    public function testCloneWorksWithNullResult(): void
+    {
+        $original = new GenerativeAiOperation(
+            'op_no_result',
+            OperationStateEnum::processing()
+        );
+
+        $cloned = clone $original;
+
+        $this->assertNull($cloned->getResult());
+        $this->assertEquals($original->getId(), $cloned->getId());
+        $this->assertEquals($original->getState()->value, $cloned->getState()->value);
+    }
 }

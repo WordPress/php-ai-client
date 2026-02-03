@@ -187,6 +187,36 @@ class ModelConfig extends AbstractDataTransferObject
     protected array $customOptions = [];
 
     /**
+     * Creates a deep clone of this configuration.
+     *
+     * Clones nested objects (functionDeclarations, webSearch) to ensure
+     * the cloned configuration is independent of the original.
+     * Enum value objects (outputModalities, outputFileType, outputMediaOrientation)
+     * are intentionally shared as they are immutable.
+     *
+     * @since 0.4.2
+     */
+    public function __clone()
+    {
+        // Deep clone function declarations if set
+        if ($this->functionDeclarations !== null) {
+            $clonedDeclarations = [];
+            foreach ($this->functionDeclarations as $declaration) {
+                $clonedDeclarations[] = clone $declaration;
+            }
+            $this->functionDeclarations = $clonedDeclarations;
+        }
+
+        // Clone web search if set
+        if ($this->webSearch !== null) {
+            $this->webSearch = clone $this->webSearch;
+        }
+
+        // Note: Enum value objects (outputModalities, outputFileType, outputMediaOrientation)
+        // are immutable and can be safely shared.
+    }
+
+    /**
      * Sets the output modalities.
      *
      * @since 0.1.0

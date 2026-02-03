@@ -734,4 +734,74 @@ class ModelConfigTest extends TestCase
         $this->expectExceptionMessage('The aspect ratio "3:2" is not compatible with the portrait orientation.');
         $config->setOutputMediaAspectRatio('3:2');
     }
+
+    /**
+     * Tests that cloning creates independent function declarations array.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentFunctionDeclarationsReferences(): void
+    {
+        $original = new ModelConfig();
+        $declaration = $this->createSampleFunctionDeclaration();
+        $original->setFunctionDeclarations([$declaration]);
+
+        $cloned = clone $original;
+
+        // The cloned config should have different FunctionDeclaration instances
+        $originalDeclarations = $original->getFunctionDeclarations();
+        $clonedDeclarations = $cloned->getFunctionDeclarations();
+
+        $this->assertNotNull($originalDeclarations);
+        $this->assertNotNull($clonedDeclarations);
+        $this->assertCount(1, $clonedDeclarations);
+        $this->assertNotSame($originalDeclarations[0], $clonedDeclarations[0]);
+
+        // But the values should be equivalent
+        $this->assertEquals(
+            $originalDeclarations[0]->getName(),
+            $clonedDeclarations[0]->getName()
+        );
+    }
+
+    /**
+     * Tests that cloning creates an independent web search reference.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentWebSearchReference(): void
+    {
+        $original = new ModelConfig();
+        $webSearch = $this->createSampleWebSearch();
+        $original->setWebSearch($webSearch);
+
+        $cloned = clone $original;
+
+        // The cloned config should have a different WebSearch instance
+        $this->assertNotSame($original->getWebSearch(), $cloned->getWebSearch());
+
+        // But the values should be equivalent
+        $this->assertEquals(
+            $original->getWebSearch()->getAllowedDomains(),
+            $cloned->getWebSearch()->getAllowedDomains()
+        );
+    }
+
+    /**
+     * Tests that cloning works correctly when optional objects are null.
+     *
+     * @return void
+     */
+    public function testCloneWorksWithNullOptionalObjects(): void
+    {
+        $original = new ModelConfig();
+        $original->setTemperature(0.7);
+        // Don't set functionDeclarations or webSearch
+
+        $cloned = clone $original;
+
+        $this->assertNull($cloned->getFunctionDeclarations());
+        $this->assertNull($cloned->getWebSearch());
+        $this->assertEquals(0.7, $cloned->getTemperature());
+    }
 }
