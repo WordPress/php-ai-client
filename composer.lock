@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "066d23ec91f900d207ae030fe7842408",
+    "content-hash": "eeac19d17fc868c73d3b7704e2cd668f",
     "packages": [
         {
             "name": "php-http/discovery",
@@ -3699,18 +3699,21 @@
             "dist": {
                 "type": "path",
                 "url": "../anthropic-ai-provider",
-                "reference": "bda522021c5622125cee168281ed021fb721d1a3"
+                "reference": "8f26e05e35852b094fcf7e4ea98af9eacb1d6344"
             },
             "require": {
-                "php": ">=7.4",
-                "wordpress/php-ai-client": "^0.4 || dev-trunk"
+                "php": ">=7.4"
             },
             "require-dev": {
                 "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
                 "phpcompatibility/php-compatibility": "dev-develop",
                 "phpstan/phpstan": "~2.1",
                 "slevomat/coding-standard": "^8.20",
-                "squizlabs/php_codesniffer": "^3.7 || ^4.0"
+                "squizlabs/php_codesniffer": "^3.7 || ^4.0",
+                "wordpress/php-ai-client": "^0.4 || dev-trunk"
+            },
+            "suggest": {
+                "wordpress/php-ai-client": "Required. The core PHP AI Client SDK that this provider extends."
             },
             "type": "wordpress-plugin",
             "autoload": {
@@ -3761,22 +3764,25 @@
         },
         {
             "name": "wordpress/google-ai-provider",
-            "version": "dev-main",
+            "version": "dev-provider-implementation",
             "dist": {
                 "type": "path",
                 "url": "../google-ai-provider",
-                "reference": "e55b080c9c85a9930a2cff6ca73cc128af18e9c6"
+                "reference": "afd5f18b88d7b889d5a82684dde66be58ad05eb4"
             },
             "require": {
-                "php": ">=7.4",
-                "wordpress/php-ai-client": "^0.4 || dev-trunk"
+                "php": ">=7.4"
             },
             "require-dev": {
                 "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
                 "phpcompatibility/php-compatibility": "dev-develop",
                 "phpstan/phpstan": "~2.1",
                 "slevomat/coding-standard": "^8.20",
-                "squizlabs/php_codesniffer": "^3.7 || ^4.0"
+                "squizlabs/php_codesniffer": "^3.7 || ^4.0",
+                "wordpress/php-ai-client": "^0.4 || dev-trunk"
+            },
+            "suggest": {
+                "wordpress/php-ai-client": "Required. The core PHP AI Client SDK that this provider extends."
             },
             "type": "wordpress-plugin",
             "autoload": {
@@ -3831,18 +3837,21 @@
             "dist": {
                 "type": "path",
                 "url": "../openai-ai-provider",
-                "reference": "048bddc8b6a6bc1ff89d88edd07a4e6acf8cfc72"
+                "reference": "f620d6e6cfb209464416fb31a31715f919b97d3f"
             },
             "require": {
-                "php": ">=7.4",
-                "wordpress/php-ai-client": "^0.4 || dev-trunk"
+                "php": ">=7.4"
             },
             "require-dev": {
                 "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
                 "phpcompatibility/php-compatibility": "dev-develop",
                 "phpstan/phpstan": "~2.1",
                 "slevomat/coding-standard": "^8.20",
-                "squizlabs/php_codesniffer": "^3.7 || ^4.0"
+                "squizlabs/php_codesniffer": "^3.7 || ^4.0",
+                "wordpress/php-ai-client": "^0.4 || dev-trunk"
+            },
+            "suggest": {
+                "wordpress/php-ai-client": "Required. The core PHP AI Client SDK that this provider extends."
             },
             "type": "wordpress-plugin",
             "autoload": {
