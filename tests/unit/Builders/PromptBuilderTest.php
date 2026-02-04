@@ -3495,4 +3495,114 @@ class PromptBuilderTest extends TestCase
 
         $this->assertFalse($builder->isSupported(CapabilityEnum::textGeneration()));
     }
+
+    /**
+     * Tests that cloning creates independent message references.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentMessagesReferences(): void
+    {
+        $original = new PromptBuilder($this->registry, 'First message');
+        $original->withText(' continued');
+
+        $cloned = clone $original;
+
+        // Add more content to the cloned builder
+        $cloned->withText(' and more');
+
+        // Use reflection to access the protected messages property
+        $originalReflection = new \ReflectionClass($original);
+        $messagesProperty = $originalReflection->getProperty('messages');
+        $messagesProperty->setAccessible(true);
+
+        $originalMessages = $messagesProperty->getValue($original);
+        $clonedMessages = $messagesProperty->getValue($cloned);
+
+        // Original should have 1 message, cloned should have different instances
+        $this->assertCount(1, $originalMessages);
+        $this->assertNotSame($originalMessages[0], $clonedMessages[0]);
+    }
+
+    /**
+     * Tests that cloning creates an independent model config reference.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentModelConfigReference(): void
+    {
+        $original = new PromptBuilder($this->registry, 'Test prompt');
+        $original->usingTemperature(0.7);
+        $original->usingMaxTokens(100);
+
+        $cloned = clone $original;
+
+        // Modify the cloned builder's config
+        $cloned->usingTemperature(0.9);
+
+        // Use reflection to access the protected modelConfig property
+        $originalReflection = new \ReflectionClass($original);
+        $configProperty = $originalReflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+
+        $originalConfig = $configProperty->getValue($original);
+        $clonedConfig = $configProperty->getValue($cloned);
+
+        // Should be different instances
+        $this->assertNotSame($originalConfig, $clonedConfig);
+
+        // Original should still have 0.7, cloned should have 0.9
+        $this->assertEquals(0.7, $originalConfig->getTemperature());
+        $this->assertEquals(0.9, $clonedConfig->getTemperature());
+    }
+
+    /**
+     * Tests that cloning creates an independent request options reference.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentRequestOptionsReference(): void
+    {
+        $requestOptions = new \WordPress\AiClient\Providers\Http\DTO\RequestOptions();
+        $requestOptions->setTimeout(30.0);
+
+        $original = new PromptBuilder($this->registry, 'Test prompt');
+        $original->usingRequestOptions($requestOptions);
+
+        $cloned = clone $original;
+
+        // Use reflection to access the protected requestOptions property
+        $originalReflection = new \ReflectionClass($original);
+        $optionsProperty = $originalReflection->getProperty('requestOptions');
+        $optionsProperty->setAccessible(true);
+
+        $originalOptions = $optionsProperty->getValue($original);
+        $clonedOptions = $optionsProperty->getValue($cloned);
+
+        // Should be different instances
+        $this->assertNotSame($originalOptions, $clonedOptions);
+
+        // But values should be equivalent
+        $this->assertEquals($originalOptions->getTimeout(), $clonedOptions->getTimeout());
+    }
+
+    /**
+     * Tests that cloning works correctly when request options are null.
+     *
+     * @return void
+     */
+    public function testCloneWorksWithNullRequestOptions(): void
+    {
+        $original = new PromptBuilder($this->registry, 'Test prompt');
+        // Don't set request options
+
+        $cloned = clone $original;
+
+        // Use reflection to verify null request options
+        $originalReflection = new \ReflectionClass($cloned);
+        $optionsProperty = $originalReflection->getProperty('requestOptions');
+        $optionsProperty->setAccessible(true);
+
+        $this->assertNull($optionsProperty->getValue($cloned));
+    }
 }

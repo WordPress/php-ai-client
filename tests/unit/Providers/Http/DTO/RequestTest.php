@@ -277,4 +277,79 @@ class RequestTest extends TestCase
         $this->expectException(AiInvalidArgumentException::class);
         new Request(HttpMethodEnum::get(), '');
     }
+
+    /**
+     * Tests that cloning creates independent headers reference.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentHeadersReference(): void
+    {
+        $original = new Request(
+            HttpMethodEnum::get(),
+            'https://example.com',
+            ['X-Test' => 'value']
+        );
+
+        $cloned = clone $original;
+
+        // Modify cloned headers
+        $clonedWithNewHeader = $cloned->withHeader('X-New', 'new-value');
+
+        // Original should not have the new header
+        $this->assertFalse($original->hasHeader('X-New'));
+        $this->assertTrue($clonedWithNewHeader->hasHeader('X-New'));
+
+        // Both should have original header
+        $this->assertTrue($original->hasHeader('X-Test'));
+        $this->assertTrue($cloned->hasHeader('X-Test'));
+    }
+
+    /**
+     * Tests that cloning creates independent request options reference.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentOptionsReference(): void
+    {
+        $options = new RequestOptions();
+        $options->setTimeout(5.0);
+
+        $original = new Request(
+            HttpMethodEnum::post(),
+            'https://example.com',
+            [],
+            null,
+            $options
+        );
+
+        $cloned = clone $original;
+
+        // Should be different instances
+        $this->assertNotSame($original->getOptions(), $cloned->getOptions());
+
+        // But values should be equivalent
+        $this->assertEquals(
+            $original->getOptions()->getTimeout(),
+            $cloned->getOptions()->getTimeout()
+        );
+    }
+
+    /**
+     * Tests that cloning works correctly when options are null.
+     *
+     * @return void
+     */
+    public function testCloneWorksWithNullOptions(): void
+    {
+        $original = new Request(
+            HttpMethodEnum::get(),
+            'https://example.com'
+        );
+
+        $cloned = clone $original;
+
+        $this->assertNull($cloned->getOptions());
+        $this->assertEquals($original->getUri(), $cloned->getUri());
+    }
 }

@@ -527,4 +527,70 @@ class MessageBuilderTest extends TestCase
         $this->assertCount(1, $parts);
         $this->assertEquals('Added later', $parts[0]->getText());
     }
+
+    /**
+     * Tests that cloning creates independent message part references.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentPartsReferences(): void
+    {
+        $original = new MessageBuilder();
+        $original->withText('Hello')
+            ->withText('World')
+            ->usingUserRole();
+
+        $cloned = clone $original;
+
+        // Build both to compare the parts
+        $originalMessage = $original->get();
+        $clonedMessage = $cloned->get();
+
+        $originalParts = $originalMessage->getParts();
+        $clonedParts = $clonedMessage->getParts();
+
+        // Should have same count and equivalent content
+        $this->assertCount(2, $clonedParts);
+        $this->assertEquals($originalParts[0]->getText(), $clonedParts[0]->getText());
+        $this->assertEquals($originalParts[1]->getText(), $clonedParts[1]->getText());
+
+        // But parts should be different instances
+        $this->assertNotSame($originalParts[0], $clonedParts[0]);
+        $this->assertNotSame($originalParts[1], $clonedParts[1]);
+    }
+
+    /**
+     * Tests that cloning works correctly with empty parts.
+     *
+     * @return void
+     */
+    public function testCloneWorksWithEmptyParts(): void
+    {
+        $original = new MessageBuilder(null, MessageRoleEnum::user());
+
+        $cloned = clone $original;
+
+        // Add content to cloned builder and verify it works
+        $message = $cloned->withText('Cloned content')->get();
+        $this->assertEquals('Cloned content', $message->getParts()[0]->getText());
+    }
+
+    /**
+     * Tests that modifications to cloned builder don't affect original.
+     *
+     * @return void
+     */
+    public function testClonedBuilderIsIndependent(): void
+    {
+        $original = new MessageBuilder();
+        $original->withText('Original text')->usingUserRole();
+
+        $cloned = clone $original;
+        $cloned->withText('Additional cloned text');
+
+        // Original should still only have one part
+        $originalMessage = $original->get();
+        $this->assertCount(1, $originalMessage->getParts());
+        $this->assertEquals('Original text', $originalMessage->getParts()[0]->getText());
+    }
 }

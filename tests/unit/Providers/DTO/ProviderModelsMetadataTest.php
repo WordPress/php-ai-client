@@ -371,4 +371,78 @@ class ProviderModelsMetadataTest extends TestCase
             $metadata
         );
     }
+
+    /**
+     * Tests that cloning creates independent provider reference.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentProviderReference(): void
+    {
+        $original = new ProviderModelsMetadata(
+            $this->createProviderMetadata(),
+            []
+        );
+
+        $cloned = clone $original;
+
+        // Should be different instances
+        $this->assertNotSame($original->getProvider(), $cloned->getProvider());
+
+        // But values should be equivalent
+        $this->assertEquals(
+            $original->getProvider()->getId(),
+            $cloned->getProvider()->getId()
+        );
+    }
+
+    /**
+     * Tests that cloning creates independent models array references.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentModelsReferences(): void
+    {
+        $original = new ProviderModelsMetadata(
+            $this->createProviderMetadata(),
+            [
+                $this->createModelMetadata('model-1', 'Model 1'),
+                $this->createModelMetadata('model-2', 'Model 2'),
+            ]
+        );
+
+        $cloned = clone $original;
+
+        $originalModels = $original->getModels();
+        $clonedModels = $cloned->getModels();
+
+        // Should have same count
+        $this->assertCount(2, $clonedModels);
+
+        // Model instances should be different
+        $this->assertNotSame($originalModels[0], $clonedModels[0]);
+        $this->assertNotSame($originalModels[1], $clonedModels[1]);
+
+        // But values should be equivalent
+        $this->assertEquals($originalModels[0]->getId(), $clonedModels[0]->getId());
+        $this->assertEquals($originalModels[1]->getId(), $clonedModels[1]->getId());
+    }
+
+    /**
+     * Tests that cloning works correctly with empty models array.
+     *
+     * @return void
+     */
+    public function testCloneWorksWithEmptyModels(): void
+    {
+        $original = new ProviderModelsMetadata(
+            $this->createProviderMetadata(),
+            []
+        );
+
+        $cloned = clone $original;
+
+        $this->assertCount(0, $cloned->getModels());
+        $this->assertNotSame($original->getProvider(), $cloned->getProvider());
+    }
 }
