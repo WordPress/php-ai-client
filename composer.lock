@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "eeac19d17fc868c73d3b7704e2cd668f",
+    "content-hash": "a44d3d217b0f43f885770bad4d61ad64",
     "packages": [
         {
             "name": "php-http/discovery",
@@ -3695,11 +3695,17 @@
         },
         {
             "name": "wordpress/anthropic-ai-provider",
-            "version": "dev-main",
+            "version": "dev-provider-implementation",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:WordPress/anthropic-ai-provider.git",
+                "reference": "405bc59acb5686d1f8e2aac181a51ec4cdf7dcde"
+            },
             "dist": {
-                "type": "path",
-                "url": "../anthropic-ai-provider",
-                "reference": "8f26e05e35852b094fcf7e4ea98af9eacb1d6344"
+                "type": "zip",
+                "url": "https://api.github.com/repos/WordPress/anthropic-ai-provider/zipball/405bc59acb5686d1f8e2aac181a51ec4cdf7dcde",
+                "reference": "405bc59acb5686d1f8e2aac181a51ec4cdf7dcde",
+                "shasum": ""
             },
             "require": {
                 "php": ">=7.4"
@@ -3758,17 +3764,21 @@
                 "issues": "https://github.com/WordPress/anthropic-ai-provider/issues",
                 "source": "https://github.com/WordPress/anthropic-ai-provider"
             },
-            "transport-options": {
-                "relative": true
-            }
+            "time": "2026-02-04T22:20:42+00:00"
         },
         {
             "name": "wordpress/google-ai-provider",
             "version": "dev-provider-implementation",
-            "dist": {
-                "type": "path",
-                "url": "../google-ai-provider",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:WordPress/google-ai-provider.git",
                 "reference": "afd5f18b88d7b889d5a82684dde66be58ad05eb4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/WordPress/google-ai-provider/zipball/afd5f18b88d7b889d5a82684dde66be58ad05eb4",
+                "reference": "afd5f18b88d7b889d5a82684dde66be58ad05eb4",
+                "shasum": ""
             },
             "require": {
                 "php": ">=7.4"
@@ -3827,17 +3837,21 @@
                 "issues": "https://github.com/WordPress/google-ai-provider/issues",
                 "source": "https://github.com/WordPress/google-ai-provider"
             },
-            "transport-options": {
-                "relative": true
-            }
+            "time": "2026-02-04T19:20:01+00:00"
         },
         {
             "name": "wordpress/openai-ai-provider",
-            "version": "dev-main",
+            "version": "dev-provider-implementation",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:WordPress/openai-ai-provider.git",
+                "reference": "841ef4a39b96f88b7b2aa6fb8f87c9b2a49edee5"
+            },
             "dist": {
-                "type": "path",
-                "url": "../openai-ai-provider",
-                "reference": "f620d6e6cfb209464416fb31a31715f919b97d3f"
+                "type": "zip",
+                "url": "https://api.github.com/repos/WordPress/openai-ai-provider/zipball/841ef4a39b96f88b7b2aa6fb8f87c9b2a49edee5",
+                "reference": "841ef4a39b96f88b7b2aa6fb8f87c9b2a49edee5",
+                "shasum": ""
             },
             "require": {
                 "php": ">=7.4"
@@ -3896,9 +3910,7 @@
                 "issues": "https://github.com/WordPress/openai-ai-provider/issues",
                 "source": "https://github.com/WordPress/openai-ai-provider"
             },
-            "transport-options": {
-                "relative": true
-            }
+            "time": "2026-02-04T22:23:27+00:00"
         }
     ],
     "aliases": [],
