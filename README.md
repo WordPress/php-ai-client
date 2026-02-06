@@ -67,6 +67,18 @@ $texts = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->generateTexts(4);
 ```
 
+### Text generation using max tokens
+
+```php
+use WordPress\AiClient\AiClient;
+
+$text = AiClient::prompt('Write a 80-verse poem with long stanzas about PHP.')
+    ->usingSystemInstruction('You are a famous poet from the 17th century.')
+    ->usingTemperature(0.8)
+    ->usingMaxTokens(8000);
+    ->generateText();
+```
+
 ### Image generation using any compatible model
 
 ```php
@@ -137,9 +149,9 @@ class AiEventListener
 
 For more information on the requirements and guiding principles, please review:
 
-* [Glossary](./docs/GLOSSARY.md)
-* [Requirements](./docs/REQUIREMENTS.md)
-* [Architecture](./docs/ARCHITECTURE.md)
-* [Prepublish Checklist](./docs/PREPUBLISH-CHECKLIST.md)
+- [Glossary](./docs/GLOSSARY.md)
+- [Requirements](./docs/REQUIREMENTS.md)
+- [Architecture](./docs/ARCHITECTURE.md)
+- [Prepublish Checklist](./docs/PREPUBLISH-CHECKLIST.md)
 
 See the [contributing documentation](./CONTRIBUTING.md) for more information on how to get involved.
