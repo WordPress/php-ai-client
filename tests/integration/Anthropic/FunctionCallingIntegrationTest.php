@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\integration\Anthropic;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Common\Exception\TokenLimitReachedException;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -326,6 +327,58 @@ class FunctionCallingIntegrationTest extends TestCase
             $this->assertArrayHasKey('name', $item);
             $this->assertArrayHasKey('quantity', $item);
             $this->assertIsInt($item['quantity']);
+        }
+    }
+
+    /**
+     * Tests tool-calling generation throws token-limit exception when max tokens are very low.
+     */
+    public function testFunctionCallingThrowsTokenLimitReachedExceptionWithVeryLowMaxTokens(): void
+    {
+        $maxTokens = 10;
+        $createPost = new FunctionDeclaration(
+            'create_post',
+            'Create a WordPress post with title, post type and full HTML content',
+            [
+                'type' => 'object',
+                'properties' => [
+                    'title' => ['type' => 'string'],
+                    'post_type' => ['type' => 'string'],
+                    'content' => ['type' => 'string'],
+                ],
+                'required' => ['title', 'post_type', 'content'],
+            ]
+        );
+
+        try {
+            AiClient::prompt(
+                'Call create_post and set content to a very long multi-section HTML document with at least '
+                . '50 list items and 20 headings.'
+            )
+                ->usingProvider('anthropic')
+                ->usingFunctionDeclarations($createPost)
+                ->usingMaxTokens($maxTokens)
+                ->generateTextResult();
+
+            $this->fail('Expected TokenLimitReachedException to be thrown.');
+        } catch (TokenLimitReachedException $exception) {
+            $this->assertSame($maxTokens, $exception->getMaxTokens());
+            $this->assertContains(
+                $exception->getProviderStopReason(),
+                ['max_tokens', 'model_context_window_exceeded']
+            );
+
+            if ($exception->getFunctionName() !== null) {
+                $this->assertSame('create_post', $exception->getFunctionName());
+            }
+
+            if ($exception->getMissingRequiredParameters() !== []) {
+                $missingParameters = $exception->getMissingRequiredParameters();
+                $expectedParameters = ['title', 'post_type', 'content'];
+                foreach ($missingParameters as $missingParameter) {
+                    $this->assertContains($missingParameter, $expectedParameters);
+                }
+            }
         }
     }
 
