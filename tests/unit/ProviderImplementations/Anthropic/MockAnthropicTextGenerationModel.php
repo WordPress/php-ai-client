@@ -33,10 +33,12 @@ class MockAnthropicTextGenerationModel extends AnthropicTextGenerationModel
     /**
      * Constructor.
      *
-     * @param ModelMetadata $metadata Model metadata.
-     * @param ProviderMetadata $providerMetadata Provider metadata.
-     * @param HttpTransporterInterface&\PHPUnit\Framework\MockObject\MockObject $mockHttpTransporter Mock HTTP transporter.
-     * @param RequestAuthenticationInterface&\PHPUnit\Framework\MockObject\MockObject $mockRequestAuthentication Mock request authentication.
+     * @param ModelMetadata          $metadata              Model metadata.
+     * @param ProviderMetadata       $providerMetadata      Provider metadata.
+     * @param HttpTransporterInterface&\PHPUnit\Framework\MockObject\MockObject
+     *                               $mockHttpTransporter   Mock HTTP transporter.
+     * @param RequestAuthenticationInterface&\PHPUnit\Framework\MockObject\MockObject
+     *                               $mockRequestAuthentication Mock request authentication.
      */
     public function __construct(
         ModelMetadata $metadata,
