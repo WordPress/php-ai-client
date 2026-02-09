@@ -568,7 +568,9 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
                 }
             }
 
-            $requiredParametersByFunctionName[$functionDeclaration->getName()] = $requiredParameters;
+            $requiredParametersByFunctionName[$functionDeclaration->getName()] = array_values(
+                array_unique($requiredParameters)
+            );
         }
 
         return $requiredParametersByFunctionName;
