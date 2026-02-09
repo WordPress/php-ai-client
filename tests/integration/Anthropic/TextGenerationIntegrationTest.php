@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\integration\Anthropic;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Common\Exception\TokenLimitReachedException;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tests\integration\traits\IntegrationTestTrait;
@@ -97,5 +98,32 @@ class TextGenerationIntegrationTest extends TestCase
         $this->assertGreaterThan(0, $tokenUsage->getPromptTokens());
         $this->assertGreaterThan(0, $tokenUsage->getCompletionTokens());
         $this->assertGreaterThan(0, $tokenUsage->getTotalTokens());
+    }
+
+    /**
+     * Tests text generation throws token-limit exception when max tokens are very low.
+     */
+    public function testTextGenerationThrowsTokenLimitReachedExceptionWithVeryLowMaxTokens(): void
+    {
+        $maxTokens = 1;
+
+        try {
+            AiClient::prompt(
+                'Write three detailed paragraphs about the history of WordPress and include dates and key milestones.'
+            )
+                ->usingProvider('anthropic')
+                ->usingMaxTokens($maxTokens)
+                ->generateTextResult();
+
+            $this->fail('Expected TokenLimitReachedException to be thrown.');
+        } catch (TokenLimitReachedException $exception) {
+            $this->assertSame($maxTokens, $exception->getMaxTokens());
+            $this->assertContains(
+                $exception->getProviderStopReason(),
+                ['max_tokens', 'model_context_window_exceeded']
+            );
+            $this->assertNull($exception->getFunctionName());
+            $this->assertSame([], $exception->getMissingRequiredParameters());
+        }
     }
 }
