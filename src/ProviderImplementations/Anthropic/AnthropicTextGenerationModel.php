@@ -6,6 +6,7 @@ namespace WordPress\AiClient\ProviderImplementations\Anthropic;
 
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Common\Exception\TokenLimitReachedException;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
@@ -480,6 +481,8 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
                 );
         }
 
+        $this->maybeThrowTokenLimitReachedException($responseData, $parts);
+
         $candidates = [new Candidate(
             new Message($role, $parts),
             $finishReason
@@ -519,6 +522,157 @@ class AnthropicTextGenerationModel extends AbstractApiBasedModel implements Text
             $this->providerMetadata(),
             $this->metadata(),
             $additionalData
+        );
+    }
+
+    /**
+     * Checks whether the given stop reason indicates token limit exhaustion.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $stopReason The provider stop reason.
+     * @return bool True if the stop reason indicates token limit exhaustion, false otherwise.
+     */
+    protected function isTokenLimitStopReason(string $stopReason): bool
+    {
+        return in_array($stopReason, ['max_tokens', 'model_context_window_exceeded'], true);
+    }
+
+    /**
+     * Gets required parameters from configured function declarations indexed by function name.
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, list<string>> Required parameter names indexed by function name.
+     */
+    protected function getRequiredParametersByFunctionName(): array
+    {
+        $functionDeclarations = $this->getConfig()->getFunctionDeclarations();
+        if (!is_array($functionDeclarations)) {
+            return [];
+        }
+
+        $requiredParametersByFunctionName = [];
+        foreach ($functionDeclarations as $functionDeclaration) {
+            if (!$functionDeclaration instanceof FunctionDeclaration) {
+                continue;
+            }
+
+            $requiredParameters = [];
+            $parameters = $functionDeclaration->getParameters();
+            if (is_array($parameters) && isset($parameters['required']) && is_array($parameters['required'])) {
+                foreach ($parameters['required'] as $requiredParameter) {
+                    if (is_string($requiredParameter)) {
+                        $requiredParameters[] = $requiredParameter;
+                    }
+                }
+            }
+
+            $requiredParametersByFunctionName[$functionDeclaration->getName()] = $requiredParameters;
+        }
+
+        return $requiredParametersByFunctionName;
+    }
+
+    /**
+     * Gets required parameter names that are missing from a function call.
+     *
+     * @since n.e.x.t
+     *
+     * @param FunctionCall|null $functionCall The function call.
+     * @param list<string> $requiredParameters Required parameter names.
+     * @return list<string> Missing required parameter names.
+     */
+    protected function getMissingRequiredParameters(?FunctionCall $functionCall, array $requiredParameters): array
+    {
+        if (!$functionCall || count($requiredParameters) === 0) {
+            return [];
+        }
+
+        $args = $functionCall->getArgs();
+        if (is_object($args)) {
+            $args = (array) $args;
+        }
+        if (!is_array($args)) {
+            return $requiredParameters;
+        }
+
+        $missingRequiredParameters = [];
+        foreach ($requiredParameters as $requiredParameter) {
+            if (!array_key_exists($requiredParameter, $args)) {
+                $missingRequiredParameters[] = $requiredParameter;
+            }
+        }
+
+        return $missingRequiredParameters;
+    }
+
+    /**
+     * Throws a token limit exception when the provider response indicates token exhaustion.
+     *
+     * @since n.e.x.t
+     *
+     * @param ResponseData $responseData The response data.
+     * @param list<MessagePart> $parts The parsed message parts from the response content.
+     * @throws TokenLimitReachedException If token limit was reached.
+     */
+    protected function maybeThrowTokenLimitReachedException(array $responseData, array $parts): void
+    {
+        if (!isset($responseData['stop_reason']) || !is_string($responseData['stop_reason'])) {
+            return;
+        }
+        if (!$this->isTokenLimitStopReason($responseData['stop_reason'])) {
+            return;
+        }
+
+        $maxTokens = $this->getConfig()->getMaxTokens() ?? 4096;
+        $functionName = null;
+        $missingRequiredParameters = [];
+        $requiredParametersByFunctionName = $this->getRequiredParametersByFunctionName();
+
+        foreach ($parts as $part) {
+            if (!$part->getType()->isFunctionCall()) {
+                continue;
+            }
+
+            $functionCall = $part->getFunctionCall();
+            if (!$functionCall) {
+                continue;
+            }
+
+            $candidateFunctionName = $functionCall->getName();
+            if ($candidateFunctionName === null) {
+                continue;
+            }
+
+            $requiredParameters = $requiredParametersByFunctionName[$candidateFunctionName] ?? [];
+            $missingParameters = $this->getMissingRequiredParameters($functionCall, $requiredParameters);
+            if (count($missingParameters) > 0) {
+                $functionName = $candidateFunctionName;
+                $missingRequiredParameters = $missingParameters;
+                break;
+            }
+        }
+
+        $message = sprintf(
+            'Generation stopped due to token limit (%d) with stop reason "%s".',
+            $maxTokens,
+            $responseData['stop_reason']
+        );
+        if ($functionName !== null) {
+            $message .= sprintf(
+                ' Tool call "%s" is missing required parameters: %s.',
+                $functionName,
+                implode(', ', $missingRequiredParameters)
+            );
+        }
+
+        throw new TokenLimitReachedException(
+            $message,
+            $maxTokens,
+            $responseData['stop_reason'],
+            $functionName,
+            $missingRequiredParameters
         );
     }
 
