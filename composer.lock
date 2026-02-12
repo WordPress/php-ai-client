@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5edd0be356b10d1734e6fed7ff957ecc",
+    "content-hash": "454eaacbc800be25f8903c6769b72012",
     "packages": [
         {
             "name": "php-http/discovery",
@@ -3640,16 +3640,16 @@
         },
         {
             "name": "wordpress/anthropic-ai-provider",
-            "version": "dev-provider-implementation",
+            "version": "1.0.0",
             "source": {
                 "type": "git",
-                "url": "git@github.com:WordPress/anthropic-ai-provider.git",
-                "reference": "405bc59acb5686d1f8e2aac181a51ec4cdf7dcde"
+                "url": "https://github.com/WordPress/anthropic-ai-provider.git",
+                "reference": "7abfab9d10f13c2c713484e3f5f096f81ad84b61"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/WordPress/anthropic-ai-provider/zipball/405bc59acb5686d1f8e2aac181a51ec4cdf7dcde",
-                "reference": "405bc59acb5686d1f8e2aac181a51ec4cdf7dcde",
+                "url": "https://api.github.com/repos/WordPress/anthropic-ai-provider/zipball/7abfab9d10f13c2c713484e3f5f096f81ad84b61",
+                "reference": "7abfab9d10f13c2c713484e3f5f096f81ad84b61",
                 "shasum": ""
             },
             "require": {
@@ -3672,21 +3672,7 @@
                     "WordPress\\AnthropicAiProvider\\": "src/"
                 }
             },
-            "scripts": {
-                "lint": [
-                    "@phpcs",
-                    "@phpstan"
-                ],
-                "phpcbf": [
-                    "phpcbf"
-                ],
-                "phpcs": [
-                    "phpcs"
-                ],
-                "phpstan": [
-                    "phpstan analyze --memory-limit=256M"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-2.0-or-later"
             ],
@@ -3709,20 +3695,20 @@
                 "issues": "https://github.com/WordPress/anthropic-ai-provider/issues",
                 "source": "https://github.com/WordPress/anthropic-ai-provider"
             },
-            "time": "2026-02-04T22:20:42+00:00"
+            "time": "2026-02-12T05:24:09+00:00"
         },
         {
             "name": "wordpress/google-ai-provider",
-            "version": "dev-provider-implementation",
+            "version": "1.0.0",
             "source": {
                 "type": "git",
-                "url": "git@github.com:WordPress/google-ai-provider.git",
-                "reference": "afd5f18b88d7b889d5a82684dde66be58ad05eb4"
+                "url": "https://github.com/WordPress/google-ai-provider.git",
+                "reference": "ce063b2f13e54e2b59c0501c5437d4d7ae049d17"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/WordPress/google-ai-provider/zipball/afd5f18b88d7b889d5a82684dde66be58ad05eb4",
-                "reference": "afd5f18b88d7b889d5a82684dde66be58ad05eb4",
+                "url": "https://api.github.com/repos/WordPress/google-ai-provider/zipball/ce063b2f13e54e2b59c0501c5437d4d7ae049d17",
+                "reference": "ce063b2f13e54e2b59c0501c5437d4d7ae049d17",
                 "shasum": ""
             },
             "require": {
@@ -3745,21 +3731,7 @@
                     "WordPress\\GoogleAiProvider\\": "src/"
                 }
             },
-            "scripts": {
-                "lint": [
-                    "@phpcs",
-                    "@phpstan"
-                ],
-                "phpcbf": [
-                    "phpcbf"
-                ],
-                "phpcs": [
-                    "phpcs"
-                ],
-                "phpstan": [
-                    "phpstan analyze --memory-limit=256M"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-2.0-or-later"
             ],
@@ -3772,8 +3744,8 @@
             "description": "Google AI provider for the PHP AI Client SDK. Works as both a Composer package and WordPress plugin.",
             "homepage": "https://github.com/WordPress/google-ai-provider",
             "keywords": [
+                "Gemini",
                 "ai",
-                "gemini",
                 "google",
                 "llm",
                 "wordpress"
@@ -3782,20 +3754,20 @@
                 "issues": "https://github.com/WordPress/google-ai-provider/issues",
                 "source": "https://github.com/WordPress/google-ai-provider"
             },
-            "time": "2026-02-04T19:20:01+00:00"
+            "time": "2026-02-12T05:21:47+00:00"
         },
         {
             "name": "wordpress/openai-ai-provider",
-            "version": "dev-provider-implementation",
+            "version": "1.0.0",
             "source": {
                 "type": "git",
-                "url": "git@github.com:WordPress/openai-ai-provider.git",
-                "reference": "841ef4a39b96f88b7b2aa6fb8f87c9b2a49edee5"
+                "url": "https://github.com/WordPress/openai-ai-provider.git",
+                "reference": "5db93179e52e9b63ce94c2a339a9cf46d6d51a32"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/WordPress/openai-ai-provider/zipball/841ef4a39b96f88b7b2aa6fb8f87c9b2a49edee5",
-                "reference": "841ef4a39b96f88b7b2aa6fb8f87c9b2a49edee5",
+                "url": "https://api.github.com/repos/WordPress/openai-ai-provider/zipball/5db93179e52e9b63ce94c2a339a9cf46d6d51a32",
+                "reference": "5db93179e52e9b63ce94c2a339a9cf46d6d51a32",
                 "shasum": ""
             },
             "require": {
@@ -3818,21 +3790,7 @@
                     "WordPress\\OpenAiAiProvider\\": "src/"
                 }
             },
-            "scripts": {
-                "lint": [
-                    "@phpcs",
-                    "@phpstan"
-                ],
-                "phpcbf": [
-                    "phpcbf"
-                ],
-                "phpcs": [
-                    "phpcs"
-                ],
-                "phpstan": [
-                    "phpstan analyze --memory-limit=256M"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-2.0-or-later"
             ],
@@ -3855,18 +3813,15 @@
                 "issues": "https://github.com/WordPress/openai-ai-provider/issues",
                 "source": "https://github.com/WordPress/openai-ai-provider"
             },
-            "time": "2026-02-04T22:23:27+00:00"
+            "time": "2026-02-12T05:23:02+00:00"
         }
     ],
     "aliases": [],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "stability-flags": {
-        "phpcompatibility/php-compatibility": 20,
-        "wordpress/anthropic-ai-provider": 20,
-        "wordpress/google-ai-provider": 20,
-        "wordpress/openai-ai-provider": 20
+        "phpcompatibility/php-compatibility": 20
     },
-    "prefer-stable": true,
+    "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
         "php": ">=7.4",
