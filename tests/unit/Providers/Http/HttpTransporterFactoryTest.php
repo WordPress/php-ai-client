@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\Providers\Http;
+namespace WordPress\AiClient\Tests\unit\Providers\Http;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
