@@ -149,9 +149,9 @@ class AiEventListener
 
 For more information on the requirements and guiding principles, please review:
 
-- [Glossary](./docs/GLOSSARY.md)
-- [Requirements](./docs/REQUIREMENTS.md)
-- [Architecture](./docs/ARCHITECTURE.md)
-- [Prepublish Checklist](./docs/PREPUBLISH-CHECKLIST.md)
+* [Glossary](./docs/GLOSSARY.md)
+* [Requirements](./docs/REQUIREMENTS.md)
+* [Architecture](./docs/ARCHITECTURE.md)
+* [Prepublish Checklist](./docs/PREPUBLISH-CHECKLIST.md)
 
 See the [contributing documentation](./CONTRIBUTING.md) for more information on how to get involved.
