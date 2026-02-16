@@ -729,12 +729,12 @@ class ModelConfig extends AbstractDataTransferObject
         MediaOrientationEnum $orientation,
         string $aspectRatio
     ): void {
-        if ($orientation->isSquare() && $aspectRatio !== '1:1') {
+        $aspectRatioParts = explode(':', $aspectRatio);
+        if ($orientation->isSquare() && $aspectRatioParts[0] !== $aspectRatioParts[1]) {
             throw new InvalidArgumentException(
                 'The aspect ratio "' . $aspectRatio . '" is not compatible with the square orientation.'
             );
         }
-        $aspectRatioParts = explode(':', $aspectRatio);
         if ($orientation->isLandscape() && $aspectRatioParts[0] <= $aspectRatioParts[1]) {
             throw new InvalidArgumentException(
                 'The aspect ratio "' . $aspectRatio . '" is not compatible with the landscape orientation.'
