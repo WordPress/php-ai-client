@@ -11,14 +11,14 @@ namespace WordPress\AiClient\Common\Exception;
  * exceeds the allowed limit, whether that is the model's context window
  * or a configured maximum.
  *
- * @since 0.4.0
+ * @since n.e.x.t
  */
 class TokenLimitReachedException extends RuntimeException
 {
     /**
      * The token limit that was reached, if known.
      *
-     * @since 0.4.0
+     * @since n.e.x.t
      *
      * @var int|null
      */
@@ -27,7 +27,7 @@ class TokenLimitReachedException extends RuntimeException
     /**
      * Creates a new TokenLimitReachedException.
      *
-     * @since 0.4.0
+     * @since n.e.x.t
      *
      * @param string         $message   The exception message.
      * @param int|null       $maxTokens The token limit that was reached, if known.
@@ -43,7 +43,7 @@ class TokenLimitReachedException extends RuntimeException
     /**
      * Returns the token limit that was reached, if known.
      *
-     * @since 0.4.0
+     * @since n.e.x.t
      *
      * @return int|null The token limit, or null if not provided.
      */
