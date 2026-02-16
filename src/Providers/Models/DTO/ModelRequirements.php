@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\DTO;
 
-use InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
