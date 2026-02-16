@@ -521,17 +521,17 @@ class ModelConfig extends AbstractDataTransferObject
      *
      * @since 0.1.0
      *
-     * @param list<FunctionDeclaration> $function_declarations The function declarations.
+     * @param list<FunctionDeclaration> $functionDeclarations The function declarations.
      *
      * @throws InvalidArgumentException If the array is not a list.
      */
-    public function setFunctionDeclarations(array $function_declarations): void
+    public function setFunctionDeclarations(array $functionDeclarations): void
     {
-        if (!array_is_list($function_declarations)) {
+        if (!array_is_list($functionDeclarations)) {
             throw new InvalidArgumentException('Function declarations must be a list array.');
         }
 
-        $this->functionDeclarations = $function_declarations;
+        $this->functionDeclarations = $functionDeclarations;
     }
 
     /**
@@ -551,11 +551,11 @@ class ModelConfig extends AbstractDataTransferObject
      *
      * @since 0.1.0
      *
-     * @param WebSearch $web_search The web search configuration.
+     * @param WebSearch $webSearch The web search configuration.
      */
-    public function setWebSearch(WebSearch $web_search): void
+    public function setWebSearch(WebSearch $webSearch): void
     {
-        $this->webSearch = $web_search;
+        $this->webSearch = $webSearch;
     }
 
     /**
@@ -729,12 +729,12 @@ class ModelConfig extends AbstractDataTransferObject
         MediaOrientationEnum $orientation,
         string $aspectRatio
     ): void {
-        if ($orientation->isSquare() && $aspectRatio !== '1:1') {
+        $aspectRatioParts = explode(':', $aspectRatio);
+        if ($orientation->isSquare() && $aspectRatioParts[0] !== $aspectRatioParts[1]) {
             throw new InvalidArgumentException(
                 'The aspect ratio "' . $aspectRatio . '" is not compatible with the square orientation.'
             );
         }
-        $aspectRatioParts = explode(':', $aspectRatio);
         if ($orientation->isLandscape() && $aspectRatioParts[0] <= $aspectRatioParts[1]) {
             throw new InvalidArgumentException(
                 'The aspect ratio "' . $aspectRatio . '" is not compatible with the landscape orientation.'
@@ -991,8 +991,8 @@ class ModelConfig extends AbstractDataTransferObject
 
         if ($this->functionDeclarations !== null) {
             $data[self::KEY_FUNCTION_DECLARATIONS] = array_map(
-                static function (FunctionDeclaration $function_declaration): array {
-                    return $function_declaration->toArray();
+                static function (FunctionDeclaration $functionDeclaration): array {
+                    return $functionDeclaration->toArray();
                 },
                 $this->functionDeclarations
             );
@@ -1096,8 +1096,8 @@ class ModelConfig extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_FUNCTION_DECLARATIONS])) {
             $config->setFunctionDeclarations(array_map(
-                static function (array $function_declaration_data): FunctionDeclaration {
-                    return FunctionDeclaration::fromArray($function_declaration_data);
+                static function (array $functionDeclarationData): FunctionDeclaration {
+                    return FunctionDeclaration::fromArray($functionDeclarationData);
                 },
                 $array[self::KEY_FUNCTION_DECLARATIONS]
             ));
