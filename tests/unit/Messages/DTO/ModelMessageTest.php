@@ -15,7 +15,7 @@ use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 
 /**
- * @covers ModelMessage
+ * @covers \WordPress\AiClient\Messages\DTO\ModelMessage
  */
 class ModelMessageTest extends TestCase
 {
