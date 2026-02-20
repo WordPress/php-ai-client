@@ -17,14 +17,14 @@ use Psr\Http\Client\ClientInterface;
  * the createClient() method to provide their specific PSR-18
  * HTTP client instance using the provided Psr17Factory.
  *
- * @since n.e.x.t
+ * @since 1.1.0
  */
 abstract class AbstractClientDiscoveryStrategy implements DiscoveryStrategy
 {
     /**
      * Initializes and registers the discovery strategy.
      *
-     * @since n.e.x.t
+     * @since 1.1.0
      *
      * @return void
      */
@@ -40,7 +40,7 @@ abstract class AbstractClientDiscoveryStrategy implements DiscoveryStrategy
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 1.1.0
      *
      * @param string $type The type of discovery.
      * @return array<array<string, mixed>> The discovery candidates.
@@ -86,7 +86,7 @@ abstract class AbstractClientDiscoveryStrategy implements DiscoveryStrategy
      * all PSR-17 interfaces (RequestFactory, ResponseFactory, StreamFactory,
      * etc.) and can be used to satisfy client constructor dependencies.
      *
-     * @since n.e.x.t
+     * @since 1.1.0
      *
      * @param Psr17Factory $psr17Factory The PSR-17 factory for creating HTTP messages.
      * @return ClientInterface The PSR-18 HTTP client.
