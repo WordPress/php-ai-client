@@ -9,10 +9,10 @@ use RuntimeException;
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
-use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Tests\mocks\MockProvider;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
 /**
@@ -241,9 +241,11 @@ class AiClientTest extends TestCase
      */
     public function testIsConfiguredWithProviderIdString(): void
     {
-        // This test will use the actual default registry since we can't easily mock static methods
-        // The default registry should have providers registered, so we test the delegation path
-        $result = AiClient::isConfigured('openai');
+        // Register a mock provider to test the delegation path
+        $registry = AiClient::defaultRegistry();
+        $registry->registerProvider(MockProvider::class);
+
+        $result = AiClient::isConfigured('mock');
 
         // The result will be false because no actual API keys are configured in tests,
         // but the important thing is that no exception is thrown and the registry delegation works
@@ -255,9 +257,11 @@ class AiClientTest extends TestCase
      */
     public function testIsConfiguredWithProviderClassName(): void
     {
-        // This test will use the actual default registry since we can't easily mock static methods
-        // The default registry should have providers registered, so we test the delegation path
-        $result = AiClient::isConfigured(OpenAiProvider::class);
+        // Register a mock provider to test the delegation path
+        $registry = AiClient::defaultRegistry();
+        $registry->registerProvider(MockProvider::class);
+
+        $result = AiClient::isConfigured(MockProvider::class);
 
         // The result will be false because no actual API keys are configured in tests,
         // but the important thing is that no exception is thrown and the registry delegation works

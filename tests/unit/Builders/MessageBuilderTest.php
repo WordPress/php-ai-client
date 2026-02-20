@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\Unit\Builders;
+namespace WordPress\AiClient\Tests\unit\Builders;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;

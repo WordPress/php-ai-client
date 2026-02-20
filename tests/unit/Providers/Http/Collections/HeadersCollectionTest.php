@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\Unit\Providers\Http\Collections;
+namespace WordPress\AiClient\Tests\unit\Providers\Http\Collections;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Http\Collections\HeadersCollection;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\Providers\Http;
+namespace WordPress\AiClient\Tests\unit\Providers\Http;
 
 use GuzzleHttp\Psr7\HttpFactory;
 use GuzzleHttp\Psr7\Response as Psr7Response;

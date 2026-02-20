@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\Unit\Providers\Http\Enums;
+namespace WordPress\AiClient\Tests\unit\Providers\Http\Enums;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;

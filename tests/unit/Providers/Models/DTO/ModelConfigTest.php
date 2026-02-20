@@ -715,6 +715,15 @@ class ModelConfigTest extends TestCase
         $config->setOutputMediaOrientation(MediaOrientationEnum::square());
     }
 
+    public function testMediaOrientationAspectRatioCompatibilitySquareNonNormalized(): void
+    {
+        $config = new ModelConfig();
+        $config->setOutputMediaOrientation(MediaOrientationEnum::square());
+        $config->setOutputMediaAspectRatio('16:16');
+
+        $this->assertSame('16:16', $config->getOutputMediaAspectRatio());
+    }
+
     public function testMediaOrientationAspectRatioCompatibilityLandscape(): void
     {
         $config = new ModelConfig();
