@@ -58,10 +58,6 @@ class HttpTransporterTest extends TestCase
     /**
      * Tests sending a simple GET request.
      *
-     * @covers ::send
-     * @covers ::convertToPsr7Request
-     * @covers ::convertFromPsr7Response
-     *
      * @return void
      */
     public function testSendGetRequest(): void
@@ -87,10 +83,6 @@ class HttpTransporterTest extends TestCase
 
     /**
      * Tests sending a POST request with body.
-     *
-     * @covers ::send
-     * @covers ::convertToPsr7Request
-     * @covers ::convertFromPsr7Response
      *
      * @return void
      */
@@ -125,10 +117,6 @@ class HttpTransporterTest extends TestCase
     /**
      * Tests handling headers with multiple values.
      *
-     * @covers ::send
-     * @covers ::convertToPsr7Request
-     * @covers ::convertFromPsr7Response
-     *
      * @return void
      */
     public function testMultipleHeaderValues(): void
@@ -162,9 +150,6 @@ class HttpTransporterTest extends TestCase
     /**
      * Tests sending a GET request with array data as query parameters.
      *
-     * @covers ::send
-     * @covers ::convertToPsr7Request
-     *
      * @return void
      */
     public function testSendGetRequestWithArrayData(): void
@@ -187,9 +172,6 @@ class HttpTransporterTest extends TestCase
 
     /**
      * Tests sending a POST request with array data as JSON.
-     *
-     * @covers ::send
-     * @covers ::convertToPsr7Request
      *
      * @return void
      */
@@ -214,9 +196,6 @@ class HttpTransporterTest extends TestCase
     /**
      * Tests sending a POST request with array data as form-encoded.
      *
-     * @covers ::send
-     * @covers ::convertToPsr7Request
-     *
      * @return void
      */
     public function testSendPostRequestWithArrayDataAsForm(): void
@@ -239,10 +218,6 @@ class HttpTransporterTest extends TestCase
 
     /**
      * Tests that Guzzle-like clients receive request options through the send method.
-     *
-     * @covers ::send
-     * @covers ::buildGuzzleOptions
-     * @covers ::isGuzzleClient
      *
      * @return void
      */
@@ -314,8 +289,6 @@ class HttpTransporterTest extends TestCase
     /**
      * Tests using discovery when no dependencies provided.
      *
-     * @covers ::__construct
-     *
      * @return void
      */
     public function testConstructorWithDiscovery(): void
@@ -330,10 +303,6 @@ class HttpTransporterTest extends TestCase
 
     /**
      * Tests that parameter options override request options when both are provided.
-     *
-     * @covers ::send
-     * @covers ::mergeOptions
-     * @covers ::buildGuzzleOptions
      *
      * @return void
      */

@@ -18,8 +18,6 @@ class HttpTransporterFactoryTest extends TestCase
     /**
      * Tests creating an HTTP transporter.
      *
-     * @covers ::createTransporter
-     *
      * @return void
      */
     public function testCreateTransporter(): void

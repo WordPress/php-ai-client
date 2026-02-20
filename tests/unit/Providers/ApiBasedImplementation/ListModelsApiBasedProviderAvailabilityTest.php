@@ -10,7 +10,7 @@ use WordPress\AiClient\Providers\ApiBasedImplementation\ListModelsApiBasedProvid
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
 
 /**
- * @covers \WordPress\AiClient\Providers\ListModelsApiBasedProviderAvailability
+ * @covers \WordPress\AiClient\Providers\ApiBasedImplementation\ListModelsApiBasedProviderAvailability
  */
 class ListModelsApiBasedProviderAvailabilityTest extends TestCase
 {
