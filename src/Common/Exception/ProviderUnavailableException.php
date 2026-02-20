@@ -48,8 +48,7 @@ class ProviderUnavailableException extends RuntimeException
         ?int $httpStatusCode = null,
         ?string $errorType = null,
         ?\Throwable $previous = null
-        )
-    {
+    ) {
         parent::__construct($message, 0, $previous);
 
         $this->httpStatusCode = $httpStatusCode;

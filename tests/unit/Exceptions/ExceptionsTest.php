@@ -7,8 +7,8 @@ namespace WordPress\AiClient\Tests\unit\Exceptions;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\AiClientExceptionInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
-use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Common\Exception\ProviderUnavailableException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Common\Exception\TokenLimitReachedException;
 use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Http\Exception\NetworkException;
@@ -38,7 +38,7 @@ class ExceptionsTest extends TestCase
         ];
 
         foreach ($exceptions as $exception) {
-            $this->assertInstanceOf(AiClientExceptionInterface::class , $exception);
+            $this->assertInstanceOf(AiClientExceptionInterface::class, $exception);
         }
     }
 
@@ -46,7 +46,7 @@ class ExceptionsTest extends TestCase
     {
         $exception = new TokenLimitReachedException('token limit reached');
 
-        $this->assertInstanceOf(RuntimeException::class , $exception);
+        $this->assertInstanceOf(RuntimeException::class, $exception);
     }
 
     public function testTokenLimitReachedExceptionMaxTokensDefaultsToNull(): void
@@ -67,7 +67,7 @@ class ExceptionsTest extends TestCase
     {
         $exception = new ProviderUnavailableException('provider unavailable');
 
-        $this->assertInstanceOf(RuntimeException::class , $exception);
+        $this->assertInstanceOf(RuntimeException::class, $exception);
     }
 
     public function testProviderUnavailableExceptionDefaultsToNull(): void
@@ -107,8 +107,7 @@ class ExceptionsTest extends TestCase
             $caught = false;
             try {
                 throw $exception;
-            }
-            catch (AiClientExceptionInterface $e) {
+            } catch (AiClientExceptionInterface $e) {
                 $caught = true;
                 $this->assertStringContainsString('error', $e->getMessage());
             }
