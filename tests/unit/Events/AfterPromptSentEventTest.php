@@ -12,7 +12,7 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
 /**
- * @covers \WordPress\AiClient\Events\AfterPromptSentEvent
+ * @covers \WordPress\AiClient\Events\AfterGenerateResultEvent
  */
 class AfterPromptSentEventTest extends TestCase
 {
