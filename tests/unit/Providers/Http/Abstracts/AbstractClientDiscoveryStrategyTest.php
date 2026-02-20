@@ -9,7 +9,7 @@ use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
-use WordPress\AiClient\Tests\mocks\ConcreteClientDiscoveryStrategy;
+use WordPress\AiClient\Tests\mocks\MockClientDiscoveryStrategy;
 
 /**
  * @covers \WordPress\AiClient\Providers\Http\Abstracts\AbstractClientDiscoveryStrategy
@@ -43,7 +43,7 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     protected function tearDown(): void
     {
         ClassDiscovery::setStrategies($this->originalStrategies);
-        ConcreteClientDiscoveryStrategy::reset();
+        MockClientDiscoveryStrategy::reset();
 
         parent::tearDown();
     }
@@ -58,7 +58,7 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     public function testGetCandidatesReturnsClientCandidateForClientInterfaceType(): void
     {
         // Act
-        $candidates = ConcreteClientDiscoveryStrategy::getCandidates(ClientInterface::class);
+        $candidates = MockClientDiscoveryStrategy::getCandidates(ClientInterface::class);
 
         // Assert
         $this->assertIsArray($candidates);
@@ -78,16 +78,16 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     {
         // Arrange
         $mockClient = new MockClient();
-        ConcreteClientDiscoveryStrategy::setClientToReturn($mockClient);
+        MockClientDiscoveryStrategy::setClientToReturn($mockClient);
 
-        $candidates = ConcreteClientDiscoveryStrategy::getCandidates(ClientInterface::class);
+        $candidates = MockClientDiscoveryStrategy::getCandidates(ClientInterface::class);
 
         // Act
         $result = $candidates[0]['class']();
 
         // Assert
         $this->assertSame($mockClient, $result);
-        $this->assertInstanceOf(Psr17Factory::class, ConcreteClientDiscoveryStrategy::getLastPsr17Factory());
+        $this->assertInstanceOf(Psr17Factory::class, MockClientDiscoveryStrategy::getLastPsr17Factory());
     }
 
     /**
@@ -100,7 +100,7 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     public function testGetCandidatesReturnsPsr17FactoryForRequestFactoryInterface(): void
     {
         // Act
-        $candidates = ConcreteClientDiscoveryStrategy::getCandidates(
+        $candidates = MockClientDiscoveryStrategy::getCandidates(
             'Psr\Http\Message\RequestFactoryInterface'
         );
 
@@ -120,7 +120,7 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     public function testGetCandidatesReturnsPsr17FactoryForResponseFactoryInterface(): void
     {
         // Act
-        $candidates = ConcreteClientDiscoveryStrategy::getCandidates(
+        $candidates = MockClientDiscoveryStrategy::getCandidates(
             'Psr\Http\Message\ResponseFactoryInterface'
         );
 
@@ -139,7 +139,7 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     public function testGetCandidatesReturnsPsr17FactoryForStreamFactoryInterface(): void
     {
         // Act
-        $candidates = ConcreteClientDiscoveryStrategy::getCandidates(
+        $candidates = MockClientDiscoveryStrategy::getCandidates(
             'Psr\Http\Message\StreamFactoryInterface'
         );
 
@@ -158,7 +158,7 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     public function testGetCandidatesReturnsPsr17FactoryForUriFactoryInterface(): void
     {
         // Act
-        $candidates = ConcreteClientDiscoveryStrategy::getCandidates(
+        $candidates = MockClientDiscoveryStrategy::getCandidates(
             'Psr\Http\Message\UriFactoryInterface'
         );
 
@@ -177,7 +177,7 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     public function testGetCandidatesReturnsPsr17FactoryForServerRequestFactoryInterface(): void
     {
         // Act
-        $candidates = ConcreteClientDiscoveryStrategy::getCandidates(
+        $candidates = MockClientDiscoveryStrategy::getCandidates(
             'Psr\Http\Message\ServerRequestFactoryInterface'
         );
 
@@ -196,7 +196,7 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     public function testGetCandidatesReturnsPsr17FactoryForUploadedFileFactoryInterface(): void
     {
         // Act
-        $candidates = ConcreteClientDiscoveryStrategy::getCandidates(
+        $candidates = MockClientDiscoveryStrategy::getCandidates(
             'Psr\Http\Message\UploadedFileFactoryInterface'
         );
 
@@ -215,7 +215,7 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     public function testGetCandidatesReturnsEmptyArrayForUnknownType(): void
     {
         // Act
-        $candidates = ConcreteClientDiscoveryStrategy::getCandidates('Some\Unknown\Interface');
+        $candidates = MockClientDiscoveryStrategy::getCandidates('Some\Unknown\Interface');
 
         // Assert
         $this->assertIsArray($candidates);
@@ -235,11 +235,11 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
         $strategiesBefore = ClassDiscovery::getStrategies();
 
         // Act
-        ConcreteClientDiscoveryStrategy::init();
+        MockClientDiscoveryStrategy::init();
 
         // Assert
         $strategiesAfter = ClassDiscovery::getStrategies();
-        $this->assertContains(ConcreteClientDiscoveryStrategy::class, $strategiesAfter);
-        $this->assertNotContains(ConcreteClientDiscoveryStrategy::class, $strategiesBefore);
+        $this->assertContains(MockClientDiscoveryStrategy::class, $strategiesAfter);
+        $this->assertNotContains(MockClientDiscoveryStrategy::class, $strategiesBefore);
     }
 }

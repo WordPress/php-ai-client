@@ -9,9 +9,9 @@ use Psr\Http\Client\ClientInterface;
 use WordPress\AiClient\Providers\Http\Abstracts\AbstractClientDiscoveryStrategy;
 
 /**
- * Concrete implementation of AbstractClientDiscoveryStrategy for testing.
+ * Mock implementation of AbstractClientDiscoveryStrategy for testing.
  */
-class ConcreteClientDiscoveryStrategy extends AbstractClientDiscoveryStrategy
+class MockClientDiscoveryStrategy extends AbstractClientDiscoveryStrategy
 {
     /**
      * @var ClientInterface|null The client to return from createClient().
