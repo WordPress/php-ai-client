@@ -51,8 +51,6 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     /**
      * Tests that getCandidates returns a client candidate for PSR-18 ClientInterface type.
      *
-     * @covers ::getCandidates
-     *
      * @return void
      */
     public function testGetCandidatesReturnsClientCandidateForClientInterfaceType(): void
@@ -69,8 +67,6 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
 
     /**
      * Tests that the client candidate closure invokes createClient with a Psr17Factory.
-     *
-     * @covers ::getCandidates
      *
      * @return void
      */
@@ -93,8 +89,6 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     /**
      * Tests that getCandidates returns Psr17Factory for PSR-17 request factory type.
      *
-     * @covers ::getCandidates
-     *
      * @return void
      */
     public function testGetCandidatesReturnsPsr17FactoryForRequestFactoryInterface(): void
@@ -113,8 +107,6 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     /**
      * Tests that getCandidates returns Psr17Factory for PSR-17 response factory type.
      *
-     * @covers ::getCandidates
-     *
      * @return void
      */
     public function testGetCandidatesReturnsPsr17FactoryForResponseFactoryInterface(): void
@@ -131,8 +123,6 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
 
     /**
      * Tests that getCandidates returns Psr17Factory for PSR-17 stream factory type.
-     *
-     * @covers ::getCandidates
      *
      * @return void
      */
@@ -151,8 +141,6 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     /**
      * Tests that getCandidates returns Psr17Factory for PSR-17 URI factory type.
      *
-     * @covers ::getCandidates
-     *
      * @return void
      */
     public function testGetCandidatesReturnsPsr17FactoryForUriFactoryInterface(): void
@@ -169,8 +157,6 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
 
     /**
      * Tests that getCandidates returns Psr17Factory for PSR-17 server request factory type.
-     *
-     * @covers ::getCandidates
      *
      * @return void
      */
@@ -189,8 +175,6 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     /**
      * Tests that getCandidates returns Psr17Factory for PSR-17 upload file factory type.
      *
-     * @covers ::getCandidates
-     *
      * @return void
      */
     public function testGetCandidatesReturnsPsr17FactoryForUploadedFileFactoryInterface(): void
@@ -208,8 +192,6 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
     /**
      * Tests that getCandidates returns an empty array for an unknown type.
      *
-     * @covers ::getCandidates
-     *
      * @return void
      */
     public function testGetCandidatesReturnsEmptyArrayForUnknownType(): void
@@ -224,8 +206,6 @@ class AbstractClientDiscoveryStrategyTest extends TestCase
 
     /**
      * Tests that init registers the strategy with Psr18ClientDiscovery.
-     *
-     * @covers ::init
      *
      * @return void
      */

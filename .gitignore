@@ -32,6 +32,7 @@ GEMINI.md
 ############
 
 .phpunit.cache/
+coverage.xml
 
 ############
 ## IDEs

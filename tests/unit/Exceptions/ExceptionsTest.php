@@ -18,7 +18,6 @@ use WordPress\AiClient\Providers\Http\Exception\NetworkException;
  * @since 0.2.0
  * @covers \WordPress\AiClient\Common\Exception\InvalidArgumentException
  * @covers \WordPress\AiClient\Common\Exception\RuntimeException
- * @covers \WordPress\AiClient\Common\Contracts\AiClientExceptionInterface
  * @covers \WordPress\AiClient\Common\Exception\TokenLimitReachedException
  * @covers \WordPress\AiClient\Providers\Http\Exception\NetworkException
  * @covers \WordPress\AiClient\Providers\Http\Exception\ClientException

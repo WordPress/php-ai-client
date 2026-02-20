@@ -29,9 +29,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    name: Test with PHP ${{matrix.php-version}} ${{ matrix.coverage && ' (coverage)' || '' }}
     strategy:
       matrix:
         php-version: ['7.4', '8.0', '8.4', '8.5']
+        coverage: [false]
+        include:
+          - php-version: '8.4'
+            coverage: true
 
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -39,7 +44,7 @@ jobs:
       uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
       with:
         php-version: ${{ matrix.php-version }}
-        coverage: xdebug
+        coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
 
     - name: Validate composer.json and composer.lock
       run: composer validate --strict
@@ -57,4 +62,12 @@ jobs:
       run: composer install --prefer-dist --no-progress
 
     - name: Run unit tests
-      run: composer test:unit
+      run: composer test:unit ${{ matrix.coverage && '-- --coverage-clover=coverage.xml' || '' }}
+
+    - name: Upload coverage to Codecov
+      if: ${{ matrix.coverage }}
+      uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+      with:
+        files: coverage.xml
+        flags: unit
+        token: ${{ secrets.CODECOV_TOKEN }}
