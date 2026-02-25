@@ -28,7 +28,7 @@ class ProviderModelsMetadataTest extends TestCase
      */
     private function createProviderMetadata(): ProviderMetadata
     {
-        return new ProviderMetadata('openai', 'OpenAI', ProviderTypeEnum::cloud());
+        return new ProviderMetadata('openai', 'OpenAI');
     }
 
     /**
@@ -281,7 +281,7 @@ class ProviderModelsMetadataTest extends TestCase
      */
     public function testWithMultipleModelsAndCapabilities(): void
     {
-        $provider = new ProviderMetadata('multi-provider', 'Multi Provider', ProviderTypeEnum::server());
+        $provider = new ProviderMetadata('multi-provider', 'Multi Provider', ['type' => ProviderTypeEnum::server()]);
         $models = [
             new ModelMetadata(
                 'text-only',
