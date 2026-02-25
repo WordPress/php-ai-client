@@ -19,6 +19,7 @@ use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
  * @phpstan-type ProviderMetadataArrayShape array{
  *     id: string,
  *     name: string,
+ *     description?: ?string,
  *     type: string,
  *     credentialsUrl?: ?string,
  *     authenticationMethod?: ?string
@@ -30,6 +31,7 @@ class ProviderMetadata extends AbstractDataTransferObject
 {
     public const KEY_ID = 'id';
     public const KEY_NAME = 'name';
+    public const KEY_DESCRIPTION = 'description';
     public const KEY_TYPE = 'type';
     public const KEY_CREDENTIALS_URL = 'credentialsUrl';
     public const KEY_AUTHENTICATION_METHOD = 'authenticationMethod';
@@ -43,6 +45,11 @@ class ProviderMetadata extends AbstractDataTransferObject
      * @var string The provider's display name.
      */
     protected string $name;
+
+    /**
+     * @var string|null The provider's description.
+     */
+    protected ?string $description;
 
     /**
      * @var ProviderTypeEnum The provider type.
@@ -69,16 +76,19 @@ class ProviderMetadata extends AbstractDataTransferObject
      * @param ProviderTypeEnum $type The provider type.
      * @param string|null $credentialsUrl The URL where users can get credentials.
      * @param RequestAuthenticationMethod|null $authenticationMethod The authentication method.
+     * @param string|null $description The provider's description.
      */
     public function __construct(
         string $id,
         string $name,
         ProviderTypeEnum $type,
         ?string $credentialsUrl = null,
-        ?RequestAuthenticationMethod $authenticationMethod = null
+        ?RequestAuthenticationMethod $authenticationMethod = null,
+        ?string $description = null
     ) {
         $this->id = $id;
         $this->name = $name;
+        $this->description = $description;
         $this->type = $type;
         $this->credentialsUrl = $credentialsUrl;
         $this->authenticationMethod = $authenticationMethod;
@@ -106,6 +116,18 @@ class ProviderMetadata extends AbstractDataTransferObject
     public function getName(): string
     {
         return $this->name;
+    }
+
+    /**
+     * Gets the provider's description.
+     *
+     * @since 0.5.0
+     *
+     * @return string|null The provider description.
+     */
+    public function getDescription(): ?string
+    {
+        return $this->description;
     }
 
     /**
@@ -162,6 +184,10 @@ class ProviderMetadata extends AbstractDataTransferObject
                     'type' => 'string',
                     'description' => 'The provider\'s display name.',
                 ],
+                self::KEY_DESCRIPTION => [
+                    'type' => 'string',
+                    'description' => 'The provider\'s description.',
+                ],
                 self::KEY_TYPE => [
                     'type' => 'string',
                     'enum' => ProviderTypeEnum::getValues(),
@@ -193,6 +219,7 @@ class ProviderMetadata extends AbstractDataTransferObject
         return [
             self::KEY_ID => $this->id,
             self::KEY_NAME => $this->name,
+            self::KEY_DESCRIPTION => $this->description,
             self::KEY_TYPE => $this->type->value,
             self::KEY_CREDENTIALS_URL => $this->credentialsUrl,
             self::KEY_AUTHENTICATION_METHOD => $this->authenticationMethod ? $this->authenticationMethod->value : null,
@@ -215,7 +242,8 @@ class ProviderMetadata extends AbstractDataTransferObject
             $array[self::KEY_CREDENTIALS_URL] ?? null,
             isset($array[self::KEY_AUTHENTICATION_METHOD])
                 ? RequestAuthenticationMethod::from($array[self::KEY_AUTHENTICATION_METHOD])
-                : null
+                : null,
+            $array[self::KEY_DESCRIPTION] ?? null
         );
     }
 }

@@ -31,6 +31,7 @@ class ProviderMetadataTest extends TestCase
 
         $this->assertEquals($id, $metadata->getId());
         $this->assertEquals($name, $metadata->getName());
+        $this->assertNull($metadata->getDescription());
         $this->assertSame($type, $metadata->getType());
         $this->assertTrue($metadata->getType()->isCloud());
         $this->assertNull($metadata->getCredentialsUrl());
@@ -54,6 +55,26 @@ class ProviderMetadataTest extends TestCase
         $this->assertEquals($name, $metadata->getName());
         $this->assertSame($type, $metadata->getType());
         $this->assertEquals($credentialsUrl, $metadata->getCredentialsUrl());
+    }
+
+    /**
+     * Tests constructor with description.
+     *
+     * @return void
+     */
+    public function testConstructorWithDescription(): void
+    {
+        $id = 'openai';
+        $name = 'OpenAI';
+        $type = ProviderTypeEnum::cloud();
+        $description = 'OpenAI is a leading AI research lab.';
+
+        $metadata = new ProviderMetadata($id, $name, $type, null, null, $description);
+
+        $this->assertEquals($id, $metadata->getId());
+        $this->assertEquals($name, $metadata->getName());
+        $this->assertEquals($description, $metadata->getDescription());
+        $this->assertSame($type, $metadata->getType());
     }
 
     /**
@@ -98,12 +119,14 @@ class ProviderMetadataTest extends TestCase
         $this->assertArrayHasKey('properties', $schema);
         $this->assertArrayHasKey(ProviderMetadata::KEY_ID, $schema['properties']);
         $this->assertArrayHasKey(ProviderMetadata::KEY_NAME, $schema['properties']);
+        $this->assertArrayHasKey(ProviderMetadata::KEY_DESCRIPTION, $schema['properties']);
         $this->assertArrayHasKey(ProviderMetadata::KEY_TYPE, $schema['properties']);
         $this->assertArrayHasKey(ProviderMetadata::KEY_CREDENTIALS_URL, $schema['properties']);
 
         // Check property types
         $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_ID]['type']);
         $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_NAME]['type']);
+        $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_DESCRIPTION]['type']);
         $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_TYPE]['type']);
         $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_CREDENTIALS_URL]['type']);
 
@@ -132,10 +155,11 @@ class ProviderMetadataTest extends TestCase
         $this->assertIsArray($array);
         $this->assertEquals('anthropic', $array[ProviderMetadata::KEY_ID]);
         $this->assertEquals('Anthropic', $array[ProviderMetadata::KEY_NAME]);
+        $this->assertNull($array[ProviderMetadata::KEY_DESCRIPTION]);
         $this->assertEquals('cloud', $array[ProviderMetadata::KEY_TYPE]);
         $this->assertNull($array[ProviderMetadata::KEY_CREDENTIALS_URL]);
         $this->assertNull($array[ProviderMetadata::KEY_AUTHENTICATION_METHOD]);
-        $this->assertCount(5, $array);
+        $this->assertCount(6, $array);
     }
 
     /**
