@@ -9,6 +9,7 @@ use WordPress\AiClient\Providers\AbstractProvider;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -175,7 +176,7 @@ class AbstractProviderTest extends TestCase
             }
             protected static function createProviderMetadata(): ProviderMetadata
             {
-                return new ProviderMetadata('mock-provider-1', 'Mock Provider 1');
+                return new ProviderMetadata('mock-provider-1', 'Mock Provider 1', ProviderTypeEnum::cloud());
             }
             protected static function createProviderAvailability(): ProviderAvailabilityInterface
             {
@@ -196,7 +197,7 @@ class AbstractProviderTest extends TestCase
             }
             protected static function createProviderMetadata(): ProviderMetadata
             {
-                return new ProviderMetadata('mock-provider-2', 'Mock Provider 2');
+                return new ProviderMetadata('mock-provider-2', 'Mock Provider 2', ProviderTypeEnum::cloud());
             }
             protected static function createProviderAvailability(): ProviderAvailabilityInterface
             {

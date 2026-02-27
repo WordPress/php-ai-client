@@ -23,7 +23,7 @@ class MockNoAuthProvider implements ProviderInterface
      */
     public static function metadata(): ProviderMetadata
     {
-        return new ProviderMetadata('no-auth', 'No Auth Provider', ['type' => ProviderTypeEnum::server()]);
+        return new ProviderMetadata('no-auth', 'No Auth Provider', ProviderTypeEnum::server());
     }
 
     /**

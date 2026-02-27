@@ -17,56 +17,64 @@ use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 class ProviderMetadataTest extends TestCase
 {
     /**
-     * Tests constructor and getter methods with defaults.
+     * Tests constructor and getter methods.
      *
      * @return void
      */
     public function testConstructorAndGetters(): void
     {
-        $metadata = new ProviderMetadata('openai', 'OpenAI');
+        $id = 'openai';
+        $name = 'OpenAI';
+        $type = ProviderTypeEnum::cloud();
 
-        $this->assertEquals('openai', $metadata->getId());
-        $this->assertEquals('OpenAI', $metadata->getName());
+        $metadata = new ProviderMetadata($id, $name, $type);
+
+        $this->assertEquals($id, $metadata->getId());
+        $this->assertEquals($name, $metadata->getName());
         $this->assertNull($metadata->getDescription());
+        $this->assertSame($type, $metadata->getType());
         $this->assertTrue($metadata->getType()->isCloud());
         $this->assertNull($metadata->getCredentialsUrl());
-        $this->assertNull($metadata->getAuthenticationMethod());
     }
 
     /**
-     * Tests constructor with all args.
+     * Tests constructor with credentials URL.
      *
      * @return void
      */
-    public function testConstructorWithAllArgs(): void
+    public function testConstructorWithCredentialsUrl(): void
     {
-        $metadata = new ProviderMetadata('openai', 'OpenAI', [
-            'description' => 'OpenAI is a leading AI research lab.',
-            'type' => ProviderTypeEnum::server(),
-            'credentialsUrl' => 'https://platform.openai.com/account/api-keys',
-        ]);
+        $id = 'openai';
+        $name = 'OpenAI';
+        $type = ProviderTypeEnum::cloud();
+        $credentialsUrl = 'https://platform.openai.com/account/api-keys';
 
-        $this->assertEquals('openai', $metadata->getId());
-        $this->assertEquals('OpenAI', $metadata->getName());
-        $this->assertEquals('OpenAI is a leading AI research lab.', $metadata->getDescription());
-        $this->assertTrue($metadata->getType()->isServer());
-        $this->assertEquals('https://platform.openai.com/account/api-keys', $metadata->getCredentialsUrl());
-    }
+        $metadata = new ProviderMetadata($id, $name, $type, $credentialsUrl);
 
-    /**
-     * Tests backwards-compatible constructor with positional arguments.
-     *
-     * @return void
-     */
-    public function testConstructorBackwardsCompatibility(): void
-    {
-        $type = ProviderTypeEnum::server();
-        $metadata = new ProviderMetadata('openai', 'OpenAI', $type, 'https://example.com/keys');
-
-        $this->assertEquals('openai', $metadata->getId());
-        $this->assertEquals('OpenAI', $metadata->getName());
+        $this->assertEquals($id, $metadata->getId());
+        $this->assertEquals($name, $metadata->getName());
         $this->assertSame($type, $metadata->getType());
-        $this->assertEquals('https://example.com/keys', $metadata->getCredentialsUrl());
+        $this->assertEquals($credentialsUrl, $metadata->getCredentialsUrl());
+    }
+
+    /**
+     * Tests constructor with description.
+     *
+     * @return void
+     */
+    public function testConstructorWithDescription(): void
+    {
+        $id = 'openai';
+        $name = 'OpenAI';
+        $type = ProviderTypeEnum::cloud();
+        $description = 'OpenAI is a leading AI research lab.';
+
+        $metadata = new ProviderMetadata($id, $name, $type, null, null, $description);
+
+        $this->assertEquals($id, $metadata->getId());
+        $this->assertEquals($name, $metadata->getName());
+        $this->assertEquals($description, $metadata->getDescription());
+        $this->assertSame($type, $metadata->getType());
     }
 
     /**
@@ -76,20 +84,20 @@ class ProviderMetadataTest extends TestCase
      */
     public function testDifferentProviderTypes(): void
     {
-        // Test cloud provider (default)
-        $cloudProvider = new ProviderMetadata('google', 'Google AI');
+        // Test cloud provider
+        $cloudProvider = new ProviderMetadata('google', 'Google AI', ProviderTypeEnum::cloud());
         $this->assertTrue($cloudProvider->getType()->isCloud());
         $this->assertFalse($cloudProvider->getType()->isServer());
         $this->assertFalse($cloudProvider->getType()->isClient());
 
         // Test server provider
-        $serverProvider = new ProviderMetadata('llama', 'LLaMA', ['type' => ProviderTypeEnum::server()]);
+        $serverProvider = new ProviderMetadata('llama', 'LLaMA', ProviderTypeEnum::server());
         $this->assertFalse($serverProvider->getType()->isCloud());
         $this->assertTrue($serverProvider->getType()->isServer());
         $this->assertFalse($serverProvider->getType()->isClient());
 
         // Test client provider
-        $clientProvider = new ProviderMetadata('browser-ai', 'Browser AI', ['type' => ProviderTypeEnum::client()]);
+        $clientProvider = new ProviderMetadata('browser-ai', 'Browser AI', ProviderTypeEnum::client());
         $this->assertFalse($clientProvider->getType()->isCloud());
         $this->assertFalse($clientProvider->getType()->isServer());
         $this->assertTrue($clientProvider->getType()->isClient());
@@ -129,7 +137,7 @@ class ProviderMetadataTest extends TestCase
         // Check required fields
         $this->assertArrayHasKey('required', $schema);
         $this->assertEquals(
-            [ProviderMetadata::KEY_ID, ProviderMetadata::KEY_NAME],
+            [ProviderMetadata::KEY_ID, ProviderMetadata::KEY_NAME, ProviderMetadata::KEY_TYPE],
             $schema['required']
         );
     }
@@ -141,7 +149,7 @@ class ProviderMetadataTest extends TestCase
      */
     public function testToArray(): void
     {
-        $metadata = new ProviderMetadata('anthropic', 'Anthropic');
+        $metadata = new ProviderMetadata('anthropic', 'Anthropic', ProviderTypeEnum::cloud());
         $array = $metadata->toArray();
 
         $this->assertIsArray($array);
@@ -184,7 +192,7 @@ class ProviderMetadataTest extends TestCase
      */
     public function testArrayRoundTrip(): void
     {
-        $original = new ProviderMetadata('test-provider', 'Test Provider', ['type' => ProviderTypeEnum::client()]);
+        $original = new ProviderMetadata('test-provider', 'Test Provider', ProviderTypeEnum::client());
         $array = $original->toArray();
         $restored = ProviderMetadata::fromArray($array);
 
@@ -200,7 +208,7 @@ class ProviderMetadataTest extends TestCase
      */
     public function testJsonSerialize(): void
     {
-        $metadata = new ProviderMetadata('json-provider', 'JSON Provider');
+        $metadata = new ProviderMetadata('json-provider', 'JSON Provider', ProviderTypeEnum::cloud());
         $json = json_encode($metadata);
         $decoded = json_decode($json, true);
 
@@ -220,7 +228,8 @@ class ProviderMetadataTest extends TestCase
     {
         $metadata = new ProviderMetadata(
             'special-chars',
-            'Provider with "quotes" & special <chars>'
+            'Provider with "quotes" & special <chars>',
+            ProviderTypeEnum::cloud()
         );
 
         $array = $metadata->toArray();
@@ -237,7 +246,7 @@ class ProviderMetadataTest extends TestCase
      */
     public function testEmptyStrings(): void
     {
-        $metadata = new ProviderMetadata('', '');
+        $metadata = new ProviderMetadata('', '', ProviderTypeEnum::cloud());
 
         $this->assertEquals('', $metadata->getId());
         $this->assertEquals('', $metadata->getName());
@@ -254,7 +263,7 @@ class ProviderMetadataTest extends TestCase
      */
     public function testImplementsCorrectInterfaces(): void
     {
-        $metadata = new ProviderMetadata('test', 'Test');
+        $metadata = new ProviderMetadata('test', 'Test', ProviderTypeEnum::cloud());
 
         $this->assertInstanceOf(
             WithArrayTransformationInterface::class,

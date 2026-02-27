@@ -48,7 +48,7 @@ class MockAbstractProvider extends AbstractProvider
      */
     protected static function createProviderMetadata(): ProviderMetadata
     {
-        return static::$mockProviderMetadata ?? new ProviderMetadata('mock-provider', 'Mock Provider');
+        return static::$mockProviderMetadata ?? new ProviderMetadata('mock-provider', 'Mock Provider', '1.0.0');
     }
 
     /**

@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Tests\traits;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -55,7 +56,8 @@ trait MockModelCreationTrait
 
         $providerMetadata = new ProviderMetadata(
             'mock',
-            'Mock Provider'
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
         );
         $modelMetadata = new ModelMetadata(
             'mock-model',
@@ -126,7 +128,8 @@ trait MockModelCreationTrait
 
         $providerMetadata = new ProviderMetadata(
             'mock',
-            'Mock Provider'
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
         );
 
         return new class (
@@ -192,7 +195,8 @@ trait MockModelCreationTrait
 
         $providerMetadata = new ProviderMetadata(
             'mock',
-            'Mock Provider'
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
         );
 
         return new class (
@@ -255,7 +259,8 @@ trait MockModelCreationTrait
         $mockMetadata = $this->createMock(ModelMetadata::class);
         $mockProviderMetadata = new ProviderMetadata(
             'mock',
-            'Mock Provider'
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
         );
 
         $mockMetadata->expects($this->any())

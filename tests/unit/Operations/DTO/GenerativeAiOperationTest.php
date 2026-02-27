@@ -38,7 +38,8 @@ class GenerativeAiOperationTest extends TestCase
     {
         return new ProviderMetadata(
             'test-provider',
-            'Test Provider'
+            'Test Provider',
+            ProviderTypeEnum::cloud()
         );
     }
 

@@ -16,12 +16,6 @@ use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
  *
  * @since 0.1.0
  *
- * @phpstan-type ProviderMetadataArgsShape array{
- *     description?: ?string,
- *     type?: ProviderTypeEnum,
- *     credentialsUrl?: ?string,
- *     authenticationMethod?: ?RequestAuthenticationMethod
- * }
  * @phpstan-type ProviderMetadataArrayShape array{
  *     id: string,
  *     name: string,
@@ -75,51 +69,29 @@ class ProviderMetadata extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * Accepts either an array of arguments or legacy positional parameters
-     * for backwards compatibility.
-     *
      * @since 0.1.0
      *
-     * @param string                          $id   The provider's unique identifier.
-     * @param string                          $name The provider's display name.
-     * @param ProviderMetadataArgsShape|ProviderTypeEnum $args {
-     *     Optional. Provider metadata arguments, or a ProviderTypeEnum for backwards compatibility.
-     *
-     *     @type string|null                      $description          The provider's description.
-     *     @type ProviderTypeEnum                 $type                 The provider type. Default cloud.
-     *     @type string|null                      $credentialsUrl       The URL where users can get credentials.
-     *     @type RequestAuthenticationMethod|null  $authenticationMethod The authentication method.
-     * }
+     * @param string $id The provider's unique identifier.
+     * @param string $name The provider's display name.
+     * @param ProviderTypeEnum $type The provider type.
+     * @param string|null $credentialsUrl The URL where users can get credentials.
+     * @param RequestAuthenticationMethod|null $authenticationMethod The authentication method.
+     * @param string|null $description The provider's description.
      */
-    public function __construct(string $id, string $name, $args = [])
-    {
-        // Capture all arguments before any parameter is modified.
-        $allArgs = func_get_args();
-
+    public function __construct(
+        string $id,
+        string $name,
+        ProviderTypeEnum $type,
+        ?string $credentialsUrl = null,
+        ?RequestAuthenticationMethod $authenticationMethod = null,
+        ?string $description = null
+    ) {
         $this->id = $id;
         $this->name = $name;
-
-        // Backwards compatibility: accept old-style positional arguments.
-        if ($args instanceof ProviderTypeEnum) {
-            $args = [
-                self::KEY_TYPE => $allArgs[2],
-            ];
-            if (isset($allArgs[3])) {
-                $args[self::KEY_CREDENTIALS_URL] = $allArgs[3];
-            }
-            if (isset($allArgs[4])) {
-                $args[self::KEY_AUTHENTICATION_METHOD] = $allArgs[4];
-            }
-            if (isset($allArgs[5])) {
-                $args[self::KEY_DESCRIPTION] = $allArgs[5];
-            }
-        }
-
-        /** @var ProviderMetadataArgsShape $args */
-        $this->description = $args[self::KEY_DESCRIPTION] ?? null;
-        $this->type = $args[self::KEY_TYPE] ?? ProviderTypeEnum::cloud();
-        $this->credentialsUrl = $args[self::KEY_CREDENTIALS_URL] ?? null;
-        $this->authenticationMethod = $args[self::KEY_AUTHENTICATION_METHOD] ?? null;
+        $this->description = $description;
+        $this->type = $type;
+        $this->credentialsUrl = $credentialsUrl;
+        $this->authenticationMethod = $authenticationMethod;
     }
 
     /**
@@ -231,7 +203,7 @@ class ProviderMetadata extends AbstractDataTransferObject
                     'description' => 'The authentication method.',
                 ],
             ],
-            'required' => [self::KEY_ID, self::KEY_NAME],
+            'required' => [self::KEY_ID, self::KEY_NAME, self::KEY_TYPE],
         ];
     }
 
@@ -261,32 +233,17 @@ class ProviderMetadata extends AbstractDataTransferObject
      */
     public static function fromArray(array $array): self
     {
-        static::validateFromArrayData($array, [self::KEY_ID, self::KEY_NAME]);
-
-        $args = [];
-
-        if (isset($array[self::KEY_DESCRIPTION])) {
-            $args[self::KEY_DESCRIPTION] = $array[self::KEY_DESCRIPTION];
-        }
-
-        if (isset($array[self::KEY_TYPE])) {
-            $args[self::KEY_TYPE] = ProviderTypeEnum::from($array[self::KEY_TYPE]);
-        }
-
-        if (isset($array[self::KEY_CREDENTIALS_URL])) {
-            $args[self::KEY_CREDENTIALS_URL] = $array[self::KEY_CREDENTIALS_URL];
-        }
-
-        if (isset($array[self::KEY_AUTHENTICATION_METHOD])) {
-            $args[self::KEY_AUTHENTICATION_METHOD] = RequestAuthenticationMethod::from(
-                $array[self::KEY_AUTHENTICATION_METHOD]
-            );
-        }
+        static::validateFromArrayData($array, [self::KEY_ID, self::KEY_NAME, self::KEY_TYPE]);
 
         return new self(
             $array[self::KEY_ID],
             $array[self::KEY_NAME],
-            $args
+            ProviderTypeEnum::from($array[self::KEY_TYPE]),
+            $array[self::KEY_CREDENTIALS_URL] ?? null,
+            isset($array[self::KEY_AUTHENTICATION_METHOD])
+                ? RequestAuthenticationMethod::from($array[self::KEY_AUTHENTICATION_METHOD])
+                : null,
+            $array[self::KEY_DESCRIPTION] ?? null
         );
     }
 }

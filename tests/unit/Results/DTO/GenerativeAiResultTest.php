@@ -15,6 +15,7 @@ use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
@@ -39,7 +40,7 @@ class GenerativeAiResultTest extends TestCase
      */
     private function createTestProviderMetadata(): ProviderMetadata
     {
-        return new ProviderMetadata('test-provider', 'Test Provider');
+        return new ProviderMetadata('test-provider', 'Test Provider', ProviderTypeEnum::cloud());
     }
 
     /**

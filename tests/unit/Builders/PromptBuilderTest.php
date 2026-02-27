@@ -18,6 +18,7 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
+use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -57,7 +58,7 @@ class PromptBuilderTest extends TestCase
      */
     private function createTestProviderMetadata(): ProviderMetadata
     {
-        return new ProviderMetadata('test-provider', 'Test Provider');
+        return new ProviderMetadata('test-provider', 'Test Provider', ProviderTypeEnum::cloud());
     }
 
     /**
@@ -90,7 +91,8 @@ class PromptBuilderTest extends TestCase
     {
         $providerMetadata = new ProviderMetadata(
             'mock-provider',
-            'Mock Provider'
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
         );
 
         return new class (
@@ -152,7 +154,8 @@ class PromptBuilderTest extends TestCase
     {
         $providerMetadata = new ProviderMetadata(
             'mock-provider',
-            'Mock Provider'
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
         );
 
         return new class (
@@ -657,17 +660,20 @@ class PromptBuilderTest extends TestCase
 
         $firstProviderMetadata = new ProviderMetadata(
             'first-provider',
-            'First Provider'
+            'First Provider',
+            ProviderTypeEnum::cloud()
         );
 
         $preferredProviderMetadata = new ProviderMetadata(
             'preferred-provider',
-            'Preferred Provider'
+            'Preferred Provider',
+            ProviderTypeEnum::cloud()
         );
 
         $otherProviderMetadata = new ProviderMetadata(
             'other-provider',
-            'Other Provider'
+            'Other Provider',
+            ProviderTypeEnum::cloud()
         );
 
         $this->registry->expects($this->once())
@@ -1898,7 +1904,8 @@ class PromptBuilderTest extends TestCase
 
         $providerMetadata = new ProviderMetadata(
             'mock-provider',
-            'Mock Provider'
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
         );
 
         $model = new class (
@@ -2086,7 +2093,8 @@ class PromptBuilderTest extends TestCase
 
         $providerMetadata = new ProviderMetadata(
             'mock-provider',
-            'Mock Provider'
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
         );
 
         $model = new class (
