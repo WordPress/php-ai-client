@@ -8,6 +8,7 @@ use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
@@ -545,5 +546,60 @@ class SupportedOptionTest extends TestCase
         $this->assertArrayHasKey('required', $schema);
         $this->assertEquals([SupportedOption::KEY_NAME], $schema['required']);
         $this->assertNotContains(SupportedOption::KEY_SUPPORTED_VALUES, $schema['required']);
+    }
+
+    /**
+     * Tests isSupportedValue works after serialize/unserialize with scalar enum values.
+     *
+     * When WordPress uses a persistent object cache (Redis/Memcached), model metadata
+     * gets serialized. AbstractEnum singletons are reconstructed as new instances on
+     * unserialize, breaking strict identity (===) comparison.
+     *
+     * @return void
+     */
+    public function testIsSupportedValueWithDeserializedEnumInSupportedValues(): void
+    {
+        $option = new SupportedOption(
+            OptionEnum::outputModalities(),
+            [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::audio()]
+        );
+
+        // Simulate Redis/Memcached round-trip
+        $deserialized = unserialize(serialize($option));
+
+        // Fresh singleton enums should still match deserialized supported values
+        $this->assertTrue($deserialized->isSupportedValue(ModalityEnum::text()));
+        $this->assertTrue($deserialized->isSupportedValue(ModalityEnum::image()));
+        $this->assertTrue($deserialized->isSupportedValue(ModalityEnum::audio()));
+        $this->assertFalse($deserialized->isSupportedValue(ModalityEnum::video()));
+    }
+
+    /**
+     * Tests isSupportedValue works after serialize/unserialize with array enum values.
+     *
+     * This covers the pattern used in model metadata where supported values are arrays
+     * of enums, e.g. [[ModalityEnum::text()], [ModalityEnum::text(), ModalityEnum::image()]].
+     *
+     * @return void
+     */
+    public function testIsSupportedValueWithDeserializedEnumArrayValues(): void
+    {
+        $option = new SupportedOption(
+            OptionEnum::outputModalities(),
+            [
+                [ModalityEnum::text()],
+                [ModalityEnum::text(), ModalityEnum::image()],
+            ]
+        );
+
+        // Simulate Redis/Memcached round-trip
+        $deserialized = unserialize(serialize($option));
+
+        // Fresh singleton enums in arrays should still match
+        $this->assertTrue($deserialized->isSupportedValue([ModalityEnum::text()]));
+        $this->assertTrue($deserialized->isSupportedValue([ModalityEnum::text(), ModalityEnum::image()]));
+        $this->assertTrue($deserialized->isSupportedValue([ModalityEnum::image(), ModalityEnum::text()])); // Order shouldn't matter
+        $this->assertFalse($deserialized->isSupportedValue([ModalityEnum::audio()]));
+        $this->assertFalse($deserialized->isSupportedValue([ModalityEnum::text(), ModalityEnum::audio()]));
     }
 }
