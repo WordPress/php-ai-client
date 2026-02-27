@@ -15,6 +15,7 @@ use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
  * unique identifier, display name, and type (cloud, server, or client).
  *
  * @since 0.1.0
+ * @since n.e.x.t Added optional description property.
  *
  * @phpstan-type ProviderMetadataArrayShape array{
  *     id: string,
@@ -70,6 +71,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      * Constructor.
      *
      * @since 0.1.0
+     * @since n.e.x.t Added optional $description parameter.
      *
      * @param string $id The provider's unique identifier.
      * @param string $name The provider's display name.
@@ -121,7 +123,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     /**
      * Gets the provider's description.
      *
-     * @since 0.5.0
+     * @since n.e.x.t
      *
      * @return string|null The provider description.
      */
@@ -170,6 +172,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      * {@inheritDoc}
      *
      * @since 0.1.0
+     * @since n.e.x.t Added description to schema.
      */
     public static function getJsonSchema(): array
     {
@@ -211,6 +214,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      * {@inheritDoc}
      *
      * @since 0.1.0
+     * @since n.e.x.t Added description to output.
      *
      * @return ProviderMetadataArrayShape
      */
@@ -230,6 +234,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      * {@inheritDoc}
      *
      * @since 0.1.0
+     * @since n.e.x.t Added description support.
      */
     public static function fromArray(array $array): self
     {
