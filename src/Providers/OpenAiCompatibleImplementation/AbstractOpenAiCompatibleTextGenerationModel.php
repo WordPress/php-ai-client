@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Common\Exception\TokenLimitReachedException;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
@@ -658,6 +659,23 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
 
         $messageData = $choiceData['message'];
+
+        if (
+            'length' === $choiceData['finish_reason']
+            && isset($messageData['tool_calls'])
+            && is_array($messageData['tool_calls'])
+            && count($messageData['tool_calls']) > 0
+        ) {
+            throw new TokenLimitReachedException(
+                sprintf(
+                    '%s response was truncated while generating a tool call.'
+                    . ' Increase the max tokens or simplify the prompt.',
+                    $this->providerMetadata()->getName()
+                ),
+                $this->getConfig()->getMaxTokens()
+            );
+        }
+
         $message = $this->parseResponseChoiceMessage($messageData, $index);
 
         switch ($choiceData['finish_reason']) {
@@ -765,9 +783,18 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             return null;
         }
 
-        $functionArguments = is_string($toolCallData['function']['arguments'])
-            ? json_decode($toolCallData['function']['arguments'], true)
-            : $toolCallData['function']['arguments'];
+        if (is_string($toolCallData['function']['arguments'])) {
+            $functionArguments = json_decode($toolCallData['function']['arguments'], true);
+            if (null === $functionArguments && JSON_ERROR_NONE !== json_last_error()) {
+                throw ResponseException::fromInvalidData(
+                    $this->providerMetadata()->getName(),
+                    'tool_call.function.arguments',
+                    sprintf('Invalid JSON in tool call arguments: %s', json_last_error_msg())
+                );
+            }
+        } else {
+            $functionArguments = $toolCallData['function']['arguments'];
+        }
 
         $functionCall = new FunctionCall(
             isset($toolCallData['id']) && is_string($toolCallData['id']) ?

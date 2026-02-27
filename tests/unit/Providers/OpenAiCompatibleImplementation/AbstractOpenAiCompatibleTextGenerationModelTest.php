@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Providers\OpenAiCompatibleImplementation
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Exception\TokenLimitReachedException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -1327,5 +1328,129 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         // Should be skipped because OpenAI API doesn't support receiving thoughts.
         $this->assertNull($data);
+    }
+
+    /**
+     * Tests parseResponseChoiceToCandidate() throws TokenLimitReachedException
+     * when finish_reason is 'length' and tool calls are present.
+     *
+     * @return void
+     */
+    public function testParseResponseChoiceToCandidateThrowsOnLengthWithToolCalls(): void
+    {
+        $choiceData = [
+            'message' => [
+                'role' => 'assistant',
+                'content' => null,
+                'tool_calls' => [
+                    [
+                        'id' => 'call_123',
+                        'type' => 'function',
+                        'function' => [
+                            'name' => 'get_weather',
+                            'arguments' => '{"location": "Lon',
+                        ],
+                    ],
+                ],
+            ],
+            'finish_reason' => 'length',
+        ];
+        $model = $this->createModel();
+
+        $this->expectException(TokenLimitReachedException::class);
+        $this->expectExceptionMessage('TestProvider response was truncated while generating a tool call.');
+
+        $model->exposeParseResponseChoiceToCandidate($choiceData);
+    }
+
+    /**
+     * Tests parseResponseChoiceToCandidate() includes maxTokens in the
+     * TokenLimitReachedException when configured.
+     *
+     * @return void
+     */
+    public function testParseResponseChoiceToCandidateTokenLimitIncludesMaxTokens(): void
+    {
+        $choiceData = [
+            'message' => [
+                'role' => 'assistant',
+                'content' => null,
+                'tool_calls' => [
+                    [
+                        'id' => 'call_456',
+                        'type' => 'function',
+                        'function' => [
+                            'name' => 'get_weather',
+                            'arguments' => '{"loc',
+                        ],
+                    ],
+                ],
+            ],
+            'finish_reason' => 'length',
+        ];
+        $modelConfig = new ModelConfig();
+        $modelConfig->setMaxTokens(500);
+        $model = $this->createModel($modelConfig);
+
+        try {
+            $model->exposeParseResponseChoiceToCandidate($choiceData);
+            $this->fail('Expected TokenLimitReachedException was not thrown.');
+        } catch (TokenLimitReachedException $e) {
+            $this->assertSame(500, $e->getMaxTokens());
+        }
+    }
+
+    /**
+     * Tests parseResponseChoiceToCandidate() does not throw when
+     * finish_reason is 'length' but no tool calls are present.
+     *
+     * @return void
+     */
+    public function testParseResponseChoiceToCandidateLengthWithoutToolCallsDoesNotThrow(): void
+    {
+        $choiceData = [
+            'message' => [
+                'role' => 'assistant',
+                'content' => 'This is a truncated respon',
+            ],
+            'finish_reason' => 'length',
+        ];
+        $model = $this->createModel();
+        $candidate = $model->exposeParseResponseChoiceToCandidate($choiceData);
+
+        $this->assertInstanceOf(Candidate::class, $candidate);
+        $this->assertEquals(FinishReasonEnum::length(), $candidate->getFinishReason());
+    }
+
+    /**
+     * Tests parseResponseChoiceToCandidate() does not throw when
+     * finish_reason is 'tool_calls' with valid tool calls.
+     *
+     * @return void
+     */
+    public function testParseResponseChoiceToCandidateToolCallsFinishReasonDoesNotThrow(): void
+    {
+        $choiceData = [
+            'message' => [
+                'role' => 'assistant',
+                'content' => null,
+                'tool_calls' => [
+                    [
+                        'id' => 'call_789',
+                        'type' => 'function',
+                        'function' => [
+                            'name' => 'get_weather',
+                            'arguments' => '{"location":"London"}',
+                        ],
+                    ],
+                ],
+            ],
+            'finish_reason' => 'tool_calls',
+        ];
+        $model = $this->createModel();
+        $candidate = $model->exposeParseResponseChoiceToCandidate($choiceData);
+
+        $this->assertInstanceOf(Candidate::class, $candidate);
+        $this->assertEquals(FinishReasonEnum::toolCalls(), $candidate->getFinishReason());
     }
 }
