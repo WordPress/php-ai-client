@@ -598,7 +598,8 @@ class SupportedOptionTest extends TestCase
         // Fresh singleton enums in arrays should still match
         $this->assertTrue($deserialized->isSupportedValue([ModalityEnum::text()]));
         $this->assertTrue($deserialized->isSupportedValue([ModalityEnum::text(), ModalityEnum::image()]));
-        $this->assertTrue($deserialized->isSupportedValue([ModalityEnum::image(), ModalityEnum::text()])); // Order shouldn't matter
+        // Order shouldn't matter
+        $this->assertTrue($deserialized->isSupportedValue([ModalityEnum::image(), ModalityEnum::text()]));
         $this->assertFalse($deserialized->isSupportedValue([ModalityEnum::audio()]));
         $this->assertFalse($deserialized->isSupportedValue([ModalityEnum::text(), ModalityEnum::audio()]));
     }
