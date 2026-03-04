@@ -9,10 +9,10 @@ use WordPress\AiClient\Common\Contracts\AiClientExceptionInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Common\Exception\TokenLimitReachedException;
+use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Http\Exception\NetworkException;
 use WordPress\AiClient\Providers\Http\Exception\ServerException;
-use WordPress\AiClient\Providers\Http\DTO\Response;
 
 /**
  * Tests for AI Client exceptions.
