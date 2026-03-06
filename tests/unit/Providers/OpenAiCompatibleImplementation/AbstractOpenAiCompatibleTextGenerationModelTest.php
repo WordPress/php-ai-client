@@ -1316,6 +1316,54 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests parseResponseChoiceMessageToolCallPart() throws ResponseException
+     * when tool call arguments contain invalid JSON.
+     *
+     * @return void
+     */
+    public function testParseResponseChoiceMessageToolCallPartInvalidJsonArguments(): void
+    {
+        $toolCallData = [
+            'id' => 'call_123',
+            'type' => 'function',
+            'function' => [
+                'name' => 'test_function',
+                'arguments' => '{invalid json',
+            ],
+        ];
+        $model = $this->createModel();
+
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Invalid JSON in tool call arguments');
+
+        $model->exposeParseResponseChoiceMessageToolCallPart($toolCallData);
+    }
+
+    /**
+     * Tests parseResponseChoiceMessageToolCallPart() handles non-string
+     * (already decoded) arguments.
+     *
+     * @return void
+     */
+    public function testParseResponseChoiceMessageToolCallPartArrayArguments(): void
+    {
+        $toolCallData = [
+            'id' => 'call_123',
+            'type' => 'function',
+            'function' => [
+                'name' => 'test_function',
+                'arguments' => ['key' => 'value'],
+            ],
+        ];
+        $model = $this->createModel();
+        $part = $model->exposeParseResponseChoiceMessageToolCallPart($toolCallData);
+
+        $this->assertInstanceOf(MessagePart::class, $part);
+        $this->assertInstanceOf(FunctionCall::class, $part->getFunctionCall());
+        $this->assertEquals(['key' => 'value'], $part->getFunctionCall()->getArgs());
+    }
+
+    /**
      * Tests getMessagePartContentData() with text part in thought channel.
      *
      * @return void
