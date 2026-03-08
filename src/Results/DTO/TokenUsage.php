@@ -17,7 +17,8 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * @phpstan-type TokenUsageArrayShape array{
  *     promptTokens: int,
  *     completionTokens: int,
- *     totalTokens: int
+ *     totalTokens: int,
+ *     thoughtTokens?: int
  * }
  *
  * @extends AbstractDataTransferObject<TokenUsageArrayShape>
@@ -27,6 +28,7 @@ class TokenUsage extends AbstractDataTransferObject
     public const KEY_PROMPT_TOKENS = 'promptTokens';
     public const KEY_COMPLETION_TOKENS = 'completionTokens';
     public const KEY_TOTAL_TOKENS = 'totalTokens';
+    public const KEY_THOUGHT_TOKENS = 'thoughtTokens';
     /**
      * @var int Number of tokens in the prompt.
      */
@@ -43,6 +45,11 @@ class TokenUsage extends AbstractDataTransferObject
     private int $totalTokens;
 
     /**
+     * @var int|null Number of tokens used for thinking.
+     */
+    private ?int $thoughtTokens;
+
+    /**
      * Constructor.
      *
      * @since 0.1.0
@@ -50,12 +57,14 @@ class TokenUsage extends AbstractDataTransferObject
      * @param int $promptTokens Number of tokens in the prompt.
      * @param int $completionTokens Number of tokens in the completion.
      * @param int $totalTokens Total number of tokens used.
+     * @param int|null $thoughtTokens Number of tokens used for thinking.
      */
-    public function __construct(int $promptTokens, int $completionTokens, int $totalTokens)
+    public function __construct(int $promptTokens, int $completionTokens, int $totalTokens, ?int $thoughtTokens = null)
     {
         $this->promptTokens = $promptTokens;
         $this->completionTokens = $completionTokens;
         $this->totalTokens = $totalTokens;
+        $this->thoughtTokens = $thoughtTokens;
     }
 
     /**
@@ -95,6 +104,18 @@ class TokenUsage extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the number of thought tokens.
+     *
+     * @since n.e.x.t
+     *
+     * @return int|null The thought token count or null if not available.
+     */
+    public function getThoughtTokens(): ?int
+    {
+        return $this->thoughtTokens;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -116,6 +137,10 @@ class TokenUsage extends AbstractDataTransferObject
                     'type' => 'integer',
                     'description' => 'Total number of tokens used.',
                 ],
+                self::KEY_THOUGHT_TOKENS => [
+                    'type' => 'integer',
+                    'description' => 'Number of tokens used for thinking.',
+                ],
             ],
             'required' => [self::KEY_PROMPT_TOKENS, self::KEY_COMPLETION_TOKENS, self::KEY_TOTAL_TOKENS],
         ];
@@ -130,11 +155,17 @@ class TokenUsage extends AbstractDataTransferObject
      */
     public function toArray(): array
     {
-        return [
+        $data = [
             self::KEY_PROMPT_TOKENS => $this->promptTokens,
             self::KEY_COMPLETION_TOKENS => $this->completionTokens,
             self::KEY_TOTAL_TOKENS => $this->totalTokens,
         ];
+
+        if ($this->thoughtTokens !== null) {
+            $data[self::KEY_THOUGHT_TOKENS] = $this->thoughtTokens;
+        }
+
+        return $data;
     }
 
     /**
@@ -153,7 +184,8 @@ class TokenUsage extends AbstractDataTransferObject
         return new self(
             $array[self::KEY_PROMPT_TOKENS],
             $array[self::KEY_COMPLETION_TOKENS],
-            $array[self::KEY_TOTAL_TOKENS]
+            $array[self::KEY_TOTAL_TOKENS],
+            $array[self::KEY_THOUGHT_TOKENS] ?? null
         );
     }
 }
