@@ -10,6 +10,7 @@ use RuntimeException;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -1055,19 +1056,17 @@ class PromptBuilderTest extends TestCase
         $this->assertArrayHasKey('otherOption', $customOptions);
         $this->assertEquals('value', $customOptions['otherOption']);
 
-        // Now set a builder value that overrides one of the custom options
+        // Now set stop sequences via the dedicated method
         $builder->usingStopSequences('STOP');
 
         // Get the config again
         $mergedConfig = $configProperty->getValue($builder);
+
+        // Assert builder's stop sequences are set on the dedicated property
+        $this->assertEquals(['STOP'], $mergedConfig->getStopSequences());
+
+        // Assert custom options are still preserved
         $customOptions = $mergedConfig->getCustomOptions();
-
-        // Assert builder's stop sequences override the config's
-        $this->assertArrayHasKey('stopSequences', $customOptions);
-        $this->assertIsArray($customOptions['stopSequences']);
-        $this->assertEquals(['STOP'], $customOptions['stopSequences']);
-
-        // Assert other custom options are still preserved
         $this->assertArrayHasKey('otherOption', $customOptions);
         $this->assertEquals('value', $customOptions['otherOption']);
     }
@@ -1215,9 +1214,7 @@ class PromptBuilderTest extends TestCase
         /** @var ModelConfig $config */
         $config = $configProperty->getValue($builder);
 
-        $customOptions = $config->getCustomOptions();
-        $this->assertArrayHasKey('stopSequences', $customOptions);
-        $this->assertEquals(['STOP', 'END', '###'], $customOptions['stopSequences']);
+        $this->assertEquals(['STOP', 'END', '###'], $config->getStopSequences());
     }
 
     /**
@@ -3604,5 +3601,114 @@ class PromptBuilderTest extends TestCase
         $optionsProperty->setAccessible(true);
 
         $this->assertNull($optionsProperty->getValue($cloned));
+    }
+
+    /**
+     * Tests asOutputMediaOrientation method.
+     *
+     * @return void
+     */
+    public function testAsOutputMediaOrientation(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->asOutputMediaOrientation(MediaOrientationEnum::landscape());
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $outputMediaOrientation = $config->getOutputMediaOrientation();
+        $this->assertNotNull($outputMediaOrientation);
+        $this->assertTrue($outputMediaOrientation->isLandscape());
+    }
+
+    /**
+     * Tests asOutputMediaOrientation method with portrait orientation.
+     *
+     * @return void
+     */
+    public function testAsOutputMediaOrientationWithPortrait(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->asOutputMediaOrientation(MediaOrientationEnum::portrait());
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $outputMediaOrientation = $config->getOutputMediaOrientation();
+        $this->assertNotNull($outputMediaOrientation);
+        $this->assertTrue($outputMediaOrientation->isPortrait());
+    }
+
+    /**
+     * Tests asOutputMediaAspectRatio method.
+     *
+     * @return void
+     */
+    public function testAsOutputMediaAspectRatio(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->asOutputMediaAspectRatio('16:9');
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertEquals('16:9', $config->getOutputMediaAspectRatio());
+    }
+
+    /**
+     * Tests asOutputSpeechVoice method.
+     *
+     * @return void
+     */
+    public function testAsOutputSpeechVoice(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->asOutputSpeechVoice('alloy');
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertEquals('alloy', $config->getOutputSpeechVoice());
+    }
+
+    /**
+     * Tests usingStopSequences sets the dedicated property.
+     *
+     * @return void
+     */
+    public function testUsingStopSequencesSetsProperty(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->usingStopSequences('STOP', 'END');
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertEquals(['STOP', 'END'], $config->getStopSequences());
     }
 }
