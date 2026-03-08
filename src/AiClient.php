@@ -363,6 +363,30 @@ class AiClient
     }
 
     /**
+     * Generates a video using the traditional API approach.
+     *
+     * @since n.e.x.t
+     *
+     * @param Prompt $prompt The prompt content.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
+     * @return GenerativeAiResult The generation result.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid.
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function generateVideoResult(
+        $prompt,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): GenerativeAiResult {
+        self::validateModelOrConfigParameter($modelOrConfig);
+        return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateVideoResult();
+    }
+
+    /**
      * Creates a new message builder for fluent API usage.
      *
      * This method will be implemented once MessageBuilder is available.

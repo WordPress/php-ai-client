@@ -14,6 +14,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -109,6 +110,25 @@ trait MockModelCreationTrait
             $id,
             $name,
             [CapabilityEnum::imageGeneration()],
+            []
+        );
+    }
+
+    /**
+     * Creates a test model metadata instance for video generation.
+     *
+     * @param string $id   Optional model ID.
+     * @param string $name Optional model name.
+     * @return ModelMetadata
+     */
+    protected function createTestVideoModelMetadata(
+        string $id = 'test-video-model',
+        string $name = 'Test Video Model'
+    ): ModelMetadata {
+        return new ModelMetadata(
+            $id,
+            $name,
+            [CapabilityEnum::videoGeneration()],
             []
         );
     }
@@ -241,6 +261,73 @@ trait MockModelCreationTrait
             }
 
             public function generateImageResult(array $prompt): GenerativeAiResult
+            {
+                return $this->result;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock video generation model using anonymous class.
+     *
+     * @param GenerativeAiResult $result   The result to return from generation.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @return ModelInterface&VideoGenerationModelInterface The mock model.
+     */
+    protected function createMockVideoGenerationModel(
+        GenerativeAiResult $result,
+        ?ModelMetadata $metadata = null
+    ): ModelInterface {
+        $metadata = $metadata ?? $this->createTestVideoModelMetadata();
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, VideoGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private GenerativeAiResult $result;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                GenerativeAiResult $result
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->result = $result;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateVideoResult(array $prompt): GenerativeAiResult
             {
                 return $this->result;
             }
