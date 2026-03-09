@@ -12,6 +12,9 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * This DTO tracks the number of tokens used in prompts and completions,
  * which is important for monitoring usage and costs.
  *
+ * Note that thought tokens are a subset of completion tokens, not additive.
+ * In other words: completionTokens - thoughtTokens = tokens of actual output content.
+ *
  * @since 0.1.0
  *
  * @phpstan-type TokenUsageArrayShape array{
@@ -35,7 +38,7 @@ class TokenUsage extends AbstractDataTransferObject
     private int $promptTokens;
 
     /**
-     * @var int Number of tokens in the completion.
+     * @var int Number of tokens in the completion, including any thought tokens.
      */
     private int $completionTokens;
 
@@ -45,7 +48,7 @@ class TokenUsage extends AbstractDataTransferObject
     private int $totalTokens;
 
     /**
-     * @var int|null Number of tokens used for thinking.
+     * @var int|null Number of tokens used for thinking, as a subset of completion tokens.
      */
     private ?int $thoughtTokens;
 
@@ -55,9 +58,9 @@ class TokenUsage extends AbstractDataTransferObject
      * @since 0.1.0
      *
      * @param int $promptTokens Number of tokens in the prompt.
-     * @param int $completionTokens Number of tokens in the completion.
+     * @param int $completionTokens Number of tokens in the completion, including any thought tokens.
      * @param int $totalTokens Total number of tokens used.
-     * @param int|null $thoughtTokens Number of tokens used for thinking.
+     * @param int|null $thoughtTokens Number of tokens used for thinking, as a subset of completion tokens.
      */
     public function __construct(int $promptTokens, int $completionTokens, int $totalTokens, ?int $thoughtTokens = null)
     {
@@ -80,7 +83,7 @@ class TokenUsage extends AbstractDataTransferObject
     }
 
     /**
-     * Gets the number of completion tokens.
+     * Gets the number of completion tokens, including any thought tokens.
      *
      * @since 0.1.0
      *
@@ -104,7 +107,7 @@ class TokenUsage extends AbstractDataTransferObject
     }
 
     /**
-     * Gets the number of thought tokens.
+     * Gets the number of thought tokens, which is a subset of the completion token count.
      *
      * @since n.e.x.t
      *
@@ -131,7 +134,7 @@ class TokenUsage extends AbstractDataTransferObject
                 ],
                 self::KEY_COMPLETION_TOKENS => [
                     'type' => 'integer',
-                    'description' => 'Number of tokens in the completion.',
+                    'description' => 'Number of tokens in the completion, including any thought tokens.',
                 ],
                 self::KEY_TOTAL_TOKENS => [
                     'type' => 'integer',
@@ -139,7 +142,7 @@ class TokenUsage extends AbstractDataTransferObject
                 ],
                 self::KEY_THOUGHT_TOKENS => [
                     'type' => 'integer',
-                    'description' => 'Number of tokens used for thinking.',
+                    'description' => 'Number of tokens used for thinking, as a subset of completion tokens.',
                 ],
             ],
             'required' => [self::KEY_PROMPT_TOKENS, self::KEY_COMPLETION_TOKENS, self::KEY_TOTAL_TOKENS],
