@@ -35,6 +35,7 @@ class ProviderMetadataTest extends TestCase
         $this->assertSame($type, $metadata->getType());
         $this->assertTrue($metadata->getType()->isCloud());
         $this->assertNull($metadata->getCredentialsUrl());
+        $this->assertNull($metadata->getLogoPath());
     }
 
     /**
@@ -74,6 +75,26 @@ class ProviderMetadataTest extends TestCase
         $this->assertEquals($id, $metadata->getId());
         $this->assertEquals($name, $metadata->getName());
         $this->assertEquals($description, $metadata->getDescription());
+        $this->assertSame($type, $metadata->getType());
+    }
+
+    /**
+     * Tests constructor with logo path.
+     *
+     * @return void
+     */
+    public function testConstructorWithLogoPath(): void
+    {
+        $id = 'openai';
+        $name = 'OpenAI';
+        $type = ProviderTypeEnum::cloud();
+        $logoPath = '/var/www/assets/openai-logo.png';
+
+        $metadata = new ProviderMetadata($id, $name, $type, null, null, null, $logoPath);
+
+        $this->assertEquals($id, $metadata->getId());
+        $this->assertEquals($name, $metadata->getName());
+        $this->assertEquals($logoPath, $metadata->getLogoPath());
         $this->assertSame($type, $metadata->getType());
     }
 
@@ -122,6 +143,7 @@ class ProviderMetadataTest extends TestCase
         $this->assertArrayHasKey(ProviderMetadata::KEY_DESCRIPTION, $schema['properties']);
         $this->assertArrayHasKey(ProviderMetadata::KEY_TYPE, $schema['properties']);
         $this->assertArrayHasKey(ProviderMetadata::KEY_CREDENTIALS_URL, $schema['properties']);
+        $this->assertArrayHasKey(ProviderMetadata::KEY_LOGO_PATH, $schema['properties']);
 
         // Check property types
         $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_ID]['type']);
@@ -129,6 +151,7 @@ class ProviderMetadataTest extends TestCase
         $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_DESCRIPTION]['type']);
         $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_TYPE]['type']);
         $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_CREDENTIALS_URL]['type']);
+        $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_LOGO_PATH]['type']);
 
         // Check enum values for type
         $this->assertArrayHasKey('enum', $schema['properties'][ProviderMetadata::KEY_TYPE]);
@@ -159,7 +182,8 @@ class ProviderMetadataTest extends TestCase
         $this->assertEquals('cloud', $array[ProviderMetadata::KEY_TYPE]);
         $this->assertNull($array[ProviderMetadata::KEY_CREDENTIALS_URL]);
         $this->assertNull($array[ProviderMetadata::KEY_AUTHENTICATION_METHOD]);
-        $this->assertCount(6, $array);
+        $this->assertNull($array[ProviderMetadata::KEY_LOGO_PATH]);
+        $this->assertCount(7, $array);
     }
 
     /**
