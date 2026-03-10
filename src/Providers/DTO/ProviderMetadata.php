@@ -16,7 +16,7 @@ use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
  *
  * @since 0.1.0
  * @since 1.2.0 Added optional description property.
- * @since n.e.x.t Added optional logoPath property.
+ * @since 1.3.0 Added optional logoPath property.
  *
  * @phpstan-type ProviderMetadataArrayShape array{
  *     id: string,
@@ -80,7 +80,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      *
      * @since 0.1.0
      * @since 1.2.0 Added optional $description parameter.
-     * @since n.e.x.t Added optional $logoPath parameter.
+     * @since 1.3.0 Added optional $logoPath parameter.
      *
      * @param string $id The provider's unique identifier.
      * @param string $name The provider's display name.
@@ -183,7 +183,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     /**
      * Gets the full path to the provider's logo image file.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @return string|null The full path to the logo image file.
      */
@@ -197,7 +197,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      *
      * @since 0.1.0
      * @since 1.2.0 Added description to schema.
-     * @since n.e.x.t Added logoPath to schema.
+     * @since 1.3.0 Added logoPath to schema.
      */
     public static function getJsonSchema(): array
     {
@@ -244,7 +244,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      *
      * @since 0.1.0
      * @since 1.2.0 Added description to output.
-     * @since n.e.x.t Added logoPath to output.
+     * @since 1.3.0 Added logoPath to output.
      *
      * @return ProviderMetadataArrayShape
      */
@@ -266,7 +266,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      *
      * @since 0.1.0
      * @since 1.2.0 Added description support.
-     * @since n.e.x.t Added logoPath support.
+     * @since 1.3.0 Added logoPath support.
      */
     public static function fromArray(array $array): self
     {

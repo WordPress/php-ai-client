@@ -109,7 +109,7 @@ class TokenUsage extends AbstractDataTransferObject
     /**
      * Gets the number of thought tokens, which is a subset of the completion token count.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @return int|null The thought token count or null if not available.
      */

@@ -12,14 +12,14 @@ use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
  *
  * Provides methods for initiating long-running video generation tasks.
  *
- * @since n.e.x.t
+ * @since 1.3.0
  */
 interface VideoGenerationOperationModelInterface
 {
     /**
      * Creates a video generation operation.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @param list<Message> $prompt Array of messages containing the video generation prompt.
      * @return GenerativeAiOperation The initiated video generation operation.

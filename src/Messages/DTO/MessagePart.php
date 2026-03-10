@@ -148,7 +148,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the thought signature.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @return string|null The thought signature or null if not set.
      */

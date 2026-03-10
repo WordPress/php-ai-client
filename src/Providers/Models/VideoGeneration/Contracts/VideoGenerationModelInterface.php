@@ -12,14 +12,14 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *
  * Provides synchronous methods for generating videos from prompts.
  *
- * @since n.e.x.t
+ * @since 1.3.0
  */
 interface VideoGenerationModelInterface
 {
     /**
      * Generates videos from a prompt.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @param list<Message> $prompt Array of messages containing the video generation prompt.
      * @return GenerativeAiResult Result containing generated videos.

@@ -86,7 +86,7 @@ class AiClient
     /**
      * @var string The version of the AI Client.
      */
-    public const VERSION = '1.2.1';
+    public const VERSION = '1.3.0';
 
     /**
      * @var ProviderRegistry|null The default provider registry instance.
@@ -365,7 +365,7 @@ class AiClient
     /**
      * Generates a video using the traditional API approach.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @param Prompt $prompt The prompt content.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,

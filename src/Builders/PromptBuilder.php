@@ -632,7 +632,7 @@ class PromptBuilder
     /**
      * Sets the output media orientation.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @param MediaOrientationEnum $orientation The output media orientation.
      * @return self
@@ -649,7 +649,7 @@ class PromptBuilder
      * If set, this supersedes the output media orientation, as it is a more
      * specific configuration.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @param string $aspectRatio The aspect ratio (e.g. "16:9", "3:2").
      * @return self
@@ -663,7 +663,7 @@ class PromptBuilder
     /**
      * Sets the output speech voice.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @param string $voice The output speech voice.
      * @return self
@@ -1105,7 +1105,7 @@ class PromptBuilder
     /**
      * Generates a video result from the prompt.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @return GenerativeAiResult The generated result containing video candidates.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -1254,7 +1254,7 @@ class PromptBuilder
     /**
      * Generates a video from the prompt.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @return File The generated video file.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -1268,7 +1268,7 @@ class PromptBuilder
     /**
      * Generates multiple videos from the prompt.
      *
-     * @since n.e.x.t
+     * @since 1.3.0
      *
      * @param int|null $candidateCount The number of videos to generate.
      * @return list<File> The generated video files.
