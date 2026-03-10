@@ -309,4 +309,127 @@ class TokenUsageTest extends TestCase
         $this->assertLessThan($midUsage->getTotalTokens(), $initialUsage->getTotalTokens());
         $this->assertLessThan($finalUsage->getTotalTokens(), $midUsage->getTotalTokens());
     }
+
+    /**
+     * Tests creating TokenUsage with thought tokens.
+     *
+     * @return void
+     */
+    public function testCreateWithThoughtTokens(): void
+    {
+        $tokenUsage = new TokenUsage(100, 50, 150, 20);
+
+        $this->assertEquals(100, $tokenUsage->getPromptTokens());
+        $this->assertEquals(50, $tokenUsage->getCompletionTokens());
+        $this->assertEquals(150, $tokenUsage->getTotalTokens());
+        $this->assertEquals(20, $tokenUsage->getThoughtTokens());
+    }
+
+    /**
+     * Tests that thought tokens are null by default.
+     *
+     * @return void
+     */
+    public function testCreateWithoutThoughtTokens(): void
+    {
+        $tokenUsage = new TokenUsage(100, 50, 150);
+
+        $this->assertNull($tokenUsage->getThoughtTokens());
+    }
+
+    /**
+     * Tests toArray includes thought tokens when set.
+     *
+     * @return void
+     */
+    public function testToArrayIncludesThoughtTokens(): void
+    {
+        $tokenUsage = new TokenUsage(100, 50, 150, 30);
+        $array = $tokenUsage->toArray();
+
+        $this->assertArrayHasKey(TokenUsage::KEY_THOUGHT_TOKENS, $array);
+        $this->assertEquals(30, $array[TokenUsage::KEY_THOUGHT_TOKENS]);
+    }
+
+    /**
+     * Tests toArray excludes thought tokens when not set.
+     *
+     * @return void
+     */
+    public function testToArrayExcludesThoughtTokens(): void
+    {
+        $tokenUsage = new TokenUsage(100, 50, 150);
+        $array = $tokenUsage->toArray();
+
+        $this->assertArrayNotHasKey(TokenUsage::KEY_THOUGHT_TOKENS, $array);
+    }
+
+    /**
+     * Tests fromArray with thought tokens.
+     *
+     * @return void
+     */
+    public function testFromArrayWithThoughtTokens(): void
+    {
+        $array = [
+            TokenUsage::KEY_PROMPT_TOKENS => 100,
+            TokenUsage::KEY_COMPLETION_TOKENS => 50,
+            TokenUsage::KEY_TOTAL_TOKENS => 250,
+            TokenUsage::KEY_THOUGHT_TOKENS => 100,
+        ];
+
+        $tokenUsage = TokenUsage::fromArray($array);
+
+        $this->assertEquals(100, $tokenUsage->getThoughtTokens());
+    }
+
+    /**
+     * Tests fromArray without thought tokens still works.
+     *
+     * @return void
+     */
+    public function testFromArrayWithoutThoughtTokens(): void
+    {
+        $array = [
+            TokenUsage::KEY_PROMPT_TOKENS => 100,
+            TokenUsage::KEY_COMPLETION_TOKENS => 50,
+            TokenUsage::KEY_TOTAL_TOKENS => 150,
+        ];
+
+        $tokenUsage = TokenUsage::fromArray($array);
+
+        $this->assertNull($tokenUsage->getThoughtTokens());
+    }
+
+    /**
+     * Tests round-trip array transformation with thought tokens.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripWithThoughtTokens(): void
+    {
+        $original = new TokenUsage(200, 100, 500, 200);
+        $array = $original->toArray();
+        $restored = TokenUsage::fromArray($array);
+
+        $this->assertEquals($original->getPromptTokens(), $restored->getPromptTokens());
+        $this->assertEquals($original->getCompletionTokens(), $restored->getCompletionTokens());
+        $this->assertEquals($original->getTotalTokens(), $restored->getTotalTokens());
+        $this->assertEquals($original->getThoughtTokens(), $restored->getThoughtTokens());
+    }
+
+    /**
+     * Tests JSON schema includes thought tokens property but not in required.
+     *
+     * @return void
+     */
+    public function testJsonSchemaIncludesThoughtTokens(): void
+    {
+        $schema = TokenUsage::getJsonSchema();
+
+        $this->assertArrayHasKey(TokenUsage::KEY_THOUGHT_TOKENS, $schema['properties']);
+        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_THOUGHT_TOKENS]['type']);
+        $this->assertArrayHasKey('description', $schema['properties'][TokenUsage::KEY_THOUGHT_TOKENS]);
+        $this->assertNotContains(TokenUsage::KEY_THOUGHT_TOKENS, $schema['required']);
+    }
 }
