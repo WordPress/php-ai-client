@@ -11,6 +11,7 @@ use WordPress\AiClient\Events\AfterGenerateResultEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
@@ -460,7 +461,7 @@ class PromptBuilder
      */
     public function usingStopSequences(string ...$stopSequences): self
     {
-        $this->modelConfig->setCustomOption('stopSequences', $stopSequences);
+        $this->modelConfig->setStopSequences($stopSequences);
         return $this;
     }
 
@@ -625,6 +626,51 @@ class PromptBuilder
     public function asOutputFileType(FileTypeEnum $fileType): self
     {
         $this->modelConfig->setOutputFileType($fileType);
+        return $this;
+    }
+
+    /**
+     * Sets the output media orientation.
+     *
+     * @since n.e.x.t
+     *
+     * @param MediaOrientationEnum $orientation The output media orientation.
+     * @return self
+     */
+    public function asOutputMediaOrientation(MediaOrientationEnum $orientation): self
+    {
+        $this->modelConfig->setOutputMediaOrientation($orientation);
+        return $this;
+    }
+
+    /**
+     * Sets the output media aspect ratio.
+     *
+     * If set, this supersedes the output media orientation, as it is a more
+     * specific configuration.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $aspectRatio The aspect ratio (e.g. "16:9", "3:2").
+     * @return self
+     */
+    public function asOutputMediaAspectRatio(string $aspectRatio): self
+    {
+        $this->modelConfig->setOutputMediaAspectRatio($aspectRatio);
+        return $this;
+    }
+
+    /**
+     * Sets the output speech voice.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $voice The output speech voice.
+     * @return self
+     */
+    public function asOutputSpeechVoice(string $voice): self
+    {
+        $this->modelConfig->setOutputSpeechVoice($voice);
         return $this;
     }
 
