@@ -317,12 +317,12 @@ class TokenUsageTest extends TestCase
      */
     public function testCreateWithThoughtTokens(): void
     {
-        $tokenUsage = new TokenUsage(100, 50, 250, 100);
+        $tokenUsage = new TokenUsage(100, 50, 150, 20);
 
         $this->assertEquals(100, $tokenUsage->getPromptTokens());
         $this->assertEquals(50, $tokenUsage->getCompletionTokens());
-        $this->assertEquals(250, $tokenUsage->getTotalTokens());
-        $this->assertEquals(100, $tokenUsage->getThoughtTokens());
+        $this->assertEquals(150, $tokenUsage->getTotalTokens());
+        $this->assertEquals(20, $tokenUsage->getThoughtTokens());
     }
 
     /**
@@ -344,11 +344,11 @@ class TokenUsageTest extends TestCase
      */
     public function testToArrayIncludesThoughtTokens(): void
     {
-        $tokenUsage = new TokenUsage(100, 50, 250, 100);
+        $tokenUsage = new TokenUsage(100, 50, 150, 30);
         $array = $tokenUsage->toArray();
 
         $this->assertArrayHasKey(TokenUsage::KEY_THOUGHT_TOKENS, $array);
-        $this->assertEquals(100, $array[TokenUsage::KEY_THOUGHT_TOKENS]);
+        $this->assertEquals(30, $array[TokenUsage::KEY_THOUGHT_TOKENS]);
     }
 
     /**
