@@ -29,6 +29,7 @@ use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
+use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -137,6 +138,69 @@ class PromptBuilderTest extends TestCase
             }
 
             public function generateSpeechResult(array $prompt): GenerativeAiResult
+            {
+                return $this->result;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock model that implements both ModelInterface and VideoGenerationModelInterface.
+     *
+     * @param ModelMetadata      $metadata The metadata for the model.
+     * @param GenerativeAiResult $result   The result to return from generation.
+     * @return ModelInterface&VideoGenerationModelInterface The mock model.
+     */
+    private function createVideoGenerationModel(ModelMetadata $metadata, GenerativeAiResult $result): ModelInterface
+    {
+        $providerMetadata = new ProviderMetadata(
+            'mock-provider',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, VideoGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private GenerativeAiResult $result;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                GenerativeAiResult $result
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->result = $result;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateVideoResult(array $prompt): GenerativeAiResult
             {
                 return $this->result;
             }
@@ -1667,10 +1731,10 @@ class PromptBuilderTest extends TestCase
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
         $builder->usingModel($model);
-        $builder->asOutputModalities(ModalityEnum::video());
+        $builder->asOutputModalities(ModalityEnum::document());
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Output modality "video" is not yet supported');
+        $this->expectExceptionMessage('Output modality "document" is not yet supported');
 
         $builder->generateResult();
     }
@@ -1752,6 +1816,130 @@ class PromptBuilderTest extends TestCase
         $modalities = $config->getOutputModalities();
         $this->assertNotNull($modalities);
         $this->assertTrue($modalities[0]->isImage());
+    }
+
+    /**
+     * Tests generateVideoResult method.
+     *
+     * @return void
+     */
+    public function testGenerateVideoResult(): void
+    {
+        $result = new GenerativeAiResult(
+            'test-result',
+            [new Candidate(
+                new ModelMessage([new MessagePart(new File('data:video/mp4;base64,AAAAIGZ0eXA=', 'video/mp4'))]),
+                FinishReasonEnum::stop()
+            )],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $actualResult = $builder->generateVideoResult();
+        $this->assertSame($result, $actualResult);
+
+        // Verify video modality was included
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $modalities = $config->getOutputModalities();
+        $this->assertNotNull($modalities);
+        $this->assertTrue($modalities[0]->isVideo());
+    }
+
+    /**
+     * Tests generateVideoResult throws exception for unsupported model.
+     *
+     * @return void
+     */
+    public function testGenerateVideoResultThrowsExceptionForUnsupportedModel(): void
+    {
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createMock(ModelInterface::class);
+        $model->method('metadata')->willReturn($metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Model "test-model" does not support video generation');
+
+        $builder->generateVideoResult();
+    }
+
+    /**
+     * Tests generateResult infers video capability from model interface.
+     *
+     * @return void
+     */
+    public function testGenerateResultInfersVideoCapabilityFromModel(): void
+    {
+        $result = new GenerativeAiResult(
+            'test-result',
+            [new Candidate(
+                new ModelMessage([new MessagePart(new File('data:video/mp4;base64,AAAAIGZ0eXA=', 'video/mp4'))]),
+                FinishReasonEnum::stop()
+            )],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $actualResult = $builder->generateResult();
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests generateResult infers video capability from video output modality.
+     *
+     * @return void
+     */
+    public function testGenerateResultInfersVideoCapabilityFromOutputModality(): void
+    {
+        $result = new GenerativeAiResult(
+            'test-result',
+            [new Candidate(
+                new ModelMessage([new MessagePart(new File('data:video/mp4;base64,AAAAIGZ0eXA=', 'video/mp4'))]),
+                FinishReasonEnum::stop()
+            )],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+        $builder->asOutputModalities(ModalityEnum::video());
+
+        $actualResult = $builder->generateResult();
+        $this->assertSame($result, $actualResult);
     }
 
     /**
@@ -2255,6 +2443,148 @@ class PromptBuilderTest extends TestCase
         $this->assertCount(2, $generatedFiles);
         $this->assertSame($files[0], $generatedFiles[0]);
         $this->assertSame($files[1], $generatedFiles[1]);
+    }
+
+    /**
+     * Tests generateVideo method.
+     *
+     * @return void
+     */
+    public function testGenerateVideo(): void
+    {
+        $file = new File('https://example.com/generated.mp4', 'video/mp4');
+        $messagePart = new MessagePart($file);
+        $message = new ModelMessage([$messagePart]);
+        $candidate = new Candidate($message, FinishReasonEnum::stop());
+
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $generatedFile = $builder->generateVideo();
+        $this->assertSame($file, $generatedFile);
+    }
+
+    /**
+     * Tests generateVideo throws exception when no video file.
+     *
+     * @return void
+     */
+    public function testGenerateVideoThrowsExceptionWhenNoFile(): void
+    {
+        $messagePart = new MessagePart('Text instead of video');
+        $message = new ModelMessage([$messagePart]);
+        $candidate = new Candidate($message, FinishReasonEnum::stop());
+
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('No file content found in first candidate');
+
+        $builder->generateVideo();
+    }
+
+    /**
+     * Tests generateVideos method.
+     *
+     * @return void
+     */
+    public function testGenerateVideos(): void
+    {
+        $files = [
+            new File('https://example.com/vid1.mp4', 'video/mp4'),
+            new File('https://example.com/vid2.mp4', 'video/mp4'),
+        ];
+
+        $candidates = [];
+        foreach ($files as $file) {
+            $candidates[] = new Candidate(
+                new Message(MessageRoleEnum::model(), [new MessagePart($file)]),
+                FinishReasonEnum::stop()
+            );
+        }
+
+        $result = new GenerativeAiResult(
+            'test-result-id',
+            $candidates,
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate videos');
+        $builder->usingModel($model);
+
+        $generatedFiles = $builder->generateVideos(2);
+
+        $this->assertCount(2, $generatedFiles);
+        $this->assertSame($files[0], $generatedFiles[0]);
+        $this->assertSame($files[1], $generatedFiles[1]);
+    }
+
+    /**
+     * Tests generateVideos method without candidate count.
+     *
+     * @return void
+     */
+    public function testGenerateVideosWithoutCandidateCount(): void
+    {
+        $file = new File('https://example.com/vid1.mp4', 'video/mp4');
+
+        $result = new GenerativeAiResult(
+            'test-result-id',
+            [new Candidate(
+                new Message(MessageRoleEnum::model(), [new MessagePart($file)]),
+                FinishReasonEnum::stop()
+            )],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate videos');
+        $builder->usingModel($model);
+
+        $generatedFiles = $builder->generateVideos();
+
+        $this->assertCount(1, $generatedFiles);
+        $this->assertSame($file, $generatedFiles[0]);
     }
 
     /**
@@ -2798,6 +3128,81 @@ class PromptBuilderTest extends TestCase
         $this->assertSame($file, $generatedFile);
     }
 
+    /**
+     * Tests generateVideoResult method creates proper operation.
+     *
+     * @return void
+     */
+    public function testGenerateVideoResultCreatesProperOperation(): void
+    {
+        $result = new GenerativeAiResult(
+            'test-result',
+            [new Candidate(
+                new ModelMessage([new MessagePart(new File('data:video/mp4;base64,AAAAIGZ0eXA=', 'video/mp4'))]),
+                FinishReasonEnum::stop()
+            )],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate a video');
+        $builder->usingModel($model);
+
+        $actualResult = $builder->generateVideoResult();
+        $this->assertSame($result, $actualResult);
+
+        // Verify that video modality was included in the model config
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $outputModalities = $config->getOutputModalities();
+        $this->assertCount(1, $outputModalities);
+        $this->assertTrue($outputModalities[0]->isVideo());
+    }
+
+
+    /**
+     * Tests generateVideo shorthand method returns file directly.
+     *
+     * @return void
+     */
+    public function testGenerateVideoReturnsFileDirectly(): void
+    {
+        $file = new File('https://example.com/generated.mp4', 'video/mp4');
+        $candidate = new Candidate(
+            new Message(MessageRoleEnum::model(), [new MessagePart($file)]),
+            FinishReasonEnum::stop()
+        );
+
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate a video');
+        $builder->usingModel($model);
+
+        $generatedFile = $builder->generateVideo();
+        $this->assertSame($file, $generatedFile);
+    }
+
 
 
     /**
@@ -2941,6 +3346,33 @@ class PromptBuilderTest extends TestCase
             ->willReturn([]);
 
         $this->assertFalse($builder->isSupportedForVideoGeneration());
+    }
+
+    /**
+     * Tests isSupportedForVideoGeneration returns true when a video generation model is set.
+     *
+     * @return void
+     */
+    public function testIsSupportedForVideoGenerationWithModel(): void
+    {
+        $metadata = new ModelMetadata(
+            'video-model',
+            'Video Model',
+            [CapabilityEnum::videoGeneration()],
+            [
+                new SupportedOption(OptionEnum::inputModalities(), [
+                    [ModalityEnum::text()]
+                ]),
+            ]
+        );
+
+        $result = $this->createTestResult();
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $this->assertTrue($builder->isSupportedForVideoGeneration());
     }
 
     /**

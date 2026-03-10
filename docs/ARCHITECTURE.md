@@ -350,6 +350,7 @@ direction LR
             +generateImageResult() GenerativeAiResult
             +generateSpeechResult() GenerativeAiResult
             +convertTextToSpeechResult() GenerativeAiResult
+            +generateVideoResult() GenerativeAiResult
             +generateText() string
             +generateTexts(?int $candidateCount) string[]
             +generateImage() File
@@ -358,6 +359,8 @@ direction LR
             +convertTextToSpeeches(?int $candidateCount) File[]
             +generateSpeech() File
             +generateSpeeches(?int $candidateCount) File[]
+            +generateVideo() File
+            +generateVideos(?int $candidateCount) File[]
             +isSupported(?CapabilityEnum $capability) bool
             +isSupportedForTextGeneration() bool
             +isSupportedForImageGeneration() bool
@@ -406,11 +409,13 @@ direction LR
             +generateImageResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +convertTextToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
+            +generateVideoResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateEmbeddingsResult(string[]|Message[] $input, ModelInterface $model) EmbeddingResult$
             +generateTextOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateImageOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +convertTextToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
+            +generateVideoOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateEmbeddingsOperation(string[]|Message[] $input, ModelInterface $model) EmbeddingOperation$
         }
     }
@@ -473,11 +478,13 @@ direction LR
             +generateImageResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +convertTextToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
+            +generateVideoResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateEmbeddingsResult(string[]|Message[] $input, ModelInterface $model) EmbeddingResult$
             +generateTextOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateImageOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +convertTextToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
+            +generateVideoOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateEmbeddingsOperation(string[]|Message[] $input, ModelInterface $model) EmbeddingOperation$
         }
     }
@@ -514,6 +521,7 @@ direction LR
             +generateImageResult() GenerativeAiResult
             +generateSpeechResult() GenerativeAiResult
             +convertTextToSpeechResult() GenerativeAiResult
+            +generateVideoResult() GenerativeAiResult
             +generateText() string
             +generateTexts(?int $candidateCount) string[]
             +generateImage() File
@@ -522,6 +530,8 @@ direction LR
             +convertTextToSpeeches(?int $candidateCount) File[]
             +generateSpeech() File
             +generateSpeeches(?int $candidateCount) File[]
+            +generateVideo() File
+            +generateVideos(?int $candidateCount) File[]
             +isSupportedForTextGeneration() bool
             +isSupportedForImageGeneration() bool
             +isSupportedForTextToSpeechConversion() bool
@@ -1090,6 +1100,15 @@ direction LR
         }
         class SpeechGenerationOperationModelInterface {
             +generateSpeechOperation(Message[] $prompt) GenerativeAiOperation
+        }
+    }
+
+    namespace AiClientNamespace.Providers.Models.VideoGeneration.Contracts {
+        class VideoGenerationModelInterface {
+            +generateVideoResult(Message[] $prompt) GenerativeAiResult
+        }
+        class VideoGenerationOperationModelInterface {
+            +generateVideoOperation(Message[] $prompt) GenerativeAiOperation
         }
     }
 

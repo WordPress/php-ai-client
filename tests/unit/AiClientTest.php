@@ -136,6 +136,36 @@ class AiClientTest extends TestCase
         AiClient::generateImageResult($prompt, $invalidModel, $registry);
     }
 
+    /**
+     * Tests generateVideoResult with string prompt and provided model.
+     */
+    public function testGenerateVideoResultWithStringAndModel(): void
+    {
+        $prompt = 'Generate video';
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockVideoGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::generateVideoResult($prompt, $mockModel, $registry);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
+     * Tests generateVideoResult throws exception for model without video generation interface.
+     */
+    public function testGenerateVideoResultWithInvalidModel(): void
+    {
+        $prompt = 'Generate video';
+        $invalidModel = $this->createMockUnsupportedModel('invalid-video-model');
+        $registry = $this->createRegistryWithMockProvider();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Model "invalid-video-model" does not support video generation.');
+
+        AiClient::generateVideoResult($prompt, $invalidModel, $registry);
+    }
+
 
     /**
      * Tests generateTextResult with Message object.
@@ -380,6 +410,21 @@ class AiClientTest extends TestCase
     }
 
     /**
+     * Tests generateResult delegates to generateVideoResult when model supports video generation.
+     */
+    public function testGenerateResultDelegatesToVideoGeneration(): void
+    {
+        $prompt = 'Generate video prompt';
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockVideoGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::generateResult($prompt, $mockModel, $registry);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
      * Tests generateResult with null model delegates to PromptBuilder.
      */
     public function testGenerateResultWithNullModelDelegatesToPromptBuilder(): void
@@ -424,6 +469,21 @@ class AiClientTest extends TestCase
     }
 
     /**
+     * Tests generateResult with video generation model.
+     */
+    public function testGenerateResultWithVideoGenerationModel(): void
+    {
+        $prompt = 'Generate a video';
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockVideoGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::generateResult($prompt, $mockModel, $registry);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
      * Tests that generateResult accepts ModelConfig and delegates to PromptBuilder.
      */
     public function testGenerateResultWithModelConfigDelegatesToPromptBuilder(): void
@@ -453,7 +513,8 @@ class AiClientTest extends TestCase
             'generateTextResult',
             'generateImageResult',
             'convertTextToSpeechResult',
-            'generateSpeechResult'
+            'generateSpeechResult',
+            'generateVideoResult'
         ];
 
         $mockRegistry = $this->createMockEmptyRegistry();
@@ -512,6 +573,7 @@ class AiClientTest extends TestCase
             'generateImageResult' => ['generateImageResult'],
             'convertTextToSpeechResult' => ['convertTextToSpeechResult'],
             'generateSpeechResult' => ['generateSpeechResult'],
+            'generateVideoResult' => ['generateVideoResult'],
         ];
     }
 
@@ -642,7 +704,8 @@ class AiClientTest extends TestCase
             'generateTextResult',
             'generateImageResult',
             'convertTextToSpeechResult',
-            'generateSpeechResult'
+            'generateSpeechResult',
+            'generateVideoResult'
         ];
 
         $mockRegistry = $this->createMockEmptyRegistry();

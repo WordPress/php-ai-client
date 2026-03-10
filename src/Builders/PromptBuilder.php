@@ -27,6 +27,7 @@ use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGeneratio
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
+use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
@@ -711,6 +712,9 @@ class PromptBuilder
         if ($model instanceof SpeechGenerationModelInterface) {
             return CapabilityEnum::speechGeneration();
         }
+        if ($model instanceof VideoGenerationModelInterface) {
+            return CapabilityEnum::videoGeneration();
+        }
 
         // No supported interface found
         return null;
@@ -962,9 +966,16 @@ class PromptBuilder
             return $model->generateSpeechResult($messages);
         }
 
-        // Video generation is not yet implemented
         if ($capability->isVideoGeneration()) {
-            throw new RuntimeException('Output modality "video" is not yet supported.');
+            if (!$model instanceof VideoGenerationModelInterface) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Model "%s" does not support video generation.',
+                        $model->metadata()->getId()
+                    )
+                );
+            }
+            return $model->generateVideoResult($messages);
         }
 
         // TODO: Add support for other capabilities when interfaces are available
@@ -1043,6 +1054,24 @@ class PromptBuilder
 
         // Generate and return the result with text-to-speech conversion capability
         return $this->generateResult(CapabilityEnum::textToSpeechConversion());
+    }
+
+    /**
+     * Generates a video result from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @return GenerativeAiResult The generated result containing video candidates.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support video generation.
+     */
+    public function generateVideoResult(): GenerativeAiResult
+    {
+        // Include video in output modalities
+        $this->includeOutputModalities(ModalityEnum::video());
+
+        // Generate and return the result with video generation capability
+        return $this->generateResult(CapabilityEnum::videoGeneration());
     }
 
     /**
@@ -1174,6 +1203,39 @@ class PromptBuilder
         }
 
         return $this->generateSpeechResult()->toFiles();
+    }
+
+    /**
+     * Generates a video from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @return File The generated video file.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no video is generated.
+     */
+    public function generateVideo(): File
+    {
+        return $this->generateVideoResult()->toFile();
+    }
+
+    /**
+     * Generates multiple videos from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @param int|null $candidateCount The number of videos to generate.
+     * @return list<File> The generated video files.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no videos are generated.
+     */
+    public function generateVideos(?int $candidateCount = null): array
+    {
+        if ($candidateCount !== null) {
+            $this->usingCandidateCount($candidateCount);
+        }
+
+        return $this->generateVideoResult()->toFiles();
     }
 
     /**
