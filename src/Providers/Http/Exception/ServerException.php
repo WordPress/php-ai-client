@@ -38,6 +38,7 @@ class ServerException extends RuntimeException
             503 => 'Service Unavailable',
             504 => 'Gateway Timeout',
             507 => 'Insufficient Storage',
+            529 => 'Overloaded',
         ];
 
         if (isset($statusTexts[$statusCode])) {
