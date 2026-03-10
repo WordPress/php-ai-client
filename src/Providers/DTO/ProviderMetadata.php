@@ -16,6 +16,7 @@ use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
  *
  * @since 0.1.0
  * @since 1.2.0 Added optional description property.
+ * @since n.e.x.t Added optional logoPath property.
  *
  * @phpstan-type ProviderMetadataArrayShape array{
  *     id: string,
@@ -23,7 +24,8 @@ use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
  *     description?: ?string,
  *     type: string,
  *     credentialsUrl?: ?string,
- *     authenticationMethod?: ?string
+ *     authenticationMethod?: ?string,
+ *     logoPath?: ?string
  * }
  *
  * @extends AbstractDataTransferObject<ProviderMetadataArrayShape>
@@ -36,6 +38,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     public const KEY_TYPE = 'type';
     public const KEY_CREDENTIALS_URL = 'credentialsUrl';
     public const KEY_AUTHENTICATION_METHOD = 'authenticationMethod';
+    public const KEY_LOGO_PATH = 'logoPath';
 
     /**
      * @var string The provider's unique identifier.
@@ -68,10 +71,16 @@ class ProviderMetadata extends AbstractDataTransferObject
     protected ?RequestAuthenticationMethod $authenticationMethod;
 
     /**
+     * @var string|null The full path to the provider's logo image file.
+     */
+    protected ?string $logoPath;
+
+    /**
      * Constructor.
      *
      * @since 0.1.0
      * @since 1.2.0 Added optional $description parameter.
+     * @since n.e.x.t Added optional $logoPath parameter.
      *
      * @param string $id The provider's unique identifier.
      * @param string $name The provider's display name.
@@ -79,6 +88,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      * @param string|null $credentialsUrl The URL where users can get credentials.
      * @param RequestAuthenticationMethod|null $authenticationMethod The authentication method.
      * @param string|null $description The provider's description.
+     * @param string|null $logoPath The full path to the provider's logo image file.
      */
     public function __construct(
         string $id,
@@ -86,7 +96,8 @@ class ProviderMetadata extends AbstractDataTransferObject
         ProviderTypeEnum $type,
         ?string $credentialsUrl = null,
         ?RequestAuthenticationMethod $authenticationMethod = null,
-        ?string $description = null
+        ?string $description = null,
+        ?string $logoPath = null
     ) {
         $this->id = $id;
         $this->name = $name;
@@ -94,6 +105,7 @@ class ProviderMetadata extends AbstractDataTransferObject
         $this->type = $type;
         $this->credentialsUrl = $credentialsUrl;
         $this->authenticationMethod = $authenticationMethod;
+        $this->logoPath = $logoPath;
     }
 
     /**
@@ -169,10 +181,23 @@ class ProviderMetadata extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the full path to the provider's logo image file.
+     *
+     * @since n.e.x.t
+     *
+     * @return string|null The full path to the logo image file.
+     */
+    public function getLogoPath(): ?string
+    {
+        return $this->logoPath;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
      * @since 1.2.0 Added description to schema.
+     * @since n.e.x.t Added logoPath to schema.
      */
     public static function getJsonSchema(): array
     {
@@ -205,6 +230,10 @@ class ProviderMetadata extends AbstractDataTransferObject
                     'enum' => array_merge(RequestAuthenticationMethod::getValues(), [null]),
                     'description' => 'The authentication method.',
                 ],
+                self::KEY_LOGO_PATH => [
+                    'type' => 'string',
+                    'description' => 'The full path to the provider\'s logo image file.',
+                ],
             ],
             'required' => [self::KEY_ID, self::KEY_NAME, self::KEY_TYPE],
         ];
@@ -215,6 +244,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      *
      * @since 0.1.0
      * @since 1.2.0 Added description to output.
+     * @since n.e.x.t Added logoPath to output.
      *
      * @return ProviderMetadataArrayShape
      */
@@ -227,6 +257,7 @@ class ProviderMetadata extends AbstractDataTransferObject
             self::KEY_TYPE => $this->type->value,
             self::KEY_CREDENTIALS_URL => $this->credentialsUrl,
             self::KEY_AUTHENTICATION_METHOD => $this->authenticationMethod ? $this->authenticationMethod->value : null,
+            self::KEY_LOGO_PATH => $this->logoPath,
         ];
     }
 
@@ -235,6 +266,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      *
      * @since 0.1.0
      * @since 1.2.0 Added description support.
+     * @since n.e.x.t Added logoPath support.
      */
     public static function fromArray(array $array): self
     {
@@ -248,7 +280,8 @@ class ProviderMetadata extends AbstractDataTransferObject
             isset($array[self::KEY_AUTHENTICATION_METHOD])
                 ? RequestAuthenticationMethod::from($array[self::KEY_AUTHENTICATION_METHOD])
                 : null,
-            $array[self::KEY_DESCRIPTION] ?? null
+            $array[self::KEY_DESCRIPTION] ?? null,
+            $array[self::KEY_LOGO_PATH] ?? null
         );
     }
 }
