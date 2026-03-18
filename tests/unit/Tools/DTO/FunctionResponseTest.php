@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
@@ -35,6 +36,45 @@ class FunctionResponseTest extends TestCase
         $this->assertEquals($id, $functionResponse->getId());
         $this->assertEquals($name, $functionResponse->getName());
         $this->assertEquals($response, $functionResponse->getResponse());
+    }
+
+    /**
+     * Tests creating FunctionResponse with only id.
+     *
+     * @return void
+     */
+    public function testCreateWithIdOnly(): void
+    {
+        $functionResponse = new FunctionResponse('func_123', null, 'result');
+
+        $this->assertEquals('func_123', $functionResponse->getId());
+        $this->assertNull($functionResponse->getName());
+        $this->assertEquals('result', $functionResponse->getResponse());
+    }
+
+    /**
+     * Tests creating FunctionResponse with only name.
+     *
+     * @return void
+     */
+    public function testCreateWithNameOnly(): void
+    {
+        $functionResponse = new FunctionResponse(null, 'getWeather', 'result');
+
+        $this->assertNull($functionResponse->getId());
+        $this->assertEquals('getWeather', $functionResponse->getName());
+        $this->assertEquals('result', $functionResponse->getResponse());
+    }
+
+    /**
+     * Tests that creating FunctionResponse without id or name throws exception.
+     *
+     * @return void
+     */
+    public function testCreateWithoutIdOrNameThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new FunctionResponse(null, null, 'result');
     }
 
     /**
@@ -216,6 +256,36 @@ class FunctionResponseTest extends TestCase
     }
 
     /**
+     * Tests array transformation with only id.
+     *
+     * @return void
+     */
+    public function testToArrayWithIdOnly(): void
+    {
+        $response = new FunctionResponse('func_123', null, 'result');
+        $json = $this->assertToArrayReturnsArray($response);
+
+        $this->assertArrayHasKey(FunctionResponse::KEY_ID, $json);
+        $this->assertArrayNotHasKey(FunctionResponse::KEY_NAME, $json);
+        $this->assertArrayHasKey(FunctionResponse::KEY_RESPONSE, $json);
+    }
+
+    /**
+     * Tests array transformation with only name.
+     *
+     * @return void
+     */
+    public function testToArrayWithNameOnly(): void
+    {
+        $response = new FunctionResponse(null, 'calculate', 'result');
+        $json = $this->assertToArrayReturnsArray($response);
+
+        $this->assertArrayNotHasKey(FunctionResponse::KEY_ID, $json);
+        $this->assertArrayHasKey(FunctionResponse::KEY_NAME, $json);
+        $this->assertArrayHasKey(FunctionResponse::KEY_RESPONSE, $json);
+    }
+
+    /**
      * Tests fromJson method.
      *
      * @return void
@@ -234,6 +304,57 @@ class FunctionResponseTest extends TestCase
         $this->assertEquals('func_456', $response->getId());
         $this->assertEquals('search', $response->getName());
         $this->assertEquals(['found' => true, 'count' => 5], $response->getResponse());
+    }
+
+    /**
+     * Tests fromArray with only id.
+     *
+     * @return void
+     */
+    public function testFromArrayWithIdOnly(): void
+    {
+        $json = [
+            FunctionResponse::KEY_ID => 'func_456',
+            FunctionResponse::KEY_RESPONSE => 'result',
+        ];
+
+        $response = FunctionResponse::fromArray($json);
+
+        $this->assertEquals('func_456', $response->getId());
+        $this->assertNull($response->getName());
+        $this->assertEquals('result', $response->getResponse());
+    }
+
+    /**
+     * Tests fromArray with only name.
+     *
+     * @return void
+     */
+    public function testFromArrayWithNameOnly(): void
+    {
+        $json = [
+            FunctionResponse::KEY_NAME => 'search',
+            FunctionResponse::KEY_RESPONSE => 'result',
+        ];
+
+        $response = FunctionResponse::fromArray($json);
+
+        $this->assertNull($response->getId());
+        $this->assertEquals('search', $response->getName());
+        $this->assertEquals('result', $response->getResponse());
+    }
+
+    /**
+     * Tests fromArray without id or name throws exception.
+     *
+     * @return void
+     */
+    public function testFromArrayWithoutIdOrNameThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        FunctionResponse::fromArray([
+            FunctionResponse::KEY_RESPONSE => 'result',
+        ]);
     }
 
     /**
