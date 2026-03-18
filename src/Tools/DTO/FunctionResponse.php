@@ -114,7 +114,7 @@ class FunctionResponse extends AbstractDataTransferObject
                     'description' => 'The response data from the function.',
                 ],
             ],
-            'oneOf' => [
+            'anyOf' => [
                 [
                     'required' => [self::KEY_RESPONSE, self::KEY_ID],
                 ],

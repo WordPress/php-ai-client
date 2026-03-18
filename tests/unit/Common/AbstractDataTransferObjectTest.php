@@ -246,6 +246,82 @@ class AbstractDataTransferObjectTest extends TestCase
     }
 
     /**
+     * Tests handling of anyOf schemas uses first schema without validation.
+     *
+     * @return void
+     */
+    public function testAnyOfSchemaHandling(): void
+    {
+        $testObject = new class extends AbstractDataTransferObject {
+            public function toArray(): array
+            {
+                return [
+                    'dynamicField' => [
+                        'type' => 'objectType',
+                        'data' => [],
+                    ],
+                ];
+            }
+
+            public static function fromArray(array $array): self
+            {
+                return new static();
+            }
+
+            public static function getJsonSchema(): array
+            {
+                return [
+                    'type' => 'object',
+                    'properties' => [
+                        'dynamicField' => [
+                            'anyOf' => [
+                                [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'type' => [
+                                            'type' => 'string',
+                                            'const' => 'objectType'
+                                        ],
+                                        'data' => [
+                                            'type' => 'object',
+                                            'properties' => []
+                                        ],
+                                    ],
+                                    'required' => ['type', 'data'],
+                                ],
+                                [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'type' => [
+                                            'type' => 'string',
+                                            'const' => 'arrayType'
+                                        ],
+                                        'data' => [
+                                            'type' => 'array',
+                                            'items' => ['type' => 'string']
+                                        ],
+                                    ],
+                                    'required' => ['type', 'data'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ];
+            }
+        };
+
+        $result = $testObject->jsonSerialize();
+
+        $this->assertIsArray($result);
+        $this->assertIsArray($result['dynamicField']);
+        $this->assertInstanceOf(stdClass::class, $result['dynamicField']['data']);
+
+        $json = json_encode($result);
+        $this->assertIsString($json);
+        $this->assertStringContainsString('"data":{}', $json);
+    }
+
+    /**
      * Tests that arrays of objects are processed recursively.
      *
      * @return void
