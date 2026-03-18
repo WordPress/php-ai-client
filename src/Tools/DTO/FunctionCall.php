@@ -119,7 +119,7 @@ class FunctionCall extends AbstractDataTransferObject
                     'description' => 'The arguments to pass to the function.',
                 ],
             ],
-            'oneOf' => [
+            'anyOf' => [
                 [
                     'required' => [self::KEY_ID],
                 ],
