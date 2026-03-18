@@ -104,6 +104,7 @@ class ProviderMetadata extends AbstractDataTransferObject
         if (!preg_match('/^[a-z0-9\-_]+$/', $id)) {
             throw new InvalidArgumentException(
                 sprintf(
+                    // phpcs:ignore Generic.Files.LineLength.TooLong
                     'Invalid provider ID "%s". Only lowercase alphanumeric characters, hyphens, and underscores are allowed.',
                     $id
                 )
