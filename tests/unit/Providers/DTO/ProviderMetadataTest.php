@@ -8,6 +8,7 @@ use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 
@@ -264,20 +265,64 @@ class ProviderMetadataTest extends TestCase
     }
 
     /**
-     * Tests with empty strings.
+     * Tests that empty string ID throws an exception.
      *
      * @return void
      */
-    public function testEmptyStrings(): void
+    public function testEmptyIdThrowsException(): void
     {
-        $metadata = new ProviderMetadata('', '', ProviderTypeEnum::cloud());
+        $this->expectException(InvalidArgumentException::class);
+        new ProviderMetadata('', '', ProviderTypeEnum::cloud());
+    }
 
-        $this->assertEquals('', $metadata->getId());
-        $this->assertEquals('', $metadata->getName());
+    /**
+     * Tests that uppercase characters in ID throw an exception.
+     *
+     * @return void
+     */
+    public function testUppercaseIdThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new ProviderMetadata('OpenAI', 'OpenAI', ProviderTypeEnum::cloud());
+    }
 
-        $array = $metadata->toArray();
-        $this->assertEquals('', $array[ProviderMetadata::KEY_ID]);
-        $this->assertEquals('', $array[ProviderMetadata::KEY_NAME]);
+    /**
+     * Tests that spaces in ID throw an exception.
+     *
+     * @return void
+     */
+    public function testSpacesInIdThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new ProviderMetadata('my provider', 'My Provider', ProviderTypeEnum::cloud());
+    }
+
+    /**
+     * Tests that special characters in ID throw an exception.
+     *
+     * @return void
+     */
+    public function testSpecialCharsInIdThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new ProviderMetadata('provider!', 'Provider', ProviderTypeEnum::cloud());
+    }
+
+    /**
+     * Tests that valid IDs with hyphens and underscores are accepted.
+     *
+     * @return void
+     */
+    public function testValidIdFormats(): void
+    {
+        $metadata1 = new ProviderMetadata('my-provider', 'My Provider', ProviderTypeEnum::cloud());
+        $this->assertEquals('my-provider', $metadata1->getId());
+
+        $metadata2 = new ProviderMetadata('provider_v2', 'Provider V2', ProviderTypeEnum::cloud());
+        $this->assertEquals('provider_v2', $metadata2->getId());
+
+        $metadata3 = new ProviderMetadata('a1-b2_c3', 'Test', ProviderTypeEnum::cloud());
+        $this->assertEquals('a1-b2_c3', $metadata3->getId());
     }
 
     /**
