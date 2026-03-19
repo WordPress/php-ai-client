@@ -363,6 +363,30 @@ class AiClient
     }
 
     /**
+     * Generates sound using the traditional API approach.
+     *
+     * @since 1.4.0
+     *
+     * @param Prompt $prompt The prompt content.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
+     * @return GenerativeAiResult The generation result.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid.
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function generateSoundResult(
+        $prompt,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): GenerativeAiResult {
+        self::validateModelOrConfigParameter($modelOrConfig);
+        return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateSoundResult();
+    }
+
+    /**
      * Generates a video using the traditional API approach.
      *
      * @since 1.3.0
