@@ -27,6 +27,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
+use WordPress\AiClient\Providers\Models\SoundGeneration\Contracts\SoundGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
@@ -139,6 +140,69 @@ class PromptBuilderTest extends TestCase
             }
 
             public function generateSpeechResult(array $prompt): GenerativeAiResult
+            {
+                return $this->result;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock model that implements both ModelInterface and SoundGenerationModelInterface.
+     *
+     * @param ModelMetadata $metadata The metadata for the model.
+     * @param GenerativeAiResult $result The result to return from generation.
+     * @return ModelInterface&SoundGenerationModelInterface The mock model.
+     */
+    private function createSoundGenerationModel(ModelMetadata $metadata, GenerativeAiResult $result): ModelInterface
+    {
+        $providerMetadata = new ProviderMetadata(
+            'mock-provider',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, SoundGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private GenerativeAiResult $result;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                GenerativeAiResult $result
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->result = $result;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateSoundResult(array $prompt): GenerativeAiResult
             {
                 return $this->result;
             }
@@ -1981,6 +2045,47 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests generateSoundResult method.
+     *
+     * @return void
+     */
+    public function testGenerateSoundResult(): void
+    {
+        $result = new GenerativeAiResult(
+            'test-result',
+            [new Candidate(
+                new ModelMessage([new MessagePart(new File('data:audio/wav;base64,UklGRigE=', 'audio/wav'))]),
+                FinishReasonEnum::stop()
+            )],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createSoundGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate sound');
+        $builder->usingModel($model);
+
+        $actualResult = $builder->generateSoundResult();
+        $this->assertSame($result, $actualResult);
+
+        // Verify audio modality was included
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $modalities = $config->getOutputModalities();
+        $this->assertNotNull($modalities);
+        $this->assertTrue($modalities[0]->isAudio());
+    }
+
+    /**
      * Tests convertTextToSpeechResult method.
      *
      * @return void
@@ -2738,6 +2843,84 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests generateSound method.
+     *
+     * @return void
+     */
+    public function testGenerateSound(): void
+    {
+        $file = new File('https://example.com/sound.mp3', 'audio/mp3');
+        $messagePart = new MessagePart($file);
+        $message = new Message(MessageRoleEnum::model(), [$messagePart]);
+        $candidate = new Candidate($message, FinishReasonEnum::stop());
+
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createSoundGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate sound');
+        $builder->usingModel($model);
+
+        $soundFile = $builder->generateSound();
+        $this->assertSame($file, $soundFile);
+    }
+
+    /**
+     * Tests generateSounds method.
+     *
+     * @return void
+     */
+    public function testGenerateSounds(): void
+    {
+        $files = [
+            new File('https://example.com/sound1.mp3', 'audio/mp3'),
+            new File('https://example.com/sound2.mp3', 'audio/mp3'),
+            new File('https://example.com/sound3.mp3', 'audio/mp3'),
+        ];
+
+        $candidates = [];
+        foreach ($files as $file) {
+            $candidates[] = new Candidate(
+                new Message(MessageRoleEnum::model(), [new MessagePart($file)]),
+                FinishReasonEnum::stop(),
+                10
+            );
+        }
+
+        $result = new GenerativeAiResult(
+            'test-result-id',
+            $candidates,
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createSoundGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate sound');
+        $builder->usingModel($model);
+
+        $soundFiles = $builder->generateSounds(3);
+
+        $this->assertCount(3, $soundFiles);
+        $this->assertSame($files[0], $soundFiles[0]);
+        $this->assertSame($files[1], $soundFiles[1]);
+        $this->assertSame($files[2], $soundFiles[2]);
+    }
+
+    /**
      * Tests appendPartToMessages creates new user message when empty.
      *
      * @return void
@@ -3404,6 +3587,40 @@ class PromptBuilderTest extends TestCase
         $builder->usingModel($model);
 
         $this->assertTrue($builder->isSupportedForSpeechGeneration());
+    }
+
+    /**
+     * Tests isSupportedForSoundGeneration convenience method.
+     *
+     * @return void
+     */
+    public function testIsSupportedForSoundGeneration(): void
+    {
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('sound-model');
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::soundGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::inputModalities(), [
+                [ModalityEnum::text()],
+                [ModalityEnum::text(), ModalityEnum::image()]
+            ])
+        ]);
+
+        $result = new GenerativeAiResult('test-id', [
+            new Candidate(
+                new ModelMessage([new MessagePart(new File('https://example.com/sound.mp3', 'audio/mp3'))]),
+                FinishReasonEnum::stop()
+            )
+        ], new TokenUsage(10, 5, 15), $this->createTestProviderMetadata(), $this->createTestTextModelMetadata());
+
+        $model = $this->createSoundGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate sound');
+        $builder->usingModel($model);
+
+        $this->assertTrue($builder->isSupportedForSoundGeneration());
     }
 
     /**
