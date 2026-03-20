@@ -2086,6 +2086,28 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests generateSoundResult throws exception for unsupported model.
+     *
+     * @return void
+     */
+    public function testGenerateSoundResultThrowsExceptionForUnsupportedModel(): void
+    {
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createMock(ModelInterface::class);
+        $model->method('metadata')->willReturn($metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Generate sound');
+        $builder->usingModel($model);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Model "test-model" does not support sound generation');
+
+        $builder->generateSoundResult();
+    }
+
+    /**
      * Tests convertTextToSpeechResult method.
      *
      * @return void
