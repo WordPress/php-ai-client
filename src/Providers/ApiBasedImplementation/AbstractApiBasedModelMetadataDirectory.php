@@ -68,6 +68,18 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
      */
     final public function getModelMetadata(string $modelId): ModelMetadata
     {
+        if ($this->hasCache(self::MODELS_CACHE_KEY)) {
+            $modelsMetadata = $this->getModelMetadataMap();
+            if (isset($modelsMetadata[$modelId])) {
+                return $modelsMetadata[$modelId];
+            }
+        }
+
+        $explicitModelMetadata = $this->createModelMetadataForExplicitModelId($modelId);
+        if ($explicitModelMetadata !== null) {
+            return $explicitModelMetadata;
+        }
+
         $modelsMetadata = $this->getModelMetadataMap();
         if (!isset($modelsMetadata[$modelId])) {
             throw new InvalidArgumentException(
@@ -112,6 +124,22 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     protected function getBaseCacheKey(): string
     {
         return 'ai_client_' . AiClient::VERSION . '_' . md5(static::class);
+    }
+
+    /**
+     * Creates metadata for an explicit model ID without listing provider models.
+     *
+     * Providers whose APIs accept arbitrary/current model IDs can override this to avoid a live list-models request
+     * when callers already know the model ID they want to instantiate.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $modelId The explicit model ID.
+     * @return ModelMetadata|null The model metadata, or null to fall back to listing provider models.
+     */
+    protected function createModelMetadataForExplicitModelId(string $modelId): ?ModelMetadata
+    {
+        return null;
     }
 
     /**
