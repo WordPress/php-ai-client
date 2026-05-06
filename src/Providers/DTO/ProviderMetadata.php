@@ -20,13 +20,13 @@ use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
  * @since 1.3.0 Added optional logoPath property.
  *
  * @phpstan-type ProviderMetadataArrayShape array{
- *     id: string,
- *     name: string,
- *     description?: ?string,
- *     type: string,
- *     credentialsUrl?: ?string,
- *     authenticationMethod?: ?string,
- *     logoPath?: ?string
+ *     id: non-empty-string,
+ *     name: non-empty-string,
+ *     description?: ?non-empty-string,
+ *     type: non-empty-string,
+ *     credentialsUrl?: ?non-empty-string,
+ *     authenticationMethod?: ?non-empty-string,
+ *     logoPath?: ?non-empty-string
  * }
  *
  * @extends AbstractDataTransferObject<ProviderMetadataArrayShape>
@@ -42,17 +42,17 @@ class ProviderMetadata extends AbstractDataTransferObject
     public const KEY_LOGO_PATH = 'logoPath';
 
     /**
-     * @var string The provider's unique identifier.
+     * @var non-empty-string The provider's unique identifier.
      */
     protected string $id;
 
     /**
-     * @var string The provider's display name.
+     * @var non-empty-string The provider's display name.
      */
     protected string $name;
 
     /**
-     * @var string|null The provider's description.
+     * @var non-empty-string|null The provider's description.
      */
     protected ?string $description;
 
@@ -62,7 +62,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     protected ProviderTypeEnum $type;
 
     /**
-     * @var string|null The URL where users can get credentials.
+     * @var non-empty-string|null The URL where users can get credentials.
      */
     protected ?string $credentialsUrl;
 
@@ -72,7 +72,7 @@ class ProviderMetadata extends AbstractDataTransferObject
     protected ?RequestAuthenticationMethod $authenticationMethod;
 
     /**
-     * @var string|null The full path to the provider's logo image file.
+     * @var non-empty-string|null The full path to the provider's logo image file.
      */
     protected ?string $logoPath;
 
@@ -83,13 +83,13 @@ class ProviderMetadata extends AbstractDataTransferObject
      * @since 1.2.0 Added optional $description parameter.
      * @since 1.3.0 Added optional $logoPath parameter.
      *
-     * @param string $id The provider's unique identifier.
-     * @param string $name The provider's display name.
+     * @param non-empty-string $id The provider's unique identifier.
+     * @param non-empty-string $name The provider's display name.
      * @param ProviderTypeEnum $type The provider type.
-     * @param string|null $credentialsUrl The URL where users can get credentials.
+     * @param non-empty-string|null $credentialsUrl The URL where users can get credentials.
      * @param RequestAuthenticationMethod|null $authenticationMethod The authentication method.
-     * @param string|null $description The provider's description.
-     * @param string|null $logoPath The full path to the provider's logo image file.
+     * @param non-empty-string|null $description The provider's description.
+     * @param non-empty-string|null $logoPath The full path to the provider's logo image file.
      * @throws InvalidArgumentException If the provider ID contains invalid characters.
      */
     public function __construct(
@@ -125,7 +125,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      *
      * @since 0.1.0
      *
-     * @return string The provider ID.
+     * @return non-empty-string The provider ID.
      */
     public function getId(): string
     {
@@ -137,7 +137,7 @@ class ProviderMetadata extends AbstractDataTransferObject
      *
      * @since 0.1.0
      *
-     * @return string The provider name.
+     * @return non-empty-string The provider name.
      */
     public function getName(): string
     {
