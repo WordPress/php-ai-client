@@ -6,7 +6,6 @@ namespace WordPress\AiClient\Tests\unit\Providers;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Http\DTO\Request;
@@ -21,8 +20,6 @@ use WordPress\AiClient\Tests\mocks\MockModelMetadataDirectory;
 use WordPress\AiClient\Tests\mocks\MockNoAuthProvider;
 use WordPress\AiClient\Tests\mocks\MockProvider;
 use WordPress\AiClient\Tests\mocks\MockProviderAvailability;
-use WordPress\OpenAiAiProvider\Models\OpenAiTextGenerationModel;
-use WordPress\OpenAiAiProvider\Provider\OpenAiProvider;
 
 /**
  * @covers \WordPress\AiClient\Providers\ProviderRegistry
@@ -229,28 +226,6 @@ class ProviderRegistryTest extends TestCase
 
         $modelConfig = new ModelConfig([]);
         $this->registry->getProviderModel('mock', 'test-model', $modelConfig);
-    }
-
-    /**
-     * Tests that explicit OpenAI model IDs instantiate without listing provider models.
-     *
-     * @return void
-     */
-    public function testGetProviderModelWithExplicitOpenAiModelIdDoesNotListModels(): void
-    {
-        $httpTransporter = $this->createMock(HttpTransporterInterface::class);
-        $httpTransporter
-            ->expects($this->never())
-            ->method('send');
-
-        $this->registry->setHttpTransporter($httpTransporter);
-        $this->registry->registerProvider(OpenAiProvider::class);
-        $this->registry->setProviderRequestAuthentication('openai', new ApiKeyRequestAuthentication('test-api-key'));
-
-        $model = $this->registry->getProviderModel('openai', 'gpt-5.4', new ModelConfig([]));
-
-        $this->assertInstanceOf(OpenAiTextGenerationModel::class, $model);
-        $this->assertEquals('gpt-5.4', $model->metadata()->getId());
     }
 
     /**

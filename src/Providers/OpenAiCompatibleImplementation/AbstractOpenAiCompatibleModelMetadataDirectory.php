@@ -11,7 +11,6 @@ use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Http\Util\ResponseUtil;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
-use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
  * Base class for a model metadata directory for providers that implement OpenAI's API format.
@@ -24,41 +23,6 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  */
 abstract class AbstractOpenAiCompatibleModelMetadataDirectory extends AbstractApiBasedModelMetadataDirectory
 {
-    /**
-     * {@inheritDoc}
-     *
-     * @since n.e.x.t
-     */
-    protected function createModelMetadataForExplicitModelId(string $modelId): ?ModelMetadata
-    {
-        if (!$this->isExplicitTextGenerationModelId($modelId)) {
-            return null;
-        }
-
-        return new ModelMetadata($modelId, $modelId, [CapabilityEnum::textGeneration()], []);
-    }
-
-    /**
-     * Checks whether a model ID is safe to treat as a text generation model without listing models.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $modelId The explicit model ID.
-     * @return bool True if the model ID matches common OpenAI-compatible text generation model families.
-     */
-    protected function isExplicitTextGenerationModelId(string $modelId): bool
-    {
-        if (str_starts_with($modelId, 'gpt-image-') || str_starts_with($modelId, 'dall-e-')) {
-            return false;
-        }
-
-        if (str_starts_with($modelId, 'gpt-') || str_starts_with($modelId, 'chatgpt-')) {
-            return true;
-        }
-
-        return preg_match('/^o\d(?:-|$)/', $modelId) === 1;
-    }
-
     /**
      * {@inheritDoc}
      *
