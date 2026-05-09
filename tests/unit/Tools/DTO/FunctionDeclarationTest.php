@@ -207,6 +207,33 @@ class FunctionDeclarationTest extends TestCase
     }
 
     /**
+     * Tests JSON serialization with empty JSON Schema object maps.
+     *
+     * @return void
+     */
+    public function testJsonSerializationPreservesEmptySchemaObjectMaps(): void
+    {
+        $declaration = new FunctionDeclaration(
+            'inspectObject',
+            'Inspects an object with optional nested metadata',
+            [
+                'type' => 'object',
+                'properties' => [
+                    'metadata' => [
+                        'type' => 'object',
+                        'properties' => [],
+                    ],
+                ],
+            ]
+        );
+
+        $json = json_encode($declaration, JSON_THROW_ON_ERROR);
+
+        $this->assertStringContainsString('"properties":{', $json);
+        $this->assertStringNotContainsString('"properties":[]', $json);
+    }
+
+    /**
      * Tests array transformation without parameters.
      *
      * @return void
