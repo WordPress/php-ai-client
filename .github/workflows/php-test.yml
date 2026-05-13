@@ -26,10 +26,16 @@ on:
       - reopened
       - synchronize
 
+# Disable permissions for all available scopes by default.
+# Any needed permissions should be configured at the job level.
+permissions: {}
+
 jobs:
   test:
     runs-on: ubuntu-latest
     name: Test with PHP ${{matrix.php-version}} ${{ matrix.coverage && ' (coverage)' || '' }}
+    permissions:
+      contents: read # Required to check out the repository.
     strategy:
       matrix:
         php-version: ['7.4', '8.0', '8.4', '8.5']
