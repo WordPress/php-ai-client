@@ -14,6 +14,8 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Tests\mocks\MockCustomAuthProvider;
+use WordPress\AiClient\Tests\mocks\MockCustomRequestAuthentication;
 use WordPress\AiClient\Tests\mocks\MockHttpTransporter;
 use WordPress\AiClient\Tests\mocks\MockModel;
 use WordPress\AiClient\Tests\mocks\MockModelMetadataDirectory;
@@ -32,12 +34,14 @@ class ProviderRegistryTest extends TestCase
     {
         parent::setUp();
         $this->registry = new ProviderRegistry();
+        MockCustomAuthProvider::reset();
         MockProvider::reset(); // Reset static state of mock provider before each test.
     }
 
     protected function tearDown(): void
     {
         MockProvider::reset(); // Reset static state of mock provider after each test.
+        MockCustomAuthProvider::reset();
         parent::tearDown();
     }
 
@@ -374,6 +378,42 @@ class ProviderRegistryTest extends TestCase
         // By default, it should create an ApiKeyRequestAuthentication if environment variables are set.
         // Since no env vars are set in tests, it should fall back to null.
         $this->assertNull($retrievedAuth);
+    }
+
+    /**
+     * Tests that provider-supplied request authentication is used when available.
+     *
+     * @return void
+     */
+    public function testRegisterProviderUsesProviderSuppliedRequestAuthentication(): void
+    {
+        $requestAuthentication = new MockCustomRequestAuthentication();
+        MockCustomAuthProvider::setRequestAuthentication($requestAuthentication);
+
+        $this->registry->registerProvider(MockCustomAuthProvider::class);
+
+        $this->assertSame(
+            $requestAuthentication,
+            $this->registry->getProviderRequestAuthentication('mock-custom-auth')
+        );
+    }
+
+    /**
+     * Tests that provider-supplied request authentication is bound to models.
+     *
+     * @return void
+     */
+    public function testRegisterProviderBindsProviderSuppliedRequestAuthenticationToModels(): void
+    {
+        $requestAuthentication = new MockCustomRequestAuthentication();
+        MockCustomAuthProvider::setRequestAuthentication($requestAuthentication);
+
+        $this->registry->registerProvider(MockCustomAuthProvider::class);
+
+        $model = $this->registry->getProviderModel('mock-custom-auth', 'mock-text-model');
+
+        $this->assertInstanceOf(MockModel::class, $model);
+        $this->assertSame($requestAuthentication, $model->getRequestAuthentication());
     }
 
     /**
