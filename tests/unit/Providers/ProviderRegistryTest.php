@@ -20,6 +20,7 @@ use WordPress\AiClient\Tests\mocks\MockModelMetadataDirectory;
 use WordPress\AiClient\Tests\mocks\MockNoAuthProvider;
 use WordPress\AiClient\Tests\mocks\MockProvider;
 use WordPress\AiClient\Tests\mocks\MockProviderAvailability;
+use WordPress\AiClient\Tests\mocks\MockSecondaryProvider;
 
 /**
  * @covers \WordPress\AiClient\Providers\ProviderRegistry
@@ -33,11 +34,13 @@ class ProviderRegistryTest extends TestCase
         parent::setUp();
         $this->registry = new ProviderRegistry();
         MockProvider::reset(); // Reset static state of mock provider before each test.
+        MockSecondaryProvider::reset();
     }
 
     protected function tearDown(): void
     {
         MockProvider::reset(); // Reset static state of mock provider after each test.
+        MockSecondaryProvider::reset();
         parent::tearDown();
     }
 
@@ -178,6 +181,28 @@ class ProviderRegistryTest extends TestCase
         // Should now find models that match the text generation requirement
         $this->assertNotEmpty($results);
         $this->assertCount(1, $results);
+    }
+
+    /**
+     * Tests findModelsMetadataForSupport prioritizes preferred provider order.
+     *
+     * @return void
+     */
+    public function testFindModelsMetadataForSupportWithPreferredProviderOrder(): void
+    {
+        $this->registry->registerProvider(MockProvider::class);
+        $this->registry->registerProvider(MockSecondaryProvider::class);
+
+        $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], []);
+
+        $results = $this->registry->findModelsMetadataForSupport(
+            $requirements,
+            ['mock-secondary', 'unknown-provider']
+        );
+
+        $this->assertCount(2, $results);
+        $this->assertSame('mock-secondary', $results[0]->getProvider()->getId());
+        $this->assertSame('mock', $results[1]->getProvider()->getId());
     }
 
     /**

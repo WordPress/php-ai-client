@@ -236,13 +236,26 @@ class ProviderRegistry implements WithHttpTransporterInterface
      * @since 0.1.0
      *
      * @param ModelRequirements $modelRequirements The requirements to match against.
+     * @param list<string> $preferredProviderOrder Optional ordered provider IDs to prioritize first.
      * @return list<ProviderModelsMetadata> List of provider models metadata that match requirements.
      */
-    public function findModelsMetadataForSupport(ModelRequirements $modelRequirements): array
-    {
+    public function findModelsMetadataForSupport(
+        ModelRequirements $modelRequirements,
+        array $preferredProviderOrder = []
+    ): array {
         $results = [];
+        $providerIds = array_keys($this->registeredIdsToClassNames);
 
-        foreach ($this->registeredIdsToClassNames as $providerId => $className) {
+        if ($preferredProviderOrder !== []) {
+            $preferredProviderOrder = array_values(array_unique($preferredProviderOrder));
+
+            $orderedProviderIds = array_values(array_intersect($preferredProviderOrder, $providerIds));
+            $remainingProviderIds = array_values(array_diff($providerIds, $orderedProviderIds));
+            $providerIds = array_merge($orderedProviderIds, $remainingProviderIds);
+        }
+
+        foreach ($providerIds as $providerId) {
+            $className = $this->registeredIdsToClassNames[$providerId];
             $providerResults = $this->findProviderModelsMetadataForSupport($providerId, $modelRequirements);
             if (!empty($providerResults)) {
                 // Use static method from ProviderInterface
