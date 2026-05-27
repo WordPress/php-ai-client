@@ -390,10 +390,10 @@ class PromptBuilder
     /**
      * Sets provider priority for cross-provider model discovery.
      *
-     * @since 0.5.0
+      * @since n.e.x.t
      *
      * @param string ...$providerIds Provider IDs in preferred order.
-     * @return self
+      * @return self The prompt builder instance.
      *
      * @throws InvalidArgumentException If no provider IDs are provided or an identifier is invalid.
      */
@@ -415,10 +415,10 @@ class PromptBuilder
     /**
      * Enables or disables fallback to subsequent discovered models after runtime failures.
      *
-     * @since 0.5.0
+      * @since n.e.x.t
      *
      * @param bool $enabled Whether fallback should be enabled.
-     * @return self
+      * @return self The prompt builder instance.
      */
     public function usingProviderFallback(bool $enabled = true): self
     {
@@ -1446,6 +1446,8 @@ class PromptBuilder
     /**
      * Retrieves candidate models ordered by provider discovery and model preferences.
      *
+      * @since n.e.x.t
+      *
      * @param ModelRequirements $requirements The requirements derived from the prompt.
      * @param CapabilityEnum $capability The capability being requested.
      * @return list<array{0:string,1:string}> Ordered [providerId, modelId] tuples.
@@ -1488,6 +1490,8 @@ class PromptBuilder
     /**
      * Reorders candidate tuples to honor model preferences while preserving discovery order for remaining entries.
      *
+      * @since n.e.x.t
+      *
      * @param list<array{0:string,1:string}> $candidates Candidate tuples in discovery order.
      * @return list<array{0:string,1:string}> Reordered candidate tuples.
      */
@@ -1545,8 +1549,10 @@ class PromptBuilder
     /**
      * Builds the no-models-found message for capability/provider context.
      *
+      * @since n.e.x.t
+      *
      * @param CapabilityEnum $capability The required capability.
-     * @return string
+      * @return string The no-models-found message.
      */
     private function createNoModelsFoundMessage(CapabilityEnum $capability): string
     {
@@ -1594,8 +1600,10 @@ class PromptBuilder
     /**
      * Normalizes and validates a provider identifier string.
      *
+      * @since n.e.x.t
+      *
      * @param string $providerId The provider identifier.
-     * @return string
+      * @return string The normalized provider identifier.
      * @throws InvalidArgumentException If the identifier is empty.
      */
     private function normalizeProviderIdentifier(string $providerId): string

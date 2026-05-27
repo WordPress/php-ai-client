@@ -234,6 +234,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
      * Finds models across all available providers that support the given requirements.
      *
      * @since 0.1.0
+      * @since n.e.x.t Added support for preferred provider ordering.
      *
      * @param ModelRequirements $modelRequirements The requirements to match against.
      * @param list<string> $preferredProviderOrder Optional ordered provider IDs to prioritize first.
