@@ -417,6 +417,29 @@ class ProviderRegistryTest extends TestCase
     }
 
     /**
+     * Tests that explicit request authentication overrides provider-supplied authentication.
+     *
+     * @return void
+     */
+    public function testSetProviderRequestAuthenticationOverridesProviderSuppliedRequestAuthentication(): void
+    {
+        MockCustomAuthProvider::setRequestAuthentication(new MockCustomRequestAuthentication());
+
+        $this->registry->registerProvider(MockCustomAuthProvider::class);
+
+        $requestAuthentication = new MockCustomRequestAuthentication();
+        $this->registry->setProviderRequestAuthentication('mock-custom-auth', $requestAuthentication);
+
+        $model = $this->registry->getProviderModel('mock-custom-auth', 'mock-text-model');
+
+        $this->assertSame(
+            $requestAuthentication,
+            $this->registry->getProviderRequestAuthentication('mock-custom-auth')
+        );
+        $this->assertSame($requestAuthentication, $model->getRequestAuthentication());
+    }
+
+    /**
      * Tests the internal getEnvVarName method using reflection.
      *
      * @dataProvider envVarNameProvider
@@ -428,7 +451,9 @@ class ProviderRegistryTest extends TestCase
     public function testGetEnvVarName(string $providerId, string $field, string $expected): void
     {
         $method = new \ReflectionMethod(ProviderRegistry::class, 'getEnvVarName');
-        $method->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $method->setAccessible(true);
+        }
 
         $result = $method->invoke($this->registry, $providerId, $field); // Invoke on instance
 
@@ -464,7 +489,9 @@ class ProviderRegistryTest extends TestCase
         $this->registry->registerProvider(MockProvider::class);
 
         $method = new \ReflectionMethod(ProviderRegistry::class, 'createDefaultProviderRequestAuthentication');
-        $method->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $method->setAccessible(true);
+        }
 
         $auth = $method->invoke($this->registry, MockProvider::class);
 
@@ -488,7 +515,9 @@ class ProviderRegistryTest extends TestCase
         $this->registry->registerProvider(MockProvider::class);
 
         $method = new \ReflectionMethod(ProviderRegistry::class, 'createDefaultProviderRequestAuthentication');
-        $method->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $method->setAccessible(true);
+        }
 
         $auth = $method->invoke($this->registry, MockProvider::class);
 
