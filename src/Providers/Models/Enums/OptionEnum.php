@@ -21,6 +21,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * Dynamically loaded from ModelConfig KEY_* constants:
  * @method static self candidateCount() Creates an instance for CANDIDATE_COUNT option.
  * @method static self customOptions() Creates an instance for CUSTOM_OPTIONS option.
+ * @method static self embeddingDimensions() Creates an instance for EMBEDDING_DIMENSIONS option.
  * @method static self frequencyPenalty() Creates an instance for FREQUENCY_PENALTY option.
  * @method static self functionDeclarations() Creates an instance for FUNCTION_DECLARATIONS option.
  * @method static self logprobs() Creates an instance for LOGPROBS option.
@@ -42,6 +43,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * @method static self webSearch() Creates an instance for WEB_SEARCH option.
  * @method bool isCandidateCount() Checks if the option is CANDIDATE_COUNT.
  * @method bool isCustomOptions() Checks if the option is CUSTOM_OPTIONS.
+ * @method bool isEmbeddingDimensions() Checks if the option is EMBEDDING_DIMENSIONS.
  * @method bool isFrequencyPenalty() Checks if the option is FREQUENCY_PENALTY.
  * @method bool isFunctionDeclarations() Checks if the option is FUNCTION_DECLARATIONS.
  * @method bool isLogprobs() Checks if the option is LOGPROBS.
