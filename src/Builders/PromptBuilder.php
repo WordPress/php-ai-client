@@ -23,6 +23,7 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
@@ -30,6 +31,7 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -675,6 +677,20 @@ class PromptBuilder
     }
 
     /**
+     * Sets the embedding vector dimension count.
+     *
+     * @since n.e.x.t
+     *
+     * @param int $dimensions The embedding vector dimension count.
+     * @return self
+     */
+    public function usingEmbeddingDimensions(int $dimensions): self
+    {
+        $this->modelConfig->setEmbeddingDimensions($dimensions);
+        return $this;
+    }
+
+    /**
      * Configures the prompt for JSON response output.
      *
      * @since 0.1.0
@@ -760,6 +776,9 @@ class PromptBuilder
         }
         if ($model instanceof VideoGenerationModelInterface) {
             return CapabilityEnum::videoGeneration();
+        }
+        if ($model instanceof EmbeddingGenerationModelInterface) {
+            return CapabilityEnum::embeddingGeneration();
         }
 
         // No supported interface found
@@ -1121,6 +1140,40 @@ class PromptBuilder
     }
 
     /**
+     * Generates an embedding result from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @return EmbeddingResult The generated result containing embedding vectors.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support embedding generation.
+     */
+    public function generateEmbeddingResult(): EmbeddingResult
+    {
+        $this->validateMessages();
+        $capability = CapabilityEnum::embeddingGeneration();
+        $model = $this->getConfiguredModel($capability);
+
+        $this->dispatchEvent(
+            new BeforeGenerateResultEvent($this->messages, $model, $capability)
+        );
+
+        if (!$model instanceof EmbeddingGenerationModelInterface) {
+            throw new RuntimeException(
+                sprintf('Model "%s" does not support embedding generation.', $model->metadata()->getId())
+            );
+        }
+
+        $result = $model->generateEmbeddingResult($this->messages);
+
+        $this->dispatchEvent(
+            new AfterGenerateResultEvent($this->messages, $model, $capability, $result)
+        );
+
+        return $result;
+    }
+
+    /**
      * Generates text from the prompt.
      *
      * @since 0.1.0
@@ -1131,6 +1184,30 @@ class PromptBuilder
     public function generateText(): string
     {
         return $this->generateTextResult()->toText();
+    }
+
+    /**
+     * Generates the first embedding vector from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @return list<float> The generated embedding vector.
+     */
+    public function generateEmbedding(): array
+    {
+        return $this->generateEmbeddingResult()->getEmbedding();
+    }
+
+    /**
+     * Generates embedding vectors from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @return list<list<float>> The generated embedding vectors.
+     */
+    public function generateEmbeddings(): array
+    {
+        return $this->generateEmbeddingResult()->getEmbeddings();
     }
 
     /**

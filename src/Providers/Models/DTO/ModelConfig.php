@@ -45,6 +45,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  *     outputMediaOrientation?: string,
  *     outputMediaAspectRatio?: string,
  *     outputSpeechVoice?: string,
+ *     embeddingDimensions?: int,
  *     customOptions?: array<string, mixed>
  * }
  *
@@ -72,6 +73,7 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_OUTPUT_MEDIA_ORIENTATION = 'outputMediaOrientation';
     public const KEY_OUTPUT_MEDIA_ASPECT_RATIO = 'outputMediaAspectRatio';
     public const KEY_OUTPUT_SPEECH_VOICE = 'outputSpeechVoice';
+    public const KEY_EMBEDDING_DIMENSIONS = 'embeddingDimensions';
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
 
     /*
@@ -180,6 +182,11 @@ class ModelConfig extends AbstractDataTransferObject
      * @var string|null Output speech voice.
      */
     protected ?string $outputSpeechVoice = null;
+
+    /**
+     * @var int|null Embedding vector dimension count.
+     */
+    protected ?int $embeddingDimensions = null;
 
     /**
      * @var array<string, mixed> Custom provider-specific options.
@@ -772,6 +779,34 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Sets the embedding vector dimension count.
+     *
+     * @since n.e.x.t
+     *
+     * @param int $embeddingDimensions The embedding vector dimension count.
+     */
+    public function setEmbeddingDimensions(int $embeddingDimensions): void
+    {
+        if ($embeddingDimensions < 1) {
+            throw new InvalidArgumentException('Embedding dimensions must be greater than 0.');
+        }
+
+        $this->embeddingDimensions = $embeddingDimensions;
+    }
+
+    /**
+     * Gets the embedding vector dimension count.
+     *
+     * @since n.e.x.t
+     *
+     * @return int|null The embedding vector dimension count.
+     */
+    public function getEmbeddingDimensions(): ?int
+    {
+        return $this->embeddingDimensions;
+    }
+
+    /**
      * Sets a single custom option.
      *
      * @since 0.1.0
@@ -915,6 +950,11 @@ class ModelConfig extends AbstractDataTransferObject
                     'type' => 'string',
                     'description' => 'Output speech voice.',
                 ],
+                self::KEY_EMBEDDING_DIMENSIONS => [
+                    'type' => 'integer',
+                    'minimum' => 1,
+                    'description' => 'Embedding vector dimension count.',
+                ],
                 self::KEY_CUSTOM_OPTIONS => [
                     'type' => 'object',
                     'additionalProperties' => true,
@@ -1026,6 +1066,10 @@ class ModelConfig extends AbstractDataTransferObject
             $data[self::KEY_OUTPUT_SPEECH_VOICE] = $this->outputSpeechVoice;
         }
 
+        if ($this->embeddingDimensions !== null) {
+            $data[self::KEY_EMBEDDING_DIMENSIONS] = $this->embeddingDimensions;
+        }
+
         if (!empty($this->customOptions)) {
             $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
         }
@@ -1129,6 +1173,10 @@ class ModelConfig extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_OUTPUT_SPEECH_VOICE])) {
             $config->setOutputSpeechVoice($array[self::KEY_OUTPUT_SPEECH_VOICE]);
+        }
+
+        if (isset($array[self::KEY_EMBEDDING_DIMENSIONS])) {
+            $config->setEmbeddingDimensions($array[self::KEY_EMBEDDING_DIMENSIONS]);
         }
 
         if (isset($array[self::KEY_CUSTOM_OPTIONS])) {
