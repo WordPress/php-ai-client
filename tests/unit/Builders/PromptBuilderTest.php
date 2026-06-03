@@ -1816,6 +1816,83 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests generateEmbeddingResult method.
+     *
+     * @return void
+     */
+    public function testGenerateEmbeddingResult(): void
+    {
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2, 0.3]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate embedding');
+        $builder->usingModel($model);
+        $builder->usingDimensions(3);
+        $builder->usingEncodingFormat('float');
+
+        $actualResult = $builder->generateEmbeddingResult();
+        $this->assertSame($result, $actualResult);
+
+        $this->assertSame(3, $model->getConfig()->getDimensions());
+        $this->assertSame('float', $model->getConfig()->getEncodingFormat());
+    }
+
+    /**
+     * Tests generateEmbedding returns the first vector.
+     *
+     * @return void
+     */
+    public function testGenerateEmbedding(): void
+    {
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2], [0.3, 0.4]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate embedding');
+        $builder->usingModel($model);
+
+        $this->assertSame([0.1, 0.2], $builder->generateEmbedding());
+    }
+
+    /**
+     * Tests generateEmbeddings returns batch vectors.
+     *
+     * @return void
+     */
+    public function testGenerateEmbeddings(): void
+    {
+        $embeddings = [[0.1, 0.2], [0.3, 0.4]];
+        $result = $this->createTestEmbeddingResult($embeddings);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+
+        $builder = new PromptBuilder($this->registry);
+        $builder->usingModel($model);
+
+        $this->assertSame($embeddings, $builder->generateEmbeddings(['First prompt', 'Second prompt']));
+    }
+
+    /**
+     * Tests generateEmbeddingResult throws exception for unsupported model.
+     *
+     * @return void
+     */
+    public function testGenerateEmbeddingResultThrowsExceptionForUnsupportedModel(): void
+    {
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createMock(ModelInterface::class);
+        $model->method('metadata')->willReturn($metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Generate embedding');
+        $builder->usingModel($model);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Model "test-model" does not support embedding generation');
+
+        $builder->generateEmbeddingResult();
+    }
+
+    /**
      * Tests generateVideoResult method.
      *
      * @return void

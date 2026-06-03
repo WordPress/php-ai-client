@@ -11,12 +11,14 @@ use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
+use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
+use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
@@ -77,6 +79,38 @@ trait MockModelCreationTrait
     }
 
     /**
+     * Creates a test EmbeddingResult for testing purposes.
+     *
+     * @param list<list<float|int>>|null $embeddings Optional embeddings for the response.
+     * @return EmbeddingResult
+     */
+    protected function createTestEmbeddingResult(?array $embeddings = null): EmbeddingResult
+    {
+        $embeddings = $embeddings ?? [[0.1, 0.2, 0.3]];
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+        $modelMetadata = new ModelMetadata(
+            'mock-embedding-model',
+            'Mock Embedding Model',
+            [CapabilityEnum::embeddingGeneration()],
+            []
+        );
+
+        return new EmbeddingResult(
+            'test-embedding-result-id',
+            $embeddings,
+            count($embeddings[0]),
+            new TokenUsage(10, 0, 10),
+            $providerMetadata,
+            $modelMetadata
+        );
+    }
+
+    /**
      * Creates a test model metadata instance for text generation.
      *
      * @param string $id Optional model ID.
@@ -129,6 +163,25 @@ trait MockModelCreationTrait
             $id,
             $name,
             [CapabilityEnum::videoGeneration()],
+            []
+        );
+    }
+
+    /**
+     * Creates a test model metadata instance for embedding generation.
+     *
+     * @param string $id Optional model ID.
+     * @param string $name Optional model name.
+     * @return ModelMetadata
+     */
+    protected function createTestEmbeddingModelMetadata(
+        string $id = 'test-embedding-model',
+        string $name = 'Test Embedding Model'
+    ): ModelMetadata {
+        return new ModelMetadata(
+            $id,
+            $name,
+            [CapabilityEnum::embeddingGeneration()],
             []
         );
     }
@@ -328,6 +381,73 @@ trait MockModelCreationTrait
             }
 
             public function generateVideoResult(array $prompt): GenerativeAiResult
+            {
+                return $this->result;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock embedding generation model using anonymous class.
+     *
+     * @param EmbeddingResult $result The result to return from generation.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @return ModelInterface&EmbeddingGenerationModelInterface The mock model.
+     */
+    protected function createMockEmbeddingGenerationModel(
+        EmbeddingResult $result,
+        ?ModelMetadata $metadata = null
+    ): ModelInterface {
+        $metadata = $metadata ?? $this->createTestEmbeddingModelMetadata();
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, EmbeddingGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private EmbeddingResult $result;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                EmbeddingResult $result
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->result = $result;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateEmbeddingResult(array $prompts): EmbeddingResult
             {
                 return $this->result;
             }

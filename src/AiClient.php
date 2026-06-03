@@ -14,6 +14,7 @@ use WordPress\AiClient\Providers\Contracts\ProviderInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 
 /**
@@ -384,6 +385,71 @@ class AiClient
     ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
         return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateVideoResult();
+    }
+
+    /**
+     * Generates embeddings using the traditional API approach.
+     *
+     * @since 1.4.0
+     *
+     * @param Prompt $prompt The prompt content.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
+     * @return EmbeddingResult The embedding result.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid.
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function generateEmbeddingResult(
+        $prompt,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): EmbeddingResult {
+        self::validateModelOrConfigParameter($modelOrConfig);
+        return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateEmbeddingResult();
+    }
+
+    /**
+     * Generates an embedding using the traditional API approach.
+     *
+     * @since 1.4.0
+     *
+     * @param Prompt $prompt The prompt content.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
+     * @return list<float|int> The generated embedding vector.
+     */
+    public static function generateEmbedding(
+        $prompt,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): array {
+        return self::generateEmbeddingResult($prompt, $modelOrConfig, $registry)->getEmbedding();
+    }
+
+    /**
+     * Generates embeddings for a list of prompts using the traditional API approach.
+     *
+     * @since 1.4.0
+     *
+     * @param list<Prompt> $prompts The prompts to embed.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
+     * @return list<list<float|int>> The generated embedding vectors.
+     */
+    public static function generateEmbeddings(
+        array $prompts,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): array {
+        self::validateModelOrConfigParameter($modelOrConfig);
+        return self::getConfiguredPromptBuilder(null, $modelOrConfig, $registry)->generateEmbeddings($prompts);
     }
 
     /**

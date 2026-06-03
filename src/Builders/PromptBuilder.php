@@ -23,6 +23,7 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
@@ -30,6 +31,7 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -480,6 +482,34 @@ class PromptBuilder
     }
 
     /**
+     * Sets the embedding dimensions.
+     *
+     * @since 1.4.0
+     *
+     * @param int $dimensions The embedding dimensions.
+     * @return self
+     */
+    public function usingDimensions(int $dimensions): self
+    {
+        $this->modelConfig->setDimensions($dimensions);
+        return $this;
+    }
+
+    /**
+     * Sets the embedding encoding format.
+     *
+     * @since 1.4.0
+     *
+     * @param string $encodingFormat The embedding encoding format.
+     * @return self
+     */
+    public function usingEncodingFormat(string $encodingFormat): self
+    {
+        $this->modelConfig->setEncodingFormat($encodingFormat);
+        return $this;
+    }
+
+    /**
      * Sets the function declarations available to the model.
      *
      * @since 0.1.0
@@ -761,7 +791,6 @@ class PromptBuilder
         if ($model instanceof VideoGenerationModelInterface) {
             return CapabilityEnum::videoGeneration();
         }
-
         // No supported interface found
         return null;
     }
@@ -1121,6 +1150,36 @@ class PromptBuilder
     }
 
     /**
+     * Generates an embedding result from the prompt.
+     *
+     * @since 1.4.0
+     *
+     * @return EmbeddingResult The generated embedding result.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support embedding generation.
+     */
+    public function generateEmbeddingResult(): EmbeddingResult
+    {
+        $this->validateMessages();
+
+        $capability = CapabilityEnum::embeddingGeneration();
+        $model = $this->getConfiguredModel($capability);
+
+        if (!$model instanceof EmbeddingGenerationModelInterface) {
+            throw new RuntimeException(
+                sprintf(
+                    'Model "%s" does not support embedding generation.',
+                    $model->metadata()->getId()
+                )
+            );
+        }
+
+        $this->dispatchEvent(new BeforeGenerateResultEvent($this->messages, $model, $capability));
+
+        return $model->generateEmbeddingResult([$this->messages]);
+    }
+
+    /**
      * Generates text from the prompt.
      *
      * @since 0.1.0
@@ -1164,6 +1223,62 @@ class PromptBuilder
     public function generateImage(): File
     {
         return $this->generateImageResult()->toFile();
+    }
+
+    /**
+     * Generates an embedding from the prompt.
+     *
+     * @since 1.4.0
+     *
+     * @return list<float|int> The generated embedding vector.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     */
+    public function generateEmbedding(): array
+    {
+        return $this->generateEmbeddingResult()->getEmbedding();
+    }
+
+    /**
+     * Generates embeddings from the prompt or from the provided prompt list.
+     *
+     * @since 1.4.0
+     *
+     * @param list<Prompt>|null $prompts Optional prompts to embed as a batch.
+     * @return list<list<float|int>> The generated embedding vectors.
+     * @throws InvalidArgumentException If a prompt or model validation fails.
+     */
+    public function generateEmbeddings(?array $prompts = null): array
+    {
+        if ($prompts === null) {
+            return $this->generateEmbeddingResult()->getEmbeddings();
+        }
+
+        if (!array_is_list($prompts)) {
+            throw new InvalidArgumentException('Prompts must be a list array.');
+        }
+
+        if (empty($prompts)) {
+            throw new InvalidArgumentException('Cannot generate embeddings from an empty prompt list.');
+        }
+
+        $promptMessages = [];
+        foreach ($prompts as $prompt) {
+            $promptMessages[] = $this->parsePromptToMessages($prompt);
+        }
+
+        $capability = CapabilityEnum::embeddingGeneration();
+        $model = $this->getConfiguredModel($capability);
+
+        if (!$model instanceof EmbeddingGenerationModelInterface) {
+            throw new RuntimeException(
+                sprintf(
+                    'Model "%s" does not support embedding generation.',
+                    $model->metadata()->getId()
+                )
+            );
+        }
+
+        return $model->generateEmbeddingResult($promptMessages)->getEmbeddings();
     }
 
     /**
@@ -1593,6 +1708,33 @@ class PromptBuilder
         }
 
         return new Message($defaultRole, $parts);
+    }
+
+    /**
+     * Parses prompt input into a message list.
+     *
+     * @since 1.4.0
+     *
+     * @param Prompt $prompt The prompt to parse.
+     * @return list<Message> The parsed messages.
+     */
+    private function parsePromptToMessages($prompt): array
+    {
+        if ($this->isMessagesList($prompt)) {
+            $messages = $prompt;
+        } else {
+            $messages = [$this->parseMessage($prompt, MessageRoleEnum::user())];
+        }
+
+        $originalMessages = $this->messages;
+        try {
+            $this->messages = $messages;
+            $this->validateMessages();
+        } finally {
+            $this->messages = $originalMessages;
+        }
+
+        return $messages;
     }
 
     /**
