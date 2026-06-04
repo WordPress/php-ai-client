@@ -520,14 +520,17 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      */
     protected function prepareResponseFormatParam(?array $outputSchema): array
     {
-        if (!is_array($outputSchema)) {
+        if ($outputSchema === null) {
             return [
                 'type' => 'json_object',
             ];
         }
 
         // Pass through payloads that are already wrapped in the json_schema envelope.
-        if (isset($outputSchema['name']) && isset($outputSchema['schema']) && is_array($outputSchema['schema'])) {
+        $isWrappedEnvelope = isset($outputSchema['name'])
+            && isset($outputSchema['schema'])
+            && is_array($outputSchema['schema']);
+        if ($isWrappedEnvelope) {
             return [
                 'type' => 'json_schema',
                 'json_schema' => $outputSchema,
