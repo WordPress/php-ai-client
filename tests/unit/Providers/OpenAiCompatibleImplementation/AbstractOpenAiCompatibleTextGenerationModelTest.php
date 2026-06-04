@@ -422,7 +422,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             [
                 'type' => 'json_schema',
                 'json_schema' => [
-                    'name' => 'response',
+                    'name' => 'response_schema',
                     'schema' => $schema,
                 ],
             ],
@@ -963,7 +963,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             [
                 'type' => 'json_schema',
                 'json_schema' => [
-                    'name' => 'response',
+                    'name' => 'response_schema',
                     'schema' => $schema,
                 ],
             ],
@@ -972,14 +972,18 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests prepareResponseFormatParam() uses the schema title as the json_schema name.
+     * Tests prepareResponseFormatParam() ignores the schema title when naming the envelope.
+     *
+     * The OpenAI API requires the json_schema name to match ^[a-zA-Z0-9_-]{1,64}$, so a
+     * user-supplied title (which may contain spaces or other invalid characters) must not be
+     * used as the name. A fixed, valid identifier is used instead.
      *
      * @return void
      */
-    public function testPrepareResponseFormatParamUsesSchemaTitleAsName(): void
+    public function testPrepareResponseFormatParamIgnoresSchemaTitle(): void
     {
         $schema = [
-            'title' => 'review_notes',
+            'title' => 'Review Notes!',
             'type' => 'object',
             'properties' => ['key' => ['type' => 'string']],
         ];
@@ -990,7 +994,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             [
                 'type' => 'json_schema',
                 'json_schema' => [
-                    'name' => 'review_notes',
+                    'name' => 'response_schema',
                     'schema' => $schema,
                 ],
             ],

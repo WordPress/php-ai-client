@@ -506,9 +506,12 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * This is only called if the output MIME type is `application/json`. When an output schema is
      * provided, it is wrapped in the `json_schema` envelope expected by the OpenAI Chat Completions
-     * API, which requires a `name` field and the schema under the `schema` key. If a caller already
+     * API, which requires a `name` field and the schema under the `schema` key. The `name` uses a
+     * fixed identifier that satisfies the API's `^[a-zA-Z0-9_-]{1,64}$` constraint, rather than a
+     * value derived from the schema, to avoid producing an invalid name. If a caller already
      * supplies a wrapped payload (i.e. an array containing both `name` and `schema` keys), it is
-     * passed through unchanged.
+     * passed through unchanged, allowing callers to opt into provider-specific options such as
+     * `strict`.
      *
      * @since 0.1.0
      *
@@ -531,16 +534,12 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             ];
         }
 
-        $jsonSchema = [
-            'name' => isset($outputSchema['title']) && is_string($outputSchema['title'])
-                ? $outputSchema['title']
-                : 'response',
-            'schema' => $outputSchema,
-        ];
-
         return [
             'type' => 'json_schema',
-            'json_schema' => $jsonSchema,
+            'json_schema' => [
+                'name' => 'response_schema',
+                'schema' => $outputSchema,
+            ],
         ];
     }
 
