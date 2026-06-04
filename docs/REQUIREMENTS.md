@@ -73,15 +73,15 @@ Below is a list of products that were reviewed. The list is non comprehensive, b
 
 _(in alphabetical order)_
 
-* [Anthropic API](https://docs.anthropic.com/en/api/)
-* [fal API](https://docs.fal.ai/model-endpoints)
+* [Anthropic API](https://platform.claude.com/docs/en/api/)
+* [fal API](https://fal.ai/docs/model-endpoints)
 * [Google Generative Language API](https://ai.google.dev/api/all-methods)
-* [Google Vertex AI API](https://cloud.google.com/vertex-ai/docs/reference/rest)
+* [Google Vertex AI API](https://docs.cloud.google.com/vertex-ai/docs/reference/rest)
 * [Nvidia LLM API](https://docs.api.nvidia.com/nim/reference/llm-apis)
-* [OpenAI API](https://platform.openai.com/docs/api-reference/)
+* [OpenAI API](https://developers.openai.com/api/reference/overview)
 * [Perplexity API](https://docs.perplexity.ai/api-reference/)
 * [Replicate API](https://replicate.com/docs/reference/http)
-* [X AI API](https://docs.x.ai/docs/api-reference)
+* [X AI API](https://docs.x.ai/developers/rest-api-reference/inference/chat)
 
 ### AI client SDKs
 
@@ -89,7 +89,7 @@ _(in alphabetical order)_
 
 * [AI Services WordPress plugin](https://github.com/felixarntz/ai-services)
 * [Drupal AI](https://git.drupalcode.org/project/ai)
-* [Firebase Genkit](https://github.com/firebase/genkit)
+* [Firebase Genkit](https://github.com/genkit-ai/genkit)
 * [Google Gen AI SDK for TypeScript and JavaScript](https://github.com/googleapis/js-genai)
 * [LangChain.js](https://github.com/langchain-ai/langchainjs)
 * [LLPhant](https://github.com/LLPhant/LLPhant)
@@ -101,7 +101,7 @@ _(in alphabetical order)_
 
 _(in alphabetical order)_
 
-* [A2A protocol](https://github.com/google/A2A)
+* [A2A protocol](https://github.com/a2aproject/A2A)
 * [MCP](https://github.com/modelcontextprotocol/modelcontextprotocol)
 * [OpenAI model spec](https://cdn.openai.com/spec/model-spec-2024-05-08.html)
 
