@@ -3902,12 +3902,12 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.4",
+        "php": ">=7.4.12",
         "ext-json": "*"
     },
     "platform-dev": {},
     "platform-overrides": {
-        "php": "7.4"
+        "php": "7.4.12"
     },
     "plugin-api-version": "2.9.0"
 }
