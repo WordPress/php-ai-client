@@ -902,11 +902,82 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
-     * Tests usingModelPreference falls back to discovery when no preferences are available.
+     * Tests usingModelPreference throws when none of the requested preferences are available.
+     *
+     * Requesting a specific model id that no provider exposes must fail loudly rather than
+     * silently routing the request to an arbitrary (potentially far more expensive) model.
+     * See issue #241.
      *
      * @return void
      */
-    public function testUsingModelPreferenceFallsBackToDiscovery(): void
+    public function testUsingModelPreferenceThrowsWhenNoPreferenceAvailable(): void
+    {
+        $metadata = $this->createTextModelMetadataWithInputSupport('discovered-id');
+        $providerMetadata = $this->createTestProviderMetadata();
+        $providerModelsMetadata = new ProviderModelsMetadata($providerMetadata, [$metadata]);
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$providerModelsMetadata]);
+
+        // No model must be instantiated when the requested preference is unavailable.
+        $this->registry->expects($this->never())
+            ->method('getProviderModel');
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModelPreference('unavailable-model');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('None of the requested model preferences ("unavailable-model")');
+
+        $builder->generateTextResult();
+    }
+
+    /**
+     * Tests usingModelPreference throws for an unavailable preference when a provider is locked in.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceThrowsWhenNoPreferenceAvailableForProvider(): void
+    {
+        $metadata = $this->createTextModelMetadataWithInputSupport('available-id');
+
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('test-provider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$metadata]);
+
+        $this->registry->expects($this->never())
+            ->method('getProviderModel');
+
+        $this->registry->expects($this->never())
+            ->method('findModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('test-provider');
+        $builder->usingModelPreference('unavailable-model');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('provider "test-provider"');
+
+        $builder->generateTextResult();
+    }
+
+    /**
+     * Tests automatic discovery is still used when no model preference is set.
+     *
+     * @return void
+     */
+    public function testFallsBackToDiscoveryWhenNoPreferenceSet(): void
     {
         $result = $this->createTestResult('Discovered model result');
         $metadata = $this->createTextModelMetadataWithInputSupport('discovered-id');
@@ -929,7 +1000,6 @@ class PromptBuilderTest extends TestCase
             ->method('findProviderModelsMetadataForSupport');
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
-        $builder->usingModelPreference('unavailable-model');
 
         $actualResult = $builder->generateTextResult();
 
