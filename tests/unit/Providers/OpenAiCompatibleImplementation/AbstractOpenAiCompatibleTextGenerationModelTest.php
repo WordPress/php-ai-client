@@ -418,7 +418,16 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $params = $model->exposePrepareGenerateTextParams($prompt);
 
         $this->assertArrayHasKey('response_format', $params);
-        $this->assertEquals(['type' => 'json_schema', 'json_schema' => $schema], $params['response_format']);
+        $this->assertEquals(
+            [
+                'type' => 'json_schema',
+                'json_schema' => [
+                    'name' => 'response',
+                    'schema' => $schema,
+                ],
+            ],
+            $params['response_format']
+        );
     }
 
     /**
@@ -950,7 +959,67 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $model = $this->createModel();
         $format = $model->exposePrepareResponseFormatParam($schema);
 
-        $this->assertEquals(['type' => 'json_schema', 'json_schema' => $schema], $format);
+        $this->assertEquals(
+            [
+                'type' => 'json_schema',
+                'json_schema' => [
+                    'name' => 'response',
+                    'schema' => $schema,
+                ],
+            ],
+            $format
+        );
+    }
+
+    /**
+     * Tests prepareResponseFormatParam() uses the schema title as the json_schema name.
+     *
+     * @return void
+     */
+    public function testPrepareResponseFormatParamUsesSchemaTitleAsName(): void
+    {
+        $schema = [
+            'title' => 'review_notes',
+            'type' => 'object',
+            'properties' => ['key' => ['type' => 'string']],
+        ];
+        $model = $this->createModel();
+        $format = $model->exposePrepareResponseFormatParam($schema);
+
+        $this->assertEquals(
+            [
+                'type' => 'json_schema',
+                'json_schema' => [
+                    'name' => 'review_notes',
+                    'schema' => $schema,
+                ],
+            ],
+            $format
+        );
+    }
+
+    /**
+     * Tests prepareResponseFormatParam() passes through an already-wrapped envelope.
+     *
+     * @return void
+     */
+    public function testPrepareResponseFormatParamPassesThroughWrappedEnvelope(): void
+    {
+        $envelope = [
+            'name' => 'classification',
+            'strict' => true,
+            'schema' => ['type' => 'object', 'properties' => ['key' => ['type' => 'string']]],
+        ];
+        $model = $this->createModel();
+        $format = $model->exposePrepareResponseFormatParam($envelope);
+
+        $this->assertEquals(
+            [
+                'type' => 'json_schema',
+                'json_schema' => $envelope,
+            ],
+            $format
+        );
     }
 
     /**

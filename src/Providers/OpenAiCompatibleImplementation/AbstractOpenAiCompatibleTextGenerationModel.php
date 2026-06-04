@@ -504,7 +504,11 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Prepares the response format parameter for the API request.
      *
-     * This is only called if the output MIME type is `application/json`.
+     * This is only called if the output MIME type is `application/json`. When an output schema is
+     * provided, it is wrapped in the `json_schema` envelope expected by the OpenAI Chat Completions
+     * API, which requires a `name` field and the schema under the `schema` key. If a caller already
+     * supplies a wrapped payload (i.e. an array containing both `name` and `schema` keys), it is
+     * passed through unchanged.
      *
      * @since 0.1.0
      *
@@ -513,15 +517,30 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      */
     protected function prepareResponseFormatParam(?array $outputSchema): array
     {
-        if (is_array($outputSchema)) {
+        if (!is_array($outputSchema)) {
+            return [
+                'type' => 'json_object',
+            ];
+        }
+
+        // Pass through payloads that are already wrapped in the json_schema envelope.
+        if (isset($outputSchema['name']) && isset($outputSchema['schema']) && is_array($outputSchema['schema'])) {
             return [
                 'type' => 'json_schema',
                 'json_schema' => $outputSchema,
             ];
         }
 
+        $jsonSchema = [
+            'name' => isset($outputSchema['title']) && is_string($outputSchema['title'])
+                ? $outputSchema['title']
+                : 'response',
+            'schema' => $outputSchema,
+        ];
+
         return [
-            'type' => 'json_object',
+            'type' => 'json_schema',
+            'json_schema' => $jsonSchema,
         ];
     }
 
