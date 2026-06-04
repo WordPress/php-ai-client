@@ -1546,7 +1546,7 @@ class PromptBuilder
     {
         $requested = [];
         foreach ($this->modelPreferenceKeys as $preferenceKey) {
-            if (strpos($preferenceKey, 'providerModel::') === 0) {
+            if (str_starts_with($preferenceKey, 'providerModel::')) {
                 [$providerId, $modelId] = explode('::', substr($preferenceKey, strlen('providerModel::')), 2);
                 $requested[] = sprintf('"%s" (provider "%s")', $modelId, $providerId);
             } else {
