@@ -973,6 +973,37 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests usingModelPreference throws and attributes the provider for an unavailable tuple preference.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceThrowsWhenTuplePreferenceUnavailable(): void
+    {
+        $metadata = $this->createTextModelMetadataWithInputSupport('available-id');
+        $providerMetadata = $this->createTestProviderMetadata();
+        $providerModelsMetadata = new ProviderModelsMetadata($providerMetadata, [$metadata]);
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$providerModelsMetadata]);
+
+        $this->registry->expects($this->never())
+            ->method('getProviderModel');
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModelPreference(['missing-provider', 'missing-model']);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('"missing-model" (provider "missing-provider")');
+
+        $builder->generateTextResult();
+    }
+
+    /**
      * Tests automatic discovery is still used when no model preference is set.
      *
      * @return void

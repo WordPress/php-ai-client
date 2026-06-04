@@ -1546,19 +1546,23 @@ class PromptBuilder
     {
         $requested = [];
         foreach ($this->modelPreferenceKeys as $preferenceKey) {
-            if (str_starts_with($preferenceKey, 'providerModel::')) {
-                [$providerId, $modelId] = explode('::', substr($preferenceKey, strlen('providerModel::')), 2);
-                $requested[] = sprintf('"%s" (provider "%s")', $modelId, $providerId);
-            } else {
+            $providerModelParts = explode('::', $preferenceKey, 3);
+
+            if ($providerModelParts[0] === 'providerModel' && count($providerModelParts) === 3) {
+                $requested[] = sprintf('"%s" (provider "%s")', $providerModelParts[2], $providerModelParts[1]);
+            } elseif ($providerModelParts[0] === 'model' && count($providerModelParts) >= 2) {
                 $requested[] = sprintf('"%s"', substr($preferenceKey, strlen('model::')));
+            } else {
+                // Unexpected key shape; surface the raw value rather than a misleading substring.
+                $requested[] = sprintf('"%s"', $preferenceKey);
             }
         }
 
         if ($this->providerIdOrClassName !== null) {
             return sprintf(
                 'None of the requested model preferences (%s) are available from provider "%s" for %s. '
-                . 'Use a model identifier that the provider exposes, or call usingModelPreference() with an '
-                . 'available model.',
+                . 'Use a model identifier that the provider exposes, or remove the usingModelPreference() '
+                . 'call to allow automatic model discovery.',
                 implode(', ', $requested),
                 $this->providerIdOrClassName,
                 $capability->value
@@ -1567,8 +1571,8 @@ class PromptBuilder
 
         return sprintf(
             'None of the requested model preferences (%s) are available from any registered provider for %s. '
-            . 'Use a model identifier that a provider exposes, or call usingModelPreference() with an '
-            . 'available model.',
+            . 'Use a model identifier that a provider exposes, or remove the usingModelPreference() '
+            . 'call to allow automatic model discovery.',
             implode(', ', $requested),
             $capability->value
         );
