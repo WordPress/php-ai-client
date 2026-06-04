@@ -8,6 +8,21 @@
 
 declare(strict_types=1);
 
+// PHP 7.4.0–7.4.11 have a covariant return type bug (https://bugs.php.net/bug.php?id=80126)
+// that causes a fatal error with the DTO inheritance pattern used throughout this library.
+// Warn early so the problem surfaces as a clear message rather than a cryptic fatal.
+if (PHP_VERSION_ID >= 70400 && PHP_VERSION_ID < 70412) {
+    trigger_error(
+        sprintf(
+            'PHP AI Client requires PHP 7.4.12 or later. You are running PHP %s, which has a known'
+            . ' covariant return type bug (https://bugs.php.net/bug.php?id=80126) that will cause'
+            . ' fatal errors with this library. Please upgrade to PHP 7.4.12 or later.',
+            PHP_VERSION
+        ),
+        E_USER_WARNING
+    );
+}
+
 if (!function_exists('array_is_list')) {
     /**
      * Checks whether a given array is a list.

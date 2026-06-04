@@ -20,7 +20,7 @@
         "source": "https://github.com/WordPress/php-ai-client"
     },
     "require": {
-        "php": ">=7.4",
+        "php": ">=7.4.12",
         "ext-json": "*",
         "nyholm/psr7": "^1.8",
         "php-http/discovery": "^1.0",
@@ -71,7 +71,7 @@
         },
         "optimize-autoloader": true,
         "platform": {
-            "php": "7.4"
+            "php": "7.4.12"
         },
         "sort-packages": true
     },
