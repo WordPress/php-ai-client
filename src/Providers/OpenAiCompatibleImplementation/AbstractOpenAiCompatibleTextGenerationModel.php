@@ -514,9 +514,21 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     protected function prepareResponseFormatParam(?array $outputSchema): array
     {
         if (is_array($outputSchema)) {
+            /*
+             * The OpenAI Structured Outputs spec requires `json_schema` to be an object carrying the
+             * schema under a `schema` key, plus a required `name`. Emitting the bare schema makes
+             * compliant endpoints reject the request with
+             * `400 missing_required_parameter: response_format.json_schema.name`. `strict` is left
+             * unset on purpose: enabling it would impose extra schema constraints (every object
+             * needs `additionalProperties: false`, all properties listed in `required`) that arbitrary
+             * caller schemas rarely satisfy, trading one 400 for another. Only `name` is required.
+             */
             return [
                 'type' => 'json_schema',
-                'json_schema' => $outputSchema,
+                'json_schema' => [
+                    'name' => 'response',
+                    'schema' => $outputSchema,
+                ],
             ];
         }
 

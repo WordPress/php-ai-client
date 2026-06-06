@@ -418,7 +418,10 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $params = $model->exposePrepareGenerateTextParams($prompt);
 
         $this->assertArrayHasKey('response_format', $params);
-        $this->assertEquals(['type' => 'json_schema', 'json_schema' => $schema], $params['response_format']);
+        $this->assertEquals(
+            ['type' => 'json_schema', 'json_schema' => ['name' => 'response', 'schema' => $schema]],
+            $params['response_format']
+        );
     }
 
     /**
@@ -950,7 +953,34 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $model = $this->createModel();
         $format = $model->exposePrepareResponseFormatParam($schema);
 
-        $this->assertEquals(['type' => 'json_schema', 'json_schema' => $schema], $format);
+        $this->assertEquals(
+            ['type' => 'json_schema', 'json_schema' => ['name' => 'response', 'schema' => $schema]],
+            $format
+        );
+    }
+
+    /**
+     * Tests that the json_schema envelope carries the required `name` and wraps the schema (regression for #229).
+     *
+     * The OpenAI Structured Outputs spec rejects a bare schema with
+     * `400 missing_required_parameter: response_format.json_schema.name`; the schema must sit under
+     * `json_schema.schema` alongside a `name`.
+     *
+     * @return void
+     */
+    public function testPrepareResponseFormatParamSchemaEnvelopeHasName(): void
+    {
+        $schema = ['type' => 'object', 'properties' => ['key' => ['type' => 'string']]];
+        $model = $this->createModel();
+        $format = $model->exposePrepareResponseFormatParam($schema);
+
+        $this->assertSame('json_schema', $format['type']);
+        $this->assertArrayHasKey('name', $format['json_schema']);
+        $this->assertNotSame('', $format['json_schema']['name']);
+        $this->assertSame($schema, $format['json_schema']['schema']);
+        $this->assertArrayNotHasKey('strict', $format['json_schema']);
+        // The raw schema must not be emitted directly under `json_schema` (the original #229 bug).
+        $this->assertArrayNotHasKey('type', $format['json_schema']);
     }
 
     /**
