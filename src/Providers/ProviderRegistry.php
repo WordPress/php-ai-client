@@ -37,12 +37,12 @@ class ProviderRegistry implements WithHttpTransporterInterface
     }
 
     /**
-     * @var array<string, class-string<ProviderInterface>> Mapping of provider IDs to class names.
+     * @var array<non-empty-string, class-string<ProviderInterface>> Mapping of provider IDs to class names.
      */
     private array $registeredIdsToClassNames = [];
 
     /**
-     * @var array<class-string<ProviderInterface>, string> Mapping of provider class names to IDs.
+     * @var array<class-string<ProviderInterface>, non-empty-string> Mapping of provider class names to IDs.
      */
     private array $registeredClassNamesToIds = [];
 
@@ -132,7 +132,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
      *
      * @since 0.1.0
      *
-     * @return list<string> List of registered provider IDs.
+     * @return list<non-empty-string> List of registered provider IDs.
      */
     public function getRegisteredProviderIds(): array
     {
