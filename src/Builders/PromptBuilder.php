@@ -275,6 +275,11 @@ class PromptBuilder
     /**
      * Sets preferred models to evaluate in order.
      *
+     * The preferences are evaluated in order, and the first one that is available for the prompt's
+     * requirements is used. If none of the provided preferences are available, generation throws an
+     * InvalidArgumentException rather than silently falling back to an arbitrary (potentially far more
+     * expensive) model. To allow automatic discovery instead, omit this method entirely.
+     *
      * @since 0.2.0
      *
      * @param string|ModelInterface|array{0:string,1:string} ...$preferredModels The preferred models as model IDs,
@@ -1320,7 +1325,8 @@ class PromptBuilder
      *
      * @param CapabilityEnum $capability The capability the model will be using.
      * @return ModelInterface The model to use.
-     * @throws InvalidArgumentException If no suitable model is found or set model doesn't meet requirements.
+     * @throws InvalidArgumentException If no suitable model is found, the set model doesn't meet requirements, or
+     *                                  explicit model preferences were provided but none are available.
      */
     private function getConfiguredModel(CapabilityEnum $capability): ModelInterface
     {
@@ -1363,18 +1369,24 @@ class PromptBuilder
                 $candidateMap
             );
 
-            if (!empty($matchingPreferences)) {
-                // Get the first matching preference key
-                $firstMatchKey = key($matchingPreferences);
-                [$providerId, $modelId] = $candidateMap[$firstMatchKey];
-
-                $model = $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
-                $this->bindModelRequestOptions($model);
-                return $model;
+            if (empty($matchingPreferences)) {
+                // Explicit model preferences were provided, but none of them are available from the
+                // resolved provider(s). Silently falling back to an arbitrary discovered model would
+                // route the request to a different (potentially far more expensive) model than the
+                // caller asked for, with no signal. Fail loudly instead. See issue #241.
+                throw new InvalidArgumentException($this->buildUnmatchedPreferenceMessage($capability));
             }
+
+            // Get the first matching preference key
+            $firstMatchKey = key($matchingPreferences);
+            [$providerId, $modelId] = $candidateMap[$firstMatchKey];
+
+            $model = $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
+            $this->bindModelRequestOptions($model);
+            return $model;
         }
 
-        // No preference matched; fall back to the first candidate discovered.
+        // No preference specified; fall back to the first candidate discovered.
         [$providerId, $modelId] = reset($candidateMap);
 
         $model = $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
@@ -1517,6 +1529,53 @@ class PromptBuilder
     private function createModelPreferenceKey(string $modelId): string
     {
         return 'model::' . $modelId;
+    }
+
+    /**
+     * Builds the exception message for when no requested model preference is available.
+     *
+     * Reconstructs a human-readable list of the requested preferences from their internal
+     * keys so a typo or stale model identifier is obvious to the caller.
+     *
+     * @since n.e.x.t
+     *
+     * @param CapabilityEnum $capability The capability the model would be used for.
+     * @return string The exception message.
+     */
+    private function buildUnmatchedPreferenceMessage(CapabilityEnum $capability): string
+    {
+        $requested = [];
+        foreach ($this->modelPreferenceKeys as $preferenceKey) {
+            $providerModelParts = explode('::', $preferenceKey, 3);
+
+            if ($providerModelParts[0] === 'providerModel' && count($providerModelParts) === 3) {
+                $requested[] = sprintf('"%s" (provider "%s")', $providerModelParts[2], $providerModelParts[1]);
+            } elseif ($providerModelParts[0] === 'model' && count($providerModelParts) >= 2) {
+                $requested[] = sprintf('"%s"', substr($preferenceKey, strlen('model::')));
+            } else {
+                // Unexpected key shape; surface the raw value rather than a misleading substring.
+                $requested[] = sprintf('"%s"', $preferenceKey);
+            }
+        }
+
+        if ($this->providerIdOrClassName !== null) {
+            return sprintf(
+                'None of the requested model preferences (%s) are available from provider "%s" for %s. '
+                . 'Use a model identifier that the provider exposes, or remove the usingModelPreference() '
+                . 'call to allow automatic model discovery.',
+                implode(', ', $requested),
+                $this->providerIdOrClassName,
+                $capability->value
+            );
+        }
+
+        return sprintf(
+            'None of the requested model preferences (%s) are available from any registered provider for %s. '
+            . 'Use a model identifier that a provider exposes, or remove the usingModelPreference() '
+            . 'call to allow automatic model discovery.',
+            implode(', ', $requested),
+            $capability->value
+        );
     }
 
     /**
