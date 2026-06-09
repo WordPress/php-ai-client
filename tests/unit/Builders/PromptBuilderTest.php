@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\Builders\PromptBuilder;
+use WordPress\AiClient\Common\Exception\RuntimeException as AiClientRuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
@@ -1153,6 +1154,75 @@ class PromptBuilderTest extends TestCase
 
         $actualProvider = $providerProperty->getValue($builder);
         $this->assertEquals('test-provider', $actualProvider);
+    }
+
+    /**
+     * Tests usingProviderPriority method.
+     *
+     * @return void
+     */
+    public function testUsingProviderPriority(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->usingProviderPriority('provider-a', 'provider-b', 'provider-a');
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $priorityProperty = $reflection->getProperty('providerPriority');
+        $priorityProperty->setAccessible(true);
+
+        $actualPriority = $priorityProperty->getValue($builder);
+        $this->assertSame(['provider-a', 'provider-b'], $actualPriority);
+    }
+
+    /**
+     * Tests usingProviderPriority throws when no identifiers are provided.
+     *
+     * @return void
+     */
+    public function testUsingProviderPriorityWithoutArgumentsThrowsException(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('At least one provider priority identifier must be provided.');
+
+        $builder->usingProviderPriority();
+    }
+
+    /**
+     * Tests usingProviderPriority throws for empty identifiers.
+     *
+     * @return void
+     */
+    public function testUsingProviderPriorityWithEmptyIdentifierThrowsException(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Provider priority identifiers cannot be empty.');
+
+        $builder->usingProviderPriority('provider-a', '   ');
+    }
+
+    /**
+     * Tests usingProviderFallback updates the fallback-enabled flag.
+     *
+     * @return void
+     */
+    public function testUsingProviderFallback(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->usingProviderFallback(false);
+
+        $this->assertSame($builder, $result);
+
+        $fallbackEnabled = (function (): bool {
+            return $this->providerFallbackEnabled;
+        })->call($builder);
+
+        $this->assertFalse($fallbackEnabled);
     }
 
     /**
@@ -3500,6 +3570,406 @@ class PromptBuilderTest extends TestCase
         $this->expectExceptionMessage(
             'No models found for provider "test-provider" that support text_generation for this prompt.'
         );
+
+        $builder->generateResult();
+    }
+
+    /**
+     * Tests generateResult passes provider priority order to discovery.
+     *
+     * @return void
+     */
+    public function testGenerateResultWithProviderPriority(): void
+    {
+        $result = $this->createMock(GenerativeAiResult::class);
+        $modelMetadata = $this->createMock(ModelMetadata::class);
+        $modelMetadata->method('getId')->willReturn('provider-priority-model');
+
+        $providerMetadata = new ProviderMetadata(
+            'preferred-provider',
+            'Preferred Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $model = $this->createMockTextGenerationModel($result, $modelMetadata);
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with(
+                $this->isInstanceOf(ModelRequirements::class),
+                ['preferred-provider', 'secondary-provider']
+            )
+            ->willReturn([new ProviderModelsMetadata($providerMetadata, [$modelMetadata])]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('preferred-provider', 'provider-priority-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProviderPriority('preferred-provider', 'secondary-provider');
+
+        $actualResult = $builder->generateResult();
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests generateResult falls back to the next discovered model after runtime failures.
+     *
+     * @return void
+     */
+    public function testGenerateResultFallsBackToNextModelOnRuntimeException(): void
+    {
+        $successfulResult = $this->createTestResult('Fallback success');
+
+        $firstModelMetadata = $this->createMock(ModelMetadata::class);
+        $firstModelMetadata->method('getId')->willReturn('first-model');
+
+        $secondModelMetadata = $this->createMock(ModelMetadata::class);
+        $secondModelMetadata->method('getId')->willReturn('second-model');
+
+        $firstProviderMetadata = new ProviderMetadata(
+            'first-provider',
+            'First Provider',
+            ProviderTypeEnum::cloud()
+        );
+        $secondProviderMetadata = new ProviderMetadata(
+            'second-provider',
+            'Second Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $failingModel = new class (
+            $firstModelMetadata,
+            $firstProviderMetadata
+        ) implements ModelInterface, TextGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateTextResult(array $prompt): GenerativeAiResult
+            {
+                throw new AiClientRuntimeException('First provider failed');
+            }
+        };
+
+        $successfulModel = $this->createMockTextGenerationModel($successfulResult, $secondModelMetadata);
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([
+                new ProviderModelsMetadata(
+                    $firstProviderMetadata,
+                    [$firstModelMetadata]
+                ),
+                new ProviderModelsMetadata($secondProviderMetadata, [$secondModelMetadata]),
+            ]);
+
+        $callCount = 0;
+        $this->registry->expects($this->exactly(2))
+            ->method('getProviderModel')
+            ->willReturnCallback(
+                function (
+                    string $providerId,
+                    string $modelId,
+                    ModelConfig $modelConfig
+                ) use (
+                    &$callCount,
+                    $failingModel,
+                    $successfulModel
+                ): ModelInterface {
+                    $this->assertInstanceOf(ModelConfig::class, $modelConfig);
+
+                    if ($callCount === 0) {
+                        $this->assertSame('first-provider', $providerId);
+                        $this->assertSame('first-model', $modelId);
+                        $callCount++;
+                        return $failingModel;
+                    }
+
+                    $this->assertSame('second-provider', $providerId);
+                    $this->assertSame('second-model', $modelId);
+                    $callCount++;
+                    return $successfulModel;
+                }
+            );
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+
+        $actualResult = $builder->generateResult();
+        $this->assertSame($successfulResult, $actualResult);
+    }
+
+    /**
+     * Tests generateResult does not retry another model when fallback is disabled.
+     *
+     * @return void
+     */
+    public function testGenerateResultWithFallbackDisabledDoesNotRetry(): void
+    {
+        $firstModelMetadata = $this->createMock(ModelMetadata::class);
+        $firstModelMetadata->method('getId')->willReturn('first-model');
+
+        $secondModelMetadata = $this->createMock(ModelMetadata::class);
+        $secondModelMetadata->method('getId')->willReturn('second-model');
+
+        $firstProviderMetadata = new ProviderMetadata(
+            'first-provider',
+            'First Provider',
+            ProviderTypeEnum::cloud()
+        );
+        $secondProviderMetadata = new ProviderMetadata(
+            'second-provider',
+            'Second Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $failingModel = new class (
+            $firstModelMetadata,
+            $firstProviderMetadata
+        ) implements ModelInterface, TextGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateTextResult(array $prompt): GenerativeAiResult
+            {
+                throw new AiClientRuntimeException('First provider failed');
+            }
+        };
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([
+                new ProviderModelsMetadata($firstProviderMetadata, [$firstModelMetadata]),
+                new ProviderModelsMetadata($secondProviderMetadata, [$secondModelMetadata]),
+            ]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('first-provider', 'first-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($failingModel);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProviderFallback(false);
+
+        $this->expectException(AiClientRuntimeException::class);
+        $this->expectExceptionMessage('First provider failed');
+
+        $builder->generateResult();
+    }
+
+    /**
+     * Tests generateResult throws the final runtime exception when all fallback candidates fail.
+     *
+     * @return void
+     */
+    public function testGenerateResultWithFallbackAllCandidatesFailThrowsLastException(): void
+    {
+        $firstModelMetadata = $this->createMock(ModelMetadata::class);
+        $firstModelMetadata->method('getId')->willReturn('first-model');
+
+        $secondModelMetadata = $this->createMock(ModelMetadata::class);
+        $secondModelMetadata->method('getId')->willReturn('second-model');
+
+        $firstProviderMetadata = new ProviderMetadata(
+            'first-provider',
+            'First Provider',
+            ProviderTypeEnum::cloud()
+        );
+        $secondProviderMetadata = new ProviderMetadata(
+            'second-provider',
+            'Second Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $firstFailingModel = new class (
+            $firstModelMetadata,
+            $firstProviderMetadata
+        ) implements ModelInterface, TextGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateTextResult(array $prompt): GenerativeAiResult
+            {
+                throw new AiClientRuntimeException('First provider failed');
+            }
+        };
+
+        $secondFailingModel = new class (
+            $secondModelMetadata,
+            $secondProviderMetadata
+        ) implements ModelInterface, TextGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateTextResult(array $prompt): GenerativeAiResult
+            {
+                throw new AiClientRuntimeException('Second provider failed');
+            }
+        };
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([
+                new ProviderModelsMetadata($firstProviderMetadata, [$firstModelMetadata]),
+                new ProviderModelsMetadata($secondProviderMetadata, [$secondModelMetadata]),
+            ]);
+
+        $callCount = 0;
+        $this->registry->expects($this->exactly(2))
+            ->method('getProviderModel')
+            ->willReturnCallback(
+                function (
+                    string $providerId,
+                    string $modelId,
+                    ModelConfig $modelConfig
+                ) use (
+                    &$callCount,
+                    $firstFailingModel,
+                    $secondFailingModel
+                ): ModelInterface {
+                    $this->assertInstanceOf(ModelConfig::class, $modelConfig);
+
+                    if ($callCount === 0) {
+                        $this->assertSame('first-provider', $providerId);
+                        $this->assertSame('first-model', $modelId);
+                        $callCount++;
+                        return $firstFailingModel;
+                    }
+
+                    $this->assertSame('second-provider', $providerId);
+                    $this->assertSame('second-model', $modelId);
+                    $callCount++;
+                    return $secondFailingModel;
+                }
+            );
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+
+        $this->expectException(AiClientRuntimeException::class);
+        $this->expectExceptionMessage('Second provider failed');
 
         $builder->generateResult();
     }
