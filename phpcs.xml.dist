@@ -21,7 +21,7 @@
     <!-- Use PSR-12 standard -->
     <rule ref="PSR12"/>
 
-    <!-- Check PHP 7.4 compatibility -->
+    <!-- Check PHP 7.4.12+ compatibility (7.4.0-7.4.11 are excluded via composer.json minimum) -->
     <rule ref="PHPCompatibility">
         <!-- Exclude functions that are polyfilled in src/polyfills.php -->
         <exclude name="PHPCompatibility.FunctionUse.NewFunctions.array_is_listFound"/>

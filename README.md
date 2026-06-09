@@ -10,6 +10,10 @@ This project is a PHP SDK, which can be installed as a Composer package. In Word
 
 While this project is stewarded by [WordPress AI Team](https://make.wordpress.org/ai/) members and contributors, it is technically WordPress agnostic. The gap the project addresses is relevant for not only the WordPress ecosystem, but the overall PHP ecosystem, so any PHP project could benefit from it. There is also no technical reason to scope it to WordPress, as communicating with AI models and their providers is independent of WordPress's built-in APIs and paradigms.
 
+## Requirements
+
+- PHP 7.4.12 or later (PHP 7.4.0–7.4.11 have a known covariant return type bug — see [PHP bug #80126](https://bugs.php.net/bug.php?id=80126))
+
 ## Installation
 
 ```

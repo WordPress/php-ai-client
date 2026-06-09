@@ -23,7 +23,7 @@ All code in this project MUST adhere to the coding standards, naming conventions
 
 Key constraints include:
 
-*   PHP 7.4 as the minimum required version.
+*   PHP 7.4.12 as the minimum required version (PHP 7.4.0–7.4.11 have a known covariant return type bug that causes fatal errors with this codebase).
 *   PER Coding Style (extending PSR-12).
 *   Strict type hinting for all parameters, return values, and properties.
 

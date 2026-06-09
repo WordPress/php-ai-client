@@ -73,7 +73,7 @@ Note that `list<string>` and `string[]` _are not_ the same. The latter is an ali
 
 ## PHP Compatibility
 
-All code must be backward compatible with PHP 7.4, which is the minimum required PHP version for this project.
+All code must be backward compatible with PHP 7.4.12, which is the minimum required PHP version for this project. PHP 7.4.0–7.4.11 have a known engine bug (https://bugs.php.net/bug.php?id=80126) that causes a fatal error with covariant return types in DTO inheritance; those patch releases are not supported.
 
 ## Running Tests
 
