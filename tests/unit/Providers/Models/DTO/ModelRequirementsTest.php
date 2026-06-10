@@ -598,6 +598,8 @@ class ModelRequirementsTest extends TestCase
         $modelConfig->setMaxTokens(2000);
         $modelConfig->setTopP(0.95);
         $modelConfig->setStopSequences(['END']);
+        $modelConfig->setDimensions(1536);
+        $modelConfig->setEncodingFormat('float');
 
         $requirements = ModelRequirements::fromPromptData(
             CapabilityEnum::textGeneration(),
@@ -612,6 +614,8 @@ class ModelRequirementsTest extends TestCase
         $hasTemperature = false;
         $hasMaxTokens = false;
         $hasTopP = false;
+        $hasDimensions = false;
+        $hasEncodingFormat = false;
 
         foreach ($options as $option) {
             if ($option->getName()->isTemperature()) {
@@ -626,10 +630,20 @@ class ModelRequirementsTest extends TestCase
                 $hasTopP = true;
                 $this->assertEquals(0.95, $option->getValue());
             }
+            if ($option->getName()->isDimensions()) {
+                $hasDimensions = true;
+                $this->assertEquals(1536, $option->getValue());
+            }
+            if ($option->getName()->isEncodingFormat()) {
+                $hasEncodingFormat = true;
+                $this->assertEquals('float', $option->getValue());
+            }
         }
 
         $this->assertTrue($hasTemperature, 'Temperature option should be present');
         $this->assertTrue($hasMaxTokens, 'Max tokens option should be present');
         $this->assertTrue($hasTopP, 'Top P option should be present');
+        $this->assertTrue($hasDimensions, 'Dimensions option should be present');
+        $this->assertTrue($hasEncodingFormat, 'Encoding format option should be present');
     }
 }
