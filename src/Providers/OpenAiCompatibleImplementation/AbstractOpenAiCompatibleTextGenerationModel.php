@@ -504,7 +504,14 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Prepares the response format parameter for the API request.
      *
-     * This is only called if the output MIME type is `application/json`.
+     * This is only called if the output MIME type is `application/json`. When an output schema is
+     * provided, it is wrapped in the `json_schema` envelope expected by the OpenAI Chat Completions
+     * API, which requires a `name` field and the schema under the `schema` key. The `name` uses a
+     * fixed identifier that satisfies the API's `^[a-zA-Z0-9_-]{1,64}$` constraint, rather than a
+     * value derived from the schema, to avoid producing an invalid name. If a caller already
+     * supplies a wrapped payload (i.e. an array containing both `name` and `schema` keys), it is
+     * passed through unchanged, allowing callers to opt into provider-specific options such as
+     * `strict`.
      *
      * @since 0.1.0
      *
@@ -513,7 +520,17 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      */
     protected function prepareResponseFormatParam(?array $outputSchema): array
     {
-        if (is_array($outputSchema)) {
+        if ($outputSchema === null) {
+            return [
+                'type' => 'json_object',
+            ];
+        }
+
+        // Pass through payloads that are already wrapped in the json_schema envelope.
+        $isWrappedEnvelope = isset($outputSchema['name'])
+            && isset($outputSchema['schema'])
+            && is_array($outputSchema['schema']);
+        if ($isWrappedEnvelope) {
             return [
                 'type' => 'json_schema',
                 'json_schema' => $outputSchema,
@@ -521,7 +538,11 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
 
         return [
-            'type' => 'json_object',
+            'type' => 'json_schema',
+            'json_schema' => [
+                'name' => 'response_schema',
+                'schema' => $outputSchema,
+            ],
         ];
     }
 
