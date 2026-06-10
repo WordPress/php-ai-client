@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
+use WordPress\AiClient\Providers\Http\DTO\BearerTokenRequestAuthentication;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -381,53 +382,15 @@ class ProviderRegistryTest extends TestCase
     }
 
     /**
-     * Tests that provider-supplied request authentication is used when available.
+     * Tests that explicit bearer token authentication is bound to models.
      *
      * @return void
      */
-    public function testRegisterProviderUsesProviderSuppliedRequestAuthentication(): void
+    public function testSetProviderRequestAuthenticationBindsBearerTokenAuthenticationToModels(): void
     {
-        $requestAuthentication = new MockCustomRequestAuthentication();
-        MockCustomAuthProvider::setRequestAuthentication($requestAuthentication);
-
         $this->registry->registerProvider(MockCustomAuthProvider::class);
 
-        $this->assertSame(
-            $requestAuthentication,
-            $this->registry->getProviderRequestAuthentication('mock-custom-auth')
-        );
-    }
-
-    /**
-     * Tests that provider-supplied request authentication is bound to models.
-     *
-     * @return void
-     */
-    public function testRegisterProviderBindsProviderSuppliedRequestAuthenticationToModels(): void
-    {
-        $requestAuthentication = new MockCustomRequestAuthentication();
-        MockCustomAuthProvider::setRequestAuthentication($requestAuthentication);
-
-        $this->registry->registerProvider(MockCustomAuthProvider::class);
-
-        $model = $this->registry->getProviderModel('mock-custom-auth', 'mock-text-model');
-
-        $this->assertInstanceOf(MockModel::class, $model);
-        $this->assertSame($requestAuthentication, $model->getRequestAuthentication());
-    }
-
-    /**
-     * Tests that explicit request authentication overrides provider-supplied authentication.
-     *
-     * @return void
-     */
-    public function testSetProviderRequestAuthenticationOverridesProviderSuppliedRequestAuthentication(): void
-    {
-        MockCustomAuthProvider::setRequestAuthentication(new MockCustomRequestAuthentication());
-
-        $this->registry->registerProvider(MockCustomAuthProvider::class);
-
-        $requestAuthentication = new MockCustomRequestAuthentication();
+        $requestAuthentication = new MockCustomRequestAuthentication('test-token');
         $this->registry->setProviderRequestAuthentication('mock-custom-auth', $requestAuthentication);
 
         $model = $this->registry->getProviderModel('mock-custom-auth', 'mock-text-model');
@@ -437,6 +400,25 @@ class ProviderRegistryTest extends TestCase
             $this->registry->getProviderRequestAuthentication('mock-custom-auth')
         );
         $this->assertSame($requestAuthentication, $model->getRequestAuthentication());
+    }
+
+    /**
+     * Tests default bearer token authentication creation from environment data.
+     *
+     * @return void
+     */
+    public function testCreateDefaultProviderRequestAuthenticationWithBearerTokenEnvVar(): void
+    {
+        putenv('MOCK_CUSTOM_AUTH_BEARER_TOKEN=test_bearer_token');
+
+        $this->registry->registerProvider(MockCustomAuthProvider::class);
+
+        $auth = $this->registry->getProviderRequestAuthentication('mock-custom-auth');
+
+        $this->assertInstanceOf(BearerTokenRequestAuthentication::class, $auth);
+        $this->assertSame('test_bearer_token', $auth->getBearerToken());
+
+        putenv('MOCK_CUSTOM_AUTH_BEARER_TOKEN');
     }
 
     /**

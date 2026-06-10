@@ -9,7 +9,6 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderWithOperationsHandlerInterface;
-use WordPress\AiClient\Providers\Contracts\ProviderWithRequestAuthenticationInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
@@ -465,29 +464,27 @@ class ProviderRegistry implements WithHttpTransporterInterface
         string $className,
         RequestAuthenticationInterface $requestAuthentication
     ): void {
-        if (!is_subclass_of($className, ProviderWithRequestAuthenticationInterface::class)) {
-            $authenticationMethod = $className::metadata()->getAuthenticationMethod();
-            if ($authenticationMethod === null) {
-                throw new InvalidArgumentException(
-                    sprintf(
-                        'Provider %s does not expect any authentication, but got %s.',
-                        $className,
-                        get_class($requestAuthentication)
-                    )
-                );
-            }
+        $authenticationMethod = $className::metadata()->getAuthenticationMethod();
+        if ($authenticationMethod === null) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Provider %s does not expect any authentication, but got %s.',
+                    $className,
+                    get_class($requestAuthentication)
+                )
+            );
+        }
 
-            $expectedClass = $authenticationMethod->getImplementationClass();
-            if (!$requestAuthentication instanceof $expectedClass) {
-                throw new InvalidArgumentException(
-                    sprintf(
-                        'Provider %s expects authentication of type %s, but got %s.',
-                        $className,
-                        $expectedClass,
-                        get_class($requestAuthentication)
-                    )
-                );
-            }
+        $expectedClass = $authenticationMethod->getImplementationClass();
+        if (!$requestAuthentication instanceof $expectedClass) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Provider %s expects authentication of type %s, but got %s.',
+                    $className,
+                    $expectedClass,
+                    get_class($requestAuthentication)
+                )
+            );
         }
 
         $availability = $className::availability();
@@ -523,10 +520,6 @@ class ProviderRegistry implements WithHttpTransporterInterface
         $providerMetadata = $className::metadata();
         $providerId = $providerMetadata->getId();
         $authenticationMethod = $providerMetadata->getAuthenticationMethod();
-
-        if (is_subclass_of($className, ProviderWithRequestAuthenticationInterface::class)) {
-            return $className::requestAuthentication();
-        }
 
         if ($authenticationMethod === null) {
             return null;
