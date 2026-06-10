@@ -55,7 +55,6 @@ class FunctionDeclarationTest extends TestCase
         $this->assertEquals($name, $declaration->getName());
         $this->assertEquals($description, $declaration->getDescription());
         $this->assertNull($declaration->getParameters());
-        $this->assertNull($declaration->getJsonSerializableParameters());
     }
 
     /**

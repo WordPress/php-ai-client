@@ -95,28 +95,6 @@ class FunctionDeclaration extends AbstractDataTransferObject
     }
 
     /**
-     * Gets the function parameters schema in a JSON-serializable form.
-     *
-     * JSON Schema object-map fields such as properties must encode as JSON
-     * objects even when empty. PHP arrays cannot preserve that distinction
-     * without casting the empty map before serialization.
-     *
-     * @since 0.1.0
-     *
-     * @return array<string, mixed>|\stdClass|null The JSON-serializable parameters schema.
-     */
-    public function getJsonSerializableParameters()
-    {
-        if ($this->parameters === null) {
-            return null;
-        }
-
-        /** @var array<string, mixed>|\stdClass $parameters */
-        $parameters = $this->prepareJsonSchemaObjectMaps($this->parameters, self::KEY_PARAMETERS);
-        return $parameters;
-    }
-
-    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -176,7 +154,10 @@ class FunctionDeclaration extends AbstractDataTransferObject
         $data = $this->toArray();
 
         if ($this->parameters !== null) {
-            $data[self::KEY_PARAMETERS] = $this->getJsonSerializableParameters();
+            $data[self::KEY_PARAMETERS] = $this->prepareJsonSchemaObjectMaps(
+                $this->parameters,
+                self::KEY_PARAMETERS
+            );
         }
 
         return $data;
@@ -185,7 +166,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * Recursively prepares JSON Schema object-map fields for JSON serialization.
      *
-     * @since 0.1.0
+     * @since n.e.x.t
      *
      * @param mixed $value The value to prepare.
      * @param string|null $key The current JSON Schema key, if available.
@@ -214,7 +195,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * Checks whether the given JSON Schema key represents an object map.
      *
-     * @since 0.1.0
+     * @since n.e.x.t
      *
      * @param string|null $key The JSON Schema key.
      * @return bool True if the key represents an object map, false otherwise.

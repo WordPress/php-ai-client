@@ -492,15 +492,9 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     {
         $tools = [];
         foreach ($functionDeclarations as $functionDeclaration) {
-            $function = $functionDeclaration->toArray();
-            $parameters = $functionDeclaration->getJsonSerializableParameters();
-            if ($parameters !== null) {
-                $function[FunctionDeclaration::KEY_PARAMETERS] = $parameters;
-            }
-
             $tools[] = [
                 'type' => 'function',
-                'function' => $function,
+                'function' => $functionDeclaration->jsonSerialize(),
             ];
         }
 
