@@ -192,7 +192,7 @@ class AiClientTest extends TestCase
 
         $embedding = AiClient::generateEmbedding('Generate embedding', $mockModel, $registry);
 
-        $this->assertSame([0.1, 0.2], $embedding);
+        $this->assertSame([0.1, 0.2], $embedding->getValues());
     }
 
     /**
@@ -207,7 +207,10 @@ class AiClientTest extends TestCase
 
         $embeddings = AiClient::generateEmbeddings(['First prompt', 'Second prompt'], $mockModel, $registry);
 
-        $this->assertSame($expectedEmbeddings, $embeddings);
+        $this->assertSame($expectedEmbeddings, array_map(
+            static fn ($embedding): array => $embedding->getValues(),
+            $embeddings
+        ));
     }
 
     /**

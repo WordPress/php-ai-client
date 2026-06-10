@@ -10,6 +10,7 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Results\DTO\Embedding;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 
@@ -41,8 +42,9 @@ class EmbeddingResultTest extends TestCase
         $result = $this->createEmbeddingResult();
 
         $this->assertSame('embedding-result-id', $result->getId());
-        $this->assertSame([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]], $result->getEmbeddings());
-        $this->assertSame([0.1, 0.2, 0.3], $result->getEmbedding());
+        $this->assertContainsOnlyInstancesOf(Embedding::class, $result->getEmbeddings());
+        $this->assertSame([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]], $result->toArray()[EmbeddingResult::KEY_EMBEDDINGS]);
+        $this->assertSame([0.1, 0.2, 0.3], $result->getEmbedding()->getValues());
         $this->assertSame(3, $result->getDimensions());
         $this->assertSame(4, $result->getTokenUsage()->getPromptTokens());
         $this->assertSame('mock', $result->getProviderMetadata()->getId());
@@ -95,5 +97,24 @@ class EmbeddingResultTest extends TestCase
                 []
             )
         );
+    }
+
+    public function testAcceptsEmbeddingValueObjects(): void
+    {
+        $result = new EmbeddingResult(
+            'embedding-result-id',
+            [new Embedding([0.1, 0.2, 0.3], 3)],
+            3,
+            new TokenUsage(4, 0, 4),
+            new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud()),
+            new ModelMetadata(
+                'mock-embedding-model',
+                'Mock Embedding Model',
+                [CapabilityEnum::embeddingGeneration()],
+                []
+            )
+        );
+
+        $this->assertSame([0.1, 0.2, 0.3], $result->getEmbedding()->getValues());
     }
 }

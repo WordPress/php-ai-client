@@ -1850,7 +1850,7 @@ class PromptBuilderTest extends TestCase
         $builder = new PromptBuilder($this->registry, 'Generate embedding');
         $builder->usingModel($model);
 
-        $this->assertSame([0.1, 0.2], $builder->generateEmbedding());
+        $this->assertSame([0.1, 0.2], $builder->generateEmbedding()->getValues());
     }
 
     /**
@@ -1867,7 +1867,10 @@ class PromptBuilderTest extends TestCase
         $builder = new PromptBuilder($this->registry);
         $builder->usingModel($model);
 
-        $this->assertSame($embeddings, $builder->generateEmbeddings(['First prompt', 'Second prompt']));
+        $this->assertSame($embeddings, array_map(
+            static fn ($embedding): array => $embedding->getValues(),
+            $builder->generateEmbeddings(['First prompt', 'Second prompt'])
+        ));
     }
 
     /**

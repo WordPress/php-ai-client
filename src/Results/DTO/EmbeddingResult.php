@@ -44,7 +44,7 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
     private string $id;
 
     /**
-     * @var list<list<float|int>>
+     * @var list<Embedding>
      */
     private array $embeddings;
 
@@ -64,7 +64,7 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
      * @since 1.4.0
      *
      * @param string $id Unique identifier for this result.
-     * @param list<list<float|int>> $embeddings The generated embedding vectors.
+     * @param list<Embedding|list<float|int>> $embeddings The generated embedding vectors.
      * @param int $dimensions The vector dimension count.
      * @param TokenUsage $tokenUsage Token usage statistics.
      * @param ProviderMetadata $providerMetadata Provider metadata.
@@ -88,18 +88,19 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
             throw new InvalidArgumentException('Embedding dimensions must be greater than zero');
         }
 
+        $normalizedEmbeddings = [];
         foreach ($embeddings as $embedding) {
-            if (!array_is_list($embedding)) {
-                throw new InvalidArgumentException('Embeddings must be list arrays.');
-            }
-
-            if (count($embedding) !== $dimensions) {
+            if (!$embedding instanceof Embedding) {
+                $embedding = new Embedding($embedding, $dimensions);
+            } elseif ($embedding->getDimensions() !== $dimensions) {
                 throw new InvalidArgumentException('Embedding vector length must match dimensions.');
             }
+
+            $normalizedEmbeddings[] = $embedding;
         }
 
         $this->id = $id;
-        $this->embeddings = $embeddings;
+        $this->embeddings = $normalizedEmbeddings;
         $this->dimensions = $dimensions;
         $this->tokenUsage = $tokenUsage;
         $this->providerMetadata = $providerMetadata;
@@ -117,7 +118,7 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
      *
      * @since 1.4.0
      *
-     * @return list<list<float|int>> The embeddings.
+     * @return list<Embedding> The embeddings.
      */
     public function getEmbeddings(): array
     {
@@ -129,9 +130,9 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
      *
      * @since 1.4.0
      *
-     * @return list<float|int> The first embedding.
+     * @return Embedding The first embedding.
      */
-    public function getEmbedding(): array
+    public function getEmbedding(): Embedding
     {
         return $this->embeddings[0];
     }
@@ -172,12 +173,7 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
                 ],
                 self::KEY_EMBEDDINGS => [
                     'type' => 'array',
-                    'items' => [
-                        'type' => 'array',
-                        'items' => [
-                            'type' => 'number',
-                        ],
-                    ],
+                    'items' => Embedding::getJsonSchema(),
                     'description' => 'Generated embedding vectors.',
                 ],
                 self::KEY_DIMENSIONS => [
@@ -212,7 +208,10 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
     {
         $data = [
             self::KEY_ID => $this->id,
-            self::KEY_EMBEDDINGS => $this->embeddings,
+            self::KEY_EMBEDDINGS => array_map(
+                static fn (Embedding $embedding): array => $embedding->toArray(),
+                $this->embeddings
+            ),
             self::KEY_DIMENSIONS => $this->dimensions,
             self::KEY_TOKEN_USAGE => $this->tokenUsage->toArray(),
             self::KEY_PROVIDER_METADATA => $this->providerMetadata->toArray(),

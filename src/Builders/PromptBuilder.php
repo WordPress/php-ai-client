@@ -31,6 +31,7 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\DTO\Embedding;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
@@ -1230,10 +1231,10 @@ class PromptBuilder
      *
      * @since 1.4.0
      *
-     * @return list<float|int> The generated embedding vector.
+     * @return Embedding The generated embedding vector.
      * @throws InvalidArgumentException If the prompt or model validation fails.
      */
-    public function generateEmbedding(): array
+    public function generateEmbedding(): Embedding
     {
         return $this->generateEmbeddingResult()->getEmbedding();
     }
@@ -1244,7 +1245,7 @@ class PromptBuilder
      * @since 1.4.0
      *
      * @param list<Prompt>|null $prompts Optional prompts to embed as a batch.
-     * @return list<list<float|int>> The generated embedding vectors.
+     * @return list<Embedding> The generated embedding vectors.
      * @throws InvalidArgumentException If a prompt or model validation fails.
      */
     public function generateEmbeddings(?array $prompts = null): array

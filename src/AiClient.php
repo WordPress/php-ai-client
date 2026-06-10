@@ -14,6 +14,7 @@ use WordPress\AiClient\Providers\Contracts\ProviderInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\DTO\Embedding;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 
@@ -421,13 +422,13 @@ class AiClient
      *                                                        or model configuration for auto-discovery,
      *                                                        or null for defaults.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
-     * @return list<float|int> The generated embedding vector.
+     * @return Embedding The generated embedding vector.
      */
     public static function generateEmbedding(
         $prompt,
         $modelOrConfig = null,
         ?ProviderRegistry $registry = null
-    ): array {
+    ): Embedding {
         return self::generateEmbeddingResult($prompt, $modelOrConfig, $registry)->getEmbedding();
     }
 
@@ -441,7 +442,7 @@ class AiClient
      *                                                        or model configuration for auto-discovery,
      *                                                        or null for defaults.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
-     * @return list<list<float|int>> The generated embedding vectors.
+     * @return list<Embedding> The generated embedding vectors.
      */
     public static function generateEmbeddings(
         array $prompts,
