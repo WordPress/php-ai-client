@@ -10,14 +10,14 @@ use WordPress\AiClient\Results\DTO\EmbeddingResult;
 /**
  * Interface for models that support embedding generation.
  *
- * @since 1.4.0
+ * @since n.e.x.t
  */
 interface EmbeddingGenerationModelInterface
 {
     /**
      * Generates embeddings from one or more prompts.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param list<list<Message>> $prompts Array of message lists to embed.
      * @return EmbeddingResult Result containing generated embedding vectors.

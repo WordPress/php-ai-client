@@ -13,7 +13,7 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
 /**
  * Represents the result of an embedding generation operation.
  *
- * @since 1.4.0
+ * @since n.e.x.t
  *
  * @phpstan-import-type TokenUsageArrayShape from TokenUsage
  * @phpstan-import-type ProviderMetadataArrayShape from ProviderMetadata
@@ -61,7 +61,7 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
     /**
      * Constructor.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param string $id Unique identifier for this result.
      * @param list<Embedding|list<float|int>> $embeddings The generated embedding vectors.
@@ -116,7 +116,7 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
     /**
      * Gets the generated embedding vectors.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return list<Embedding> The embeddings.
      */
@@ -128,7 +128,7 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
     /**
      * Gets the first generated embedding vector.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return Embedding The first embedding.
      */

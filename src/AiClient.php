@@ -391,7 +391,7 @@ class AiClient
     /**
      * Generates embeddings using the traditional API approach.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
@@ -415,7 +415,7 @@ class AiClient
     /**
      * Generates an embedding using the traditional API approach.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
@@ -435,7 +435,7 @@ class AiClient
     /**
      * Generates embeddings for a list of prompts using the traditional API approach.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param list<Prompt> $prompts The prompts to embed.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,

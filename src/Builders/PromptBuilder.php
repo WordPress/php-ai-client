@@ -485,7 +485,7 @@ class PromptBuilder
     /**
      * Sets the embedding dimensions.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param int $dimensions The embedding dimensions.
      * @return self
@@ -499,7 +499,7 @@ class PromptBuilder
     /**
      * Sets the embedding encoding format.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param string $encodingFormat The embedding encoding format.
      * @return self
@@ -1153,7 +1153,7 @@ class PromptBuilder
     /**
      * Generates an embedding result from the prompt.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return EmbeddingResult The generated embedding result.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -1229,7 +1229,7 @@ class PromptBuilder
     /**
      * Generates an embedding from the prompt.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return Embedding The generated embedding vector.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -1242,7 +1242,7 @@ class PromptBuilder
     /**
      * Generates embeddings from the prompt or from the provided prompt list.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param list<Prompt>|null $prompts Optional prompts to embed as a batch.
      * @return list<Embedding> The generated embedding vectors.
@@ -1714,7 +1714,7 @@ class PromptBuilder
     /**
      * Parses prompt input into a message list.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt to parse.
      * @return list<Message> The parsed messages.

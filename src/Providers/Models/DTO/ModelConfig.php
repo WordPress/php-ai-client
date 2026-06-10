@@ -788,7 +788,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the embedding dimensions.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param int $dimensions The embedding dimensions.
      */
@@ -804,7 +804,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the embedding dimensions.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return int|null The embedding dimensions.
      */
@@ -816,7 +816,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the embedding encoding format.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param string $encodingFormat The embedding encoding format.
      */
@@ -828,7 +828,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the embedding encoding format.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return string|null The embedding encoding format.
      */

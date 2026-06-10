@@ -14,7 +14,7 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 /**
  * Represents a single generated embedding vector.
  *
- * @since 1.4.0
+ * @since n.e.x.t
  *
  * @implements IteratorAggregate<int, float|int>
  */
@@ -30,7 +30,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Constructor.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param list<mixed> $values The embedding vector values.
      * @param int $dimensions The vector dimension count.
@@ -65,7 +65,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Gets the vector values.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return list<float|int> The embedding vector values.
      */
@@ -77,7 +77,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Gets the vector dimension count.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return int The vector dimension count.
      */
@@ -89,7 +89,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Gets the number of vector values.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return int The number of vector values.
      */
@@ -101,7 +101,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Gets an iterator for the vector values.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return Traversable<int, float|int> The vector value iterator.
      */
@@ -113,7 +113,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Gets the JSON schema for embedding vectors.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return array<string, mixed> The JSON schema.
      */
@@ -131,7 +131,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Converts the embedding to an array.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return list<float|int> The embedding vector values.
      */
@@ -143,7 +143,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Creates an embedding from an array.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @param list<mixed> $array The embedding vector values.
      * @param int $dimensions The vector dimension count.
@@ -157,7 +157,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Converts the embedding to a JSON-serializable value.
      *
-     * @since 1.4.0
+     * @since n.e.x.t
      *
      * @return list<float|int> The embedding vector values.
      */
