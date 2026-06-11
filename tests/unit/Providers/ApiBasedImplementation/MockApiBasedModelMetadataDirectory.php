@@ -28,6 +28,11 @@ class MockApiBasedModelMetadataDirectory extends AbstractApiBasedModelMetadataDi
     private int $listRequestCount = 0;
 
     /**
+     * @var int
+     */
+    private int $explicitModelMetadataLookupCount = 0;
+
+    /**
      * Constructor.
      *
      * @param array<string, ModelMetadata> $mockModels
@@ -53,6 +58,8 @@ class MockApiBasedModelMetadataDirectory extends AbstractApiBasedModelMetadataDi
      */
     protected function createModelMetadataForExplicitModelId(string $modelId): ?ModelMetadata
     {
+        ++$this->explicitModelMetadataLookupCount;
+
         if ($this->explicitModelMetadata !== null && $this->explicitModelMetadata->getId() === $modelId) {
             return $this->explicitModelMetadata;
         }
@@ -68,5 +75,15 @@ class MockApiBasedModelMetadataDirectory extends AbstractApiBasedModelMetadataDi
     public function getListRequestCount(): int
     {
         return $this->listRequestCount;
+    }
+
+    /**
+     * Returns the number of explicit model metadata lookups.
+     *
+     * @return int
+     */
+    public function getExplicitModelMetadataLookupCount(): int
+    {
+        return $this->explicitModelMetadataLookupCount;
     }
 }
