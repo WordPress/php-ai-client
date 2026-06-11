@@ -8,12 +8,15 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
+use WordPress\AiClient\Providers\Http\DTO\BearerTokenRequestAuthentication;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Tests\mocks\MockCustomAuthProvider;
+use WordPress\AiClient\Tests\mocks\MockCustomRequestAuthentication;
 use WordPress\AiClient\Tests\mocks\MockHttpTransporter;
 use WordPress\AiClient\Tests\mocks\MockModel;
 use WordPress\AiClient\Tests\mocks\MockModelMetadataDirectory;
@@ -32,12 +35,14 @@ class ProviderRegistryTest extends TestCase
     {
         parent::setUp();
         $this->registry = new ProviderRegistry();
+        MockCustomAuthProvider::reset();
         MockProvider::reset(); // Reset static state of mock provider before each test.
     }
 
     protected function tearDown(): void
     {
         MockProvider::reset(); // Reset static state of mock provider after each test.
+        MockCustomAuthProvider::reset();
         parent::tearDown();
     }
 
@@ -377,6 +382,46 @@ class ProviderRegistryTest extends TestCase
     }
 
     /**
+     * Tests that explicit bearer token authentication is bound to models.
+     *
+     * @return void
+     */
+    public function testSetProviderRequestAuthenticationBindsBearerTokenAuthenticationToModels(): void
+    {
+        $this->registry->registerProvider(MockCustomAuthProvider::class);
+
+        $requestAuthentication = new MockCustomRequestAuthentication('test-token');
+        $this->registry->setProviderRequestAuthentication('mock-custom-auth', $requestAuthentication);
+
+        $model = $this->registry->getProviderModel('mock-custom-auth', 'mock-text-model');
+
+        $this->assertSame(
+            $requestAuthentication,
+            $this->registry->getProviderRequestAuthentication('mock-custom-auth')
+        );
+        $this->assertSame($requestAuthentication, $model->getRequestAuthentication());
+    }
+
+    /**
+     * Tests default bearer token authentication creation from environment data.
+     *
+     * @return void
+     */
+    public function testCreateDefaultProviderRequestAuthenticationWithBearerTokenEnvVar(): void
+    {
+        putenv('MOCK_CUSTOM_AUTH_BEARER_TOKEN=test_bearer_token');
+
+        $this->registry->registerProvider(MockCustomAuthProvider::class);
+
+        $auth = $this->registry->getProviderRequestAuthentication('mock-custom-auth');
+
+        $this->assertInstanceOf(BearerTokenRequestAuthentication::class, $auth);
+        $this->assertSame('test_bearer_token', $auth->getBearerToken());
+
+        putenv('MOCK_CUSTOM_AUTH_BEARER_TOKEN');
+    }
+
+    /**
      * Tests the internal getEnvVarName method using reflection.
      *
      * @dataProvider envVarNameProvider
@@ -388,7 +433,9 @@ class ProviderRegistryTest extends TestCase
     public function testGetEnvVarName(string $providerId, string $field, string $expected): void
     {
         $method = new \ReflectionMethod(ProviderRegistry::class, 'getEnvVarName');
-        $method->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $method->setAccessible(true);
+        }
 
         $result = $method->invoke($this->registry, $providerId, $field); // Invoke on instance
 
@@ -424,7 +471,9 @@ class ProviderRegistryTest extends TestCase
         $this->registry->registerProvider(MockProvider::class);
 
         $method = new \ReflectionMethod(ProviderRegistry::class, 'createDefaultProviderRequestAuthentication');
-        $method->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $method->setAccessible(true);
+        }
 
         $auth = $method->invoke($this->registry, MockProvider::class);
 
@@ -448,7 +497,9 @@ class ProviderRegistryTest extends TestCase
         $this->registry->registerProvider(MockProvider::class);
 
         $method = new \ReflectionMethod(ProviderRegistry::class, 'createDefaultProviderRequestAuthentication');
-        $method->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $method->setAccessible(true);
+        }
 
         $auth = $method->invoke($this->registry, MockProvider::class);
 
