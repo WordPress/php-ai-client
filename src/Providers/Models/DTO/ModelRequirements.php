@@ -101,15 +101,10 @@ class ModelRequirements extends AbstractDataTransferObject
      */
     public function areMetBy(ModelMetadata $metadata): bool
     {
-        // Create lookup maps for better performance (instead of nested foreach loops)
+        // Create lookup map for better performance (instead of nested foreach loops)
         $capabilitiesMap = [];
         foreach ($metadata->getSupportedCapabilities() as $capability) {
             $capabilitiesMap[$capability->value] = $capability;
-        }
-
-        $optionsMap = [];
-        foreach ($metadata->getSupportedOptions() as $option) {
-            $optionsMap[$option->getName()->value] = $option;
         }
 
         // Check if all required capabilities are supported using map lookup
@@ -120,21 +115,40 @@ class ModelRequirements extends AbstractDataTransferObject
         }
 
         // Check if all required options are supported with the specified values
+        return count($this->getUnmetRequiredOptions($metadata)) === 0;
+    }
+
+    /**
+     * Returns the required options that the given model metadata does not support.
+     *
+     * A required option is unmet when the model does not list it as a supported
+     * option at all, or when the required value is not among the option's
+     * supported values.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelMetadata $metadata The model metadata to check against.
+     * @return list<RequiredOption> The required options the model does not support.
+     */
+    public function getUnmetRequiredOptions(ModelMetadata $metadata): array
+    {
+        // Create lookup map for better performance (instead of nested foreach loops)
+        $optionsMap = [];
+        foreach ($metadata->getSupportedOptions() as $option) {
+            $optionsMap[$option->getName()->value] = $option;
+        }
+
+        $unmetOptions = [];
         foreach ($this->requiredOptions as $requiredOption) {
             // Use map lookup instead of linear search
-            if (!isset($optionsMap[$requiredOption->getName()->value])) {
-                return false;
-            }
+            $supportedOption = $optionsMap[$requiredOption->getName()->value] ?? null;
 
-            $supportedOption = $optionsMap[$requiredOption->getName()->value];
-
-            // Check if the required value is supported by this option
-            if (!$supportedOption->isSupportedValue($requiredOption->getValue())) {
-                return false;
+            if ($supportedOption === null || !$supportedOption->isSupportedValue($requiredOption->getValue())) {
+                $unmetOptions[] = $requiredOption;
             }
         }
 
-        return true;
+        return $unmetOptions;
     }
 
     /**

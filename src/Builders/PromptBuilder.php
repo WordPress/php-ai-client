@@ -23,6 +23,7 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
@@ -1313,14 +1314,15 @@ class PromptBuilder
     /**
      * Gets the model to use for generation.
      *
-     * If a model has been explicitly set, validates it meets requirements and returns it.
+     * If a model has been explicitly set, it is used as-is without validating it against the prompt
+     * requirements; unsupported parameters surface as errors from the provider's API.
      * Otherwise, finds a suitable model based on the prompt requirements.
      *
      * @since 0.1.0
      *
      * @param CapabilityEnum $capability The capability the model will be using.
      * @return ModelInterface The model to use.
-     * @throws InvalidArgumentException If no suitable model is found or set model doesn't meet requirements.
+     * @throws InvalidArgumentException If no suitable model is found.
      */
     private function getConfiguredModel(CapabilityEnum $capability): ModelInterface
     {
@@ -1339,20 +1341,9 @@ class PromptBuilder
         $candidateMap = $this->getCandidateModelsMap($requirements);
 
         if (empty($candidateMap)) {
-            $message = sprintf(
-                'No models found that support %s for this prompt.',
-                $capability->value
+            throw new InvalidArgumentException(
+                $this->getNoSuitableModelsMessage($capability, $requirements)
             );
-
-            if ($this->providerIdOrClassName !== null) {
-                $message = sprintf(
-                    'No models found for provider "%s" that support %s for this prompt.',
-                    $this->providerIdOrClassName,
-                    $capability->value
-                );
-            }
-
-            throw new InvalidArgumentException($message);
         }
 
         // Check if any preferred models match the candidates, in priority order.
@@ -1435,6 +1426,115 @@ class PromptBuilder
         $providerId = $this->registry->getProviderId($this->providerIdOrClassName);
 
         return $this->generateMapFromCandidates($providerId, $modelsMetadata);
+    }
+
+    /**
+     * Builds the exception message for when no models satisfy the prompt requirements.
+     *
+     * Distinguishes between no model supporting the required capability at all and models supporting
+     * the capability but not the required options. This avoids misleading messages where an
+     * unsupported option (e.g. a sampling parameter such as temperature) would otherwise be reported
+     * as the capability itself being unsupported.
+     *
+     * @since n.e.x.t
+     *
+     * @param CapabilityEnum $capability The capability the model must support.
+     * @param ModelRequirements $requirements The full requirements derived from the prompt.
+     * @return string The exception message.
+     */
+    private function getNoSuitableModelsMessage(CapabilityEnum $capability, ModelRequirements $requirements): string
+    {
+        $scope = '';
+        if ($this->providerIdOrClassName !== null) {
+            $scope = sprintf(' for provider "%s"', $this->providerIdOrClassName);
+        }
+
+        $capabilityCandidates = [];
+        if (count($requirements->getRequiredOptions()) > 0) {
+            // Check whether models would qualify based on the required capabilities alone.
+            $capabilityCandidates = $this->findCandidateModelsMetadata(
+                new ModelRequirements($requirements->getRequiredCapabilities(), [])
+            );
+        }
+
+        if (count($capabilityCandidates) === 0) {
+            return sprintf(
+                'No models found%s that support %s for this prompt.',
+                $scope,
+                $capability->value
+            );
+        }
+
+        /*
+         * Models support the required capabilities, so the required options are what excluded them.
+         * Determine which option names are unmet by every candidate (definite blockers) and which
+         * are unmet by at least one candidate (relevant when only the combination is unsupported).
+         */
+        $unmetByAll = null;
+        $unmetByAny = [];
+        foreach ($capabilityCandidates as $modelMetadata) {
+            $unmetNames = array_map(
+                static function (RequiredOption $option): string {
+                    return $option->getName()->value;
+                },
+                $requirements->getUnmetRequiredOptions($modelMetadata)
+            );
+
+            $unmetByAny = array_merge($unmetByAny, $unmetNames);
+            $unmetByAll = $unmetByAll === null ? $unmetNames : array_intersect($unmetByAll, $unmetNames);
+        }
+        $unmetByAll = array_values(array_unique($unmetByAll));
+        $unmetByAny = array_values(array_unique($unmetByAny));
+
+        if (count($unmetByAll) > 0) {
+            $detail = sprintf(
+                'Models supporting %s are available, but none of them support the following required options: %s.',
+                $capability->value,
+                implode(', ', $unmetByAll)
+            );
+        } else {
+            $detail = sprintf(
+                'Models supporting %s are available, ' .
+                    'but no single model supports all of the following required options together: %s.',
+                $capability->value,
+                implode(', ', $unmetByAny)
+            );
+        }
+
+        return sprintf(
+            'No models found%s that support %s with the required options for this prompt. %s',
+            $scope,
+            $capability->value,
+            $detail
+        );
+    }
+
+    /**
+     * Finds the metadata of all models that satisfy the given requirements.
+     *
+     * Honors the configured provider restriction, if any.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelRequirements $requirements The requirements to match against.
+     * @return list<ModelMetadata> The metadata of the matching models.
+     */
+    private function findCandidateModelsMetadata(ModelRequirements $requirements): array
+    {
+        if ($this->providerIdOrClassName === null) {
+            $modelsMetadata = [];
+            foreach ($this->registry->findModelsMetadataForSupport($requirements) as $providerModelsMetadata) {
+                foreach ($providerModelsMetadata->getModels() as $modelMetadata) {
+                    $modelsMetadata[] = $modelMetadata;
+                }
+            }
+            return $modelsMetadata;
+        }
+
+        return $this->registry->findProviderModelsMetadataForSupport(
+            $this->providerIdOrClassName,
+            $requirements
+        );
     }
 
     /**
