@@ -23,6 +23,31 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+use Symfony\Component\Dotenv\Dotenv;
+use WordPress\AnthropicAiProvider\Provider\AnthropicProvider;
+use WordPress\GoogleAiProvider\Provider\GoogleProvider;
+use WordPress\OpenAiAiProvider\Provider\OpenAiProvider;
+
+// Load .env file if it exists (same approach as integration test bootstrap).
+$envFile = __DIR__ . '/.env';
+if (file_exists($envFile)) {
+    $dotenv = new Dotenv();
+    $dotenv->usePutenv(true);
+    $dotenv->load($envFile);
+}
+
+// Register provider packages so the registry can discover them.
+$registry = AiClient::defaultRegistry();
+if (class_exists(AnthropicProvider::class)) {
+    $registry->registerProvider(AnthropicProvider::class);
+}
+if (class_exists(GoogleProvider::class)) {
+    $registry->registerProvider(GoogleProvider::class);
+}
+if (class_exists(OpenAiProvider::class)) {
+    $registry->registerProvider(OpenAiProvider::class);
+}
+
 /**
  * Prints the output to stdout.
  *
