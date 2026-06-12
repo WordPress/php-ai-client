@@ -514,6 +514,7 @@ class AiClientTest extends TestCase
             'generateImageResult',
             'convertTextToSpeechResult',
             'generateSpeechResult',
+            'generateSoundResult',
             'generateVideoResult'
         ];
 
@@ -573,6 +574,7 @@ class AiClientTest extends TestCase
             'generateImageResult' => ['generateImageResult'],
             'convertTextToSpeechResult' => ['convertTextToSpeechResult'],
             'generateSpeechResult' => ['generateSpeechResult'],
+            'generateSoundResult' => ['generateSoundResult'],
             'generateVideoResult' => ['generateVideoResult'],
         ];
     }
@@ -705,6 +707,7 @@ class AiClientTest extends TestCase
             'generateImageResult',
             'convertTextToSpeechResult',
             'generateSpeechResult',
+            'generateSoundResult',
             'generateVideoResult'
         ];
 

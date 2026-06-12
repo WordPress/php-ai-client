@@ -16,6 +16,7 @@ use WordPress\AiClient\Common\AbstractEnum;
  * @method static self textToSpeechConversion() Creates an instance for TEXT_TO_SPEECH_CONVERSION capability.
  * @method static self speechGeneration() Creates an instance for SPEECH_GENERATION capability.
  * @method static self musicGeneration() Creates an instance for MUSIC_GENERATION capability.
+ * @method static self soundGeneration() Creates an instance for SOUND_GENERATION capability.
  * @method static self videoGeneration() Creates an instance for VIDEO_GENERATION capability.
  * @method static self embeddingGeneration() Creates an instance for EMBEDDING_GENERATION capability.
  * @method static self chatHistory() Creates an instance for CHAT_HISTORY capability.
@@ -24,6 +25,7 @@ use WordPress\AiClient\Common\AbstractEnum;
  * @method bool isTextToSpeechConversion() Checks if the capability is TEXT_TO_SPEECH_CONVERSION.
  * @method bool isSpeechGeneration() Checks if the capability is SPEECH_GENERATION.
  * @method bool isMusicGeneration() Checks if the capability is MUSIC_GENERATION.
+ * @method bool isSoundGeneration() Checks if the capability is SOUND_GENERATION.
  * @method bool isVideoGeneration() Checks if the capability is VIDEO_GENERATION.
  * @method bool isEmbeddingGeneration() Checks if the capability is EMBEDDING_GENERATION.
  * @method bool isChatHistory() Checks if the capability is CHAT_HISTORY.
@@ -54,6 +56,11 @@ class CapabilityEnum extends AbstractEnum
      * Music generation capability.
      */
     public const MUSIC_GENERATION = 'music_generation';
+
+    /**
+     * Sound generation capability.
+     */
+    public const SOUND_GENERATION = 'sound_generation';
 
     /**
      * Video generation capability.
