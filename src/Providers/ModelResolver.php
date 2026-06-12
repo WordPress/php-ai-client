@@ -196,9 +196,10 @@ class ModelResolver
     /**
      * Resolves the model to use for the given requirements.
      *
-     * If a model has been explicitly set, updates its config, binds dependencies,
-     * and returns it. Otherwise, finds a suitable model based on the requirements,
-     * honoring any configured model preferences and provider constraint.
+     * If a model has been explicitly set, it is used as-is without validating it against the
+     * requirements; its config is updated, dependencies are bound, and unsupported parameters
+     * surface as errors from the provider's API. Otherwise, finds a suitable model based on the
+     * requirements, honoring any configured model preferences and provider constraint.
      *
      * @since 1.4.0
      *
@@ -206,7 +207,7 @@ class ModelResolver
      * @param ModelConfig $modelConfig The model configuration to apply.
      * @param string|null $subject Optional caller-specific subject for failure messages.
      * @return ModelInterface The model to use.
-     * @throws InvalidArgumentException If no suitable model is found or set model doesn't meet requirements.
+     * @throws InvalidArgumentException If no suitable model is found.
      */
     public function resolve(
         ModelRequirements $requirements,
