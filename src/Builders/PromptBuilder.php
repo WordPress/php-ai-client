@@ -1314,14 +1314,15 @@ class PromptBuilder
     /**
      * Gets the model to use for generation.
      *
-     * If a model has been explicitly set, validates it meets requirements and returns it.
+     * If a model has been explicitly set, it is used as-is without validating it against the prompt
+     * requirements; unsupported parameters surface as errors from the provider's API.
      * Otherwise, finds a suitable model based on the prompt requirements.
      *
      * @since 0.1.0
      *
      * @param CapabilityEnum $capability The capability the model will be using.
      * @return ModelInterface The model to use.
-     * @throws InvalidArgumentException If no suitable model is found or set model doesn't meet requirements.
+     * @throws InvalidArgumentException If no suitable model is found.
      */
     private function getConfiguredModel(CapabilityEnum $capability): ModelInterface
     {
