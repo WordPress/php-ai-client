@@ -3487,8 +3487,10 @@ class PromptBuilderTest extends TestCase
      */
     public function testGenerateResultWithProviderNoModelsThrowsException(): void
     {
-        // Mock the registry to return empty array when provider is specified
-        $this->registry->expects($this->once())
+        // Mock the registry to return empty array when provider is specified. Called twice:
+        // once with the full requirements, once with capability-only requirements while
+        // building the exception message.
+        $this->registry->expects($this->exactly(2))
             ->method('findProviderModelsMetadataForSupport')
             ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
             ->willReturn([]);
@@ -3499,6 +3501,129 @@ class PromptBuilderTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
             'No models found for provider "test-provider" that support text_generation for this prompt.'
+        );
+
+        $builder->generateResult();
+    }
+
+    /**
+     * Tests generateResult names the unmet options when models support the capability itself.
+     *
+     * @return void
+     */
+    public function testGenerateResultWithUnsupportedOptionNamesOptionInException(): void
+    {
+        $metadata = $this->createTextModelMetadataWithInputSupport('text-model');
+        $providerMetadata = new ProviderMetadata(
+            'test-provider',
+            'Test Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $this->registry->expects($this->exactly(2))
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturnOnConsecutiveCalls(
+                // No model matches the full requirements (including temperature).
+                [],
+                // A model matches the capability-only requirements.
+                [new ProviderModelsMetadata($providerMetadata, [$metadata])]
+            );
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingTemperature(0.7);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'No models found that support text_generation with the required options for this prompt. '
+            . 'Models supporting text_generation are available, but none of them support the following '
+            . 'required options: temperature.'
+        );
+
+        $builder->generateTextResult();
+    }
+
+    /**
+     * Tests generateResult names the option combination when each option is only individually supported.
+     *
+     * @return void
+     */
+    public function testGenerateResultWithUnsupportedOptionCombinationNamesOptionsInException(): void
+    {
+        $temperatureOnlyMetadata = new ModelMetadata(
+            'temperature-model',
+            'Temperature Model',
+            [CapabilityEnum::textGeneration()],
+            [
+                new SupportedOption(OptionEnum::inputModalities()),
+                new SupportedOption(OptionEnum::outputModalities()),
+                new SupportedOption(OptionEnum::temperature()),
+            ]
+        );
+        $topPOnlyMetadata = new ModelMetadata(
+            'top-p-model',
+            'Top P Model',
+            [CapabilityEnum::textGeneration()],
+            [
+                new SupportedOption(OptionEnum::inputModalities()),
+                new SupportedOption(OptionEnum::outputModalities()),
+                new SupportedOption(OptionEnum::topP()),
+            ]
+        );
+        $providerMetadata = new ProviderMetadata(
+            'test-provider',
+            'Test Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $this->registry->expects($this->exactly(2))
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturnOnConsecutiveCalls(
+                [],
+                [new ProviderModelsMetadata($providerMetadata, [$temperatureOnlyMetadata, $topPOnlyMetadata])]
+            );
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingTemperature(0.7);
+        $builder->usingTopP(0.9);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'No models found that support text_generation with the required options for this prompt. '
+            . 'Models supporting text_generation are available, but no single model supports all of the '
+            . 'following required options together: topP, temperature.'
+        );
+
+        $builder->generateTextResult();
+    }
+
+    /**
+     * Tests generateResult names the unmet options for a provider-restricted prompt.
+     *
+     * @return void
+     */
+    public function testGenerateResultWithProviderUnsupportedOptionNamesOptionInException(): void
+    {
+        $metadata = $this->createTextModelMetadataWithInputSupport('text-model');
+
+        $this->registry->expects($this->exactly(2))
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturnOnConsecutiveCalls(
+                [],
+                [$metadata]
+            );
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('test-provider');
+        $builder->usingTemperature(0.7);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'No models found for provider "test-provider" that support text_generation with the required '
+            . 'options for this prompt. Models supporting text_generation are available, but none of them '
+            . 'support the following required options: temperature.'
         );
 
         $builder->generateResult();
