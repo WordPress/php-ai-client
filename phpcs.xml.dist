@@ -21,6 +21,9 @@
     <!-- Use PSR-12 standard -->
     <rule ref="PSR12"/>
 
+    <!-- Check up to 20 files simultaneously. -->
+    <arg name="parallel" value="20"/>
+
     <!-- Check PHP 7.4 compatibility -->
     <rule ref="PHPCompatibility">
         <!-- Exclude functions that are polyfilled in src/polyfills.php -->
