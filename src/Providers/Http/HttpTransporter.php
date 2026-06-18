@@ -101,7 +101,9 @@ class HttpTransporter implements HttpTransporterInterface
             );
         }
 
-        return $this->convertFromPsr7Response($psr7Response);
+        $streaming = $mergedOptions !== null && $mergedOptions->isStream() === true;
+
+        return $this->convertFromPsr7Response($psr7Response, $streaming);
     }
 
     /**
@@ -145,6 +147,11 @@ class HttpTransporter implements HttpTransporterInterface
             $merged->setMaxRedirects($requestOptions->getMaxRedirects());
         }
 
+        $requestStream = $requestOptions->isStream();
+        if ($requestStream !== null) {
+            $merged->setStream($requestStream);
+        }
+
         // Override with parameter options (higher precedence)
         if ($parameterOptions->getTimeout() !== null) {
             $merged->setTimeout($parameterOptions->getTimeout());
@@ -156,6 +163,11 @@ class HttpTransporter implements HttpTransporterInterface
 
         if ($parameterOptions->getMaxRedirects() !== null) {
             $merged->setMaxRedirects($parameterOptions->getMaxRedirects());
+        }
+
+        $parameterStream = $parameterOptions->isStream();
+        if ($parameterStream !== null) {
+            $merged->setStream($parameterStream);
         }
 
         return $merged;
@@ -270,6 +282,10 @@ class HttpTransporter implements HttpTransporterInterface
             }
         }
 
+        if ($options->isStream() === true) {
+            $guzzleOptions['stream'] = true;
+        }
+
         return $guzzleOptions;
     }
 
@@ -313,14 +329,25 @@ class HttpTransporter implements HttpTransporterInterface
      * @param ResponseInterface $psr7Response The PSR-7 response.
      * @return Response The custom response.
      */
-    private function convertFromPsr7Response(ResponseInterface $psr7Response): Response
+    private function convertFromPsr7Response(ResponseInterface $psr7Response, bool $stream): Response
     {
+        /**
+         * PSR-7 always returns headers as arrays, but HeadersCollection handles this.
+         *
+         * @var array<string, list<string>> $headers
+         */
+        $headers = $psr7Response->getHeaders();
+
+        // When streaming, pass the body stream through so it is consumed lazily.
+        if ($stream) {
+            return new Response($psr7Response->getStatusCode(), $headers, $psr7Response->getBody());
+        }
+
         $body = (string) $psr7Response->getBody();
 
-        // PSR-7 always returns headers as arrays, but HeadersCollection handles this
         return new Response(
             $psr7Response->getStatusCode(),
-            $psr7Response->getHeaders(), // @phpstan-ignore-line
+            $headers,
             $body === '' ? null : $body
         );
     }
