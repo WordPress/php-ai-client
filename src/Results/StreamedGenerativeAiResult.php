@@ -51,6 +51,11 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
     private bool $finished = false;
 
     /**
+     * @var list<callable(GenerativeAiResult): void> Callbacks run once when the result is assembled.
+     */
+    private array $completionCallbacks = [];
+
+    /**
      * @var GenerativeAiResult|null The assembled result, once built.
      */
     private ?GenerativeAiResult $result = null;
@@ -107,6 +112,21 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
     }
 
     /**
+     * Registers a callback to run once, when the final result is first assembled.
+     *
+     * @since n.e.x.t
+     *
+     * @param callable(GenerativeAiResult): void $callback Receives the assembled result.
+     * @return self
+     */
+    public function onComplete(callable $callback): self
+    {
+        $this->completionCallbacks[] = $callback;
+
+        return $this;
+    }
+
+    /**
      * Yields each chunk as it is read, folding it into the accumulated state.
      *
      * @since n.e.x.t
@@ -122,6 +142,8 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
             }
             yield $chunk;
         }
+
+        $this->finalize();
     }
 
     /**
@@ -138,10 +160,37 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
             while ($this->pull() !== null) {
                 // Drain any remaining chunks so the result is complete.
             }
-            $this->result = $this->buildResult();
+            $this->finalize();
+        }
+
+        if ($this->result === null) {
+            throw new RuntimeException('The stream produced no candidates.');
         }
 
         return $this->result;
+    }
+
+    /**
+     * Assembles the result once and runs the completion callbacks.
+     *
+     * A no-op if the result is already built or the stream produced no candidates,
+     * so a fully iterated empty stream does not fire the completion callbacks.
+     *
+     * @since n.e.x.t
+     *
+     * @return void
+     */
+    private function finalize(): void
+    {
+        if ($this->result !== null || $this->candidates === []) {
+            return;
+        }
+
+        $this->result = $this->buildResult();
+
+        foreach ($this->completionCallbacks as $callback) {
+            $callback($this->result);
+        }
     }
 
     /**
