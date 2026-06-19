@@ -25,6 +25,8 @@ final class SseEventStreamParser implements EventStreamParserInterface
     /**
      * Number of bytes to read from the stream per iteration.
      *
+     * @see https://github.com/php/php-src/blob/e71b4e592864cfefe15f6861c6b477d89aec2f36/main/php_network.h#L252
+     *
      * @var int
      */
     private const READ_CHUNK_BYTES = 8192;
