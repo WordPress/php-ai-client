@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\mocks;
 
-use RuntimeException;
 use Psr\Http\Message\StreamInterface;
+use RuntimeException;
 
 /**
  * A read-only stream that returns a fixed list of chunks, one per read().
