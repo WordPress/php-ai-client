@@ -48,7 +48,7 @@ final class SseEventStreamParser implements EventStreamParserInterface
     {
         $event = '';
         $data = '';
-        $lastId = null;
+        $lastId = '';
         $retry = null;
         $hasData = false;
 
@@ -109,10 +109,13 @@ final class SseEventStreamParser implements EventStreamParserInterface
                 }
             }
 
-            // Emit the last event if the stream ended without a blank line.
-            if ($hasData) {
-                yield $this->createEvent($event, $data, $lastId, $retry);
-            }
+            /*
+             * Per the spec:
+             *   Once the end of the file is reached, any pending data must be discarded. (If the file ends
+             *   in the middle of an event, before the final empty line, the incomplete event is not dispatched.)
+             *
+             * @see https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation
+             */
         } finally {
             $stream->close();
         }
@@ -125,11 +128,11 @@ final class SseEventStreamParser implements EventStreamParserInterface
      *
      * @param string $event The accumulated event name.
      * @param string $data The accumulated data buffer (newline-joined).
-     * @param string|null $id The current last event ID.
+     * @param string $id The current last event ID.
      * @param int|null $retry The current reconnection time.
      * @return ServerSentEvent The event.
      */
-    private function createEvent(string $event, string $data, ?string $id, ?int $retry): ServerSentEvent
+    private function createEvent(string $event, string $data, string $id, ?int $retry): ServerSentEvent
     {
         return new ServerSentEvent(
             $event !== '' ? $event : 'message',
