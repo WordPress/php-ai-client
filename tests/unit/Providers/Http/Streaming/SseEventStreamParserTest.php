@@ -474,6 +474,20 @@ class SseEventStreamParserTest extends TestCase
     }
 
     /**
+     * Tests that a sole event with no terminating blank line yields nothing.
+     *
+     * Some SSE parsers emit the final event even when its terminator is missing.
+     * The WHATWG spec discards an event left pending at EOF, so a stream whose
+     * only event is never closed produces no events at all.
+     *
+     * @return void
+     */
+    public function testSoleIncompleteEventYieldsNothing(): void
+    {
+        $this->assertSame([], $this->parseBody('data:hello'));
+    }
+
+    /**
      * Tests a first read shorter than the BOM that is not a BOM prefix.
      *
      * @return void
