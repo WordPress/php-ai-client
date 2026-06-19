@@ -1064,7 +1064,8 @@ class PromptBuilder
         $this->includeOutputModalities(ModalityEnum::text());
         $this->validateMessages();
 
-        $model = $this->getConfiguredModel(CapabilityEnum::textGeneration());
+        $capability = CapabilityEnum::textGeneration();
+        $model = $this->getConfiguredModel($capability);
 
         if (!$model instanceof StreamingTextGenerationModelInterface) {
             throw new RuntimeException(
@@ -1075,7 +1076,15 @@ class PromptBuilder
             );
         }
 
-        return $model->streamGenerateTextResult($this->messages);
+        $messages = $this->messages;
+
+        $this->dispatchEvent(new BeforeGenerateResultEvent($messages, $model, $capability));
+
+        return $model->streamGenerateTextResult($messages)->onComplete(
+            function (GenerativeAiResult $result) use ($messages, $model, $capability): void {
+                $this->dispatchEvent(new AfterGenerateResultEvent($messages, $model, $capability, $result));
+            }
+        );
     }
 
     /**
