@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Providers\Http\Streaming;
 /**
  * Represents a single decoded event from a Server-Sent Events stream.
  *
- * @see <https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation>.
+ * @see https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation
  *
  * @since n.e.x.t
  */
