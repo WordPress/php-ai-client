@@ -24,9 +24,9 @@ final class ServerSentEvent
     private string $data;
 
     /**
-     * @var string|null The last event ID associated with this event, if any.
+     * @var string The last event ID. Empty when the stream has not set one.
      */
-    private ?string $id;
+    private string $id;
 
     /**
      * @var int|null The reconnection time in milliseconds, if the stream sent one.
@@ -40,10 +40,10 @@ final class ServerSentEvent
      *
      * @param string $event The event name.
      * @param string $data The event payload.
-     * @param string|null $id The last event ID, or null.
+     * @param string $id The last event ID, or an empty string when none was set.
      * @param int|null $retry The reconnection time in milliseconds, or null.
      */
-    public function __construct(string $event, string $data, ?string $id = null, ?int $retry = null)
+    public function __construct(string $event, string $data, string $id = '', ?int $retry = null)
     {
         $this->event = $event;
         $this->data = $data;
@@ -80,19 +80,22 @@ final class ServerSentEvent
      *
      * @since n.e.x.t
      *
-     * @return string|null The event ID, or null.
+     * @return string The event ID, or an empty string when none was set.
      */
-    public function getId(): ?string
+    public function getId(): string
     {
         return $this->id;
     }
 
     /**
-     * Gets the reconnection time in milliseconds.
+     * Gets the reconnection time in milliseconds, if the event set one.
+     *
+     * Parsed for spec completeness only. The SDK does not reconnect: provider
+     * streams are one-shot and cannot be resumed, so this value is informational.
      *
      * @since n.e.x.t
      *
-     * @return int|null The reconnection time, or null.
+     * @return int|null The reconnection time, or null when none was set.
      */
     public function getRetry(): ?int
     {
