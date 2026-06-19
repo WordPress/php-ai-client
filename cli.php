@@ -10,6 +10,9 @@
  *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai
  *   GOOGLE_API_KEY=123456 OPENAI_API_KEY=123456 php cli.php 'Your prompt here'
  *
+ * To stream the response as it arrives, use --outputFormat=stream-text:
+ *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai --outputFormat=stream-text
+ *
  * For large prompts (e.g., with images), use stdin or file input:
  *   cat prompt.json | php cli.php - --providerId=openai --modelId=gpt-4o
  *   php cli.php @prompt.json --providerId=openai --modelId=gpt-4o
@@ -190,7 +193,15 @@ try {
 }
 
 try {
-    if ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
+    if ($outputFormat === 'stream-text') {
+        $stream = $promptBuilder->streamGenerateTextResult();
+        foreach ($stream as $chunk) {
+            echo $chunk->getDeltaText();
+            flush();
+        }
+        echo PHP_EOL;
+        $result = $stream->getFinalResult();
+    } elseif ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
         $result = $promptBuilder->generateImageResult();
     } else {
         $result = $promptBuilder->generateTextResult();
@@ -204,7 +215,11 @@ try {
 logInfo("Using provider ID: \"{$result->getProviderMetadata()->getId()}\"");
 logInfo("Using model ID: \"{$result->getModelMetadata()->getId()}\"");
 
+$output = null;
 switch ($outputFormat) {
+    case 'stream-text':
+        // The text was already streamed to stdout above.
+        break;
     case 'result-json':
         $output = json_encode($result, JSON_PRETTY_PRINT);
         break;
@@ -222,4 +237,6 @@ switch ($outputFormat) {
         $output = $result->toText();
 }
 
-printOutput($output);
+if (is_string($output)) {
+    printOutput($output);
+}
