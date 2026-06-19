@@ -448,6 +448,45 @@ class SseEventStreamParserTest extends TestCase
     }
 
     /**
+     * Tests that a final line without a terminator is parsed then discarded at EOF.
+     *
+     * @return void
+     */
+    public function testFinalLineWithoutTerminatorIsDiscarded(): void
+    {
+        $events = $this->parseBody("data:x\n\ndata:y");
+
+        $this->assertCount(1, $events);
+        $this->assertSame('x', $events[0]->getData());
+    }
+
+    /**
+     * Tests that a final line ending in a lone CR at EOF is parsed then discarded.
+     *
+     * @return void
+     */
+    public function testFinalLineEndingWithLoneCrIsDiscarded(): void
+    {
+        $events = $this->parseBody("data:x\n\ndata:y\r");
+
+        $this->assertCount(1, $events);
+        $this->assertSame('x', $events[0]->getData());
+    }
+
+    /**
+     * Tests a first read shorter than the BOM that is not a BOM prefix.
+     *
+     * @return void
+     */
+    public function testFirstReadShorterThanBomPrefix(): void
+    {
+        $events = $this->parse(['d', "ata:x\n\n"]);
+
+        $this->assertCount(1, $events);
+        $this->assertSame('x', $events[0]->getData());
+    }
+
+    /**
      * Tests that the stream is closed after it is fully consumed.
      *
      * @return void
