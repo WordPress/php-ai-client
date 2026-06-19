@@ -136,30 +136,10 @@ final class SseEventStreamParser implements EventStreamParserInterface
     {
         return new ServerSentEvent(
             $event !== '' ? $event : 'message',
-            $this->stripTrailingNewline($data),
+            (string) substr($data, 0, -1), // data always ends with a newline, so drop it.
             $id,
             $retry
         );
-    }
-
-    /**
-     * Removes a single trailing newline from the data buffer.
-     *
-     * Each `data` field appends a newline, so the joined buffer carries a
-     * trailing one that is removed before the event is dispatched.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $data The data buffer.
-     * @return string The data without a trailing newline.
-     */
-    private function stripTrailingNewline(string $data): string
-    {
-        if ($data !== '' && $data[strlen($data) - 1] === "\n") {
-            return substr($data, 0, -1);
-        }
-
-        return $data;
     }
 
     /**
@@ -205,11 +185,6 @@ final class SseEventStreamParser implements EventStreamParserInterface
             foreach ($lines as $line) {
                 yield $line;
             }
-        }
-
-        // Strip a BOM from a stream shorter than three bytes.
-        if (!$bomChecked && strncmp($buffer, self::BOM, 3) === 0) {
-            $buffer = substr($buffer, 3);
         }
 
         [$lines] = $this->extractLines($buffer, true);
