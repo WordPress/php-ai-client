@@ -105,6 +105,11 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
     private array $toolCalls = [];
 
     /**
+     * @var array<string, mixed> Merged result-level provider metadata.
+     */
+    private array $additionalData = [];
+
+    /**
      * Constructor.
      *
      * @since n.e.x.t
@@ -254,6 +259,11 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
             $this->tokenUsage = $tokenUsage;
         }
 
+        $additionalData = $chunk->getAdditionalData();
+        if ($additionalData !== []) {
+            $this->additionalData = array_merge($this->additionalData, $additionalData);
+        }
+
         // A chunk with no candidate index carries only result-level metadata, such
         // as the final usage event, so it registers no candidate.
         $index = $chunk->getCandidateIndex();
@@ -366,7 +376,8 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
             $candidates,
             $this->tokenUsage ?? new TokenUsage(0, 0, 0),
             $this->providerMetadata,
-            $this->modelMetadata
+            $this->modelMetadata,
+            $this->additionalData
         );
     }
 
