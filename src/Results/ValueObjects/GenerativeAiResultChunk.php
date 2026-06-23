@@ -50,6 +50,11 @@ final class GenerativeAiResultChunk
     private array $toolCallDeltas;
 
     /**
+     * @var array<string, mixed> Result-level provider metadata carried by this chunk.
+     */
+    private array $additionalData;
+
+    /**
      * Constructor.
      *
      * @since n.e.x.t
@@ -60,6 +65,7 @@ final class GenerativeAiResultChunk
      * @param TokenUsage|null $tokenUsage The token usage, when reported.
      * @param string|null $id The result id, when reported.
      * @param list<ToolCallDelta> $toolCallDeltas Partial tool calls carried by this chunk.
+     * @param array<string, mixed> $additionalData Result-level provider metadata carried by this chunk.
      */
     public function __construct(
         ?int $candidateIndex,
@@ -67,7 +73,8 @@ final class GenerativeAiResultChunk
         ?FinishReasonEnum $finishReason = null,
         ?TokenUsage $tokenUsage = null,
         ?string $id = null,
-        array $toolCallDeltas = []
+        array $toolCallDeltas = [],
+        array $additionalData = []
     ) {
         $this->candidateIndex = $candidateIndex;
         $this->parts = $parts;
@@ -75,6 +82,7 @@ final class GenerativeAiResultChunk
         $this->tokenUsage = $tokenUsage;
         $this->id = $id;
         $this->toolCallDeltas = $toolCallDeltas;
+        $this->additionalData = $additionalData;
     }
 
     /**
@@ -191,5 +199,17 @@ final class GenerativeAiResultChunk
     public function getToolCallDeltas(): array
     {
         return $this->toolCallDeltas;
+    }
+
+    /**
+     * Gets the result-level provider metadata carried by this chunk.
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed> The provider metadata, possibly empty.
+     */
+    public function getAdditionalData(): array
+    {
+        return $this->additionalData;
     }
 }
