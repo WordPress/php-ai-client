@@ -28,6 +28,7 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Results\StreamedGenerativeAiResult;
 use WordPress\AiClient\Results\ValueObjects\GenerativeAiResultChunk;
+use WordPress\AiClient\Results\ValueObjects\ToolCallDelta;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
@@ -68,11 +69,21 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
  *     choices?: list<ChoiceData>,
  *     usage?: UsageData
  * }
+ * @phpstan-type StreamToolCallData array{
+ *     index?: int,
+ *     id?: string,
+ *     type?: string,
+ *     function?: array{
+ *         name?: string,
+ *         arguments?: string
+ *     }
+ * }
  * @phpstan-type StreamDeltaData array{
  *     role?: string,
  *     reasoning_content?: string,
  *     reasoning?: string,
- *     content?: string
+ *     content?: string,
+ *     tool_calls?: list<StreamToolCallData>
  * }
  * @phpstan-type StreamChoiceData array{
  *     index?: int,
@@ -219,7 +230,8 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 $this->parseStreamDeltaParts($delta),
                 $finishReason,
                 $tokenUsage,
-                $id
+                $id,
+                $this->parseStreamToolCallDeltas($delta)
             );
         }
     }
@@ -249,6 +261,47 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
 
         return $parts;
+    }
+
+    /**
+     * Maps a streamed delta's tool calls into tool call fragments.
+     *
+     * @since n.e.x.t
+     *
+     * @param StreamDeltaData $delta The delta payload from a choice.
+     * @return list<ToolCallDelta> The parsed tool call fragments.
+     */
+    protected function parseStreamToolCallDeltas(array $delta): array
+    {
+        if (!isset($delta['tool_calls']) || !is_array($delta['tool_calls'])) {
+            return [];
+        }
+
+        $deltas = [];
+        foreach ($delta['tool_calls'] as $position => $toolCall) {
+            if (!is_array($toolCall)) {
+                continue;
+            }
+
+            // Providers key parallel tool calls by "index"; fall back to position.
+            $slot = isset($toolCall['index']) && is_int($toolCall['index'])
+                ? $toolCall['index']
+                : (int) $position;
+
+            $id = isset($toolCall['id']) && is_string($toolCall['id']) ? $toolCall['id'] : null;
+
+            $function = isset($toolCall['function']) && is_array($toolCall['function'])
+                ? $toolCall['function']
+                : [];
+            $name = isset($function['name']) && is_string($function['name']) ? $function['name'] : null;
+            $arguments = isset($function['arguments']) && is_string($function['arguments'])
+                ? $function['arguments']
+                : '';
+
+            $deltas[] = new ToolCallDelta($slot, $id, $name, $arguments);
+        }
+
+        return $deltas;
     }
 
     /**
