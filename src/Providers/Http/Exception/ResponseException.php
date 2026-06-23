@@ -47,4 +47,24 @@ class ResponseException extends RuntimeException
     {
         return new self(sprintf('Unexpected %s API response: Invalid "%s" key: %s', $apiName, $fieldName, $message));
     }
+
+    /**
+     * Creates a ResponseException for an error encountered while streaming a response.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $apiName The name of the API/provider.
+     * @param string $message The error message.
+     * @return self
+     *
+     * @param \Throwable|null $previous The underlying exception, when wrapping one.
+     */
+    public static function fromStreamError(string $apiName, string $message, ?\Throwable $previous = null): self
+    {
+        return new self(
+            sprintf('Error while streaming the %s API response: %s', $apiName, $message),
+            0,
+            $previous
+        );
+    }
 }
