@@ -176,25 +176,55 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         $response = $httpTransporter->send($request, $streamOptions);
         $this->throwIfNotSuccessful($response);
 
-        foreach ($this->getEventStreamParser()->parse($response->getStream()) as $event) {
-            $data = $event->getData();
+        try {
+            foreach ($this->getEventStreamParser()->parse($response->getStream()) as $event) {
+                $data = $event->getData();
+                if ($data === '' || $data === '[DONE]') {
+                    continue;
+                }
 
-            // The provider marks the end of the stream with a "[DONE]" sentinel.
-            if ($data === '' || $data === '[DONE]') {
-                continue;
-            }
+                $decoded = json_decode($data, true);
+                if (!is_array($decoded)) {
+                    continue;
+                }
 
-            $decoded = json_decode($data, true);
-            if (!is_array($decoded)) {
-                continue;
-            }
+                $this->throwIfStreamError($decoded);
 
-            /** @var StreamEventData $decoded */
-            $chunks = $this->parseStreamEventToChunks($decoded);
-            foreach ($chunks as $chunk) {
-                yield $chunk;
+                /** @var StreamEventData $decoded */
+                $chunks = $this->parseStreamEventToChunks($decoded);
+                foreach ($chunks as $chunk) {
+                    yield $chunk;
+                }
             }
+        } catch (ResponseException $e) {
+            throw $e;
+        } catch (\RuntimeException $e) {
+            throw ResponseException::fromStreamError($this->providerMetadata()->getName(), $e->getMessage(), $e);
         }
+    }
+
+    /**
+     * Throws if a decoded stream event reports a provider error.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<array-key, mixed> $event The decoded stream event.
+     * @return void
+     *
+     * @throws ResponseException If the event carries an error payload.
+     */
+    protected function throwIfStreamError(array $event): void
+    {
+        if (!isset($event['error'])) {
+            return;
+        }
+
+        $error = $event['error'];
+        $message = is_array($error) && isset($error['message']) && is_string($error['message'])
+            ? $error['message']
+            : 'The provider reported an error.';
+
+        throw ResponseException::fromStreamError($this->providerMetadata()->getName(), $message);
     }
 
     /**
