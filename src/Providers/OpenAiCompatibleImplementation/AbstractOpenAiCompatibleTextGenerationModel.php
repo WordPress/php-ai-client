@@ -62,7 +62,10 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
  * @phpstan-type UsageData array{
  *     prompt_tokens?: int,
  *     completion_tokens?: int,
- *     total_tokens?: int
+ *     total_tokens?: int,
+ *     completion_tokens_details?: array{
+ *         reasoning_tokens?: int
+ *     }
  * }
  * @phpstan-type ResponseData array{
  *     id?: string,
@@ -210,10 +213,12 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             : null;
         $choices = isset($data['choices']) && is_array($data['choices']) ? $data['choices'] : [];
 
+        $additionalData = $this->extractAdditionalData($data);
+
         if ($choices === []) {
             // Events with no choices (such as the final usage event) carry only result metadata.
-            if ($tokenUsage !== null || $id !== null) {
-                yield new GenerativeAiResultChunk(null, [], null, $tokenUsage, $id);
+            if ($tokenUsage !== null || $id !== null || $additionalData !== []) {
+                yield new GenerativeAiResultChunk(null, [], null, $tokenUsage, $id, [], $additionalData);
             }
             return;
         }
@@ -231,7 +236,8 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 $finishReason,
                 $tokenUsage,
                 $id,
-                $this->parseStreamToolCallDeltas($delta)
+                $this->parseStreamToolCallDeltas($delta),
+                $additionalData
             );
         }
     }
@@ -314,11 +320,35 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      */
     protected function parseUsageData(array $usage): TokenUsage
     {
+        $thoughtTokens = null;
+        if (
+            isset($usage['completion_tokens_details']['reasoning_tokens'])
+            && is_int($usage['completion_tokens_details']['reasoning_tokens'])
+        ) {
+            $thoughtTokens = $usage['completion_tokens_details']['reasoning_tokens'];
+        }
+
         return new TokenUsage(
             $usage['prompt_tokens'] ?? 0,
             $usage['completion_tokens'] ?? 0,
-            $usage['total_tokens'] ?? 0
+            $usage['total_tokens'] ?? 0,
+            $thoughtTokens
         );
+    }
+
+    /**
+     * Extracts provider-specific metadata from a response or stream event.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, mixed> $data The decoded response or event payload.
+     * @return array<string, mixed> The remaining provider metadata.
+     */
+    protected function extractAdditionalData(array $data): array
+    {
+        unset($data['id'], $data['choices'], $data['usage']);
+
+        return $data;
     }
 
     /**
@@ -841,21 +871,12 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
 
         $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
 
-        if (isset($responseData['usage']) && is_array($responseData['usage'])) {
-            $usage = $responseData['usage'];
-
-            $tokenUsage = new TokenUsage(
-                $usage['prompt_tokens'] ?? 0,
-                $usage['completion_tokens'] ?? 0,
-                $usage['total_tokens'] ?? 0
-            );
-        } else {
-            $tokenUsage = new TokenUsage(0, 0, 0);
-        }
+        $tokenUsage = isset($responseData['usage']) && is_array($responseData['usage'])
+            ? $this->parseUsageData($responseData['usage'])
+            : new TokenUsage(0, 0, 0);
 
         // Use any other data from the response as provider-specific response metadata.
-        $additionalData = $responseData;
-        unset($additionalData['id'], $additionalData['choices'], $additionalData['usage']);
+        $additionalData = $this->extractAdditionalData($responseData);
 
         return new GenerativeAiResult(
             $id,
