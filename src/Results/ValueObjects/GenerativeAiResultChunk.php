@@ -45,6 +45,11 @@ final class GenerativeAiResultChunk
     private ?string $id;
 
     /**
+     * @var list<ToolCallDelta> Partial tool calls carried by this chunk.
+     */
+    private array $toolCallDeltas;
+
+    /**
      * Constructor.
      *
      * @since n.e.x.t
@@ -54,19 +59,22 @@ final class GenerativeAiResultChunk
      * @param FinishReasonEnum|null $finishReason The finish reason, when reported.
      * @param TokenUsage|null $tokenUsage The token usage, when reported.
      * @param string|null $id The result id, when reported.
+     * @param list<ToolCallDelta> $toolCallDeltas Partial tool calls carried by this chunk.
      */
     public function __construct(
         ?int $candidateIndex,
         array $parts = [],
         ?FinishReasonEnum $finishReason = null,
         ?TokenUsage $tokenUsage = null,
-        ?string $id = null
+        ?string $id = null,
+        array $toolCallDeltas = []
     ) {
         $this->candidateIndex = $candidateIndex;
         $this->parts = $parts;
         $this->finishReason = $finishReason;
         $this->tokenUsage = $tokenUsage;
         $this->id = $id;
+        $this->toolCallDeltas = $toolCallDeltas;
     }
 
     /**
@@ -171,5 +179,17 @@ final class GenerativeAiResultChunk
     public function getId(): ?string
     {
         return $this->id;
+    }
+
+    /**
+     * Gets the partial tool calls carried by this chunk.
+     *
+     * @since n.e.x.t
+     *
+     * @return list<ToolCallDelta> The tool call fragments, possibly empty.
+     */
+    public function getToolCallDeltas(): array
+    {
+        return $this->toolCallDeltas;
     }
 }
