@@ -27,6 +27,14 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
  */
 final class ChunkAccumulator
 {
+    /**
+     * @var list<string> Canonical channel order for assembled parts, matching the buffered parser.
+     */
+    private const CANONICAL_CHANNEL_ORDER = [
+        MessagePartChannelEnum::THOUGHT,
+        MessagePartChannelEnum::CONTENT,
+    ];
+
     private ProviderMetadata $providerMetadata;
 
     private ModelMetadata $modelMetadata;
@@ -264,10 +272,12 @@ final class ChunkAccumulator
     {
         $parts = [];
 
-        // Store text parts first.
-        foreach ($this->text[$index] ?? [] as $channel => $text) {
+        foreach (self::CANONICAL_CHANNEL_ORDER as $channel) {
+            if (!isset($this->text[$index][$channel])) {
+                continue;
+            }
             $parts[] = new MessagePart(
-                $text,
+                $this->text[$index][$channel],
                 MessagePartChannelEnum::from($channel),
                 $this->thoughtSignatures[$index][$channel] ?? null
             );
