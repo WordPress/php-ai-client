@@ -180,13 +180,12 @@ class PromptBuilderEventDispatchingTest extends TestCase
     }
 
     /**
-     * The Before event is dispatched up front, before the stream is consumed.
+     * Tests that the Before event is dispatched before the stream is consumed.
      *
      * @return void
      */
     public function testStreamingDispatchesBeforeEventBeforeConsumption(): void
     {
-        // Create the handle but do not consume it.
         $this->createStreamingBuilderWithDispatcher()->streamGenerateTextResult();
 
         $this->assertCount(1, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
@@ -194,7 +193,7 @@ class PromptBuilderEventDispatchingTest extends TestCase
     }
 
     /**
-     * The After event fires once on completion, carrying the assembled result.
+     * Tests that the After event fires once with the assembled result.
      *
      * @return void
      */
@@ -216,7 +215,7 @@ class PromptBuilderEventDispatchingTest extends TestCase
     }
 
     /**
-     * The After event is not dispatched when the consumer breaks out early.
+     * Tests that the After event is not dispatched on an early break.
      *
      * @return void
      */
@@ -231,7 +230,7 @@ class PromptBuilderEventDispatchingTest extends TestCase
     }
 
     /**
-     * The After event fires exactly once across a full iteration followed by getFinalResult().
+     * Tests that the After event fires only once across iteration and getFinalResult().
      *
      * @return void
      */
@@ -240,7 +239,6 @@ class PromptBuilderEventDispatchingTest extends TestCase
         $handle = $this->createStreamingBuilderWithDispatcher()->streamGenerateTextResult();
 
         foreach ($handle as $chunk) {
-            // drain
         }
         $handle->getFinalResult();
 
@@ -248,7 +246,7 @@ class PromptBuilderEventDispatchingTest extends TestCase
     }
 
     /**
-     * Streaming completes without error when no dispatcher is set, and dispatches nothing.
+     * Tests that streaming dispatches nothing when no dispatcher is set.
      *
      * @return void
      */
@@ -268,7 +266,7 @@ class PromptBuilderEventDispatchingTest extends TestCase
     }
 
     /**
-     * Streaming dispatches Before then After, in that order.
+     * Tests that streaming dispatches Before then After.
      *
      * @return void
      */
