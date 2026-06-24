@@ -10,6 +10,9 @@ use WordPress\AiClient\Events\AfterGenerateResultEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\DTO\TokenUsage;
+use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Results\ValueObjects\GenerativeAiResultChunk;
 use WordPress\AiClient\Tests\mocks\MockEventDispatcher;
 use WordPress\AiClient\Tests\mocks\MockProvider;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
@@ -150,6 +153,128 @@ class PromptBuilderEventDispatchingTest extends TestCase
         $builder->usingModel($model);
 
         $builder->generateTextResult();
+
+        $events = $this->dispatcher->getDispatchedEvents();
+        $this->assertCount(2, $events);
+        $this->assertInstanceOf(BeforeGenerateResultEvent::class, $events[0]);
+        $this->assertInstanceOf(AfterGenerateResultEvent::class, $events[1]);
+    }
+
+    /**
+     * Creates a builder wired with the injected dispatcher and a model that streams the given chunks.
+     *
+     * @return PromptBuilder
+     */
+    private function createStreamingBuilderWithDispatcher(): PromptBuilder
+    {
+        $model = $this->createMockStreamingTextGenerationModel([
+            $this->createStreamingTextChunk('Hel'),
+            $this->createStreamingTextChunk('lo', FinishReasonEnum::stop()),
+            new GenerativeAiResultChunk(null, new TokenUsage(3, 5, 8), [], []),
+        ]);
+
+        $builder = new PromptBuilder($this->registry, 'Hello', $this->dispatcher);
+        $builder->usingModel($model);
+
+        return $builder;
+    }
+
+    /**
+     * The Before event is dispatched up front, before the stream is consumed.
+     *
+     * @return void
+     */
+    public function testStreamingDispatchesBeforeEventBeforeConsumption(): void
+    {
+        // Create the handle but do not consume it.
+        $this->createStreamingBuilderWithDispatcher()->streamGenerateTextResult();
+
+        $this->assertCount(1, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
+        $this->assertCount(0, $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class));
+    }
+
+    /**
+     * The After event fires once on completion, carrying the assembled result.
+     *
+     * @return void
+     */
+    public function testStreamingDispatchesAfterEventOnceWithAssembledResult(): void
+    {
+        $result = $this->createStreamingBuilderWithDispatcher()
+            ->streamGenerateTextResult()
+            ->getFinalResult();
+
+        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class);
+        $this->assertCount(1, $afterEvents);
+
+        $event = $afterEvents[0];
+        $this->assertSame($result, $event->getResult());
+        $this->assertSame('Hello', $event->getResult()->toText());
+        $this->assertSame(8, $event->getResult()->getTokenUsage()->getTotalTokens());
+        $this->assertEquals(CapabilityEnum::textGeneration(), $event->getCapability());
+        $this->assertCount(1, $event->getMessages());
+    }
+
+    /**
+     * The After event is not dispatched when the consumer breaks out early.
+     *
+     * @return void
+     */
+    public function testStreamingDoesNotDispatchAfterEventOnEarlyBreak(): void
+    {
+        foreach ($this->createStreamingBuilderWithDispatcher()->streamGenerateTextResult() as $chunk) {
+            break;
+        }
+
+        $this->assertCount(1, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
+        $this->assertCount(0, $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class));
+    }
+
+    /**
+     * The After event fires exactly once across a full iteration followed by getFinalResult().
+     *
+     * @return void
+     */
+    public function testStreamingDispatchesAfterEventOnlyOnce(): void
+    {
+        $handle = $this->createStreamingBuilderWithDispatcher()->streamGenerateTextResult();
+
+        foreach ($handle as $chunk) {
+            // drain
+        }
+        $handle->getFinalResult();
+
+        $this->assertCount(1, $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class));
+    }
+
+    /**
+     * Streaming completes without error when no dispatcher is set, and dispatches nothing.
+     *
+     * @return void
+     */
+    public function testStreamingDispatchesNoEventsWithoutDispatcher(): void
+    {
+        $model = $this->createMockStreamingTextGenerationModel([
+            $this->createStreamingTextChunk('Hello', FinishReasonEnum::stop()),
+        ]);
+
+        $builder = new PromptBuilder($this->registry, 'Hello');
+        $builder->usingModel($model);
+
+        $result = $builder->streamGenerateTextResult()->getFinalResult();
+
+        $this->assertSame('Hello', $result->toText());
+        $this->assertCount(0, $this->dispatcher->getDispatchedEvents());
+    }
+
+    /**
+     * Streaming dispatches Before then After, in that order.
+     *
+     * @return void
+     */
+    public function testStreamingDispatchesEventsInOrder(): void
+    {
+        $this->createStreamingBuilderWithDispatcher()->streamGenerateTextResult()->getFinalResult();
 
         $events = $this->dispatcher->getDispatchedEvents();
         $this->assertCount(2, $events);
