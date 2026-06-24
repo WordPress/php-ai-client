@@ -55,9 +55,8 @@ class ResponseException extends RuntimeException
      *
      * @param string $apiName The name of the API/provider.
      * @param string $message The error message.
-     * @return self
-     *
      * @param \Throwable|null $previous The underlying exception, when wrapping one.
+     * @return self The exception describing the stream error.
      */
     public static function fromStreamError(string $apiName, string $message, ?\Throwable $previous = null): self
     {
