@@ -272,10 +272,7 @@ final class ChunkAccumulator
     {
         $parts = [];
 
-        foreach (self::CANONICAL_CHANNEL_ORDER as $channel) {
-            if (!isset($this->text[$index][$channel])) {
-                continue;
-            }
+        foreach ($this->orderedChannels($index) as $channel) {
             $parts[] = new MessagePart(
                 $this->text[$index][$channel],
                 MessagePartChannelEnum::from($channel),
@@ -296,6 +293,34 @@ final class ChunkAccumulator
         $finishReason = $this->finishReasons[$index] ?? FinishReasonEnum::stop();
 
         return new Candidate($message, $finishReason);
+    }
+
+    /**
+     * Returns the candidate's text channels in canonical order, with any unknown channel last.
+     *
+     * @since n.e.x.t
+     *
+     * @param int $index The candidate index.
+     * @return list<string> The present channels, ordered.
+     */
+    private function orderedChannels(int $index): array
+    {
+        $present = array_keys($this->text[$index] ?? []);
+
+        $ordered = [];
+        foreach (self::CANONICAL_CHANNEL_ORDER as $channel) {
+            if (in_array($channel, $present, true)) {
+                $ordered[] = $channel;
+            }
+        }
+
+        foreach ($present as $channel) {
+            if (!in_array($channel, self::CANONICAL_CHANNEL_ORDER, true)) {
+                $ordered[] = $channel;
+            }
+        }
+
+        return $ordered;
     }
 
     /**
