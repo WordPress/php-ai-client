@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Http\Streaming\Contracts;
 
 use Psr\Http\Message\StreamInterface;
-use WordPress\AiClient\Providers\Http\Streaming\ServerSentEvent;
+use WordPress\AiClient\Providers\Http\Streaming\ValueObjects\ServerSentEvent;
 
 /**
  * Decodes a response body stream into discrete events.
