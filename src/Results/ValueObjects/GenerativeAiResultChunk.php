@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\ValueObjects;
 
-use WordPress\AiClient\Messages\DTO\MessagePart;
-use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Results\DTO\TokenUsage;
-use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
 /**
  * Represents a single chunk of a streamed generative AI result.
@@ -19,20 +16,9 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 final class GenerativeAiResultChunk
 {
     /**
-     * @var int|null Index of the candidate this chunk contributes to, or null when the chunk
-     *               carries only result-level metadata (e.g. a usage event).
+     * @var string|null The result id, when this chunk reports it.
      */
-    private ?int $candidateIndex;
-
-    /**
-     * @var MessagePart[] The partial content parts carried by this chunk.
-     */
-    private array $parts;
-
-    /**
-     * @var FinishReasonEnum|null The finish reason, when this chunk reports it.
-     */
-    private ?FinishReasonEnum $finishReason;
+    private ?string $id;
 
     /**
      * @var TokenUsage|null The token usage, when this chunk reports it.
@@ -40,141 +26,35 @@ final class GenerativeAiResultChunk
     private ?TokenUsage $tokenUsage;
 
     /**
-     * @var string|null The result id, when this chunk reports it.
-     */
-    private ?string $id;
-
-    /**
-     * @var list<ToolCallDelta> Partial tool calls carried by this chunk.
-     */
-    private array $toolCallDeltas;
-
-    /**
      * @var array<string, mixed> Result-level provider metadata carried by this chunk.
      */
     private array $additionalData;
+
+    /**
+     * @var list<CandidateDelta> The per-candidate deltas carried by this chunk.
+     */
+    private array $candidateDeltas;
 
     /**
      * Constructor.
      *
      * @since n.e.x.t
      *
-     * @param int|null $candidateIndex Index of the candidate this chunk contributes to.
-     * @param MessagePart[] $parts The partial content parts carried by this chunk.
-     * @param FinishReasonEnum|null $finishReason The finish reason, when reported.
-     * @param TokenUsage|null $tokenUsage The token usage, when reported.
      * @param string|null $id The result id, when reported.
-     * @param list<ToolCallDelta> $toolCallDeltas Partial tool calls carried by this chunk.
-     * @param array<string, mixed> $additionalData Result-level provider metadata carried by this chunk.
+     * @param TokenUsage|null $tokenUsage The token usage, when reported.
+     * @param array<string, mixed> $additionalData Result-level provider metadata.
+     * @param list<CandidateDelta> $candidateDeltas The per-candidate deltas.
      */
     public function __construct(
-        ?int $candidateIndex,
-        array $parts = [],
-        ?FinishReasonEnum $finishReason = null,
-        ?TokenUsage $tokenUsage = null,
         ?string $id = null,
-        array $toolCallDeltas = [],
-        array $additionalData = []
+        ?TokenUsage $tokenUsage = null,
+        array $additionalData = [],
+        array $candidateDeltas = []
     ) {
-        $this->candidateIndex = $candidateIndex;
-        $this->parts = $parts;
-        $this->finishReason = $finishReason;
-        $this->tokenUsage = $tokenUsage;
         $this->id = $id;
-        $this->toolCallDeltas = $toolCallDeltas;
+        $this->tokenUsage = $tokenUsage;
         $this->additionalData = $additionalData;
-    }
-
-    /**
-     * Gets the index of the candidate this chunk contributes to.
-     *
-     * @since n.e.x.t
-     *
-     * @return int|null The candidate index, or null when the chunk carries only result-level metadata.
-     */
-    public function getCandidateIndex(): ?int
-    {
-        return $this->candidateIndex;
-    }
-
-    /**
-     * Gets the partial content parts.
-     *
-     * @since n.e.x.t
-     *
-     * @return MessagePart[] The content parts.
-     */
-    public function getParts(): array
-    {
-        return $this->parts;
-    }
-
-    /**
-     * Gets delta text of this chunk's content channel.
-     *
-     * @since n.e.x.t
-     *
-     * @return string The content text delta, or an empty string when this chunk carries none.
-     */
-    public function getDeltaText(): string
-    {
-        return $this->deltaTextForChannel(MessagePartChannelEnum::content());
-    }
-
-    /**
-     * Gets delta text of this chunk's reasoning (thought) channel.
-     *
-     * @since n.e.x.t
-     *
-     * @return string The reasoning text delta, or an empty string when this chunk carries none.
-     */
-    public function getReasoningDeltaText(): string
-    {
-        return $this->deltaTextForChannel(MessagePartChannelEnum::thought());
-    }
-
-    /**
-     * Concatenates the delta text of this chunk's parts on the given channel.
-     *
-     * @since n.e.x.t
-     *
-     * @param MessagePartChannelEnum $channel The channel to read.
-     * @return string The concatenated delta text, or an empty string when there is none.
-     */
-    private function deltaTextForChannel(MessagePartChannelEnum $channel): string
-    {
-        $text = '';
-        foreach ($this->parts as $part) {
-            if ($part->getChannel()->is($channel) && $part->getText() !== null) {
-                $text .= $part->getText();
-            }
-        }
-
-        return $text;
-    }
-
-    /**
-     * Gets the finish reason.
-     *
-     * @since n.e.x.t
-     *
-     * @return FinishReasonEnum|null The finish reason, or null when not reported by this chunk.
-     */
-    public function getFinishReason(): ?FinishReasonEnum
-    {
-        return $this->finishReason;
-    }
-
-    /**
-     * Gets the token usage.
-     *
-     * @since n.e.x.t
-     *
-     * @return TokenUsage|null The token usage, or null when not reported by this chunk.
-     */
-    public function getTokenUsage(): ?TokenUsage
-    {
-        return $this->tokenUsage;
+        $this->candidateDeltas = $candidateDeltas;
     }
 
     /**
@@ -190,15 +70,15 @@ final class GenerativeAiResultChunk
     }
 
     /**
-     * Gets the partial tool calls carried by this chunk.
+     * Gets the token usage.
      *
      * @since n.e.x.t
      *
-     * @return list<ToolCallDelta> The tool call fragments, possibly empty.
+     * @return TokenUsage|null The token usage, or null when not reported by this chunk.
      */
-    public function getToolCallDeltas(): array
+    public function getTokenUsage(): ?TokenUsage
     {
-        return $this->toolCallDeltas;
+        return $this->tokenUsage;
     }
 
     /**
@@ -211,5 +91,72 @@ final class GenerativeAiResultChunk
     public function getAdditionalData(): array
     {
         return $this->additionalData;
+    }
+
+    /**
+     * Gets the per-candidate deltas carried by this chunk.
+     *
+     * @since n.e.x.t
+     *
+     * @return list<CandidateDelta> The candidate deltas, possibly empty (metadata-only event).
+     */
+    public function getCandidateDeltas(): array
+    {
+        return $this->candidateDeltas;
+    }
+
+    /**
+     * Gets the content text delta carried by this chunk.
+     *
+     * @since n.e.x.t
+     *
+     * @return string The content text delta, or an empty string when this chunk carries none.
+     */
+    public function getDeltaText(): string
+    {
+        $text = '';
+        foreach ($this->candidateDeltas as $delta) {
+            $text .= $delta->getDeltaText();
+        }
+
+        return $text;
+    }
+
+    /**
+     * Gets the reasoning (thought) text delta carried by this chunk.
+     *
+     * Convenience for single-candidate streaming; see getDeltaText().
+     *
+     * @since n.e.x.t
+     *
+     * @return string The reasoning text delta, or an empty string when this chunk carries none.
+     */
+    public function getReasoningDeltaText(): string
+    {
+        $text = '';
+        foreach ($this->candidateDeltas as $delta) {
+            $text .= $delta->getReasoningDeltaText();
+        }
+
+        return $text;
+    }
+
+    /**
+     * Gets the tool call fragments carried by this chunk.
+     *
+     * @since n.e.x.t
+     *
+     * @return list<ToolCallDelta> The tool call fragments, possibly empty.
+     */
+    public function getToolCallDeltas(): array
+    {
+        $deltas = [];
+        foreach ($this->candidateDeltas as $candidateDelta) {
+            foreach ($candidateDelta->getToolCallDeltas() as $toolCallDelta) {
+                $deltas[] = $toolCallDelta;
+            }
+        }
+
+        return $deltas;
     }
 }
