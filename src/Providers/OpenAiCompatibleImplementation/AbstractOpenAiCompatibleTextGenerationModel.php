@@ -364,20 +364,27 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      */
     protected function parseUsageData(array $usage): TokenUsage
     {
-        $thoughtTokens = null;
-        if (
-            isset($usage['completion_tokens_details']['reasoning_tokens'])
-            && is_int($usage['completion_tokens_details']['reasoning_tokens'])
-        ) {
-            $thoughtTokens = $usage['completion_tokens_details']['reasoning_tokens'];
-        }
+        $reasoningTokens = $usage['completion_tokens_details']['reasoning_tokens'] ?? null;
 
         return new TokenUsage(
-            $usage['prompt_tokens'] ?? 0,
-            $usage['completion_tokens'] ?? 0,
-            $usage['total_tokens'] ?? 0,
-            $thoughtTokens
+            $this->toIntOrZero($usage['prompt_tokens'] ?? 0),
+            $this->toIntOrZero($usage['completion_tokens'] ?? 0),
+            $this->toIntOrZero($usage['total_tokens'] ?? 0),
+            is_numeric($reasoningTokens) ? (int) $reasoningTokens : null
         );
+    }
+
+    /**
+     * Coerces an untrusted usage value to an integer, defaulting to zero.
+     *
+     * @since n.e.x.t
+     *
+     * @param mixed $value The raw value from the decoded usage payload.
+     * @return int The coerced integer, or 0 when the value is not numeric.
+     */
+    private function toIntOrZero($value): int
+    {
+        return is_numeric($value) ? (int) $value : 0;
     }
 
     /**
