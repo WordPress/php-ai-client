@@ -85,9 +85,17 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
      * @since n.e.x.t
      *
      * @return Generator<int, GenerativeAiResultChunk> The chunks, in order.
+     *
+     * @throws RuntimeException If the source stream has already been consumed.
      */
     public function getIterator(): Generator
     {
+        if ($this->started) {
+            throw new RuntimeException(
+                'This streamed result has already been consumed; the stream can be read only once.'
+            );
+        }
+
         while (true) {
             $chunk = $this->pull();
             if ($chunk === null) {
@@ -124,10 +132,7 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
     }
 
     /**
-     * Assembles the result once and runs the completion callbacks.
-     *
-     * A no-op if the result is already built or the stream produced no candidates,
-     * so a fully iterated empty stream does not fire the completion callbacks.
+     * Assembles the result and runs the completion callbacks.
      *
      * @since n.e.x.t
      *
@@ -135,7 +140,7 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
      */
     private function finalize(): void
     {
-        if ($this->result !== null || !$this->accumulator->hasCandidates()) {
+        if (!$this->accumulator->hasCandidates()) {
             return;
         }
 
@@ -162,6 +167,8 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
         if (!$this->started) {
             $this->chunks->rewind();
             $this->started = true;
+        } else {
+            $this->chunks->next();
         }
 
         if (!$this->chunks->valid()) {
@@ -171,7 +178,6 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
 
         $chunk = $this->chunks->current();
         $this->accumulator->add($chunk);
-        $this->chunks->next();
 
         return $chunk;
     }
