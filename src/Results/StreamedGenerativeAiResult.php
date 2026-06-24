@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Results;
 use Generator;
 use Iterator;
 use IteratorAggregate;
+use Throwable;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -30,9 +31,19 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
     private ChunkAccumulator $accumulator;
 
     /**
+     * @var list<callable(): void> Callbacks run once when consumption begins.
+     */
+    private array $startCallbacks = [];
+
+    /**
      * @var list<callable(GenerativeAiResult): void> Callbacks run once when the result is assembled.
      */
     private array $completionCallbacks = [];
+
+    /**
+     * @var list<callable(Throwable): void> Callbacks run once when consumption fails.
+     */
+    private array $errorCallbacks = [];
 
     /**
      * @var bool Whether the source stream has been started.
@@ -43,6 +54,11 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
      * @var bool Whether the source stream has been fully read.
      */
     private bool $finished = false;
+
+    /**
+     * @var bool Whether a terminal outcome (completion or error) has been reached.
+     */
+    private bool $finalized = false;
 
     /**
      * @var GenerativeAiResult|null The assembled result, once built.
@@ -65,6 +81,21 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
     }
 
     /**
+     * Registers a callback to run once, when consumption begins.
+     *
+     * @since n.e.x.t
+     *
+     * @param callable(): void $callback The callback.
+     * @return self
+     */
+    public function onStart(callable $callback): self
+    {
+        $this->startCallbacks[] = $callback;
+
+        return $this;
+    }
+
+    /**
      * Registers a callback to run once, when the final result is first assembled.
      *
      * @since n.e.x.t
@@ -75,6 +106,21 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
     public function onComplete(callable $callback): self
     {
         $this->completionCallbacks[] = $callback;
+
+        return $this;
+    }
+
+    /**
+     * Registers a callback to run once, when consumption fails.
+     *
+     * @since n.e.x.t
+     *
+     * @param callable(Throwable): void $callback Receives the error.
+     * @return self
+     */
+    public function onError(callable $callback): self
+    {
+        $this->errorCallbacks[] = $callback;
 
         return $this;
     }
@@ -96,15 +142,20 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
             );
         }
 
-        while (true) {
-            $chunk = $this->pull();
-            if ($chunk === null) {
-                break;
+        try {
+            while (true) {
+                $chunk = $this->pull();
+                if ($chunk === null) {
+                    break;
+                }
+                yield $chunk;
             }
-            yield $chunk;
-        }
 
-        $this->finalize();
+            $this->finalize();
+        } catch (Throwable $e) {
+            $this->fail($e);
+            throw $e;
+        }
     }
 
     /**
@@ -118,14 +169,22 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
     public function getFinalResult(): GenerativeAiResult
     {
         if ($this->result === null) {
-            while ($this->pull() !== null) {
-                // Drain any remaining chunks so the result is complete.
+            try {
+                while ($this->pull() !== null) {
+                    // Drain any remaining chunks so the result is complete.
+                }
+
+                $this->finalize();
+            } catch (Throwable $e) {
+                $this->fail($e);
+                throw $e;
             }
-            $this->finalize();
         }
 
         if ($this->result === null) {
-            throw new RuntimeException('The stream produced no candidates.');
+            $error = new RuntimeException('The stream produced no candidates.');
+            $this->fail($error);
+            throw $error;
         }
 
         return $this->result;
@@ -140,14 +199,36 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
      */
     private function finalize(): void
     {
-        if (!$this->accumulator->hasCandidates()) {
+        if ($this->finalized || !$this->accumulator->hasCandidates()) {
             return;
         }
 
+        $this->finalized = true;
         $this->result = $this->accumulator->build();
 
         foreach ($this->completionCallbacks as $callback) {
             $callback($this->result);
+        }
+    }
+
+    /**
+     * Reaches the terminal "errored" state exactly once and runs the error callbacks.
+     *
+     * @since n.e.x.t
+     *
+     * @param Throwable $error The error that ended consumption.
+     * @return void
+     */
+    private function fail(Throwable $error): void
+    {
+        if ($this->finalized) {
+            return;
+        }
+
+        $this->finalized = true;
+
+        foreach ($this->errorCallbacks as $callback) {
+            $callback($error);
         }
     }
 
@@ -160,13 +241,16 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
      */
     private function pull(): ?GenerativeAiResultChunk
     {
-        if ($this->finished) {
+        if ($this->finished || $this->finalized) {
             return null;
         }
 
         if (!$this->started) {
-            $this->chunks->rewind();
             $this->started = true;
+            foreach ($this->startCallbacks as $callback) {
+                $callback();
+            }
+            $this->chunks->rewind();
         } else {
             $this->chunks->next();
         }
