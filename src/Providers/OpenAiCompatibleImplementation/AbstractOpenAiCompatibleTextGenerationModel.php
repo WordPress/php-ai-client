@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
+use Generator;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -27,6 +28,7 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Results\StreamedGenerativeAiResult;
+use WordPress\AiClient\Results\ValueObjects\CandidateDelta;
 use WordPress\AiClient\Results\ValueObjects\GenerativeAiResultChunk;
 use WordPress\AiClient\Results\ValueObjects\ToolCallDelta;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -150,9 +152,9 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      * @since n.e.x.t
      *
      * @param list<Message> $prompt The prompt to generate text for.
-     * @return iterable<int, GenerativeAiResultChunk> The result chunks as they arrive.
+     * @return Generator<int, GenerativeAiResultChunk> The result chunks as they arrive.
      */
-    private function streamTextChunks(array $prompt): iterable
+    private function streamTextChunks(array $prompt): Generator
     {
         $httpTransporter = $this->getHttpTransporter();
 
@@ -191,8 +193,8 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 $this->throwIfStreamError($decoded);
 
                 /** @var StreamEventData $decoded */
-                $chunks = $this->parseStreamEventToChunks($decoded);
-                foreach ($chunks as $chunk) {
+                $chunk = $this->parseStreamEvent($decoded);
+                if ($chunk !== null) {
                     yield $chunk;
                 }
             }
@@ -228,48 +230,60 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     }
 
     /**
-     * Maps one decoded stream event into result chunks, one per choice.
+     * Maps one decoded stream event into a result chunk.
      *
      * @since n.e.x.t
      *
      * @param StreamEventData $data The decoded event payload.
-     * @return iterable<int, GenerativeAiResultChunk> The chunks for this event.
+     * @return GenerativeAiResultChunk|null The chunk, or null when the event carries nothing usable.
      */
-    protected function parseStreamEventToChunks(array $data): iterable
+    protected function parseStreamEvent(array $data): ?GenerativeAiResultChunk
     {
         $id = isset($data['id']) && is_string($data['id']) ? $data['id'] : null;
         $tokenUsage = isset($data['usage']) && is_array($data['usage'])
             ? $this->parseUsageData($data['usage'])
             : null;
+        $additionalData = $this->extractAdditionalData($data);
         $choices = isset($data['choices']) && is_array($data['choices']) ? $data['choices'] : [];
 
-        $additionalData = $this->extractAdditionalData($data);
-
-        if ($choices === []) {
-            // Events with no choices (such as the final usage event) carry only result metadata.
-            if ($tokenUsage !== null || $id !== null || $additionalData !== []) {
-                yield new GenerativeAiResultChunk(null, [], null, $tokenUsage, $id, [], $additionalData);
-            }
-            return;
-        }
-
+        $candidateDeltas = [];
         foreach ($choices as $choice) {
-            $index = isset($choice['index']) && is_int($choice['index']) ? $choice['index'] : 0;
-            $delta = isset($choice['delta']) && is_array($choice['delta']) ? $choice['delta'] : [];
-            $finishReason = isset($choice['finish_reason']) && is_string($choice['finish_reason'])
-                ? FinishReasonEnum::tryFrom($choice['finish_reason'])
-                : null;
-
-            yield new GenerativeAiResultChunk(
-                $index,
-                $this->parseStreamDeltaParts($delta),
-                $finishReason,
-                $tokenUsage,
-                $id,
-                $this->parseStreamToolCallDeltas($delta),
-                $additionalData
-            );
+            if (!is_array($choice)) {
+                continue;
+            }
+            $candidateDeltas[] = $this->parseStreamChoice($choice);
         }
+
+        // Skip events that carry no metadata and no candidate deltas.
+        if ($id === null && $tokenUsage === null && $additionalData === [] && $candidateDeltas === []) {
+            return null;
+        }
+
+        return new GenerativeAiResultChunk($id, $tokenUsage, $additionalData, $candidateDeltas);
+    }
+
+    /**
+     * Maps one streamed choice into a candidate delta.
+     *
+     * @since n.e.x.t
+     *
+     * @param StreamChoiceData $choice The choice payload from the event.
+     * @return CandidateDelta The parsed candidate delta.
+     */
+    protected function parseStreamChoice(array $choice): CandidateDelta
+    {
+        $index = isset($choice['index']) && is_int($choice['index']) ? $choice['index'] : 0;
+        $delta = isset($choice['delta']) && is_array($choice['delta']) ? $choice['delta'] : [];
+        $finishReason = isset($choice['finish_reason']) && is_string($choice['finish_reason'])
+            ? FinishReasonEnum::tryFrom($choice['finish_reason'])
+            : null;
+
+        return new CandidateDelta(
+            $index,
+            $this->parseStreamDeltaParts($delta),
+            $finishReason,
+            $this->parseStreamToolCallDeltas($delta)
+        );
     }
 
     /**
@@ -278,7 +292,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      * @since n.e.x.t
      *
      * @param StreamDeltaData $delta The delta payload from a choice.
-     * @return MessagePart[] The parsed message parts.
+     * @return list<MessagePart> The parsed message parts.
      */
     protected function parseStreamDeltaParts(array $delta): array
     {
