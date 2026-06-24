@@ -393,12 +393,12 @@ trait MockModelCreationTrait
     /**
      * Creates a mock model that streams the given chunks.
      *
-     * @param list<GenerativeAiResultChunk> $chunks The chunks to stream.
+     * @param iterable<GenerativeAiResultChunk> $chunks The chunks to stream.
      * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
      * @return ModelInterface&StreamingTextGenerationModelInterface The mock model.
      */
     protected function createMockStreamingTextGenerationModel(
-        array $chunks,
+        iterable $chunks,
         ?ModelMetadata $metadata = null
     ): ModelInterface {
         $metadata = $metadata ?? $this->createTestTextModelMetadata();
@@ -416,17 +416,17 @@ trait MockModelCreationTrait
         ) implements ModelInterface, TextGenerationModelInterface, StreamingTextGenerationModelInterface {
             private ModelMetadata $metadata;
             private ProviderMetadata $providerMetadata;
-            /** @var list<GenerativeAiResultChunk> */
-            private array $chunks;
+            /** @var iterable<GenerativeAiResultChunk> */
+            private iterable $chunks;
             private ModelConfig $config;
 
             /**
-             * @param list<GenerativeAiResultChunk> $chunks
+             * @param iterable<GenerativeAiResultChunk> $chunks
              */
             public function __construct(
                 ModelMetadata $metadata,
                 ProviderMetadata $providerMetadata,
-                array $chunks
+                iterable $chunks
             ) {
                 $this->metadata = $metadata;
                 $this->providerMetadata = $providerMetadata;
@@ -461,8 +461,10 @@ trait MockModelCreationTrait
 
             public function streamGenerateTextResult(array $prompt): StreamedGenerativeAiResult
             {
+                $source = is_array($this->chunks) ? new ArrayIterator($this->chunks) : $this->chunks;
+
                 return new StreamedGenerativeAiResult(
-                    new ArrayIterator($this->chunks),
+                    $source,
                     $this->providerMetadata,
                     $this->metadata
                 );
