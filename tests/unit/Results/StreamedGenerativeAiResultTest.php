@@ -108,10 +108,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * Creates a strict single-use source that fails if it is read again after exhaustion.
-     *
-     * This mirrors a real consumed stream (an HTTP/SSE body cannot be re-read), so a handle that
-     * re-touches an exhausted source surfaces a `LogicException` instead of finishing cleanly.
+     * Creates a single-use source that throws if it is read after exhaustion.
      *
      * @param list<GenerativeAiResultChunk> $chunks The chunks to yield once.
      * @return Iterator<int, GenerativeAiResultChunk>
@@ -172,7 +169,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * Iterating yields every chunk, in order.
+     * Tests that iterating yields all chunks in order.
      */
     public function testIteratingYieldsAllChunksInOrder(): void
     {
@@ -189,7 +186,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * getFinalResult() assembles the result without the caller iterating.
+     * Tests that getFinalResult() assembles the result without iterating.
      */
     public function testGetFinalResultAssemblesWithoutIterating(): void
     {
@@ -206,7 +203,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * Iterating and then calling getFinalResult() yields the same assembled result.
+     * Tests that iterating then getFinalResult() returns the same assembled result.
      */
     public function testIterateThenGetFinalResultIsConsistent(): void
     {
@@ -216,14 +213,14 @@ class StreamedGenerativeAiResultTest extends TestCase
         ]);
 
         foreach ($handle as $chunk) {
-            // drain
+            // Consume the stream but do nothing with the chunks.
         }
 
         $this->assertSame('Hello', $handle->getFinalResult()->toText());
     }
 
     /**
-     * getFinalResult() returns the same instance on repeated calls.
+     * Tests that getFinalResult() returns the same instance on repeated calls.
      */
     public function testGetFinalResultIsIdempotent(): void
     {
@@ -236,7 +233,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * getFinalResult() after an early break drains the remainder and returns the full result.
+     * Tests that getFinalResult() drains the remainder after an early break.
      */
     public function testGetFinalResultAfterEarlyBreakDrainsRemainder(): void
     {
@@ -254,7 +251,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * The completion callback fires once, with the result, after a full iteration.
+     * Tests that the completion callback fires once with the result after a full iteration.
      */
     public function testOnCompleteFiresOnceWithResultOnFullIteration(): void
     {
@@ -265,7 +262,7 @@ class StreamedGenerativeAiResultTest extends TestCase
         });
 
         foreach ($handle as $chunk) {
-            // drain
+            // Consume the stream but do nothing with the chunks.
         }
 
         $this->assertCount(1, $received);
@@ -273,7 +270,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * The completion callback fires on getFinalResult() without iterating.
+     * Tests that the completion callback fires on getFinalResult() without iterating.
      */
     public function testOnCompleteFiresOnGetFinalResult(): void
     {
@@ -289,7 +286,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * The completion callback fires only once across iteration and getFinalResult().
+     * Tests that the completion callback fires only once across iteration and getFinalResult().
      */
     public function testOnCompleteFiresOnlyOnceAcrossIterateAndGetFinalResult(): void
     {
@@ -300,7 +297,7 @@ class StreamedGenerativeAiResultTest extends TestCase
         });
 
         foreach ($handle as $chunk) {
-            // drain
+            // Consume the stream but do nothing with the chunks.
         }
         $handle->getFinalResult();
 
@@ -308,7 +305,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * Multiple completion callbacks all fire, in registration order.
+     * Tests that multiple completion callbacks fire in registration order.
      */
     public function testMultipleOnCompleteCallbacksFireInRegistrationOrder(): void
     {
@@ -327,7 +324,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * The completion callback does not fire when the caller breaks before the stream ends.
+     * Tests that the completion callback does not fire on an early break.
      */
     public function testOnCompleteNotFiredOnEarlyBreak(): void
     {
@@ -348,7 +345,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * An empty stream throws on getFinalResult() and never fires the completion callback.
+     * Tests that an empty stream throws on getFinalResult() and fires no completion callback.
      */
     public function testEmptyStreamThrowsAndDoesNotFireOnComplete(): void
     {
@@ -369,8 +366,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * After a candidate-less stream is drained by iteration, getFinalResult() still throws the
-     * no-candidates error and does not re-read the already-exhausted source.
+     * Tests that getFinalResult() after iterating an empty stream throws without re-reading the source.
      */
     public function testGetFinalResultAfterIteratingEmptyStreamThrowsWithoutReReadingSource(): void
     {
@@ -383,7 +379,7 @@ class StreamedGenerativeAiResultTest extends TestCase
         });
 
         foreach ($handle as $chunk) {
-            // drain the metadata-only stream to completion
+            // Consume the stream but do nothing with the chunks.
         }
 
         try {
@@ -397,7 +393,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * A stream that ends without a finish reason resolves with the default (stop).
+     * Tests that a stream without a finish reason defaults to stop.
      */
     public function testPartialStreamWithoutFinishReasonDefaultsToStop(): void
     {
@@ -408,7 +404,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * Iterating yields every chunk produced before an error, then propagates the error.
+     * Tests that iteration yields all chunks produced before an error, then propagates it.
      */
     public function testIterationYieldsChunksBeforeAnErrorThenPropagates(): void
     {
@@ -434,7 +430,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * getFinalResult() propagates an error raised while draining the stream.
+     * Tests that getFinalResult() propagates an error raised while draining.
      */
     public function testGetFinalResultPropagatesStreamError(): void
     {
@@ -448,7 +444,7 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
-     * The completion callback does not fire when the stream errors.
+     * Tests that the completion callback does not fire when the stream errors.
      */
     public function testOnCompleteNotFiredWhenStreamErrors(): void
     {
@@ -462,34 +458,33 @@ class StreamedGenerativeAiResultTest extends TestCase
 
         try {
             foreach ($handle as $chunk) {
-                // drain
+                // Consume the stream but do nothing with the chunks.
             }
         } catch (RuntimeException $e) {
-            // expected
+            // Expected error here.
         }
 
         $this->assertSame(0, $count);
     }
 
     /**
-     * The stream is single-use: a second iteration throws rather than silently yielding nothing.
+     * Tests that re-iterating a consumed stream throws.
      */
     public function testReiteratingAConsumedStreamThrows(): void
     {
         $handle = $this->createHandleFromChunks([$this->createContentChunk('hi', FinishReasonEnum::stop())]);
 
         foreach ($handle as $chunk) {
-            // drain
+            // Consume the stream but do nothing with the chunks.
         }
 
         $this->expectException(RuntimeException::class);
         foreach ($handle as $chunk) {
-            // second iteration must not silently yield nothing
         }
     }
 
     /**
-     * Iterating after getFinalResult() throws (the stream has already been consumed).
+     * Tests that iterating after getFinalResult() throws.
      */
     public function testIteratingAfterGetFinalResultThrows(): void
     {
@@ -498,7 +493,6 @@ class StreamedGenerativeAiResultTest extends TestCase
 
         $this->expectException(RuntimeException::class);
         foreach ($handle as $chunk) {
-            // already consumed
         }
     }
 }

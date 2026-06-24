@@ -1386,7 +1386,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Creating the handle is lazy: no HTTP request is sent until it is consumed.
+     * Tests that creating the handle does not perform the request.
      */
     public function testStreamGenerateTextResultReturnsHandleWithoutPerformingRequest(): void
     {
@@ -1398,7 +1398,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * The streamed request opts into streaming and asks the provider to include usage.
+     * Tests that the streamed request enables streaming and usage reporting.
      */
     public function testStreamGenerateTextResultEnablesStreamingOnTheRequest(): void
     {
@@ -1422,12 +1422,11 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         $handle = $this->createModel()->streamGenerateTextResult($this->createStreamPrompt());
 
-        // Consuming triggers the request; a DONE-only stream yields no chunks.
         $this->assertSame([], $this->consumeChunks($handle));
     }
 
     /**
-     * Content deltas are concatenated and the trailing usage/finish frames are folded in.
+     * Tests that content deltas, the finish reason, and usage are assembled.
      */
     public function testStreamAssemblesContentFinishReasonAndUsage(): void
     {
@@ -1458,7 +1457,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Each usable SSE event surfaces as its own chunk; empty and [DONE] frames do not.
+     * Tests that each event yields a chunk and the [DONE] sentinel is skipped.
      */
     public function testStreamYieldsOneChunkPerEventAndSkipsTheDoneSentinel(): void
     {
@@ -1486,7 +1485,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Provider-specific top-level fields are preserved as additional data on chunks and the result.
+     * Tests that additional data is extracted onto chunks and the result.
      */
     public function testStreamExtractsAdditionalDataIntoChunksAndResult(): void
     {
@@ -1510,8 +1509,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * `reasoning_content` and `reasoning` deltas land on the thought channel and reasoning
-     * tokens are captured from the usage details.
+     * Tests that reasoning deltas route to the thought channel with thought tokens.
      */
     public function testStreamRoutesReasoningToThoughtChannelWithThoughtTokens(): void
     {
@@ -1641,7 +1639,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Tool-call deltas are reassembled into function calls, however the provider fragments them.
+     * Tests that tool-call deltas are reassembled into function calls.
      *
      * @dataProvider assembledToolCallProvider
      *
@@ -1669,7 +1667,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Choices at different indices become separate candidates, sorted by index.
+     * Tests that choices at different indices become separate candidates.
      */
     public function testStreamSeparatesMultipleCandidatesByIndex(): void
     {
@@ -1696,7 +1694,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * An unknown finish reason is dropped (null) and the candidate defaults to stop.
+     * Tests that an unknown finish reason defaults to stop.
      */
     public function testStreamUnknownFinishReasonDefaultsToStop(): void
     {
@@ -1716,7 +1714,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * A malformed JSON frame is skipped without aborting the stream.
+     * Tests that a malformed JSON frame is skipped without aborting the stream.
      */
     public function testStreamSkipsUnparsableJsonLineButKeepsValidChunks(): void
     {
@@ -1737,7 +1735,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * A stream that only contains the [DONE] sentinel produces no result.
+     * Tests that a [DONE]-only stream produces no result.
      */
     public function testStreamWithOnlyDoneSentinelProducesNoResult(): void
     {
@@ -1749,7 +1747,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * An error frame raises a ResponseException carrying the provider message, wrapped exactly once.
+     * Tests that an error frame raises a ResponseException with the provider message.
      */
     public function testStreamThrowsResponseExceptionOnErrorEvent(): void
     {
@@ -1772,7 +1770,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Chunks produced before a mid-stream error frame are delivered, then the error propagates.
+     * Tests that chunks before a mid-stream error are delivered, then it propagates.
      */
     public function testStreamYieldsContentBeforeMidStreamErrorThenThrows(): void
     {
@@ -1801,7 +1799,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * A non-successful response is surfaced before any streaming begins.
+     * Tests that a non-successful response is surfaced before streaming begins.
      */
     public function testStreamThrowsClientExceptionWhenResponseIsNotSuccessful(): void
     {
@@ -1814,8 +1812,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * A read failure part-way through the stream is wrapped as a ResponseException with its cause,
-     * after the chunks received before the failure have been delivered.
+     * Tests that a mid-read failure is wrapped as a ResponseException with its cause.
      */
     public function testStreamWrapsMidReadFailureAsResponseException(): void
     {
@@ -1845,14 +1842,14 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * throwIfStreamError() is a no-op for events without an error payload.
+     * Tests that throwIfStreamError() is a no-op without an error payload.
      */
     public function testThrowIfStreamErrorIgnoresEventsWithoutError(): void
     {
         $model = $this->createModel();
         $model->exposeThrowIfStreamError(['choices' => []]);
 
-        $this->assertTrue(true); // No exception thrown.
+        $this->assertTrue(true);
     }
 
     /**
@@ -1895,7 +1892,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * parseStreamEvent() returns null when an event carries nothing usable.
+     * Tests that parseStreamEvent() returns null for an unusable event.
      */
     public function testParseStreamEventReturnsNullWhenEventCarriesNothingUsable(): void
     {
@@ -1906,7 +1903,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * parseStreamEvent() ignores a non-string id and non-array usage/choices.
+     * Tests that parseStreamEvent() ignores a non-string id and non-array usage and choices.
      */
     public function testParseStreamEventIgnoresNonStringIdAndNonArrayUsageAndChoices(): void
     {
@@ -1927,7 +1924,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * parseStreamEvent() skips choice entries that are not arrays.
+     * Tests that parseStreamEvent() skips non-array choice entries.
      */
     public function testParseStreamEventSkipsNonArrayChoiceEntries(): void
     {
@@ -1983,7 +1980,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * parseStreamDeltaParts() maps reasoning and content channels and ignores non-string values.
+     * Tests that parseStreamDeltaParts() maps channels and ignores non-string values.
      */
     public function testParseStreamDeltaPartsMapsChannels(): void
     {
@@ -2134,7 +2131,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * extractAdditionalData() strips id, choices and usage and keeps the rest.
+     * Tests that extractAdditionalData() strips id, choices, and usage.
      */
     public function testExtractAdditionalDataStripsKnownKeys(): void
     {

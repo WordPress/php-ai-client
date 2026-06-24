@@ -97,7 +97,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * The id is captured from the first chunk that reports one; later ids are ignored.
+     * Tests that the id is captured from the first chunk that reports one.
      */
     public function testCapturesIdFromFirstChunkThatReportsOne(): void
     {
@@ -110,7 +110,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Token usage is last-wins (the final usage event is authoritative).
+     * Tests that token usage is last-wins.
      */
     public function testTokenUsageIsLastWins(): void
     {
@@ -125,7 +125,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Additional data is merged across chunks, with later chunks winning on conflicts.
+     * Tests that additional data is merged with later chunks winning.
      */
     public function testAdditionalDataMergedWithLaterChunksWinning(): void
     {
@@ -140,7 +140,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Text on the same channel is concatenated across deltas into one part.
+     * Tests that text on the same channel is concatenated into one part.
      */
     public function testTextConcatenatedPerChannel(): void
     {
@@ -155,7 +155,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Reasoning and content become separate parts, in arrival (channel-first-seen) order.
+     * Tests that reasoning and content become separate parts in arrival order.
      */
     public function testReasoningAndContentAreSeparatePartsInArrivalOrder(): void
     {
@@ -173,7 +173,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * The thought signature is captured last-wins per channel; a null signature does not clear it.
+     * Tests that the thought signature is captured last-wins and a null signature does not clear it.
      */
     public function testThoughtSignatureCapturedLastWinsPerChannel(): void
     {
@@ -194,7 +194,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * The finish reason defaults to stop when no delta reports one.
+     * Tests that the finish reason defaults to stop when not reported.
      */
     public function testFinishReasonDefaultsToStopWhenNotReported(): void
     {
@@ -205,7 +205,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * The reported finish reason is used when present.
+     * Tests that the reported finish reason is used when present.
      */
     public function testFinishReasonUsedWhenReported(): void
     {
@@ -218,7 +218,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * A non-text part is kept whole and placed after the text parts.
+     * Tests that a non-text part is kept and placed after the text parts.
      */
     public function testNonTextPartIsKeptAndPlacedAfterText(): void
     {
@@ -236,7 +236,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Tool-call fragments are stitched by slot into a complete function call.
+     * Tests that tool-call fragments are stitched by slot into a function call.
      */
     public function testToolCallReassembledFromFragments(): void
     {
@@ -259,7 +259,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Tool-call id and name are first-wins across fragments.
+     * Tests that tool-call id and name are first-wins across fragments.
      */
     public function testToolCallIdAndNameAreFirstWins(): void
     {
@@ -278,7 +278,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Tool-call arguments: valid JSON decodes, broken JSON is kept raw, empty becomes null.
+     * Tests decoding of tool-call arguments.
      *
      * @dataProvider toolCallArgumentsProvider
      *
@@ -310,7 +310,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Parallel tool calls are emitted in slot-index order regardless of arrival order.
+     * Tests that parallel tool calls are emitted in slot-index order.
      */
     public function testParallelToolCallsAreOrderedBySlot(): void
     {
@@ -329,13 +329,15 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * A tool-call slot that never received an id or name is skipped (no crash, no part).
+     * Tests that a tool-call slot without an id or name is skipped.
      */
     public function testToolCallSlotWithoutIdOrNameIsSkipped(): void
     {
         $acc = $this->createAccumulator();
         $acc->add($this->createChunk(null, null, [], [
-            new CandidateDelta(0, [$this->createContentPart('hi')], null, [new ToolCallDelta(0, null, null, '{"x":1}')]),
+            new CandidateDelta(0, [$this->createContentPart('hi')], null, [
+                new ToolCallDelta(0, null, null, '{"x":1}'),
+            ]),
         ]));
 
         $parts = $acc->build()->getCandidates()[0]->getMessage()->getParts();
@@ -344,7 +346,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Tool-call fragments without an index stitch into slot 0.
+     * Tests that tool-call fragments without an index stitch into slot 0.
      */
     public function testToolCallDeltaWithoutIndexUsesSlotZero(): void
     {
@@ -362,7 +364,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Candidates are separated by index and emitted in sorted index order.
+     * Tests that candidates are separated and sorted by index.
      */
     public function testCandidatesAreSeparatedAndSortedByIndex(): void
     {
@@ -379,7 +381,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * hasCandidates() reflects whether any candidate delta has been folded in.
+     * Tests that hasCandidates() reflects the accumulated state.
      */
     public function testHasCandidatesReflectsAccumulatedState(): void
     {
@@ -390,7 +392,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * A metadata-only chunk (no candidate deltas) registers no candidate.
+     * Tests that a metadata-only chunk registers no candidate.
      */
     public function testMetadataOnlyChunkRegistersNoCandidate(): void
     {
@@ -401,7 +403,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * build() throws when no candidate was accumulated.
+     * Tests that build() throws when no candidate was accumulated.
      */
     public function testBuildThrowsWhenNoCandidates(): void
     {
@@ -414,7 +416,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * build() applies defaults when id, usage, and additional data are absent.
+     * Tests that build() applies defaults when metadata is absent.
      */
     public function testBuildAppliesDefaultsWhenMetadataAbsent(): void
     {
@@ -428,7 +430,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * build() carries the provider and model metadata into the result.
+     * Tests that build() uses the provider and model metadata.
      */
     public function testBuildUsesProviderAndModelMetadata(): void
     {
@@ -441,7 +443,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * A candidate that received no content builds a valid, empty message.
+     * Tests that a candidate with no parts builds an empty message.
      */
     public function testCandidateWithNoPartsBuildsEmptyMessage(): void
     {
@@ -454,7 +456,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Tool-call arguments reassemble correctly no matter where the fragment boundaries fall.
+     * Tests that tool-call arguments reassemble from many small fragments.
      */
     public function testToolCallArgumentsReassembleFromManySmallFragments(): void
     {
@@ -474,7 +476,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Parallel tool-call fragments interleaved across separate deltas stitch per slot.
+     * Tests that parallel tool-call fragments interleaved across deltas stitch per slot.
      */
     public function testParallelToolCallFragmentsInterleaveAcrossDeltas(): void
     {
@@ -501,7 +503,7 @@ class ChunkAccumulatorTest extends TestCase
     }
 
     /**
-     * Reasoning and content interleaved across deltas concatenate per channel, not merge.
+     * Tests that interleaved reasoning and content concatenate per channel.
      */
     public function testReasoningAndContentInterleaveAcrossDeltas(): void
     {
