@@ -125,8 +125,6 @@ final class GenerativeAiResultChunk
     /**
      * Gets the reasoning (thought) text delta carried by this chunk.
      *
-     * Convenience for single-candidate streaming; see getDeltaText().
-     *
      * @since n.e.x.t
      *
      * @return string The reasoning text delta, or an empty string when this chunk carries none.
