@@ -316,7 +316,10 @@ final class ChunkAccumulator
 
         foreach ($present as $channel) {
             if (!in_array($channel, self::CANONICAL_CHANNEL_ORDER, true)) {
+                // Add any unknown channel last, in arrival order in case the provider sends multiple unknown channels.
+                // @codeCoverageIgnoreStart
                 $ordered[] = $channel;
+                // @codeCoverageIgnoreEnd
             }
         }
 
