@@ -2107,6 +2107,32 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
                 2,
                 null,
             ],
+            'numeric-string tokens are coerced to int' => [
+                ['prompt_tokens' => '15', 'completion_tokens' => '20', 'total_tokens' => '35'],
+                15,
+                20,
+                35,
+                null,
+            ],
+            'float tokens are coerced to int' => [
+                ['prompt_tokens' => 15.0, 'completion_tokens' => 20.0, 'total_tokens' => 35.0],
+                15,
+                20,
+                35,
+                null,
+            ],
+            'numeric-string reasoning tokens are coerced to int' => [
+                [
+                    'prompt_tokens' => 1,
+                    'completion_tokens' => 1,
+                    'total_tokens' => 2,
+                    'completion_tokens_details' => ['reasoning_tokens' => '10'],
+                ],
+                1,
+                1,
+                2,
+                10,
+            ],
         ];
     }
 
