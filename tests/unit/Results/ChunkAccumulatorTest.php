@@ -520,4 +520,22 @@ class ChunkAccumulatorTest extends TestCase
         $this->assertTrue($parts[1]->getChannel()->is(MessagePartChannelEnum::content()));
         $this->assertSame('Hi there', $parts[1]->getText());
     }
+
+    /**
+     * Tests that parts are ordered thought-then-content even when content arrives first.
+     */
+    public function testContentArrivingBeforeReasoningStillOrdersThoughtFirst(): void
+    {
+        $acc = $this->createAccumulator();
+        $acc->add($this->createChunk(null, null, [], [
+            new CandidateDelta(0, [$this->createContentPart('answer'), $this->createReasoningPart('reason')]),
+        ]));
+
+        $parts = $acc->build()->getCandidates()[0]->getMessage()->getParts();
+        $this->assertCount(2, $parts);
+        $this->assertTrue($parts[0]->getChannel()->is(MessagePartChannelEnum::thought()));
+        $this->assertSame('reason', $parts[0]->getText());
+        $this->assertTrue($parts[1]->getChannel()->is(MessagePartChannelEnum::content()));
+        $this->assertSame('answer', $parts[1]->getText());
+    }
 }
