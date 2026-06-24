@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Providers\Http\Streaming;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Providers\Http\Streaming\ServerSentEvent;
 use WordPress\AiClient\Providers\Http\Streaming\SseEventStreamParser;
+use WordPress\AiClient\Providers\Http\Streaming\ValueObjects\ServerSentEvent;
 use WordPress\AiClient\Tests\mocks\ChunkStream;
 
 /**

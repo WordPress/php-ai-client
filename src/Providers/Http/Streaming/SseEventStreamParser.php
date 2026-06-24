@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Providers\Http\Streaming;
 
 use Psr\Http\Message\StreamInterface;
 use WordPress\AiClient\Providers\Http\Streaming\Contracts\EventStreamParserInterface;
+use WordPress\AiClient\Providers\Http\Streaming\ValueObjects\ServerSentEvent;
 
 /**
  * Parses a Server-Sent Events (`text/event-stream`) response body.

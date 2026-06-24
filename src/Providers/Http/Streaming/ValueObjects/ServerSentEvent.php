@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers\Http\Streaming;
+namespace WordPress\AiClient\Providers\Http\Streaming\ValueObjects;
 
 /**
  * Represents a single decoded event from a Server-Sent Events stream.
