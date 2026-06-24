@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Builders;
 
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
+use WordPress\AiClient\Events\GenerateResultErrorEvent;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\TokenUsage;
@@ -180,16 +182,50 @@ class PromptBuilderEventDispatchingTest extends TestCase
     }
 
     /**
-     * Tests that the Before event is dispatched before the stream is consumed.
+     * Tests that the Before event is not dispatched until the stream is consumed.
      *
      * @return void
      */
-    public function testStreamingDispatchesBeforeEventBeforeConsumption(): void
+    public function testStreamingDoesNotDispatchBeforeEventUntilConsumed(): void
     {
-        $this->createStreamingBuilderWithDispatcher()->streamGenerateTextResult();
+        $handle = $this->createStreamingBuilderWithDispatcher()->streamGenerateTextResult();
+
+        $this->assertCount(0, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
+
+        $handle->getFinalResult();
+
+        $this->assertCount(1, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
+    }
+
+    /**
+     * Tests that a stream failure dispatches the error event and no After event.
+     *
+     * @return void
+     */
+    public function testStreamingDispatchesErrorEventOnStreamFailure(): void
+    {
+        $chunk = $this->createStreamingTextChunk('Hello');
+        $source = (function () use ($chunk) {
+            yield $chunk;
+            throw new RuntimeException('stream failed');
+        })();
+        $model = $this->createMockStreamingTextGenerationModel($source);
+
+        $builder = new PromptBuilder($this->registry, 'Hello', $this->dispatcher);
+        $builder->usingModel($model);
+
+        try {
+            foreach ($builder->streamGenerateTextResult() as $streamChunk) {
+            }
+        } catch (RuntimeException $e) {
+        }
 
         $this->assertCount(1, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
         $this->assertCount(0, $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class));
+
+        $errorEvents = $this->dispatcher->getDispatchedEventsOfType(GenerateResultErrorEvent::class);
+        $this->assertCount(1, $errorEvents);
+        $this->assertSame('stream failed', $errorEvents[0]->getError()->getMessage());
     }
 
     /**
