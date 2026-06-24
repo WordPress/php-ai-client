@@ -142,4 +142,19 @@ class ResponseTest extends TestCase
 
         $this->assertSame('{"ok":true}', $response->getBody());
     }
+
+    /**
+     * Tests that toArray serializes the body, reading a streamed body when needed.
+     *
+     * @return void
+     */
+    public function testToArraySerializesStreamedBody(): void
+    {
+        $response = new Response(200, ['X-Test' => 'value'], new ChunkStream(['streamed body']));
+
+        $array = $response->toArray();
+
+        $this->assertSame(200, $array[Response::KEY_STATUS_CODE]);
+        $this->assertSame('streamed body', $array[Response::KEY_BODY]);
+    }
 }
