@@ -9,6 +9,7 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
+use WordPress\AiClient\Events\GenerateResultErrorEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
@@ -1078,13 +1079,16 @@ class PromptBuilder
 
         $messages = $this->messages;
 
-        $this->dispatchEvent(new BeforeGenerateResultEvent($messages, $model, $capability));
-
-        return $model->streamGenerateTextResult($messages)->onComplete(
-            function (GenerativeAiResult $result) use ($messages, $model, $capability): void {
+        return $model->streamGenerateTextResult($messages)
+            ->onStart(function () use ($messages, $model, $capability): void {
+                $this->dispatchEvent(new BeforeGenerateResultEvent($messages, $model, $capability));
+            })
+            ->onComplete(function (GenerativeAiResult $result) use ($messages, $model, $capability): void {
                 $this->dispatchEvent(new AfterGenerateResultEvent($messages, $model, $capability, $result));
-            }
-        );
+            })
+            ->onError(function (\Throwable $error) use ($messages, $model, $capability): void {
+                $this->dispatchEvent(new GenerateResultErrorEvent($messages, $model, $capability, $error));
+            });
     }
 
     /**
