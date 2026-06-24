@@ -106,37 +106,41 @@ final class GenerativeAiResultChunk
     }
 
     /**
-     * Gets the content text delta carried by this chunk.
+     * Gets the content text delta for a single candidate.
      *
      * @since n.e.x.t
      *
-     * @return string The content text delta, or an empty string when this chunk carries none.
+     * @param int $candidateIndex The candidate index to read.
+     * @return string The content text delta, or an empty string when the candidate carries none.
      */
-    public function getDeltaText(): string
+    public function getDeltaText(int $candidateIndex = 0): string
     {
-        $text = '';
         foreach ($this->candidateDeltas as $delta) {
-            $text .= $delta->getDeltaText();
+            if ($delta->getIndex() === $candidateIndex) {
+                return $delta->getDeltaText();
+            }
         }
 
-        return $text;
+        return '';
     }
 
     /**
-     * Gets the reasoning (thought) text delta carried by this chunk.
+     * Gets the reasoning (thought) text delta for a single candidate.
      *
      * @since n.e.x.t
      *
-     * @return string The reasoning text delta, or an empty string when this chunk carries none.
+     * @param int $candidateIndex The candidate index to read.
+     * @return string The reasoning text delta, or an empty string when the candidate carries none.
      */
-    public function getReasoningDeltaText(): string
+    public function getReasoningDeltaText(int $candidateIndex = 0): string
     {
-        $text = '';
         foreach ($this->candidateDeltas as $delta) {
-            $text .= $delta->getReasoningDeltaText();
+            if ($delta->getIndex() === $candidateIndex) {
+                return $delta->getReasoningDeltaText();
+            }
         }
 
-        return $text;
+        return '';
     }
 
     /**

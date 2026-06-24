@@ -68,29 +68,33 @@ class GenerativeAiResultChunkTest extends TestCase
     }
 
     /**
-     * Tests that getDeltaText concatenates the content text across candidate deltas.
+     * Tests that getDeltaText returns the primary candidate's content by default.
      */
-    public function testGetDeltaTextFlattensAcrossCandidateDeltas(): void
+    public function testGetDeltaTextReturnsPrimaryCandidateByDefault(): void
     {
         $chunk = new GenerativeAiResultChunk(null, null, [], [
             new CandidateDelta(0, [$this->createContentPart('A')]),
             new CandidateDelta(1, [$this->createContentPart('B')]),
         ]);
 
-        $this->assertSame('AB', $chunk->getDeltaText());
+        $this->assertSame('A', $chunk->getDeltaText());
+        $this->assertSame('B', $chunk->getDeltaText(1));
+        $this->assertSame('', $chunk->getDeltaText(99));
     }
 
     /**
-     * Tests that getReasoningDeltaText concatenates the thought text across candidate deltas.
+     * Tests that getReasoningDeltaText returns the primary candidate's reasoning by default.
      */
-    public function testGetReasoningDeltaTextFlattensAcrossCandidateDeltas(): void
+    public function testGetReasoningDeltaTextReturnsPrimaryCandidateByDefault(): void
     {
         $chunk = new GenerativeAiResultChunk(null, null, [], [
-            new CandidateDelta(0, [$this->createReasoningPart('think ')]),
+            new CandidateDelta(0, [$this->createReasoningPart('think')]),
             new CandidateDelta(1, [$this->createReasoningPart('more')]),
         ]);
 
-        $this->assertSame('think more', $chunk->getReasoningDeltaText());
+        $this->assertSame('think', $chunk->getReasoningDeltaText());
+        $this->assertSame('more', $chunk->getReasoningDeltaText(1));
+        $this->assertSame('', $chunk->getReasoningDeltaText(99));
     }
 
     /**
