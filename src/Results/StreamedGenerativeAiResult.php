@@ -56,14 +56,14 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
     private bool $finished = false;
 
     /**
-     * @var bool Whether a terminal outcome (completion or error) has been reached.
-     */
-    private bool $finalized = false;
-
-    /**
      * @var GenerativeAiResult|null The assembled result, once built.
      */
     private ?GenerativeAiResult $result = null;
+
+    /**
+     * @var Throwable|null The error that ended consumption, once it failed.
+     */
+    private ?Throwable $error = null;
 
     /**
      * Constructor.
@@ -164,10 +164,16 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
      * @since n.e.x.t
      *
      * @return GenerativeAiResult The assembled result.
+     *
+     * @throws Throwable The original stream error, if consumption failed.
      * @throws RuntimeException If the stream produced no candidates.
      */
     public function getFinalResult(): GenerativeAiResult
     {
+        if ($this->error !== null) {
+            throw $this->error;
+        }
+
         if ($this->result === null) {
             try {
                 while ($this->pull() !== null) {
@@ -199,11 +205,10 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
      */
     private function finalize(): void
     {
-        if ($this->finalized || !$this->accumulator->hasCandidates()) {
+        if (!$this->accumulator->hasCandidates()) {
             return;
         }
 
-        $this->finalized = true;
         $this->result = $this->accumulator->build();
 
         foreach ($this->completionCallbacks as $callback) {
@@ -212,7 +217,7 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
     }
 
     /**
-     * Reaches the terminal "errored" state exactly once and runs the error callbacks.
+     * Handles a failure in the stream, storing the error and running the error callbacks.
      *
      * @since n.e.x.t
      *
@@ -221,11 +226,7 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
      */
     private function fail(Throwable $error): void
     {
-        if ($this->finalized) {
-            return;
-        }
-
-        $this->finalized = true;
+        $this->error = $error;
 
         foreach ($this->errorCallbacks as $callback) {
             $callback($error);
@@ -241,7 +242,7 @@ final class StreamedGenerativeAiResult implements IteratorAggregate
      */
     private function pull(): ?GenerativeAiResultChunk
     {
-        if ($this->finished || $this->finalized) {
+        if ($this->finished) {
             return null;
         }
 

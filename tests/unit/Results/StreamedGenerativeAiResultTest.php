@@ -634,6 +634,26 @@ class StreamedGenerativeAiResultTest extends TestCase
     }
 
     /**
+     * Tests that getFinalResult() after a failure re-throws the original stream error.
+     */
+    public function testGetFinalResultAfterFailureRethrowsOriginalError(): void
+    {
+        $handle = $this->createHandle(
+            $this->createFailingIterator([$this->createContentChunk('a')], new RuntimeException('stream failed'))
+        );
+
+        try {
+            foreach ($handle as $chunk) {
+            }
+        } catch (RuntimeException $e) {
+        }
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('stream failed');
+        $handle->getFinalResult();
+    }
+
+    /**
      * Tests that the error callback fires at most once across iteration and getFinalResult().
      */
     public function testOnErrorFiresAtMostOnceAcrossIterationAndGetFinalResult(): void
