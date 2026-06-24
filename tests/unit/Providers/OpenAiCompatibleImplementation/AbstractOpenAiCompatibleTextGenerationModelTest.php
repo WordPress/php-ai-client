@@ -175,6 +175,38 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests that token usage defaults to zero when the response omits usage.
+     *
+     * @return void
+     */
+    public function testGenerateTextResultDefaultsTokenUsageWhenUsageAbsent(): void
+    {
+        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Hello')])];
+        $response = new Response(
+            200,
+            [],
+            json_encode([
+                'id' => 'chatcmpl-123',
+                'choices' => [
+                    [
+                        'message' => ['role' => 'assistant', 'content' => 'Hi there!'],
+                        'finish_reason' => 'stop',
+                    ],
+                ],
+            ])
+        );
+
+        $this->mockRequestAuthentication->method('authenticateRequest')->willReturnArgument(0);
+        $this->mockHttpTransporter->method('send')->willReturn($response);
+
+        $result = $this->createModel()->generateTextResult($prompt);
+
+        $this->assertSame(0, $result->getTokenUsage()->getPromptTokens());
+        $this->assertSame(0, $result->getTokenUsage()->getCompletionTokens());
+        $this->assertSame(0, $result->getTokenUsage()->getTotalTokens());
+    }
+
+    /**
      * Tests prepareGenerateTextParams() with basic text prompt.
      *
      * @return void
