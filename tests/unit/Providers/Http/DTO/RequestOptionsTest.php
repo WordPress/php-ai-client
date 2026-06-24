@@ -94,4 +94,68 @@ class RequestOptionsTest extends TestCase
 
         $this->assertSame(['integer', 'null'], $schema['properties'][RequestOptions::KEY_MAX_REDIRECTS]['type']);
     }
+
+    /**
+     * Tests that setStream toggles the stream flag.
+     *
+     * @return void
+     */
+    public function testSetStreamTogglesStreamFlag(): void
+    {
+        $options = new RequestOptions();
+        $options->setStream(true);
+        $this->assertTrue($options->isStream());
+
+        $options->setStream(false);
+        $this->assertFalse($options->isStream());
+    }
+
+    /**
+     * Tests that the stream flag is null by default.
+     *
+     * @return void
+     */
+    public function testStreamIsNullByDefault(): void
+    {
+        $this->assertNull((new RequestOptions())->isStream());
+    }
+
+    /**
+     * Tests that toArray includes the stream flag only when it is set.
+     *
+     * @return void
+     */
+    public function testToArrayIncludesStreamWhenSet(): void
+    {
+        $options = new RequestOptions();
+        $this->assertArrayNotHasKey(RequestOptions::KEY_STREAM, $options->toArray());
+
+        $options->setStream(true);
+        $this->assertTrue($options->toArray()[RequestOptions::KEY_STREAM]);
+    }
+
+    /**
+     * Tests that fromArray reads the stream flag.
+     *
+     * @return void
+     */
+    public function testFromArrayReadsStream(): void
+    {
+        $options = RequestOptions::fromArray([RequestOptions::KEY_STREAM => true]);
+
+        $this->assertInstanceOf(RequestOptions::class, $options);
+        $this->assertTrue($options->isStream());
+    }
+
+    /**
+     * Tests that the JSON schema defines a nullable boolean stream flag.
+     *
+     * @return void
+     */
+    public function testGetJsonSchemaDefinesNullableStream(): void
+    {
+        $schema = RequestOptions::getJsonSchema();
+
+        $this->assertSame(['boolean', 'null'], $schema['properties'][RequestOptions::KEY_STREAM]['type']);
+    }
 }
