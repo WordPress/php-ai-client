@@ -9,6 +9,7 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
+use WordPress\AiClient\Events\GenerateResultErrorEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
@@ -26,11 +27,13 @@ use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\StreamingTextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Results\StreamedGenerativeAiResult;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 use WordPress\AiClient\Tools\DTO\WebSearch;
@@ -1046,6 +1049,65 @@ class PromptBuilder
 
         // Generate and return the result with text generation capability
         return $this->generateResult(CapabilityEnum::textGeneration());
+    }
+
+    /**
+     * Streams a text result from the prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @return StreamedGenerativeAiResult The streamed result.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model does not support streaming text generation.
+     */
+    public function streamGenerateTextResult(): StreamedGenerativeAiResult
+    {
+        $this->includeOutputModalities(ModalityEnum::text());
+        $this->validateMessages();
+
+        $capability = CapabilityEnum::textGeneration();
+        $model = $this->getConfiguredModel($capability);
+
+        if (!$model instanceof StreamingTextGenerationModelInterface) {
+            throw new RuntimeException(
+                sprintf(
+                    'Model "%s" does not support streaming text generation.',
+                    $model->metadata()->getId()
+                )
+            );
+        }
+
+        $messages = $this->messages;
+
+        return $model->streamGenerateTextResult($messages)
+            ->onStart(function () use ($messages, $model, $capability): void {
+                $this->dispatchEvent(new BeforeGenerateResultEvent($messages, $model, $capability));
+            })
+            ->onComplete(function (GenerativeAiResult $result) use ($messages, $model, $capability): void {
+                $this->dispatchEvent(new AfterGenerateResultEvent($messages, $model, $capability, $result));
+            })
+            ->onError(function (\Throwable $error) use ($messages, $model, $capability): void {
+                $this->dispatchEvent(new GenerateResultErrorEvent($messages, $model, $capability, $error));
+            });
+    }
+
+    /**
+     * Streams generated text from the prompt as it arrives.
+     *
+     * @since n.e.x.t
+     *
+     * @return iterable<string> The text deltas, in order.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model does not support streaming text generation.
+     */
+    public function streamGenerateText(): iterable
+    {
+        foreach ($this->streamGenerateTextResult() as $chunk) {
+            $delta = $chunk->getDeltaText();
+            if ($delta !== '') {
+                yield $delta;
+            }
+        }
     }
 
     /**

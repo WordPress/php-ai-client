@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\traits;
 
+use ArrayIterator;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
@@ -13,6 +14,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\StreamingTextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
@@ -20,6 +22,9 @@ use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Results\StreamedGenerativeAiResult;
+use WordPress\AiClient\Results\ValueObjects\CandidateDelta;
+use WordPress\AiClient\Results\ValueObjects\GenerativeAiResultChunk;
 use WordPress\AiClient\Tests\mocks\MockProvider;
 
 /**
@@ -367,5 +372,103 @@ trait MockModelCreationTrait
             ->willReturn(new ModelConfig());
 
         return $mockModel;
+    }
+
+    /**
+     * Creates a chunk carrying a content text delta on candidate 0.
+     *
+     * @param string $text The content delta.
+     * @param FinishReasonEnum|null $finishReason Optional finish reason for the candidate.
+     * @return GenerativeAiResultChunk
+     */
+    protected function createStreamingTextChunk(
+        string $text,
+        ?FinishReasonEnum $finishReason = null
+    ): GenerativeAiResultChunk {
+        return new GenerativeAiResultChunk(null, null, [], [
+            new CandidateDelta(0, [new MessagePart($text)], $finishReason),
+        ]);
+    }
+
+    /**
+     * Creates a mock model that streams the given chunks.
+     *
+     * @param iterable<GenerativeAiResultChunk> $chunks The chunks to stream.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @return ModelInterface&StreamingTextGenerationModelInterface The mock model.
+     */
+    protected function createMockStreamingTextGenerationModel(
+        iterable $chunks,
+        ?ModelMetadata $metadata = null
+    ): ModelInterface {
+        $metadata = $metadata ?? $this->createTestTextModelMetadata();
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $chunks
+        ) implements ModelInterface, TextGenerationModelInterface, StreamingTextGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            /** @var iterable<GenerativeAiResultChunk> */
+            private iterable $chunks;
+            private ModelConfig $config;
+
+            /**
+             * @param iterable<GenerativeAiResultChunk> $chunks
+             */
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                iterable $chunks
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->chunks = $chunks;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateTextResult(array $prompt): GenerativeAiResult
+            {
+                throw new \RuntimeException('Non-streaming generation is not exercised by streaming tests.');
+            }
+
+            public function streamGenerateTextResult(array $prompt): StreamedGenerativeAiResult
+            {
+                $source = is_array($this->chunks) ? new ArrayIterator($this->chunks) : $this->chunks;
+
+                return new StreamedGenerativeAiResult(
+                    $source,
+                    $this->providerMetadata,
+                    $this->metadata
+                );
+            }
+        };
     }
 }

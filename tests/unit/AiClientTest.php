@@ -12,6 +12,8 @@ use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Results\StreamedGenerativeAiResult;
 use WordPress\AiClient\Tests\mocks\MockProvider;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
@@ -797,5 +799,31 @@ class AiClientTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/No models found that support/');
         AiClient::generateResult($prompt, null, $this->createMockEmptyRegistry());
+    }
+
+    /**
+     * Tests that streamGenerateTextResult delegates to the prompt builder and returns a handle.
+     */
+    public function testStreamGenerateTextResultWithStringAndModel(): void
+    {
+        $model = $this->createMockStreamingTextGenerationModel([
+            $this->createStreamingTextChunk('Hello', FinishReasonEnum::stop()),
+        ]);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $handle = AiClient::streamGenerateTextResult('Generate text', $model, $registry);
+
+        $this->assertInstanceOf(StreamedGenerativeAiResult::class, $handle);
+        $this->assertSame('Hello', $handle->getFinalResult()->toText());
+    }
+
+    /**
+     * Tests that streamGenerateTextResult validates the model-or-config parameter.
+     */
+    public function testStreamGenerateTextResultWithInvalidModel(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Parameter must be a ModelInterface');
+        AiClient::streamGenerateTextResult('Generate text', 'invalid', $this->createRegistryWithMockProvider());
     }
 }

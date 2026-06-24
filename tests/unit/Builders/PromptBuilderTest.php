@@ -36,6 +36,8 @@ use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Results\StreamedGenerativeAiResult;
+use WordPress\AiClient\Results\ValueObjects\GenerativeAiResultChunk;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -4142,5 +4144,69 @@ class PromptBuilderTest extends TestCase
         $config = $configProperty->getValue($builder);
 
         $this->assertEquals(['STOP', 'END'], $config->getStopSequences());
+    }
+
+    /**
+     * Tests streamGenerateTextResult returns a StreamedGenerativeAiResult handle and yields the final result.
+     *
+     * @return void
+     */
+    public function testStreamGenerateTextResultReturnsStreamedHandle(): void
+    {
+        $model = $this->createMockStreamingTextGenerationModel([
+            $this->createStreamingTextChunk('Hel'),
+            $this->createStreamingTextChunk('lo', FinishReasonEnum::stop()),
+            new GenerativeAiResultChunk(null, new TokenUsage(3, 5, 8), [], []),
+        ]);
+
+        $builder = new PromptBuilder($this->registry, 'Hello');
+        $builder->usingModel($model);
+
+        $handle = $builder->streamGenerateTextResult();
+
+        $this->assertInstanceOf(StreamedGenerativeAiResult::class, $handle);
+        $result = $handle->getFinalResult();
+        $this->assertSame('Hello', $result->toText());
+        $this->assertSame(8, $result->getTokenUsage()->getTotalTokens());
+    }
+
+    /**
+     * Tests streamGenerateTextResult throws an exception when the model does not support streaming.
+     *
+     * @return void
+     */
+    public function testStreamGenerateTextResultThrowsWhenModelDoesNotSupportStreaming(): void
+    {
+        // A plain text-generation model does not implement StreamingTextGenerationModelInterface.
+        $model = $this->createMockTextGenerationModel($this->createTestResult());
+
+        $builder = new PromptBuilder($this->registry, 'Hello');
+        $builder->usingModel($model);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('does not support streaming text generation');
+        $builder->streamGenerateTextResult();
+    }
+
+    /**
+     * Tests streamGenerateText yields the text deltas in order and skips chunks without text.
+     *
+     * @return void
+     */
+    public function testStreamGenerateTextYieldsTextDeltasAndSkipsEmpty(): void
+    {
+        $model = $this->createMockStreamingTextGenerationModel([
+            $this->createStreamingTextChunk('Hel'),
+            // A metadata-only chunk carries no text and must not be yielded.
+            new GenerativeAiResultChunk(null, new TokenUsage(1, 1, 2), [], []),
+            $this->createStreamingTextChunk('lo', FinishReasonEnum::stop()),
+        ]);
+
+        $builder = new PromptBuilder($this->registry, 'Hello');
+        $builder->usingModel($model);
+
+        $deltas = iterator_to_array($builder->streamGenerateText(), false);
+
+        $this->assertSame(['Hel', 'lo'], $deltas);
     }
 }
