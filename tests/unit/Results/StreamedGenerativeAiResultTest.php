@@ -495,4 +495,168 @@ class StreamedGenerativeAiResultTest extends TestCase
         foreach ($handle as $chunk) {
         }
     }
+
+    /**
+     * Tests that the start callback fires exactly once when consumption begins.
+     */
+    public function testOnStartFiresOnceWhenConsumptionBegins(): void
+    {
+        $count = 0;
+        $handle = $this->createHandleFromChunks([$this->createContentChunk('hi', FinishReasonEnum::stop())]);
+        $handle->onStart(function () use (&$count) {
+            $count++;
+        });
+
+        foreach ($handle as $chunk) {
+        }
+
+        $this->assertSame(1, $count);
+    }
+
+    /**
+     * Tests that the start callback does not fire until the stream is consumed.
+     */
+    public function testOnStartNotFiredUntilConsumed(): void
+    {
+        $count = 0;
+        $handle = $this->createHandleFromChunks([$this->createContentChunk('hi', FinishReasonEnum::stop())]);
+        $handle->onStart(function () use (&$count) {
+            $count++;
+        });
+
+        $this->assertSame(0, $count);
+
+        $handle->getFinalResult();
+
+        $this->assertSame(1, $count);
+    }
+
+    /**
+     * Tests that the start callback fires even when the caller breaks early.
+     */
+    public function testOnStartFiresOnEarlyBreak(): void
+    {
+        $count = 0;
+        $handle = $this->createHandleFromChunks([
+            $this->createContentChunk('a'),
+            $this->createContentChunk('b', FinishReasonEnum::stop()),
+        ]);
+        $handle->onStart(function () use (&$count) {
+            $count++;
+        });
+
+        foreach ($handle as $chunk) {
+            break;
+        }
+
+        $this->assertSame(1, $count);
+    }
+
+    /**
+     * Tests that the error callback fires once with the error when iterating fails.
+     */
+    public function testOnErrorFiresOnceWhenIterationFails(): void
+    {
+        $received = [];
+        $handle = $this->createHandle(
+            $this->createFailingIterator([$this->createContentChunk('a')], new RuntimeException('stream failed'))
+        );
+        $handle->onError(function (\Throwable $e) use (&$received) {
+            $received[] = $e;
+        });
+
+        try {
+            foreach ($handle as $chunk) {
+            }
+        } catch (RuntimeException $e) {
+        }
+
+        $this->assertCount(1, $received);
+        $this->assertSame('stream failed', $received[0]->getMessage());
+    }
+
+    /**
+     * Tests that the error callback fires when getFinalResult() drains a failing stream.
+     */
+    public function testOnErrorFiresWhenGetFinalResultFails(): void
+    {
+        $count = 0;
+        $handle = $this->createHandle(
+            $this->createFailingIterator([$this->createContentChunk('a')], new RuntimeException('stream failed'))
+        );
+        $handle->onError(function () use (&$count) {
+            $count++;
+        });
+
+        try {
+            $handle->getFinalResult();
+        } catch (RuntimeException $e) {
+        }
+
+        $this->assertSame(1, $count);
+    }
+
+    /**
+     * Tests that the error callback does not fire on a successful stream.
+     */
+    public function testOnErrorNotFiredOnSuccess(): void
+    {
+        $count = 0;
+        $handle = $this->createHandleFromChunks([$this->createContentChunk('hi', FinishReasonEnum::stop())]);
+        $handle->onError(function () use (&$count) {
+            $count++;
+        });
+
+        $handle->getFinalResult();
+
+        $this->assertSame(0, $count);
+    }
+
+    /**
+     * Tests that the error callback does not fire when the caller breaks early.
+     */
+    public function testOnErrorNotFiredOnEarlyBreak(): void
+    {
+        $count = 0;
+        $handle = $this->createHandleFromChunks([
+            $this->createContentChunk('a'),
+            $this->createContentChunk('b', FinishReasonEnum::stop()),
+        ]);
+        $handle->onError(function () use (&$count) {
+            $count++;
+        });
+
+        foreach ($handle as $chunk) {
+            break;
+        }
+
+        $this->assertSame(0, $count);
+    }
+
+    /**
+     * Tests that the error callback fires at most once across iteration and getFinalResult().
+     */
+    public function testOnErrorFiresAtMostOnceAcrossIterationAndGetFinalResult(): void
+    {
+        $count = 0;
+        $handle = $this->createHandle(
+            $this->createFailingIterator([$this->createContentChunk('a')], new RuntimeException('stream failed'))
+        );
+        $handle->onError(function () use (&$count) {
+            $count++;
+        });
+
+        try {
+            foreach ($handle as $chunk) {
+            }
+        } catch (RuntimeException $e) {
+        }
+
+        try {
+            $handle->getFinalResult();
+        } catch (RuntimeException $e) {
+        }
+
+        $this->assertSame(1, $count);
+    }
 }
