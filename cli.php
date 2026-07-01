@@ -8,6 +8,7 @@
  * Usage:
  *   GOOGLE_API_KEY=123456 php cli.php 'Your prompt here' --providerId=google --modelId=gemini-2.5-flash
  *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai
+ *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai --outputFormat=embedding-json
  *   GOOGLE_API_KEY=123456 OPENAI_API_KEY=123456 php cli.php 'Your prompt here'
  *
  * For large prompts (e.g., with images), use stdin or file input:
@@ -192,13 +193,15 @@ try {
 try {
     if ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
         $result = $promptBuilder->generateImageResult();
+    } elseif ($outputFormat === 'embedding-json' || $outputFormat === 'embedding-result-json') {
+        $result = $promptBuilder->generateEmbeddingResult();
     } else {
         $result = $promptBuilder->generateTextResult();
     }
 } catch (InvalidArgumentException $e) {
-    logError('Invalid arguments while trying to generate text result: ' . $e->getMessage());
+    logError('Invalid arguments while trying to generate result: ' . $e->getMessage());
 } catch (ResponseException $e) {
-    logError('Request failed while trying to generate text result: ' . $e->getMessage());
+    logError('Request failed while trying to generate result: ' . $e->getMessage());
 }
 
 logInfo("Using provider ID: \"{$result->getProviderMetadata()->getId()}\"");
@@ -216,6 +219,12 @@ switch ($outputFormat) {
         break;
     case 'image-base64':
         $output = $result->toFile()->getBase64Data();
+        break;
+    case 'embedding-json':
+        $output = json_encode($result->getEmbedding(), JSON_PRETTY_PRINT);
+        break;
+    case 'embedding-result-json':
+        $output = json_encode($result, JSON_PRETTY_PRINT);
         break;
     case 'message-text':
     default:

@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Events;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
-use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Results\Contracts\ResultInterface;
 
 /**
  * Event dispatched after a prompt has been sent to the AI model and a response received.
@@ -35,9 +35,9 @@ class AfterGenerateResultEvent
     private ?CapabilityEnum $capability;
 
     /**
-     * @var GenerativeAiResult The result from the model.
+     * @var ResultInterface The result from the model.
      */
-    private GenerativeAiResult $result;
+    private ResultInterface $result;
 
     /**
      * Constructor.
@@ -47,13 +47,13 @@ class AfterGenerateResultEvent
      * @param list<Message> $messages The messages that were sent to the model.
      * @param ModelInterface $model The model that processed the prompt.
      * @param CapabilityEnum|null $capability The capability that was used for generation.
-     * @param GenerativeAiResult $result The result from the model.
+     * @param ResultInterface $result The result from the model.
      */
     public function __construct(
         array $messages,
         ModelInterface $model,
         ?CapabilityEnum $capability,
-        GenerativeAiResult $result
+        ResultInterface $result
     ) {
         $this->messages = $messages;
         $this->model = $model;
@@ -102,9 +102,9 @@ class AfterGenerateResultEvent
      *
      * @since 0.4.0
      *
-     * @return GenerativeAiResult The result.
+     * @return ResultInterface The result.
      */
-    public function getResult(): GenerativeAiResult
+    public function getResult(): ResultInterface
     {
         return $this->result;
     }

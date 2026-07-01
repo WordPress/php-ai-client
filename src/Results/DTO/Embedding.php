@@ -25,6 +25,9 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
      */
     private array $values;
 
+    /**
+     * @var int The vector dimension count.
+     */
     private int $dimensions;
 
     /**

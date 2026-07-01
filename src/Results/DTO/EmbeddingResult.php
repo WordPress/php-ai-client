@@ -41,6 +41,9 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
     public const KEY_MODEL_METADATA = 'modelMetadata';
     public const KEY_ADDITIONAL_DATA = 'additionalData';
 
+    /**
+     * @var string Unique identifier for this result.
+     */
     private string $id;
 
     /**
@@ -48,9 +51,24 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
      */
     private array $embeddings;
 
+    /**
+     * @var int The vector dimension count.
+     */
     private int $dimensions;
+
+    /**
+     * @var TokenUsage Token usage statistics.
+     */
     private TokenUsage $tokenUsage;
+
+    /**
+     * @var ProviderMetadata Provider metadata.
+     */
     private ProviderMetadata $providerMetadata;
+
+    /**
+     * @var ModelMetadata Model metadata.
+     */
     private ModelMetadata $modelMetadata;
 
     /**
@@ -108,6 +126,11 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
         $this->additionalData = $additionalData;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
     public function getId(): string
     {
         return $this->id;
@@ -137,31 +160,65 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
         return $this->embeddings[0];
     }
 
+    /**
+     * Gets the vector dimension count.
+     *
+     * @since n.e.x.t
+     *
+     * @return int The vector dimension count.
+     */
     public function getDimensions(): int
     {
         return $this->dimensions;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
     public function getTokenUsage(): TokenUsage
     {
         return $this->tokenUsage;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
     public function getProviderMetadata(): ProviderMetadata
     {
         return $this->providerMetadata;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
     public function getModelMetadata(): ModelMetadata
     {
         return $this->modelMetadata;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
     public function getAdditionalData(): array
     {
         return $this->additionalData;
     }
 
+    /**
+     * Gets the JSON schema for embedding results.
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed> The JSON schema.
+     */
     public static function getJsonSchema(): array
     {
         return [
@@ -202,7 +259,11 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
     }
 
     /**
-     * @return EmbeddingResultArrayShape
+     * Converts the embedding result to an array.
+     *
+     * @since n.e.x.t
+     *
+     * @return EmbeddingResultArrayShape The embedding result array.
      */
     public function toArray(): array
     {
@@ -225,6 +286,14 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
         return $data;
     }
 
+    /**
+     * Creates an embedding result from an array.
+     *
+     * @since n.e.x.t
+     *
+     * @param EmbeddingResultArrayShape $array The embedding result array.
+     * @return self The embedding result instance.
+     */
     public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [

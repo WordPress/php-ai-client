@@ -88,6 +88,40 @@ $imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in t
     ->generateImage();
 ```
 
+### Embedding generation using any compatible model
+
+```php
+use WordPress\AiClient\AiClient;
+
+$embedding = AiClient::prompt('PHP powers a large part of the web.')
+    ->generateEmbedding();
+
+$values = $embedding->getValues();
+```
+
+### Batch embedding generation
+
+```php
+use WordPress\AiClient\AiClient;
+
+$embeddings = AiClient::prompt()
+    ->usingProvider('openai')
+    ->generateEmbeddings([
+        'PHP powers a large part of the web.',
+        'WordPress makes publishing accessible.',
+    ]);
+```
+
+### Embedding generation with dimensions
+
+```php
+use WordPress\AiClient\AiClient;
+
+$embedding = AiClient::prompt('PHP powers a large part of the web.')
+    ->usingDimensions(512)
+    ->generateEmbedding();
+```
+
 See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php) and its public methods for all the ways you can configure the prompt.
 
 **More documentation is coming soon.**

@@ -1177,7 +1177,11 @@ class PromptBuilder
 
         $this->dispatchEvent(new BeforeGenerateResultEvent($this->messages, $model, $capability));
 
-        return $model->generateEmbeddingResult([$this->messages]);
+        $result = $model->generateEmbeddingResult([$this->messages]);
+
+        $this->dispatchEvent(new AfterGenerateResultEvent($this->messages, $model, $capability, $result));
+
+        return $result;
     }
 
     /**
@@ -1279,7 +1283,15 @@ class PromptBuilder
             );
         }
 
-        return $model->generateEmbeddingResult($promptMessages)->getEmbeddings();
+        $eventMessages = array_merge(...$promptMessages);
+
+        $this->dispatchEvent(new BeforeGenerateResultEvent($eventMessages, $model, $capability));
+
+        $result = $model->generateEmbeddingResult($promptMessages);
+
+        $this->dispatchEvent(new AfterGenerateResultEvent($eventMessages, $model, $capability, $result));
+
+        return $result->getEmbeddings();
     }
 
     /**

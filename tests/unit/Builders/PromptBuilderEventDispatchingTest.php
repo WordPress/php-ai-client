@@ -156,4 +156,56 @@ class PromptBuilderEventDispatchingTest extends TestCase
         $this->assertInstanceOf(BeforeGenerateResultEvent::class, $events[0]);
         $this->assertInstanceOf(AfterGenerateResultEvent::class, $events[1]);
     }
+
+    /**
+     * Tests that events are dispatched for embedding generation.
+     *
+     * @return void
+     */
+    public function testEventsAreDispatchedForEmbeddingGeneration(): void
+    {
+        $result = $this->createTestEmbeddingResult();
+        $model = $this->createMockEmbeddingGenerationModel($result);
+
+        $builder = new PromptBuilder($this->registry, 'Hello', $this->dispatcher);
+        $builder->usingModel($model);
+
+        $returnedResult = $builder->generateEmbeddingResult();
+
+        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class);
+        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class);
+
+        $this->assertCount(1, $beforeEvents);
+        $this->assertCount(1, $afterEvents);
+        $this->assertEquals(CapabilityEnum::embeddingGeneration(), $beforeEvents[0]->getCapability());
+        $this->assertEquals(CapabilityEnum::embeddingGeneration(), $afterEvents[0]->getCapability());
+        $this->assertSame($result, $afterEvents[0]->getResult());
+        $this->assertSame($returnedResult, $afterEvents[0]->getResult());
+    }
+
+    /**
+     * Tests that events are dispatched for batch embedding generation.
+     *
+     * @return void
+     */
+    public function testEventsAreDispatchedForBatchEmbeddingGeneration(): void
+    {
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+
+        $builder = new PromptBuilder($this->registry, null, $this->dispatcher);
+        $builder->usingModel($model);
+
+        $embeddings = $builder->generateEmbeddings(['Hello', 'World']);
+
+        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class);
+        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class);
+
+        $this->assertCount(2, $embeddings);
+        $this->assertCount(1, $beforeEvents);
+        $this->assertCount(1, $afterEvents);
+        $this->assertCount(2, $beforeEvents[0]->getMessages());
+        $this->assertEquals(CapabilityEnum::embeddingGeneration(), $beforeEvents[0]->getCapability());
+        $this->assertSame($result, $afterEvents[0]->getResult());
+    }
 }
