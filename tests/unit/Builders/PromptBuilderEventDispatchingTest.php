@@ -6,7 +6,9 @@ namespace WordPress\AiClient\Tests\unit\Builders;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Builders\PromptBuilder;
+use WordPress\AiClient\Events\AfterGenerateEmbeddingEvent;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
+use WordPress\AiClient\Events\BeforeGenerateEmbeddingEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
@@ -172,15 +174,18 @@ class PromptBuilderEventDispatchingTest extends TestCase
 
         $returnedResult = $builder->generateEmbeddingResult();
 
-        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class);
-        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class);
+        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateEmbeddingEvent::class);
+        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateEmbeddingEvent::class);
 
         $this->assertCount(1, $beforeEvents);
         $this->assertCount(1, $afterEvents);
+        $this->assertCount(1, $beforeEvents[0]->getPrompts());
         $this->assertEquals(CapabilityEnum::embeddingGeneration(), $beforeEvents[0]->getCapability());
         $this->assertEquals(CapabilityEnum::embeddingGeneration(), $afterEvents[0]->getCapability());
         $this->assertSame($result, $afterEvents[0]->getResult());
         $this->assertSame($returnedResult, $afterEvents[0]->getResult());
+        $this->assertCount(0, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
+        $this->assertCount(0, $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class));
     }
 
     /**
@@ -198,13 +203,15 @@ class PromptBuilderEventDispatchingTest extends TestCase
 
         $embeddings = $builder->generateEmbeddings(['Hello', 'World']);
 
-        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class);
-        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class);
+        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateEmbeddingEvent::class);
+        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateEmbeddingEvent::class);
 
         $this->assertCount(2, $embeddings);
         $this->assertCount(1, $beforeEvents);
         $this->assertCount(1, $afterEvents);
-        $this->assertCount(2, $beforeEvents[0]->getMessages());
+        $this->assertCount(2, $beforeEvents[0]->getPrompts());
+        $this->assertCount(1, $beforeEvents[0]->getPrompts()[0]);
+        $this->assertCount(1, $beforeEvents[0]->getPrompts()[1]);
         $this->assertEquals(CapabilityEnum::embeddingGeneration(), $beforeEvents[0]->getCapability());
         $this->assertSame($result, $afterEvents[0]->getResult());
     }

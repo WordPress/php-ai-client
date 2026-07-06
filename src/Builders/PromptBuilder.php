@@ -7,7 +7,9 @@ namespace WordPress\AiClient\Builders;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Events\AfterGenerateEmbeddingEvent;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
+use WordPress\AiClient\Events\BeforeGenerateEmbeddingEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
@@ -493,20 +495,6 @@ class PromptBuilder
     public function usingDimensions(int $dimensions): self
     {
         $this->modelConfig->setDimensions($dimensions);
-        return $this;
-    }
-
-    /**
-     * Sets the embedding encoding format.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $encodingFormat The embedding encoding format.
-     * @return self
-     */
-    public function usingEncodingFormat(string $encodingFormat): self
-    {
-        $this->modelConfig->setEncodingFormat($encodingFormat);
         return $this;
     }
 
@@ -1175,11 +1163,13 @@ class PromptBuilder
             );
         }
 
-        $this->dispatchEvent(new BeforeGenerateResultEvent($this->messages, $model, $capability));
+        $promptMessages = [$this->messages];
 
-        $result = $model->generateEmbeddingResult([$this->messages]);
+        $this->dispatchEvent(new BeforeGenerateEmbeddingEvent($promptMessages, $model, $capability));
 
-        $this->dispatchEvent(new AfterGenerateResultEvent($this->messages, $model, $capability, $result));
+        $result = $model->generateEmbeddingResult($promptMessages);
+
+        $this->dispatchEvent(new AfterGenerateEmbeddingEvent($promptMessages, $model, $capability, $result));
 
         return $result;
     }
@@ -1272,7 +1262,7 @@ class PromptBuilder
         }
 
         $capability = CapabilityEnum::embeddingGeneration();
-        $model = $this->getConfiguredModel($capability);
+        $model = $this->getConfiguredModelForMessages($capability, array_merge(...$promptMessages));
 
         if (!$model instanceof EmbeddingGenerationModelInterface) {
             throw new RuntimeException(
@@ -1283,13 +1273,11 @@ class PromptBuilder
             );
         }
 
-        $eventMessages = array_merge(...$promptMessages);
-
-        $this->dispatchEvent(new BeforeGenerateResultEvent($eventMessages, $model, $capability));
+        $this->dispatchEvent(new BeforeGenerateEmbeddingEvent($promptMessages, $model, $capability));
 
         $result = $model->generateEmbeddingResult($promptMessages);
 
-        $this->dispatchEvent(new AfterGenerateResultEvent($eventMessages, $model, $capability, $result));
+        $this->dispatchEvent(new AfterGenerateEmbeddingEvent($promptMessages, $model, $capability, $result));
 
         return $result->getEmbeddings();
     }
@@ -1452,7 +1440,22 @@ class PromptBuilder
      */
     private function getConfiguredModel(CapabilityEnum $capability): ModelInterface
     {
-        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
+        return $this->getConfiguredModelForMessages($capability, $this->messages);
+    }
+
+    /**
+     * Gets the model to use for generation for the provided messages.
+     *
+     * @since n.e.x.t
+     *
+     * @param CapabilityEnum $capability The capability the model will be using.
+     * @param list<Message>  $messages The messages to derive requirements from.
+     * @return ModelInterface The model to use.
+     * @throws InvalidArgumentException If no suitable model is found or set model doesn't meet requirements.
+     */
+    private function getConfiguredModelForMessages(CapabilityEnum $capability, array $messages): ModelInterface
+    {
+        $requirements = ModelRequirements::fromPromptData($capability, $messages, $this->modelConfig);
 
         if ($this->model !== null) {
             // Explicit model was provided via usingModel(); just update config and bind dependencies.

@@ -46,7 +46,6 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  *     outputMediaAspectRatio?: string,
  *     outputSpeechVoice?: string,
  *     dimensions?: int,
- *     encodingFormat?: string,
  *     customOptions?: array<string, mixed>
  * }
  *
@@ -75,7 +74,6 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_OUTPUT_MEDIA_ASPECT_RATIO = 'outputMediaAspectRatio';
     public const KEY_OUTPUT_SPEECH_VOICE = 'outputSpeechVoice';
     public const KEY_DIMENSIONS = 'dimensions';
-    public const KEY_ENCODING_FORMAT = 'encodingFormat';
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
 
     /*
@@ -189,11 +187,6 @@ class ModelConfig extends AbstractDataTransferObject
      * @var int|null Embedding vector dimensions.
      */
     protected ?int $dimensions = null;
-
-    /**
-     * @var string|null Embedding encoding format.
-     */
-    protected ?string $encodingFormat = null;
 
     /**
      * @var array<string, mixed> Custom provider-specific options.
@@ -814,30 +807,6 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
-     * Sets the embedding encoding format.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $encodingFormat The embedding encoding format.
-     */
-    public function setEncodingFormat(string $encodingFormat): void
-    {
-        $this->encodingFormat = $encodingFormat;
-    }
-
-    /**
-     * Gets the embedding encoding format.
-     *
-     * @since n.e.x.t
-     *
-     * @return string|null The embedding encoding format.
-     */
-    public function getEncodingFormat(): ?string
-    {
-        return $this->encodingFormat;
-    }
-
-    /**
      * Sets a single custom option.
      *
      * @since 0.1.0
@@ -986,10 +955,6 @@ class ModelConfig extends AbstractDataTransferObject
                     'minimum' => 1,
                     'description' => 'Embedding vector dimensions.',
                 ],
-                self::KEY_ENCODING_FORMAT => [
-                    'type' => 'string',
-                    'description' => 'Embedding encoding format.',
-                ],
                 self::KEY_CUSTOM_OPTIONS => [
                     'type' => 'object',
                     'additionalProperties' => true,
@@ -1105,10 +1070,6 @@ class ModelConfig extends AbstractDataTransferObject
             $data[self::KEY_DIMENSIONS] = $this->dimensions;
         }
 
-        if ($this->encodingFormat !== null) {
-            $data[self::KEY_ENCODING_FORMAT] = $this->encodingFormat;
-        }
-
         if (!empty($this->customOptions)) {
             $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
         }
@@ -1216,10 +1177,6 @@ class ModelConfig extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_DIMENSIONS])) {
             $config->setDimensions($array[self::KEY_DIMENSIONS]);
-        }
-
-        if (isset($array[self::KEY_ENCODING_FORMAT])) {
-            $config->setEncodingFormat($array[self::KEY_ENCODING_FORMAT]);
         }
 
         if (isset($array[self::KEY_CUSTOM_OPTIONS])) {

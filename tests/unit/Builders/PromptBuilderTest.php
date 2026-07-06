@@ -1828,13 +1828,11 @@ class PromptBuilderTest extends TestCase
         $builder = new PromptBuilder($this->registry, 'Generate embedding');
         $builder->usingModel($model);
         $builder->usingDimensions(3);
-        $builder->usingEncodingFormat('float');
 
         $actualResult = $builder->generateEmbeddingResult();
         $this->assertSame($result, $actualResult);
 
         $this->assertSame(3, $model->getConfig()->getDimensions());
-        $this->assertSame('float', $model->getConfig()->getEncodingFormat());
     }
 
     /**
@@ -1871,6 +1869,41 @@ class PromptBuilderTest extends TestCase
             static fn ($embedding): array => $embedding->getValues(),
             $builder->generateEmbeddings(['First prompt', 'Second prompt'])
         ));
+    }
+
+    /**
+     * Tests generateEmbeddings derives model requirements from provided batch prompts.
+     *
+     * @return void
+     */
+    public function testGenerateEmbeddingsUsesBatchPromptMessagesForModelSelection(): void
+    {
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2], [0.3, 0.4]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+        $modelMetadata = $this->createTestEmbeddingModelMetadata('batch-embedding-model');
+        $providerMetadata = new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud());
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->callback(static function (ModelRequirements $requirements): bool {
+                foreach ($requirements->getRequiredOptions() as $requiredOption) {
+                    if ($requiredOption->getName()->isInputModalities()) {
+                        return [ModalityEnum::text()] === $requiredOption->getValue();
+                    }
+                }
+
+                return false;
+            }))
+            ->willReturn([new ProviderModelsMetadata($providerMetadata, [$modelMetadata])]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('mock', 'batch-embedding-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $builder = new PromptBuilder($this->registry, null);
+
+        $this->assertCount(2, $builder->generateEmbeddings(['First prompt', 'Second prompt']));
     }
 
     /**

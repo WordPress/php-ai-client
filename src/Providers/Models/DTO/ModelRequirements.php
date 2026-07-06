@@ -346,10 +346,6 @@ class ModelRequirements extends AbstractDataTransferObject
             $requiredOptions[] = new RequiredOption(OptionEnum::dimensions(), $modelConfig->getDimensions());
         }
 
-        if ($modelConfig->getEncodingFormat() !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::encodingFormat(), $modelConfig->getEncodingFormat());
-        }
-
         // Add custom options as individual RequiredOptions
         foreach ($modelConfig->getCustomOptions() as $key => $value) {
             $requiredOptions[] = new RequiredOption(OptionEnum::customOptions(), [$key => $value]);

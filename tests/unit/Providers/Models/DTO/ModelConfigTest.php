@@ -75,7 +75,6 @@ class ModelConfigTest extends TestCase
         $this->assertNull($config->getOutputMediaAspectRatio());
         $this->assertNull($config->getOutputSpeechVoice());
         $this->assertNull($config->getDimensions());
-        $this->assertNull($config->getEncodingFormat());
         $this->assertEquals([], $config->getCustomOptions());
     }
 
@@ -183,10 +182,6 @@ class ModelConfigTest extends TestCase
         $config->setDimensions(1536);
         $this->assertEquals(1536, $config->getDimensions());
 
-        // Test embedding encoding format
-        $config->setEncodingFormat('float');
-        $this->assertEquals('float', $config->getEncodingFormat());
-
         // Test custom options
         $customOptions = ['custom_param' => 'value', 'another_param' => 123];
         $config->setCustomOptions($customOptions);
@@ -230,7 +225,6 @@ class ModelConfigTest extends TestCase
             ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO,
             ModelConfig::KEY_OUTPUT_SPEECH_VOICE,
             ModelConfig::KEY_DIMENSIONS,
-            ModelConfig::KEY_ENCODING_FORMAT,
             ModelConfig::KEY_CUSTOM_OPTIONS
         ];
 
@@ -251,7 +245,6 @@ class ModelConfigTest extends TestCase
         $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO]['type']);
         $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_SPEECH_VOICE]['type']);
         $this->assertEquals('integer', $schema['properties'][ModelConfig::KEY_DIMENSIONS]['type']);
-        $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_ENCODING_FORMAT]['type']);
         $this->assertEquals('object', $schema['properties'][ModelConfig::KEY_CUSTOM_OPTIONS]['type']);
 
         // Check constraints
@@ -292,7 +285,6 @@ class ModelConfigTest extends TestCase
         $config->setOutputMediaAspectRatio('9:16');
         $config->setOutputSpeechVoice('onyx');
         $config->setDimensions(768);
-        $config->setEncodingFormat('base64');
         $config->setCustomOptions(['key' => 'value']);
 
         $array = $config->toArray();
@@ -319,7 +311,6 @@ class ModelConfigTest extends TestCase
         $this->assertEquals('9:16', $array[ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO]);
         $this->assertEquals('onyx', $array[ModelConfig::KEY_OUTPUT_SPEECH_VOICE]);
         $this->assertEquals(768, $array[ModelConfig::KEY_DIMENSIONS]);
-        $this->assertEquals('base64', $array[ModelConfig::KEY_ENCODING_FORMAT]);
         $this->assertEquals(['key' => 'value'], $array[ModelConfig::KEY_CUSTOM_OPTIONS]);
     }
 
@@ -433,7 +424,6 @@ class ModelConfigTest extends TestCase
             ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO => '16:9',
             ModelConfig::KEY_OUTPUT_SPEECH_VOICE => 'fable',
             ModelConfig::KEY_DIMENSIONS => 1024,
-            ModelConfig::KEY_ENCODING_FORMAT => 'float',
             ModelConfig::KEY_CUSTOM_OPTIONS => ['custom' => true]
         ];
 
@@ -465,7 +455,6 @@ class ModelConfigTest extends TestCase
         $this->assertEquals('16:9', $config->getOutputMediaAspectRatio());
         $this->assertEquals('fable', $config->getOutputSpeechVoice());
         $this->assertEquals(1024, $config->getDimensions());
-        $this->assertEquals('float', $config->getEncodingFormat());
         $this->assertEquals(['custom' => true], $config->getCustomOptions());
     }
 
@@ -502,7 +491,6 @@ class ModelConfigTest extends TestCase
         $original->setOutputMediaAspectRatio('1:1');
         $original->setOutputSpeechVoice('shimmer');
         $original->setDimensions(256);
-        $original->setEncodingFormat('float');
         $original->setCustomOptions(['test' => 'value']);
 
         $array = $original->toArray();
@@ -518,7 +506,6 @@ class ModelConfigTest extends TestCase
         $this->assertEquals($original->getOutputMediaAspectRatio(), $restored->getOutputMediaAspectRatio());
         $this->assertEquals($original->getOutputSpeechVoice(), $restored->getOutputSpeechVoice());
         $this->assertEquals($original->getDimensions(), $restored->getDimensions());
-        $this->assertEquals($original->getEncodingFormat(), $restored->getEncodingFormat());
         $this->assertEquals($original->getCustomOptions(), $restored->getCustomOptions());
     }
 
