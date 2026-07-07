@@ -1139,20 +1139,25 @@ class PromptBuilder
     }
 
     /**
-     * Generates an embedding result from the prompt.
+     * Generates an embedding result from the prompt or from the provided prompt list.
      *
      * @since n.e.x.t
      *
+     * @param list<Prompt>|null $prompts Optional prompts to embed as a batch. If null, the builder's
+     *                                   own prompt is embedded as a single input.
      * @return EmbeddingResult The generated embedding result.
-     * @throws InvalidArgumentException If the prompt or model validation fails.
-     * @throws RuntimeException If the model doesn't support embedding generation.
+     * @throws InvalidArgumentException If a prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support embedding generation, or returns an
+     *                          embedding count that does not match the number of batch prompts.
      */
-    public function generateEmbeddingResult(): EmbeddingResult
+    public function generateEmbeddingResult(?array $prompts = null): EmbeddingResult
     {
-        $this->validateMessages();
+        $promptMessages = $this->resolveEmbeddingPromptMessages($prompts);
 
         $capability = CapabilityEnum::embeddingGeneration();
-        $model = $this->getConfiguredModel($capability);
+        // Each batch prompt is an independent embedding input routed to the same model. Derive model
+        // requirements from a single prompt so a multi-prompt batch is not misread as chat history.
+        $model = $this->getConfiguredModelForMessages($capability, $promptMessages[0]);
 
         if (!$model instanceof EmbeddingGenerationModelInterface) {
             throw new RuntimeException(
@@ -1163,11 +1168,20 @@ class PromptBuilder
             );
         }
 
-        $promptMessages = [$this->messages];
-
         $this->dispatchEvent(new BeforeGenerateEmbeddingEvent($promptMessages, $model, $capability));
 
         $result = $model->generateEmbeddingResult($promptMessages);
+
+        // For an explicit batch, embeddings map positionally to prompts.
+        if ($prompts !== null && count($result->getEmbeddings()) !== count($promptMessages)) {
+            throw new RuntimeException(
+                sprintf(
+                    'Expected %d embedding(s) from the model, but received %d.',
+                    count($promptMessages),
+                    count($result->getEmbeddings())
+                )
+            );
+        }
 
         $this->dispatchEvent(new AfterGenerateEmbeddingEvent($promptMessages, $model, $capability, $result));
 
@@ -1241,45 +1255,12 @@ class PromptBuilder
      * @param list<Prompt>|null $prompts Optional prompts to embed as a batch.
      * @return list<Embedding> The generated embedding vectors.
      * @throws InvalidArgumentException If a prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support embedding generation, or returns an
+     *                          embedding count that does not match the number of batch prompts.
      */
     public function generateEmbeddings(?array $prompts = null): array
     {
-        if ($prompts === null) {
-            return $this->generateEmbeddingResult()->getEmbeddings();
-        }
-
-        if (!array_is_list($prompts)) {
-            throw new InvalidArgumentException('Prompts must be a list array.');
-        }
-
-        if (empty($prompts)) {
-            throw new InvalidArgumentException('Cannot generate embeddings from an empty prompt list.');
-        }
-
-        $promptMessages = [];
-        foreach ($prompts as $prompt) {
-            $promptMessages[] = $this->parsePromptToMessages($prompt);
-        }
-
-        $capability = CapabilityEnum::embeddingGeneration();
-        $model = $this->getConfiguredModelForMessages($capability, array_merge(...$promptMessages));
-
-        if (!$model instanceof EmbeddingGenerationModelInterface) {
-            throw new RuntimeException(
-                sprintf(
-                    'Model "%s" does not support embedding generation.',
-                    $model->metadata()->getId()
-                )
-            );
-        }
-
-        $this->dispatchEvent(new BeforeGenerateEmbeddingEvent($promptMessages, $model, $capability));
-
-        $result = $model->generateEmbeddingResult($promptMessages);
-
-        $this->dispatchEvent(new AfterGenerateEmbeddingEvent($promptMessages, $model, $capability, $result));
-
-        return $result->getEmbeddings();
+        return $this->generateEmbeddingResult($prompts)->getEmbeddings();
     }
 
     /**
@@ -1727,6 +1708,39 @@ class PromptBuilder
     }
 
     /**
+     * Resolves the prompt input into a list of message lists for embedding generation.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<Prompt>|null $prompts Optional prompts to embed as a batch. If null, the builder's
+     *                                   own prompt is used as a single input.
+     * @return list<list<Message>> The resolved message lists, one per prompt.
+     * @throws InvalidArgumentException If the prompt list is invalid or a prompt fails validation.
+     */
+    private function resolveEmbeddingPromptMessages(?array $prompts): array
+    {
+        if ($prompts === null) {
+            $this->validateMessages();
+            return [$this->messages];
+        }
+
+        if (!array_is_list($prompts)) {
+            throw new InvalidArgumentException('Prompts must be a list array.');
+        }
+
+        if (empty($prompts)) {
+            throw new InvalidArgumentException('Cannot generate embeddings from an empty prompt list.');
+        }
+
+        $promptMessages = [];
+        foreach ($prompts as $prompt) {
+            $promptMessages[] = $this->parsePromptToMessages($prompt);
+        }
+
+        return $promptMessages;
+    }
+
+    /**
      * Parses prompt input into a message list.
      *
      * @since n.e.x.t
@@ -1736,19 +1750,11 @@ class PromptBuilder
      */
     private function parsePromptToMessages($prompt): array
     {
-        if ($this->isMessagesList($prompt)) {
-            $messages = $prompt;
-        } else {
-            $messages = [$this->parseMessage($prompt, MessageRoleEnum::user())];
-        }
+        $messages = $this->isMessagesList($prompt)
+            ? $prompt
+            : [$this->parseMessage($prompt, MessageRoleEnum::user())];
 
-        $originalMessages = $this->messages;
-        try {
-            $this->messages = $messages;
-            $this->validateMessages();
-        } finally {
-            $this->messages = $originalMessages;
-        }
+        $this->validateMessages($messages);
 
         return $messages;
     }
@@ -1762,26 +1768,30 @@ class PromptBuilder
      * - The last message has parts
      *
      * @since 0.1.0
+     * @since n.e.x.t Accepts an optional messages array to validate; defaults to the builder's messages.
      *
+     * @param list<Message>|null $messages The messages to validate. Defaults to the builder's messages.
      * @return void
      * @throws InvalidArgumentException If validation fails.
      */
-    private function validateMessages(): void
+    private function validateMessages(?array $messages = null): void
     {
-        if (empty($this->messages)) {
+        $messages = $messages ?? $this->messages;
+
+        if (empty($messages)) {
             throw new InvalidArgumentException(
                 'Cannot generate from an empty prompt. Add content using withText() or similar methods.'
             );
         }
 
-        $firstMessage = reset($this->messages);
+        $firstMessage = reset($messages);
         if (!$firstMessage->getRole()->isUser()) {
             throw new InvalidArgumentException(
                 'The first message must be from a user role, not from ' . $firstMessage->getRole()->value
             );
         }
 
-        $lastMessage = end($this->messages);
+        $lastMessage = end($messages);
         if (!$lastMessage->getRole()->isUser()) {
             throw new InvalidArgumentException(
                 'The last message must be from a user role, not from ' . $lastMessage->getRole()->value
