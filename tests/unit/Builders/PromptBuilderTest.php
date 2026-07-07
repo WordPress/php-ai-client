@@ -1907,6 +1907,26 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests generateEmbeddings throws when the model returns a mismatched embedding count.
+     *
+     * @return void
+     */
+    public function testGenerateEmbeddingsThrowsOnCountMismatch(): void
+    {
+        // Model returns a single embedding, but two prompts are requested.
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+
+        $builder = new PromptBuilder($this->registry);
+        $builder->usingModel($model);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Expected 2 embedding(s) from the model, but received 1.');
+
+        $builder->generateEmbeddings(['First prompt', 'Second prompt']);
+    }
+
+    /**
      * Tests generateEmbeddingResult throws exception for unsupported model.
      *
      * @return void
