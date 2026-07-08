@@ -47,6 +47,41 @@ class EmbeddingGenerationIntegrationTest extends TestCase
     }
 
     /**
+     * Tests generating a single embedding from a list of inputs.
+     */
+    public function testSingleEmbeddingGenerationInputs(): void
+    {
+        $embedding = AiClient::inputs([
+            'PHP powers a large part of the web.',
+        ])
+            ->usingProvider('openai')
+            ->generateEmbedding();
+
+        $this->assertInstanceOf(Embedding::class, $embedding);
+        $this->assertGreaterThan(0, count($embedding));
+        $this->assertSame(count($embedding), $embedding->getDimensions());
+        $this->assertIsFloat($embedding->getValues()[0]);
+    }
+
+    /**
+     * Tests generating a single embedding using withInputs().
+     */
+    public function testSingleEmbeddingGenerationWithInputs(): void
+    {
+        $embedding = AiClient::prompt()
+            ->withInputs([
+            'PHP powers a large part of the web.',
+        ])
+            ->usingProvider('openai')
+            ->generateEmbedding();
+
+        $this->assertInstanceOf(Embedding::class, $embedding);
+        $this->assertGreaterThan(0, count($embedding));
+        $this->assertSame(count($embedding), $embedding->getDimensions());
+        $this->assertIsFloat($embedding->getValues()[0]);
+    }
+
+    /**
      * Tests generating an embedding with an explicit dimension count.
      */
     public function testEmbeddingGenerationWithDimensions(): void
