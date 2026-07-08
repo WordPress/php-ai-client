@@ -104,12 +104,12 @@ $values = $embedding->getValues();
 ```php
 use WordPress\AiClient\AiClient;
 
-$embeddings = AiClient::prompt()
-    ->usingProvider('openai')
-    ->generateEmbeddings([
+$embeddings = AiClient::inputs([
         'PHP powers a large part of the web.',
         'WordPress makes publishing accessible.',
-    ]);
+    ])
+    ->usingProvider('openai')
+    ->generateEmbeddings();
 ```
 
 ### Embedding generation with dimensions

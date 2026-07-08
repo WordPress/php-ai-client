@@ -15,12 +15,12 @@ use WordPress\AiClient\Results\DTO\EmbeddingResult;
 interface EmbeddingGenerationModelInterface
 {
     /**
-     * Generates embeddings from one or more prompts.
+     * Generates embeddings from one or more inputs.
      *
      * @since n.e.x.t
      *
-     * @param list<list<Message>> $prompts Array of message lists to embed.
+     * @param list<list<Message>> $inputs Array of message lists to embed.
      * @return EmbeddingResult Result containing generated embedding vectors.
      */
-    public function generateEmbeddingResult(array $prompts): EmbeddingResult;
+    public function generateEmbeddingResult(array $inputs): EmbeddingResult;
 }
