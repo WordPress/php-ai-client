@@ -179,7 +179,7 @@ class PromptBuilderEventDispatchingTest extends TestCase
 
         $this->assertCount(1, $beforeEvents);
         $this->assertCount(1, $afterEvents);
-        $this->assertCount(1, $beforeEvents[0]->getPrompts());
+        $this->assertCount(1, $beforeEvents[0]->getInputs());
         $this->assertEquals(CapabilityEnum::embeddingGeneration(), $beforeEvents[0]->getCapability());
         $this->assertEquals(CapabilityEnum::embeddingGeneration(), $afterEvents[0]->getCapability());
         $this->assertSame($result, $afterEvents[0]->getResult());
@@ -200,8 +200,9 @@ class PromptBuilderEventDispatchingTest extends TestCase
 
         $builder = new PromptBuilder($this->registry, null, $this->dispatcher);
         $builder->usingModel($model);
+        $builder->withInputs(['Hello', 'World']);
 
-        $embeddings = $builder->generateEmbeddings(['Hello', 'World']);
+        $embeddings = $builder->generateEmbeddings();
 
         $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateEmbeddingEvent::class);
         $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateEmbeddingEvent::class);
@@ -209,9 +210,9 @@ class PromptBuilderEventDispatchingTest extends TestCase
         $this->assertCount(2, $embeddings);
         $this->assertCount(1, $beforeEvents);
         $this->assertCount(1, $afterEvents);
-        $this->assertCount(2, $beforeEvents[0]->getPrompts());
-        $this->assertCount(1, $beforeEvents[0]->getPrompts()[0]);
-        $this->assertCount(1, $beforeEvents[0]->getPrompts()[1]);
+        $this->assertCount(2, $beforeEvents[0]->getInputs());
+        $this->assertCount(1, $beforeEvents[0]->getInputs()[0]);
+        $this->assertCount(1, $beforeEvents[0]->getInputs()[1]);
         $this->assertEquals(CapabilityEnum::embeddingGeneration(), $beforeEvents[0]->getCapability());
         $this->assertSame($result, $afterEvents[0]->getResult());
     }

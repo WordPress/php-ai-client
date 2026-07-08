@@ -447,7 +447,7 @@ trait MockModelCreationTrait
                 return $this->config;
             }
 
-            public function generateEmbeddingResult(array $prompts): EmbeddingResult
+            public function generateEmbeddingResult(array $inputs): EmbeddingResult
             {
                 return $this->result;
             }

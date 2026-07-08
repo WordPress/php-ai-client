@@ -17,9 +17,9 @@ use WordPress\AiClient\Results\DTO\EmbeddingResult;
 class AfterGenerateEmbeddingEvent
 {
     /**
-     * @var list<list<Message>> The prompts that were sent to the model.
+     * @var list<list<Message>> The inputs that were sent to the model.
      */
-    private array $prompts;
+    private array $inputs;
 
     /**
      * @var ModelInterface The model that generated embeddings.
@@ -41,33 +41,33 @@ class AfterGenerateEmbeddingEvent
      *
      * @since n.e.x.t
      *
-     * @param list<list<Message>> $prompts The prompts that were sent to the model.
+     * @param list<list<Message>> $inputs The inputs that were sent to the model.
      * @param ModelInterface      $model The model that generated embeddings.
      * @param CapabilityEnum      $capability The capability that was used for generation.
      * @param EmbeddingResult     $result The result from the model.
      */
     public function __construct(
-        array $prompts,
+        array $inputs,
         ModelInterface $model,
         CapabilityEnum $capability,
         EmbeddingResult $result
     ) {
-        $this->prompts = $prompts;
+        $this->inputs = $inputs;
         $this->model = $model;
         $this->capability = $capability;
         $this->result = $result;
     }
 
     /**
-     * Gets the prompts that were sent to the model.
+     * Gets the inputs that were sent to the model.
      *
      * @since n.e.x.t
      *
-     * @return list<list<Message>> The prompts.
+     * @return list<list<Message>> The inputs.
      */
-    public function getPrompts(): array
+    public function getInputs(): array
     {
-        return $this->prompts;
+        return $this->inputs;
     }
 
     /**
@@ -113,15 +113,15 @@ class AfterGenerateEmbeddingEvent
      */
     public function __clone()
     {
-        $clonedPrompts = [];
-        foreach ($this->prompts as $prompt) {
-            $clonedPrompt = [];
-            foreach ($prompt as $message) {
-                $clonedPrompt[] = clone $message;
+        $clonedInputs = [];
+        foreach ($this->inputs as $input) {
+            $clonedInput = [];
+            foreach ($input as $message) {
+                $clonedInput[] = clone $message;
             }
-            $clonedPrompts[] = $clonedPrompt;
+            $clonedInputs[] = $clonedInput;
         }
-        $this->prompts = $clonedPrompts;
+        $this->inputs = $clonedInputs;
         $this->result = clone $this->result;
     }
 }

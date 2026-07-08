@@ -1864,10 +1864,11 @@ class PromptBuilderTest extends TestCase
 
         $builder = new PromptBuilder($this->registry);
         $builder->usingModel($model);
+        $builder->withInputs(['First prompt', 'Second prompt']);
 
         $this->assertSame($embeddings, array_map(
             static fn ($embedding): array => $embedding->getValues(),
-            $builder->generateEmbeddings(['First prompt', 'Second prompt'])
+            $builder->generateEmbeddings()
         ));
     }
 
@@ -1902,8 +1903,9 @@ class PromptBuilderTest extends TestCase
             ->willReturn($model);
 
         $builder = new PromptBuilder($this->registry, null);
+        $builder->withInputs(['First prompt', 'Second prompt']);
 
-        $this->assertCount(2, $builder->generateEmbeddings(['First prompt', 'Second prompt']));
+        $this->assertCount(2, $builder->generateEmbeddings());
     }
 
     /**
@@ -1919,11 +1921,82 @@ class PromptBuilderTest extends TestCase
 
         $builder = new PromptBuilder($this->registry);
         $builder->usingModel($model);
+        $builder->withInputs(['First prompt', 'Second prompt']);
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Expected 2 embedding(s) from the model, but received 1.');
 
-        $builder->generateEmbeddings(['First prompt', 'Second prompt']);
+        $builder->generateEmbeddings();
+    }
+
+    /**
+     * Tests withInputs rejects an empty list.
+     *
+     * @return void
+     */
+    public function testWithInputsRejectsEmptyList(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Inputs must be a non-empty list array.');
+
+        $builder->withInputs([]);
+    }
+
+    /**
+     * Tests withInputs rejects combining batch inputs with an assembled prompt.
+     *
+     * @return void
+     */
+    public function testWithInputsRejectsCombiningWithAssembledPrompt(): void
+    {
+        $builder = new PromptBuilder($this->registry, 'An assembled prompt');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot combine withInputs() with an assembled prompt; use one or the other.');
+
+        $builder->withInputs(['First prompt', 'Second prompt']);
+    }
+
+    /**
+     * Tests generateEmbedding throws when multiple batch inputs are provided.
+     *
+     * @return void
+     */
+    public function testGenerateEmbeddingThrowsForMultipleBatchInputs(): void
+    {
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2], [0.3, 0.4]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+
+        $builder = new PromptBuilder($this->registry);
+        $builder->usingModel($model);
+        $builder->withInputs(['First prompt', 'Second prompt']);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'generateEmbedding() returns a single vector; use generateEmbeddings() for batch inputs.'
+        );
+
+        $builder->generateEmbedding();
+    }
+
+    /**
+     * Tests batch inputs are rejected by non-embedding generation.
+     *
+     * @return void
+     */
+    public function testGenerateResultRejectsBatchInputs(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $builder->withInputs(['First prompt', 'Second prompt']);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Inputs set via withInputs() are only supported for embedding generation.'
+        );
+
+        $builder->generateTextResult();
     }
 
     /**

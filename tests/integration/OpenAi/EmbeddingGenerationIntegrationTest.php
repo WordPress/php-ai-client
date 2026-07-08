@@ -61,19 +61,19 @@ class EmbeddingGenerationIntegrationTest extends TestCase
     }
 
     /**
-     * Tests generating embeddings for a batch of prompts.
+     * Tests generating embeddings for a batch of inputs.
      */
     public function testBatchEmbeddingGeneration(): void
     {
-        $embeddings = AiClient::prompt()
+        $embeddings = AiClient::inputs([
+            'PHP powers a large part of the web.',
+            'WordPress makes publishing accessible.',
+        ])
             ->usingProvider('openai')
             ->usingDimensions(256)
-            ->generateEmbeddings([
-                'PHP powers a large part of the web.',
-                'WordPress makes publishing accessible.',
-            ]);
+            ->generateEmbeddings();
 
-        // Exercises the positional batch count guard: one vector must be returned per prompt.
+        // Exercises the positional batch count guard: one vector must be returned per input.
         $this->assertCount(2, $embeddings);
         $this->assertContainsOnlyInstancesOf(Embedding::class, $embeddings);
         $this->assertSame(
