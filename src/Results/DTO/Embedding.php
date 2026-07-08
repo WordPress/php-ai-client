@@ -98,7 +98,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
      */
     public function count(): int
     {
-        return count($this->values);
+        return $this->dimensions;
     }
 
     /**
