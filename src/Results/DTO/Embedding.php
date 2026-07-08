@@ -16,12 +16,14 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
  *
  * @since n.e.x.t
  *
+ * @phpstan-type EmbeddingShape list<float|int>
+ *
  * @implements IteratorAggregate<int, float|int>
  */
 final class Embedding implements Countable, IteratorAggregate, JsonSerializable
 {
     /**
-     * @var list<float|int>
+     * @var EmbeddingShape
      */
     private array $values;
 
@@ -70,7 +72,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
      *
      * @since n.e.x.t
      *
-     * @return list<float|int> The embedding vector values.
+     * @return EmbeddingShape The embedding vector values.
      */
     public function getValues(): array
     {
@@ -136,7 +138,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
      *
      * @since n.e.x.t
      *
-     * @return list<float|int> The embedding vector values.
+     * @return EmbeddingShape The embedding vector values.
      */
     public function toArray(): array
     {
@@ -162,7 +164,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
      *
      * @since n.e.x.t
      *
-     * @return list<float|int> The embedding vector values.
+     * @return EmbeddingShape The embedding vector values.
      */
     public function jsonSerialize(): array
     {

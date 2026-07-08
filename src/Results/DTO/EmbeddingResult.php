@@ -18,10 +18,11 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  * @phpstan-import-type TokenUsageArrayShape from TokenUsage
  * @phpstan-import-type ProviderMetadataArrayShape from ProviderMetadata
  * @phpstan-import-type ModelMetadataArrayShape from ModelMetadata
+ * @phpstan-import-type EmbeddingShape from Embedding
  *
  * @phpstan-type EmbeddingResultArrayShape array{
  *     id: string,
- *     embeddings: list<list<float|int>>,
+ *     embeddings: list<EmbeddingShape>,
  *     dimensions: int,
  *     tokenUsage: TokenUsageArrayShape,
  *     providerMetadata: ProviderMetadataArrayShape,
@@ -82,7 +83,7 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
      * @since n.e.x.t
      *
      * @param string $id Unique identifier for this result.
-     * @param list<Embedding|list<float|int>> $embeddings The generated embedding vectors.
+     * @param list<Embedding|EmbeddingShape> $embeddings The generated embedding vectors.
      * @param int $dimensions The vector dimension count.
      * @param TokenUsage $tokenUsage Token usage statistics.
      * @param ProviderMetadata $providerMetadata Provider metadata.
