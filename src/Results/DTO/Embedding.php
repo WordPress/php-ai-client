@@ -54,8 +54,26 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
             throw new InvalidArgumentException('Embedding vector length must match dimensions.');
         }
 
+        foreach ($values as $value) {
+            self::assertNumericValue($value);
+        }
+
         $this->values = $values;
         $this->dimensions = $dimensions;
+    }
+
+    /**
+     * Asserts that a value is an integer or float.
+     *
+     * @since n.e.x.t
+     *
+     * @param mixed $value The value to validate.
+     */
+    private static function assertNumericValue($value): void
+    {
+        if (!is_int($value) && !is_float($value)) {
+            throw new InvalidArgumentException('Embedding values must be integers or floats.');
+        }
     }
 
     /**
