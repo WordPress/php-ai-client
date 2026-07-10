@@ -16,14 +16,14 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
  *
  * @since n.e.x.t
  *
- * @phpstan-type EmbeddingShape list<float|int>
+ * @phpstan-type EmbeddingList list<float|int>
  *
  * @implements IteratorAggregate<int, float|int>
  */
 final class Embedding implements Countable, IteratorAggregate, JsonSerializable
 {
     /**
-     * @var EmbeddingShape
+     * @var EmbeddingList
      */
     private array $values;
 
@@ -37,7 +37,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
      *
      * @since n.e.x.t
      *
-     * @param list<mixed> $values The embedding vector values.
+     * @param EmbeddingList $values The embedding vector values.
      * @param int $dimensions The vector dimension count.
      */
     public function __construct(array $values, int $dimensions)
@@ -54,16 +54,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
             throw new InvalidArgumentException('Embedding vector length must match dimensions.');
         }
 
-        $normalizedValues = [];
-        foreach ($values as $value) {
-            if (!is_int($value) && !is_float($value)) {
-                throw new InvalidArgumentException('Embedding values must be integers or floats.');
-            }
-
-            $normalizedValues[] = $value;
-        }
-
-        $this->values = $normalizedValues;
+        $this->values = $values;
         $this->dimensions = $dimensions;
     }
 
@@ -72,7 +63,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
      *
      * @since n.e.x.t
      *
-     * @return EmbeddingShape The embedding vector values.
+     * @return EmbeddingList The embedding vector values.
      */
     public function getValues(): array
     {
@@ -138,7 +129,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
      *
      * @since n.e.x.t
      *
-     * @return EmbeddingShape The embedding vector values.
+     * @return EmbeddingList The embedding vector values.
      */
     public function toArray(): array
     {
@@ -150,7 +141,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
      *
      * @since n.e.x.t
      *
-     * @param list<mixed> $array The embedding vector values.
+     * @param EmbeddingList $array The embedding vector values.
      * @param int $dimensions The vector dimension count.
      * @return self The embedding instance.
      */
@@ -164,7 +155,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
      *
      * @since n.e.x.t
      *
-     * @return EmbeddingShape The embedding vector values.
+     * @return EmbeddingList The embedding vector values.
      */
     public function jsonSerialize(): array
     {
