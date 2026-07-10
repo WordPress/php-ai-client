@@ -46,16 +46,16 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
             throw new InvalidArgumentException('Embedding dimensions must be greater than zero');
         }
 
-        if (!array_is_list($values)) {
-            throw new InvalidArgumentException('Embedding values must be a list array.');
+        if (!self::isEmbeddingList($values)) {
+            if (!array_is_list($values)) {
+                throw new InvalidArgumentException('Embedding values must be a list array.');
+            }
+
+            throw new InvalidArgumentException('Embedding values must be integers or floats.');
         }
 
         if (count($values) !== $dimensions) {
             throw new InvalidArgumentException('Embedding vector length must match dimensions.');
-        }
-
-        foreach ($values as $value) {
-            self::assertNumericValue($value);
         }
 
         $this->values = $values;
@@ -63,17 +63,28 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Asserts that a value is an integer or float.
+     * Checks whether the value is a list of integers or floats.
      *
      * @since n.e.x.t
      *
-     * @param mixed $value The value to validate.
+     * @param mixed $values The value to check.
+     * @return bool True if the value is an embedding list.
+     *
+     * @phpstan-assert-if-true EmbeddingList $values
      */
-    private static function assertNumericValue($value): void
+    private static function isEmbeddingList($values): bool
     {
-        if (!is_int($value) && !is_float($value)) {
-            throw new InvalidArgumentException('Embedding values must be integers or floats.');
+        if (!is_array($values) || !array_is_list($values)) {
+            return false;
         }
+
+        foreach ($values as $value) {
+            if (!is_int($value) && !is_float($value)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
