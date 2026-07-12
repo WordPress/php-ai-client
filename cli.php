@@ -1,14 +1,20 @@
 <?php
+
 /**
  * CLI script for interacting with the AI client.
  *
  * This script allows users to send prompts to the AI and receive responses.
  * It supports named arguments for provider and model selection.
  *
+ * Setup:
+ *   1. Copy cli-providers.php.example to cli-providers.php
+ *   2. Customize cli-providers.php to register the providers you need
+ *   3. Create a .env file with your API keys (see .env.example)
+ *
  * Usage:
- *   GOOGLE_API_KEY=123456 php cli.php 'Your prompt here' --providerId=google --modelId=gemini-2.5-flash
- *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai
- *   GOOGLE_API_KEY=123456 OPENAI_API_KEY=123456 php cli.php 'Your prompt here'
+ *   php cli.php 'Your prompt here' --providerId=google --modelId=gemini-2.5-flash
+ *   php cli.php 'Your prompt here' --providerId=openai
+ *   php cli.php 'Your prompt here'
  *
  * For large prompts (e.g., with images), use stdin or file input:
  *   cat prompt.json | php cli.php - --providerId=openai --modelId=gpt-4o
@@ -17,16 +23,12 @@
 
 declare(strict_types=1);
 
+use Symfony\Component\Dotenv\Dotenv;
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 
 require_once __DIR__ . '/vendor/autoload.php';
-
-use Symfony\Component\Dotenv\Dotenv;
-use WordPress\AnthropicAiProvider\Provider\AnthropicProvider;
-use WordPress\GoogleAiProvider\Provider\GoogleProvider;
-use WordPress\OpenAiAiProvider\Provider\OpenAiProvider;
 
 // Load .env file if it exists (same approach as integration test bootstrap).
 $envFile = __DIR__ . '/.env';
@@ -37,15 +39,14 @@ if (file_exists($envFile)) {
 }
 
 // Register provider packages so the registry can discover them.
+// This is done via a user-controlled file to avoid hardcoding specific providers.
+// Copy cli-providers.php.example to cli-providers.php to get started.
 $registry = AiClient::defaultRegistry();
-if (class_exists(AnthropicProvider::class)) {
-    $registry->registerProvider(AnthropicProvider::class);
-}
-if (class_exists(GoogleProvider::class)) {
-    $registry->registerProvider(GoogleProvider::class);
-}
-if (class_exists(OpenAiProvider::class)) {
-    $registry->registerProvider(OpenAiProvider::class);
+$cliProvidersFile = __DIR__ . '/cli-providers.php';
+if (file_exists($cliProvidersFile)) {
+    (static function () use ($registry, $cliProvidersFile): void {
+        require $cliProvidersFile;
+    })();
 }
 
 /**
