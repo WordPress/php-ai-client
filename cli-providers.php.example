@@ -1,0 +1,30 @@
+<?php
+/**
+ * Example CLI providers configuration.
+ *
+ * Copy this file to cli-providers.php and customize it with your desired providers.
+ * The cli-providers.php file is git-ignored so your configuration won't be committed.
+ *
+ * This file is loaded in a closure with only $registry in scope, ensuring isolation.
+ */
+
+declare(strict_types=1);
+
+use WordPress\AnthropicAiProvider\Provider\AnthropicProvider;
+use WordPress\GoogleAiProvider\Provider\GoogleProvider;
+use WordPress\OpenAiAiProvider\Provider\OpenAiProvider;
+
+// Register the providers you need for the CLI.
+// Only register providers that you have installed and configured.
+
+if (class_exists(AnthropicProvider::class)) {
+    $registry->registerProvider(AnthropicProvider::class);
+}
+
+if (class_exists(GoogleProvider::class)) {
+    $registry->registerProvider(GoogleProvider::class);
+}
+
+if (class_exists(OpenAiProvider::class)) {
+    $registry->registerProvider(OpenAiProvider::class);
+}
