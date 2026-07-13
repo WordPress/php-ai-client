@@ -8,9 +8,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Builders\Traits\ModelResolutionTrait;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
-use WordPress\AiClient\Events\AfterGenerateEmbeddingEvent;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
-use WordPress\AiClient\Events\BeforeGenerateEmbeddingEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
@@ -24,7 +22,6 @@ use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
-use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
@@ -32,8 +29,6 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
-use WordPress\AiClient\Results\DTO\Embedding;
-use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -61,14 +56,6 @@ class PromptBuilder
      * @var list<Message> The messages in the conversation.
      */
     protected array $messages = [];
-
-    /**
-     * @var list<list<Message>>|null Independent inputs for batch embedding generation.
-     *
-     * When set, embedding generation embeds each element as its own input instead of using
-     * the assembled {@see PromptBuilder::$messages}. Null means single-input mode.
-     */
-    protected ?array $inputs = null;
 
     /**
      * @var EventDispatcherInterface|null The event dispatcher for prompt lifecycle events.
@@ -127,19 +114,6 @@ class PromptBuilder
             $clonedMessages[] = clone $message;
         }
         $this->messages = $clonedMessages;
-
-        // Deep clone batch inputs if set (list of message lists)
-        if ($this->inputs !== null) {
-            $clonedInputs = [];
-            foreach ($this->inputs as $inputMessages) {
-                $clonedInputMessages = [];
-                foreach ($inputMessages as $message) {
-                    $clonedInputMessages[] = clone $message;
-                }
-                $clonedInputs[] = $clonedInputMessages;
-            }
-            $this->inputs = $clonedInputs;
-        }
 
         // Clone model config (ModelConfig has __clone)
         $this->modelConfig = clone $this->modelConfig;
@@ -243,42 +217,6 @@ class PromptBuilder
     }
 
     /**
-     * Sets multiple independent inputs to embed as a batch.
-     *
-     * Each element is parsed as its own embedding input. This is mutually exclusive with the
-     * builder's assembled prompt (via the constructor or with*() methods) and is only consumed
-     * by the embedding generation methods.
-     *
-     * @since n.e.x.t
-     *
-     * @param list<Prompt> $inputs The inputs to embed, each treated as an independent input.
-     * @return self
-     * @throws InvalidArgumentException If the inputs are not a non-empty list, or an assembled
-     *                                  prompt is already present.
-     */
-    public function withInputs(array $inputs): self
-    {
-        if (!array_is_list($inputs) || $inputs === []) {
-            throw new InvalidArgumentException('Inputs must be a non-empty list array.');
-        }
-
-        if ($this->messages !== []) {
-            throw new InvalidArgumentException(
-                'Cannot combine withInputs() with an assembled prompt; use one or the other.'
-            );
-        }
-
-        $resolvedInputs = [];
-        foreach ($inputs as $input) {
-            $resolvedInputs[] = $this->parseInputToMessages($input);
-        }
-
-        $this->inputs = $resolvedInputs;
-
-        return $this;
-    }
-
-    /**
      * Sets the system instruction.
      *
      * System instructions are stored in the model configuration and guide
@@ -376,20 +314,6 @@ class PromptBuilder
     public function usingCandidateCount(int $candidateCount): self
     {
         $this->modelConfig->setCandidateCount($candidateCount);
-        return $this;
-    }
-
-    /**
-     * Sets the embedding dimensions.
-     *
-     * @since n.e.x.t
-     *
-     * @param int $dimensions The embedding dimensions.
-     * @return self
-     */
-    public function usingDimensions(int $dimensions): self
-    {
-        $this->modelConfig->setDimensions($dimensions);
         return $this;
     }
 
@@ -800,12 +724,6 @@ class PromptBuilder
      */
     public function generateResult(?CapabilityEnum $capability = null): GenerativeAiResult
     {
-        if ($this->inputs !== null) {
-            throw new InvalidArgumentException(
-                'Inputs set via withInputs() are only supported for embedding generation.'
-            );
-        }
-
         $this->validateMessages();
 
         // If capability is not provided, infer it
@@ -1016,55 +934,6 @@ class PromptBuilder
     }
 
     /**
-     * Generates an embedding result from the builder's prompt or batch inputs.
-     *
-     * @since n.e.x.t
-     *
-     * @return EmbeddingResult The generated embedding result.
-     * @throws InvalidArgumentException If the input or model validation fails.
-     * @throws RuntimeException If the model doesn't support embedding generation, or returns an
-     *                          embedding count that does not match the number of batch inputs.
-     */
-    public function generateEmbeddingResult(): EmbeddingResult
-    {
-        $inputMessages = $this->resolveEmbeddingInputMessages();
-
-        $capability = CapabilityEnum::embeddingGeneration();
-        // Each input is an independent embedding request routed to the same model. Derive model
-        // requirements from a single input so a multi-input batch is not misread as chat history.
-        $requirements = ModelRequirements::fromPromptData($capability, $inputMessages[0], $this->modelConfig);
-        $model = $this->modelResolver->resolve($requirements, $this->modelConfig);
-
-        if (!$model instanceof EmbeddingGenerationModelInterface) {
-            throw new RuntimeException(
-                sprintf(
-                    'Model "%s" does not support embedding generation.',
-                    $model->metadata()->getId()
-                )
-            );
-        }
-
-        $this->dispatchEvent(new BeforeGenerateEmbeddingEvent($inputMessages, $model, $capability));
-
-        $result = $model->generateEmbeddingResult($inputMessages);
-
-        // For an explicit batch, embeddings map positionally to inputs.
-        if ($this->inputs !== null && count($result->getEmbeddings()) !== count($inputMessages)) {
-            throw new RuntimeException(
-                sprintf(
-                    'Expected %d embedding(s) from the model, but received %d.',
-                    count($inputMessages),
-                    count($result->getEmbeddings())
-                )
-            );
-        }
-
-        $this->dispatchEvent(new AfterGenerateEmbeddingEvent($inputMessages, $model, $capability, $result));
-
-        return $result;
-    }
-
-    /**
      * Generates text from the prompt.
      *
      * @since 0.1.0
@@ -1108,41 +977,6 @@ class PromptBuilder
     public function generateImage(): File
     {
         return $this->generateImageResult()->toFile();
-    }
-
-    /**
-     * Generates a single embedding from the builder's prompt.
-     *
-     * @since n.e.x.t
-     *
-     * @return Embedding The generated embedding vector.
-     * @throws InvalidArgumentException If the input or model validation fails, or multiple batch
-     *                                  inputs were provided via withInputs().
-     */
-    public function generateEmbedding(): Embedding
-    {
-        if ($this->inputs !== null && count($this->inputs) > 1) {
-            throw new InvalidArgumentException(
-                'generateEmbedding() returns a single vector; use generateEmbeddings() for batch inputs.'
-            );
-        }
-
-        return $this->generateEmbeddingResult()->getEmbedding();
-    }
-
-    /**
-     * Generates embeddings from the builder's prompt or batch inputs.
-     *
-     * @since n.e.x.t
-     *
-     * @return list<Embedding> The generated embedding vectors.
-     * @throws InvalidArgumentException If the input or model validation fails.
-     * @throws RuntimeException If the model doesn't support embedding generation, or returns an
-     *                          embedding count that does not match the number of batch inputs.
-     */
-    public function generateEmbeddings(): array
-    {
-        return $this->generateEmbeddingResult()->getEmbeddings();
     }
 
     /**
@@ -1385,44 +1219,6 @@ class PromptBuilder
     }
 
     /**
-     * Resolves the builder's prompt or batch inputs into a list of message lists.
-     *
-     * @since n.e.x.t
-     *
-     * @return list<list<Message>> The resolved message lists, one per input.
-     * @throws InvalidArgumentException If the builder's prompt fails validation.
-     */
-    private function resolveEmbeddingInputMessages(): array
-    {
-        if ($this->inputs !== null) {
-            return $this->inputs;
-        }
-
-        $this->validateMessages();
-
-        return [$this->messages];
-    }
-
-    /**
-     * Parses a single input into a message list.
-     *
-     * @since n.e.x.t
-     *
-     * @param Prompt $input The input to parse.
-     * @return list<Message> The parsed messages.
-     */
-    private function parseInputToMessages($input): array
-    {
-        $messages = $this->isMessagesList($input)
-            ? $input
-            : [$this->parseMessage($input, MessageRoleEnum::user())];
-
-        $this->validateMessages($messages);
-
-        return $messages;
-    }
-
-    /**
      * Validates the messages array for prompt generation.
      *
      * Ensures that:
@@ -1431,15 +1227,13 @@ class PromptBuilder
      * - The last message has parts
      *
      * @since 0.1.0
-     * @since n.e.x.t Accepts an optional messages array to validate; defaults to the builder's messages.
      *
-     * @param list<Message>|null $messages The messages to validate. Defaults to the builder's messages.
      * @return void
      * @throws InvalidArgumentException If validation fails.
      */
-    private function validateMessages(?array $messages = null): void
+    private function validateMessages(): void
     {
-        $messages = $messages ?? $this->messages;
+        $messages = $this->messages;
 
         if (empty($messages)) {
             throw new InvalidArgumentException(

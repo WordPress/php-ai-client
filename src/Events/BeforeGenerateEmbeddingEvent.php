@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Events;
 
-use WordPress\AiClient\Messages\DTO\Message;
+use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
@@ -16,7 +16,7 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 class BeforeGenerateEmbeddingEvent
 {
     /**
-     * @var list<list<Message>> The inputs to be sent to the model.
+     * @var list<MessagePart> The inputs to be sent to the model.
      */
     private array $inputs;
 
@@ -35,9 +35,9 @@ class BeforeGenerateEmbeddingEvent
      *
      * @since n.e.x.t
      *
-     * @param list<list<Message>> $inputs The inputs to be sent to the model.
-     * @param ModelInterface      $model The model that will generate embeddings.
-     * @param CapabilityEnum      $capability The capability being used for generation.
+     * @param list<MessagePart> $inputs The inputs to be sent to the model.
+     * @param ModelInterface    $model The model that will generate embeddings.
+     * @param CapabilityEnum    $capability The capability being used for generation.
      */
     public function __construct(array $inputs, ModelInterface $model, CapabilityEnum $capability)
     {
@@ -51,7 +51,7 @@ class BeforeGenerateEmbeddingEvent
      *
      * @since n.e.x.t
      *
-     * @return list<list<Message>> The inputs.
+     * @return list<MessagePart> The inputs.
      */
     public function getInputs(): array
     {
@@ -91,11 +91,7 @@ class BeforeGenerateEmbeddingEvent
     {
         $clonedInputs = [];
         foreach ($this->inputs as $input) {
-            $clonedInput = [];
-            foreach ($input as $message) {
-                $clonedInput[] = clone $message;
-            }
-            $clonedInputs[] = $clonedInput;
+            $clonedInputs[] = clone $input;
         }
         $this->inputs = $clonedInputs;
     }

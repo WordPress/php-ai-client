@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Tests\unit;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Builders\EmbeddingBuilder;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
@@ -186,7 +187,7 @@ class AiClientTest extends TestCase
      */
     public function testGenerateEmbeddingReturnsFirstVector(): void
     {
-        $expectedResult = $this->createTestEmbeddingResult([[0.1, 0.2], [0.3, 0.4]]);
+        $expectedResult = $this->createTestEmbeddingResult([[0.1, 0.2]]);
         $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
         $registry = $this->createRegistryWithMockProvider();
 
@@ -226,6 +227,24 @@ class AiClientTest extends TestCase
         $this->expectExceptionMessage('Model "invalid-embedding-model" does not support embedding generation.');
 
         AiClient::generateEmbeddingResult($prompt, $invalidModel, $registry);
+    }
+
+    /**
+     * Tests embed() returns an EmbeddingBuilder configured with the given input.
+     */
+    public function testEmbedReturnsEmbeddingBuilder(): void
+    {
+        $embeddings = [[0.1, 0.2], [0.3, 0.4]];
+        $expectedResult = $this->createTestEmbeddingResult($embeddings);
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $builder = AiClient::embed(['First input', 'Second input'], $registry);
+
+        $this->assertInstanceOf(EmbeddingBuilder::class, $builder);
+
+        $result = $builder->usingModel($mockModel)->generateEmbeddings();
+        $this->assertCount(2, $result);
     }
 
 

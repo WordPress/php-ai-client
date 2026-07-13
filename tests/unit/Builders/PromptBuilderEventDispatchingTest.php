@@ -6,9 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Builders;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Builders\PromptBuilder;
-use WordPress\AiClient\Events\AfterGenerateEmbeddingEvent;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
-use WordPress\AiClient\Events\BeforeGenerateEmbeddingEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
@@ -157,63 +155,5 @@ class PromptBuilderEventDispatchingTest extends TestCase
         $this->assertCount(2, $events);
         $this->assertInstanceOf(BeforeGenerateResultEvent::class, $events[0]);
         $this->assertInstanceOf(AfterGenerateResultEvent::class, $events[1]);
-    }
-
-    /**
-     * Tests that events are dispatched for embedding generation.
-     *
-     * @return void
-     */
-    public function testEventsAreDispatchedForEmbeddingGeneration(): void
-    {
-        $result = $this->createTestEmbeddingResult();
-        $model = $this->createMockEmbeddingGenerationModel($result);
-
-        $builder = new PromptBuilder($this->registry, 'Hello', $this->dispatcher);
-        $builder->usingModel($model);
-
-        $returnedResult = $builder->generateEmbeddingResult();
-
-        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateEmbeddingEvent::class);
-        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateEmbeddingEvent::class);
-
-        $this->assertCount(1, $beforeEvents);
-        $this->assertCount(1, $afterEvents);
-        $this->assertCount(1, $beforeEvents[0]->getInputs());
-        $this->assertEquals(CapabilityEnum::embeddingGeneration(), $beforeEvents[0]->getCapability());
-        $this->assertEquals(CapabilityEnum::embeddingGeneration(), $afterEvents[0]->getCapability());
-        $this->assertSame($result, $afterEvents[0]->getResult());
-        $this->assertSame($returnedResult, $afterEvents[0]->getResult());
-        $this->assertCount(0, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
-        $this->assertCount(0, $this->dispatcher->getDispatchedEventsOfType(AfterGenerateResultEvent::class));
-    }
-
-    /**
-     * Tests that events are dispatched for batch embedding generation.
-     *
-     * @return void
-     */
-    public function testEventsAreDispatchedForBatchEmbeddingGeneration(): void
-    {
-        $result = $this->createTestEmbeddingResult([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]);
-        $model = $this->createMockEmbeddingGenerationModel($result);
-
-        $builder = new PromptBuilder($this->registry, null, $this->dispatcher);
-        $builder->usingModel($model);
-        $builder->withInputs(['Hello', 'World']);
-
-        $embeddings = $builder->generateEmbeddings();
-
-        $beforeEvents = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateEmbeddingEvent::class);
-        $afterEvents = $this->dispatcher->getDispatchedEventsOfType(AfterGenerateEmbeddingEvent::class);
-
-        $this->assertCount(2, $embeddings);
-        $this->assertCount(1, $beforeEvents);
-        $this->assertCount(1, $afterEvents);
-        $this->assertCount(2, $beforeEvents[0]->getInputs());
-        $this->assertCount(1, $beforeEvents[0]->getInputs()[0]);
-        $this->assertCount(1, $beforeEvents[0]->getInputs()[1]);
-        $this->assertEquals(CapabilityEnum::embeddingGeneration(), $beforeEvents[0]->getCapability());
-        $this->assertSame($result, $afterEvents[0]->getResult());
     }
 }
