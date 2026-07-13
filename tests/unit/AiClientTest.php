@@ -186,7 +186,7 @@ class AiClientTest extends TestCase
      */
     public function testGenerateEmbeddingReturnsFirstVector(): void
     {
-        $expectedResult = $this->createTestEmbeddingResult([[0.1, 0.2], [0.3, 0.4]]);
+        $expectedResult = $this->createTestEmbeddingResult([[0.1, 0.2]]);
         $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
         $registry = $this->createRegistryWithMockProvider();
 

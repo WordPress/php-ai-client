@@ -163,7 +163,9 @@ foreach ($named_args as $key => $value) {
 try {
     $modelConfig = ModelConfig::fromArray($model_config_data);
 
-    $promptBuilder = AiClient::prompt($promptInput);
+    $promptBuilder = ($outputFormat === 'embedding-json' || $outputFormat === 'embedding-result-json')
+        ? AiClient::inputs([$promptInput])
+        : AiClient::prompt($promptInput);
     $promptBuilder = $promptBuilder->usingModelConfig($modelConfig);
     if ($providerId && $modelId) {
         $providerClassName = AiClient::defaultRegistry()->getProviderClassName($providerId);

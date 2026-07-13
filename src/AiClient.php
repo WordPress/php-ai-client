@@ -6,6 +6,7 @@ namespace WordPress\AiClient;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\SimpleCache\CacheInterface;
+use WordPress\AiClient\Builders\EmbeddingBuilder;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
@@ -242,20 +243,20 @@ class AiClient
     }
 
     /**
-     * Creates a prompt builder configured with multiple inputs for batch embedding generation.
+     * Creates an embedding builder configured with text inputs.
      *
      * Each element is treated as an independent embedding input. Chain an embedding generation
      * method such as generateEmbeddings() to produce one vector per input.
      *
      * @since n.e.x.t
      *
-     * @param list<Prompt> $inputs The inputs to embed.
+     * @param list<string> $inputs The text inputs to embed.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
-     * @return PromptBuilder The prompt builder instance.
+     * @return EmbeddingBuilder The embedding builder instance.
      */
-    public static function inputs(array $inputs, ?ProviderRegistry $registry = null): PromptBuilder
+    public static function inputs(array $inputs, ?ProviderRegistry $registry = null): EmbeddingBuilder
     {
-        return self::prompt(null, $registry)->withInputs($inputs);
+        return new EmbeddingBuilder($inputs, $registry ?? self::defaultRegistry(), self::$eventDispatcher);
     }
 
     /**
@@ -410,7 +411,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param Prompt $prompt The prompt content.
+     * @param string $prompt The text input to embed.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
      *                                                        or model configuration for auto-discovery,
      *                                                        or null for defaults.
@@ -426,7 +427,13 @@ class AiClient
         ?ProviderRegistry $registry = null
     ): EmbeddingResult {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::getConfiguredPromptBuilder($prompt, $modelOrConfig, $registry)->generateEmbeddingResult();
+        $builder = self::inputs([$prompt], $registry);
+        if ($modelOrConfig instanceof ModelInterface) {
+            $builder->usingModel($modelOrConfig);
+        } elseif ($modelOrConfig instanceof ModelConfig) {
+            $builder->usingModelConfig($modelOrConfig);
+        }
+        return $builder->generateEmbeddingResult();
     }
 
     /**
@@ -434,7 +441,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param Prompt $prompt The prompt content.
+     * @param string $prompt The text input to embed.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
      *                                                        or model configuration for auto-discovery,
      *                                                        or null for defaults.
@@ -454,7 +461,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param list<Prompt> $inputs The inputs to embed.
+     * @param list<string> $inputs The text inputs to embed.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
      *                                                        or model configuration for auto-discovery,
      *                                                        or null for defaults.
@@ -467,8 +474,13 @@ class AiClient
         ?ProviderRegistry $registry = null
     ): array {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::applyModelOrConfig(self::inputs($inputs, $registry), $modelOrConfig)
-            ->generateEmbeddings();
+        $builder = self::inputs($inputs, $registry);
+        if ($modelOrConfig instanceof ModelInterface) {
+            $builder->usingModel($modelOrConfig);
+        } elseif ($modelOrConfig instanceof ModelConfig) {
+            $builder->usingModelConfig($modelOrConfig);
+        }
+        return $builder->generateEmbeddings();
     }
 
     /**
@@ -528,26 +540,12 @@ class AiClient
         $modelOrConfig,
         ?ProviderRegistry $registry = null
     ): PromptBuilder {
-        return self::applyModelOrConfig(self::prompt($prompt, $registry), $modelOrConfig);
-    }
-
-    /**
-     * Applies a model or model configuration to a prompt builder.
-     *
-     * @param PromptBuilder $builder The builder to configure.
-     * @param ModelInterface|ModelConfig|null $modelOrConfig Specific model, model configuration,
-     *                                                        or null for default discovery.
-     * @return PromptBuilder The configured builder.
-     */
-    private static function applyModelOrConfig(PromptBuilder $builder, $modelOrConfig): PromptBuilder
-    {
+        $builder = self::prompt($prompt, $registry);
         if ($modelOrConfig instanceof ModelInterface) {
             $builder->usingModel($modelOrConfig);
         } elseif ($modelOrConfig instanceof ModelConfig) {
             $builder->usingModelConfig($modelOrConfig);
         }
-        // null case: use default model discovery
-
         return $builder;
     }
 }

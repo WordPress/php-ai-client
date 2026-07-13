@@ -314,6 +314,7 @@ direction LR
     namespace AiClientNamespace {
         class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
+            +inputs(string[]) EmbeddingBuilder$
             +message($input = null) MessageBuilder$
         }
     }
@@ -368,7 +369,17 @@ direction LR
             +isSupportedForVideoGeneration() bool
             +isSupportedForSpeechGeneration() bool
             +isSupportedForMusicGeneration() bool
-            +isSupportedForEmbeddingGeneration() bool
+        }
+        class EmbeddingBuilder {
+            +usingModel(ModelInterface $model) self
+            +usingModelConfig(ModelConfig $config) self
+            +usingModelPreference(...string|ModelInterface|array $models) self
+            +usingProvider(string $providerIdOrClassName) self
+            +usingRequestOptions(RequestOptions $options) self
+            +usingDimensions(int $dimensions) self
+            +generateEmbeddingResult() EmbeddingResult
+            +generateEmbedding() Embedding
+            +generateEmbeddings() Embedding[]
         }
 
         class MessageBuilder {
@@ -410,13 +421,13 @@ direction LR
             +convertTextToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateVideoResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
-            +generateEmbeddingsResult(string[]|Message[] $input, ModelInterface $model) EmbeddingResult$
+            +generateEmbeddingsResult(string[] $input, ModelInterface $model) EmbeddingResult$
             +generateTextOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateImageOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +convertTextToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateVideoOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
-            +generateEmbeddingsOperation(string[]|Message[] $input, ModelInterface $model) EmbeddingOperation$
+            +generateEmbeddingsOperation(string[] $input, ModelInterface $model) EmbeddingOperation$
         }
     }
 ```
@@ -479,13 +490,13 @@ direction LR
             +convertTextToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateVideoResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
-            +generateEmbeddingsResult(string[]|Message[] $input, ModelInterface $model) EmbeddingResult$
+            +generateEmbeddingsResult(string[] $input, ModelInterface $model) EmbeddingResult$
             +generateTextOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateImageOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +convertTextToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateVideoOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
-            +generateEmbeddingsOperation(string[]|Message[] $input, ModelInterface $model) EmbeddingOperation$
+            +generateEmbeddingsOperation(string[] $input, ModelInterface $model) EmbeddingOperation$
         }
     }
 
@@ -781,9 +792,10 @@ direction LR
     AiClient .. GenerativeAiOperation : creates
     AiClient .. EmbeddingOperation : creates
     PromptBuilder .. GenerativeAiResult : creates
-    PromptBuilder .. EmbeddingResult : creates
     PromptBuilder .. GenerativeAiOperation : creates
-    PromptBuilder .. EmbeddingOperation : creates
+    AiClient .. EmbeddingBuilder : creates
+    EmbeddingBuilder .. EmbeddingResult : creates
+    EmbeddingBuilder .. EmbeddingOperation : creates
     MessageBuilder .. Message : creates
     Message "1" *-- "1..*" MessagePart
     MessagePart "1" o-- "0..1" File
@@ -1078,7 +1090,7 @@ direction LR
 
     namespace AiClientNamespace.Providers.Models.EmbeddingGeneration.Contracts {
         class EmbeddingGenerationModelInterface {
-            +generateEmbeddingsResult(Message[] $input) EmbeddingResult
+            +generateEmbeddingsResult(string[] $input) EmbeddingResult
         }
         class EmbeddingGenerationOperationModelInterface {
             +generateEmbeddingsOperation(Message[] $input) EmbeddingOperation

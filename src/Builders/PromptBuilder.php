@@ -7,9 +7,7 @@ namespace WordPress\AiClient\Builders;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
-use WordPress\AiClient\Events\AfterGenerateEmbeddingEvent;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
-use WordPress\AiClient\Events\BeforeGenerateEmbeddingEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
@@ -25,7 +23,6 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
-use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
@@ -33,8 +30,6 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
-use WordPress\AiClient\Results\DTO\Embedding;
-use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -62,18 +57,16 @@ class PromptBuilder
     private ProviderRegistry $registry;
 
     /**
+     * @var ModelResolver Resolves models shared by fluent builders.
+     */
+    private ModelResolver $modelResolver;
+
+    /**
      * @var list<Message> The messages in the conversation.
      */
     protected array $messages = [];
 
     /**
-     * @var list<list<Message>>|null Independent inputs for batch embedding generation.
-     *
-     * When set, embedding generation embeds each element as its own input instead of using
-     * the assembled {@see PromptBuilder::$messages}. Null means single-input mode.
-     */
-    protected ?array $inputs = null;
-
     /**
      * @var ModelInterface|null The model to use for generation.
      */
@@ -121,6 +114,7 @@ class PromptBuilder
         ?EventDispatcherInterface $eventDispatcher = null
     ) {
         $this->registry = $registry;
+        $this->modelResolver = new ModelResolver($registry);
         $this->modelConfig = new ModelConfig();
         $this->eventDispatcher = $eventDispatcher;
 
@@ -156,19 +150,6 @@ class PromptBuilder
             $clonedMessages[] = clone $message;
         }
         $this->messages = $clonedMessages;
-
-        // Deep clone batch inputs if set (list of message lists)
-        if ($this->inputs !== null) {
-            $clonedInputs = [];
-            foreach ($this->inputs as $inputMessages) {
-                $clonedInputMessages = [];
-                foreach ($inputMessages as $message) {
-                    $clonedInputMessages[] = clone $message;
-                }
-                $clonedInputs[] = $clonedInputMessages;
-            }
-            $this->inputs = $clonedInputs;
-        }
 
         // Clone model config (ModelConfig has __clone)
         $this->modelConfig = clone $this->modelConfig;
@@ -274,41 +255,6 @@ class PromptBuilder
     }
 
     /**
-     * Sets multiple independent inputs to embed as a batch.
-     *
-     * Each element is parsed as its own embedding input. This is mutually exclusive with the
-     * builder's assembled prompt (via the constructor or with*() methods) and is only consumed
-     * by the embedding generation methods.
-     *
-     * @since n.e.x.t
-     *
-     * @param list<Prompt> $inputs The inputs to embed, each treated as an independent input.
-     * @return self
-     * @throws InvalidArgumentException If the inputs are not a non-empty list, or an assembled
-     *                                  prompt is already present.
-     */
-    public function withInputs(array $inputs): self
-    {
-        if (!array_is_list($inputs) || $inputs === []) {
-            throw new InvalidArgumentException('Inputs must be a non-empty list array.');
-        }
-
-        if ($this->messages !== []) {
-            throw new InvalidArgumentException(
-                'Cannot combine withInputs() with an assembled prompt; use one or the other.'
-            );
-        }
-
-        $resolvedInputs = [];
-        foreach ($inputs as $input) {
-            $resolvedInputs[] = $this->parseInputToMessages($input);
-        }
-
-        $this->inputs = $resolvedInputs;
-
-        return $this;
-    }
-
     /**
      * Sets the model to use for generation.
      *
@@ -322,6 +268,7 @@ class PromptBuilder
      */
     public function usingModel(ModelInterface $model): self
     {
+        $this->modelResolver->usingModel($model);
         $this->model = $model;
 
         // Merge model's config with builder's config, with builder's config taking precedence
@@ -349,6 +296,7 @@ class PromptBuilder
      */
     public function usingModelPreference(...$preferredModels): self
     {
+        $this->modelResolver->usingModelPreference(...$preferredModels);
         if ($preferredModels === []) {
             throw new InvalidArgumentException('At least one model preference must be provided.');
         }
@@ -413,6 +361,7 @@ class PromptBuilder
      */
     public function usingModelConfig(ModelConfig $config): self
     {
+        $this->modelResolver->usingModelConfig($config);
         // Convert both configs to arrays
         $builderConfigArray = $this->modelConfig->toArray();
         $providedConfigArray = $config->toArray();
@@ -436,6 +385,7 @@ class PromptBuilder
      */
     public function usingProvider(string $providerIdOrClassName): self
     {
+        $this->modelResolver->usingProvider($providerIdOrClassName);
         $this->providerIdOrClassName = $providerIdOrClassName;
         return $this;
     }
@@ -542,20 +492,6 @@ class PromptBuilder
     }
 
     /**
-     * Sets the embedding dimensions.
-     *
-     * @since n.e.x.t
-     *
-     * @param int $dimensions The embedding dimensions.
-     * @return self
-     */
-    public function usingDimensions(int $dimensions): self
-    {
-        $this->modelConfig->setDimensions($dimensions);
-        return $this;
-    }
-
-    /**
      * Sets the function declarations available to the model.
      *
      * @since 0.1.0
@@ -621,6 +557,7 @@ class PromptBuilder
      */
     public function usingRequestOptions(RequestOptions $requestOptions): self
     {
+        $this->modelResolver->usingRequestOptions($requestOptions);
         $this->requestOptions = $requestOptions;
         return $this;
     }
@@ -959,18 +896,6 @@ class PromptBuilder
     }
 
     /**
-     * Checks if the prompt is supported for embedding generation.
-     *
-     * @since 0.1.0
-     *
-     * @return bool True if embedding generation is supported.
-     */
-    public function isSupportedForEmbeddingGeneration(): bool
-    {
-        return $this->isSupported(CapabilityEnum::embeddingGeneration());
-    }
-
-    /**
      * Generates a result from the prompt.
      *
      * This is the primary execution method that generates a result (containing
@@ -987,12 +912,6 @@ class PromptBuilder
      */
     public function generateResult(?CapabilityEnum $capability = null): GenerativeAiResult
     {
-        if ($this->inputs !== null) {
-            throw new InvalidArgumentException(
-                'Inputs set via withInputs() are only supported for embedding generation.'
-            );
-        }
-
         $this->validateMessages();
 
         // If capability is not provided, infer it
@@ -1202,54 +1121,6 @@ class PromptBuilder
     }
 
     /**
-     * Generates an embedding result from the builder's prompt or batch inputs.
-     *
-     * @since n.e.x.t
-     *
-     * @return EmbeddingResult The generated embedding result.
-     * @throws InvalidArgumentException If the input or model validation fails.
-     * @throws RuntimeException If the model doesn't support embedding generation, or returns an
-     *                          embedding count that does not match the number of batch inputs.
-     */
-    public function generateEmbeddingResult(): EmbeddingResult
-    {
-        $inputMessages = $this->resolveEmbeddingInputMessages();
-
-        $capability = CapabilityEnum::embeddingGeneration();
-        // Each input is an independent embedding request routed to the same model. Derive model
-        // requirements from a single input so a multi-input batch is not misread as chat history.
-        $model = $this->getConfiguredModelForMessages($capability, $inputMessages[0]);
-
-        if (!$model instanceof EmbeddingGenerationModelInterface) {
-            throw new RuntimeException(
-                sprintf(
-                    'Model "%s" does not support embedding generation.',
-                    $model->metadata()->getId()
-                )
-            );
-        }
-
-        $this->dispatchEvent(new BeforeGenerateEmbeddingEvent($inputMessages, $model, $capability));
-
-        $result = $model->generateEmbeddingResult($inputMessages);
-
-        // For an explicit batch, embeddings map positionally to inputs.
-        if ($this->inputs !== null && count($result->getEmbeddings()) !== count($inputMessages)) {
-            throw new RuntimeException(
-                sprintf(
-                    'Expected %d embedding(s) from the model, but received %d.',
-                    count($inputMessages),
-                    count($result->getEmbeddings())
-                )
-            );
-        }
-
-        $this->dispatchEvent(new AfterGenerateEmbeddingEvent($inputMessages, $model, $capability, $result));
-
-        return $result;
-    }
-
-    /**
      * Generates text from the prompt.
      *
      * @since 0.1.0
@@ -1293,41 +1164,6 @@ class PromptBuilder
     public function generateImage(): File
     {
         return $this->generateImageResult()->toFile();
-    }
-
-    /**
-     * Generates a single embedding from the builder's prompt.
-     *
-     * @since n.e.x.t
-     *
-     * @return Embedding The generated embedding vector.
-     * @throws InvalidArgumentException If the input or model validation fails, or multiple batch
-     *                                  inputs were provided via withInputs().
-     */
-    public function generateEmbedding(): Embedding
-    {
-        if ($this->inputs !== null && count($this->inputs) > 1) {
-            throw new InvalidArgumentException(
-                'generateEmbedding() returns a single vector; use generateEmbeddings() for batch inputs.'
-            );
-        }
-
-        return $this->generateEmbeddingResult()->getEmbedding();
-    }
-
-    /**
-     * Generates embeddings from the builder's prompt or batch inputs.
-     *
-     * @since n.e.x.t
-     *
-     * @return list<Embedding> The generated embedding vectors.
-     * @throws InvalidArgumentException If the input or model validation fails.
-     * @throws RuntimeException If the model doesn't support embedding generation, or returns an
-     *                          embedding count that does not match the number of batch inputs.
-     */
-    public function generateEmbeddings(): array
-    {
-        return $this->generateEmbeddingResult()->getEmbeddings();
     }
 
     /**
@@ -1503,62 +1339,10 @@ class PromptBuilder
      */
     private function getConfiguredModelForMessages(CapabilityEnum $capability, array $messages): ModelInterface
     {
-        $requirements = ModelRequirements::fromPromptData($capability, $messages, $this->modelConfig);
-
-        if ($this->model !== null) {
-            // Explicit model was provided via usingModel(); just update config and bind dependencies.
-            $model = $this->model;
-            $model->setConfig($this->modelConfig);
-            $this->registry->bindModelDependencies($model);
-            $this->bindModelRequestOptions($model);
-            return $model;
-        }
-
-        // Retrieve the candidate models map which satisfies the requirements.
-        $candidateMap = $this->getCandidateModelsMap($requirements);
-
-        if (empty($candidateMap)) {
-            $message = sprintf(
-                'No models found that support %s for this prompt.',
-                $capability->value
-            );
-
-            if ($this->providerIdOrClassName !== null) {
-                $message = sprintf(
-                    'No models found for provider "%s" that support %s for this prompt.',
-                    $this->providerIdOrClassName,
-                    $capability->value
-                );
-            }
-
-            throw new InvalidArgumentException($message);
-        }
-
-        // Check if any preferred models match the candidates, in priority order.
-        if (!empty($this->modelPreferenceKeys)) {
-            // Find preferences that match available candidates, preserving preference order.
-            $matchingPreferences = array_intersect_key(
-                array_flip($this->modelPreferenceKeys),
-                $candidateMap
-            );
-
-            if (!empty($matchingPreferences)) {
-                // Get the first matching preference key
-                $firstMatchKey = key($matchingPreferences);
-                [$providerId, $modelId] = $candidateMap[$firstMatchKey];
-
-                $model = $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
-                $this->bindModelRequestOptions($model);
-                return $model;
-            }
-        }
-
-        // No preference matched; fall back to the first candidate discovered.
-        [$providerId, $modelId] = reset($candidateMap);
-
-        $model = $this->registry->getProviderModel($providerId, $modelId, $this->modelConfig);
-        $this->bindModelRequestOptions($model);
-        return $model;
+        $this->modelResolver->setModelConfig($this->modelConfig);
+        return $this->modelResolver->resolve(
+            ModelRequirements::fromPromptData($capability, $messages, $this->modelConfig)
+        );
     }
 
     /**
@@ -1571,6 +1355,7 @@ class PromptBuilder
      * @param ModelInterface $model The model to bind request options to.
      * @return void
      */
+    // @phpstan-ignore-next-line
     private function bindModelRequestOptions(ModelInterface $model): void
     {
         if ($this->requestOptions !== null && $model instanceof ApiBasedModelInterface) {
@@ -1586,6 +1371,7 @@ class PromptBuilder
      * @param ModelRequirements $requirements The requirements derived from the prompt.
      * @return array<string, array{0:string,1:string}> Map of preference keys to [providerId, modelId] tuples.
      */
+    // @phpstan-ignore-next-line
     private function getCandidateModelsMap(ModelRequirements $requirements): array
     {
         if ($this->providerIdOrClassName === null) {
@@ -1772,44 +1558,6 @@ class PromptBuilder
         }
 
         return new Message($defaultRole, $parts);
-    }
-
-    /**
-     * Resolves the builder's prompt or batch inputs into a list of message lists.
-     *
-     * @since n.e.x.t
-     *
-     * @return list<list<Message>> The resolved message lists, one per input.
-     * @throws InvalidArgumentException If the builder's prompt fails validation.
-     */
-    private function resolveEmbeddingInputMessages(): array
-    {
-        if ($this->inputs !== null) {
-            return $this->inputs;
-        }
-
-        $this->validateMessages();
-
-        return [$this->messages];
-    }
-
-    /**
-     * Parses a single input into a message list.
-     *
-     * @since n.e.x.t
-     *
-     * @param Prompt $input The input to parse.
-     * @return list<Message> The parsed messages.
-     */
-    private function parseInputToMessages($input): array
-    {
-        $messages = $this->isMessagesList($input)
-            ? $input
-            : [$this->parseMessage($input, MessageRoleEnum::user())];
-
-        $this->validateMessages($messages);
-
-        return $messages;
     }
 
     /**
