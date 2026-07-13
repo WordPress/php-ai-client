@@ -17,11 +17,9 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
-use WordPress\AiClient\Providers\ApiBasedImplementation\Contracts\ApiBasedModelInterface;
 use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
-use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
@@ -52,11 +50,6 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
 class PromptBuilder
 {
     /**
-     * @var ProviderRegistry The provider registry for finding suitable models.
-     */
-    private ProviderRegistry $registry;
-
-    /**
      * @var ModelResolver Resolves models shared by fluent builders.
      */
     private ModelResolver $modelResolver;
@@ -67,30 +60,9 @@ class PromptBuilder
     protected array $messages = [];
 
     /**
-    /**
-     * @var ModelInterface|null The model to use for generation.
-     */
-    protected ?ModelInterface $model = null;
-
-    /**
-     * @var list<string> Ordered list of preference keys to check when selecting a model.
-     */
-    protected array $modelPreferenceKeys = [];
-
-    /**
-     * @var string|null The provider ID or class name.
-     */
-    protected ?string $providerIdOrClassName = null;
-
-    /**
      * @var ModelConfig The model configuration.
      */
     protected ModelConfig $modelConfig;
-
-    /**
-     * @var RequestOptions|null The request options for HTTP transport.
-     */
-    protected ?RequestOptions $requestOptions = null;
 
     /**
      * @var EventDispatcherInterface|null The event dispatcher for prompt lifecycle events.
@@ -113,9 +85,9 @@ class PromptBuilder
         $prompt = null,
         ?EventDispatcherInterface $eventDispatcher = null
     ) {
-        $this->registry = $registry;
         $this->modelResolver = new ModelResolver($registry);
         $this->modelConfig = new ModelConfig();
+        $this->modelResolver->setModelConfig($this->modelConfig);
         $this->eventDispatcher = $eventDispatcher;
 
         if ($prompt === null) {
@@ -151,16 +123,9 @@ class PromptBuilder
         }
         $this->messages = $clonedMessages;
 
-        // Clone model config (ModelConfig has __clone)
         $this->modelConfig = clone $this->modelConfig;
-
-        // Clone request options if set (contains only primitives)
-        if ($this->requestOptions !== null) {
-            $this->requestOptions = clone $this->requestOptions;
-        }
-
-        // Note: $registry, $model, and $eventDispatcher are service objects
-        // and are intentionally NOT cloned - they should be shared references.
+        $this->modelResolver = clone $this->modelResolver;
+        $this->modelResolver->setModelConfig($this->modelConfig);
     }
 
     /**
@@ -255,7 +220,6 @@ class PromptBuilder
     }
 
     /**
-    /**
      * Sets the model to use for generation.
      *
      * The model's configuration will be merged with the builder's configuration,
@@ -269,15 +233,7 @@ class PromptBuilder
     public function usingModel(ModelInterface $model): self
     {
         $this->modelResolver->usingModel($model);
-        $this->model = $model;
-
-        // Merge model's config with builder's config, with builder's config taking precedence
-        $modelConfigArray = $model->getConfig()->toArray();
-        $builderConfigArray = $this->modelConfig->toArray();
-        $mergedConfigArray = array_merge($modelConfigArray, $builderConfigArray);
-
-        $this->modelConfig = ModelConfig::fromArray($mergedConfigArray);
-
+        $this->modelConfig = $this->modelResolver->getModelConfig();
         return $this;
     }
 
@@ -297,54 +253,6 @@ class PromptBuilder
     public function usingModelPreference(...$preferredModels): self
     {
         $this->modelResolver->usingModelPreference(...$preferredModels);
-        if ($preferredModels === []) {
-            throw new InvalidArgumentException('At least one model preference must be provided.');
-        }
-
-        $preferenceKeys = [];
-
-        foreach ($preferredModels as $preferredModel) {
-            if (is_array($preferredModel)) {
-                // [model identifier, provider ID] tuple
-                if (!array_is_list($preferredModel) || count($preferredModel) !== 2) {
-                    throw new InvalidArgumentException(
-                        'Model preference tuple must contain model identifier and provider ID.'
-                    );
-                }
-
-                [$providerId, $modelId] = $preferredModel;
-
-                $modelId = $this->normalizePreferenceIdentifier($modelId);
-                $providerId = $this->normalizePreferenceIdentifier(
-                    $providerId,
-                    'Model preference provider identifiers cannot be empty.'
-                );
-
-                $preferenceKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
-            } elseif ($preferredModel instanceof ModelInterface) {
-                // Model instance
-                $modelId = $preferredModel->metadata()->getId();
-                $providerId = $preferredModel->providerMetadata()->getId();
-
-                $preferenceKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
-            } elseif (is_string($preferredModel)) {
-                // Model ID
-                $modelId = $this->normalizePreferenceIdentifier($preferredModel);
-
-                $preferenceKey = $this->createModelPreferenceKey($modelId);
-            } else {
-                // Invalid type
-                throw new InvalidArgumentException(
-                    'Model preferences must be model identifiers, instances of ModelInterface, ' .
-                    'or provider/model tuples.'
-                );
-            }
-
-            $preferenceKeys[] = $preferenceKey;
-        }
-
-        $this->modelPreferenceKeys = $preferenceKeys;
-
         return $this;
     }
 
@@ -362,16 +270,7 @@ class PromptBuilder
     public function usingModelConfig(ModelConfig $config): self
     {
         $this->modelResolver->usingModelConfig($config);
-        // Convert both configs to arrays
-        $builderConfigArray = $this->modelConfig->toArray();
-        $providedConfigArray = $config->toArray();
-
-        // Merge arrays with builder config taking precedence
-        $mergedArray = array_merge($providedConfigArray, $builderConfigArray);
-
-        // Create new config from merged array
-        $this->modelConfig = ModelConfig::fromArray($mergedArray);
-
+        $this->modelConfig = $this->modelResolver->getModelConfig();
         return $this;
     }
 
@@ -386,7 +285,6 @@ class PromptBuilder
     public function usingProvider(string $providerIdOrClassName): self
     {
         $this->modelResolver->usingProvider($providerIdOrClassName);
-        $this->providerIdOrClassName = $providerIdOrClassName;
         return $this;
     }
 
@@ -558,7 +456,6 @@ class PromptBuilder
     public function usingRequestOptions(RequestOptions $requestOptions): self
     {
         $this->modelResolver->usingRequestOptions($requestOptions);
-        $this->requestOptions = $requestOptions;
         return $this;
     }
 
@@ -792,8 +689,8 @@ class PromptBuilder
         // If no intended capability provided, infer from output modalities
         if ($capability === null) {
             // First try to infer from a specific model if one is set
-            if ($this->model !== null) {
-                $inferredCapability = $this->inferCapabilityFromModelInterfaces($this->model);
+            if ($this->modelResolver->getModel() !== null) {
+                $inferredCapability = $this->inferCapabilityFromModelInterfaces($this->modelResolver->getModel());
                 if ($inferredCapability !== null) {
                     $capability = $inferredCapability;
                 }
@@ -809,14 +706,13 @@ class PromptBuilder
         $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
 
         // If the model has been set, check if it meets the requirements
-        if ($this->model !== null) {
-            return $requirements->areMetBy($this->model->metadata());
+        if ($this->modelResolver->getModel() !== null) {
+            return $requirements->areMetBy($this->modelResolver->getModel()->metadata());
         }
 
         try {
             // Check if any models support these requirements
-            $models = $this->registry->findModelsMetadataForSupport($requirements);
-            return !empty($models);
+            return $this->modelResolver->hasCandidate($requirements);
         } catch (InvalidArgumentException $e) {
             // No models support the requirements
             return false;
@@ -917,8 +813,8 @@ class PromptBuilder
         // If capability is not provided, infer it
         if ($capability === null) {
             // First try to infer from a specific model if one is set
-            if ($this->model !== null) {
-                $inferredCapability = $this->inferCapabilityFromModelInterfaces($this->model);
+            if ($this->modelResolver->getModel() !== null) {
+                $inferredCapability = $this->inferCapabilityFromModelInterfaces($this->modelResolver->getModel());
                 if ($inferredCapability !== null) {
                     $capability = $inferredCapability;
                 }
@@ -1341,147 +1237,9 @@ class PromptBuilder
     {
         $this->modelResolver->setModelConfig($this->modelConfig);
         return $this->modelResolver->resolve(
-            ModelRequirements::fromPromptData($capability, $messages, $this->modelConfig)
+            ModelRequirements::fromPromptData($capability, $messages, $this->modelConfig),
+            'prompt'
         );
-    }
-
-    /**
-     * Binds configured request options to the model if present and supported.
-     *
-     * Request options are only applicable to API-based models that make HTTP requests.
-     *
-     * @since 0.3.0
-     *
-     * @param ModelInterface $model The model to bind request options to.
-     * @return void
-     */
-    // @phpstan-ignore-next-line
-    private function bindModelRequestOptions(ModelInterface $model): void
-    {
-        if ($this->requestOptions !== null && $model instanceof ApiBasedModelInterface) {
-            $model->setRequestOptions($this->requestOptions);
-        }
-    }
-
-    /**
-     * Builds a map of candidate models that satisfy the requirements for efficient lookup.
-     *
-     * @since 0.2.0
-     *
-     * @param ModelRequirements $requirements The requirements derived from the prompt.
-     * @return array<string, array{0:string,1:string}> Map of preference keys to [providerId, modelId] tuples.
-     */
-    // @phpstan-ignore-next-line
-    private function getCandidateModelsMap(ModelRequirements $requirements): array
-    {
-        if ($this->providerIdOrClassName === null) {
-            // No provider locked in, gather all models across providers that meet requirements.
-            $providerModelsMetadata = $this->registry->findModelsMetadataForSupport($requirements);
-
-            $candidateMap = [];
-            foreach ($providerModelsMetadata as $providerModels) {
-                $providerId = $providerModels->getProvider()->getId();
-                $providerMap = $this->generateMapFromCandidates($providerId, $providerModels->getModels());
-
-                // Use + operator to merge, preserving keys from $candidateMap (first provider wins for model-only keys)
-                $candidateMap = $candidateMap + $providerMap;
-            }
-
-            return $candidateMap;
-        }
-
-        // Provider set, only consider models from that provider.
-        $modelsMetadata = $this->registry->findProviderModelsMetadataForSupport(
-            $this->providerIdOrClassName,
-            $requirements
-        );
-
-        // Ensure we pass the provider ID, not the class name
-        $providerId = $this->registry->getProviderId($this->providerIdOrClassName);
-
-        return $this->generateMapFromCandidates($providerId, $modelsMetadata);
-    }
-
-    /**
-     * Generates a candidate map from model metadata with both provider-specific and model-only keys.
-     *
-     * @since 0.2.0
-     *
-     * @param string $providerId The provider ID.
-     * @param list<ModelMetadata> $modelsMetadata The models metadata to map.
-     * @return array<string, array{0:string,1:string}> Map of preference keys to [providerId, modelId] tuples.
-     */
-    private function generateMapFromCandidates(string $providerId, array $modelsMetadata): array
-    {
-        $map = [];
-
-        foreach ($modelsMetadata as $modelMetadata) {
-            $modelId = $modelMetadata->getId();
-
-            // Add provider-specific key
-            $providerModelKey = $this->createProviderModelPreferenceKey($providerId, $modelId);
-            $map[$providerModelKey] = [$providerId, $modelId];
-
-            // Add model-only key
-            $modelKey = $this->createModelPreferenceKey($modelId);
-            $map[$modelKey] = [$providerId, $modelId];
-        }
-
-        return $map;
-    }
-
-    /**
-     * Normalizes and validates a preference identifier string.
-     *
-     * @since 0.2.0
-     *
-     * @param mixed $value The value to normalize.
-     * @param string $emptyMessage The message for empty or invalid values.
-     * @return string The normalized identifier.
-     *
-     * @throws InvalidArgumentException If the value is not a non-empty string.
-     */
-    private function normalizePreferenceIdentifier(
-        $value,
-        string $emptyMessage = 'Model preference identifiers cannot be empty.'
-    ): string {
-        if (!is_string($value)) {
-            throw new InvalidArgumentException($emptyMessage);
-        }
-
-        $trimmed = trim($value);
-        if ($trimmed === '') {
-            throw new InvalidArgumentException($emptyMessage);
-        }
-
-        return $trimmed;
-    }
-
-    /**
-     * Creates a preference key for a provider/model combination.
-     *
-     * @since 0.2.0
-     *
-     * @param string $providerId The provider identifier.
-     * @param string $modelId The model identifier.
-     * @return string The generated preference key.
-     */
-    private function createProviderModelPreferenceKey(string $providerId, string $modelId): string
-    {
-        return 'providerModel::' . $providerId . '::' . $modelId;
-    }
-
-    /**
-     * Creates a preference key for a model identifier.
-     *
-     * @since 0.2.0
-     *
-     * @param string $modelId The model identifier.
-     * @return string The generated preference key.
-     */
-    private function createModelPreferenceKey(string $modelId): string
-    {
-        return 'model::' . $modelId;
     }
 
     /**

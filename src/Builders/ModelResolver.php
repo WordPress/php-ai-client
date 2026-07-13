@@ -56,6 +56,16 @@ class ModelResolver
         return $this->model;
     }
 
+    public function getProviderIdOrClassName(): ?string
+    {
+        return $this->providerIdOrClassName;
+    }
+
+    public function getRequestOptions(): ?RequestOptions
+    {
+        return $this->requestOptions;
+    }
+
     public function usingModel(ModelInterface $model): void
     {
         $this->model = $model;
@@ -119,7 +129,7 @@ class ModelResolver
         $this->requestOptions = $requestOptions;
     }
 
-    public function resolve(ModelRequirements $requirements): ModelInterface
+    public function resolve(ModelRequirements $requirements, string $subject = 'requirements'): ModelInterface
     {
         if ($this->model !== null) {
             $model = $this->model;
@@ -135,7 +145,7 @@ class ModelResolver
                 ? 'No models found that support'
                 : sprintf('No models found for provider "%s" that support', $this->providerIdOrClassName);
             throw new InvalidArgumentException(
-                sprintf('%s %s for this prompt.', $prefix, $requirements->getRequiredCapabilities()[0]->value)
+                sprintf('%s %s for this %s.', $prefix, $requirements->getRequiredCapabilities()[0]->value, $subject)
             );
         }
 
@@ -148,6 +158,18 @@ class ModelResolver
         $candidate = reset($candidates);
         assert(is_array($candidate));
         return $this->createModel($candidate);
+    }
+
+    public function hasCandidate(ModelRequirements $requirements): bool
+    {
+        if ($this->providerIdOrClassName === null) {
+            return $this->registry->findModelsMetadataForSupport($requirements) !== [];
+        }
+
+        return $this->registry->findProviderModelsMetadataForSupport(
+            $this->providerIdOrClassName,
+            $requirements
+        ) !== [];
     }
 
     /** @return array<string, array{0:string,1:string}> Candidate models by preference key. */

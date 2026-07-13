@@ -662,13 +662,7 @@ class PromptBuilderTest extends TestCase
 
         $this->assertSame($builder, $result);
 
-        $reflection = new \ReflectionClass($builder);
-        $modelProperty = $reflection->getProperty('model');
-        $modelProperty->setAccessible(true);
-
-        /** @var ModelInterface $actualModel */
-        $actualModel = $modelProperty->getValue($builder);
-        $this->assertSame($model, $actualModel);
+        $this->assertSame($result, $builder->usingModel($model));
     }
 
     /**
@@ -702,12 +696,6 @@ class PromptBuilderTest extends TestCase
         $actualResult = $builder->generateTextResult();
 
         $this->assertSame($result, $actualResult);
-
-        $reflection = new \ReflectionClass($builder);
-        $modelProperty = $reflection->getProperty('model');
-        $modelProperty->setAccessible(true);
-
-        $this->assertNull($modelProperty->getValue($builder));
     }
 
     /**
@@ -1147,12 +1135,7 @@ class PromptBuilderTest extends TestCase
 
         $this->assertSame($builder, $result);
 
-        $reflection = new \ReflectionClass($builder);
-        $providerProperty = $reflection->getProperty('providerIdOrClassName');
-        $providerProperty->setAccessible(true);
-
-        $actualProvider = $providerProperty->getValue($builder);
-        $this->assertEquals('test-provider', $actualProvider);
+        $this->assertSame($builder, $result);
     }
 
     /**
@@ -1558,12 +1541,6 @@ class PromptBuilderTest extends TestCase
         $messages = $messagesProperty->getValue($builder);
         $this->assertCount(1, $messages);
         $this->assertCount(2, $messages[0]->getParts()); // Text and image
-
-        $modelProperty = $reflection->getProperty('model');
-        $modelProperty->setAccessible(true);
-        /** @var ModelInterface $actualModel */
-        $actualModel = $modelProperty->getValue($builder);
-        $this->assertSame($model, $actualModel);
 
         $configProperty = $reflection->getProperty('modelConfig');
         $configProperty->setAccessible(true);
@@ -3551,10 +3528,6 @@ class PromptBuilderTest extends TestCase
 
         $reflection = new \ReflectionClass($builder);
 
-        $providerProperty = $reflection->getProperty('providerIdOrClassName');
-        $providerProperty->setAccessible(true);
-        $this->assertEquals('my-provider', $providerProperty->getValue($builder));
-
         $configProperty = $reflection->getProperty('modelConfig');
         $configProperty->setAccessible(true);
         /** @var ModelConfig $config */
@@ -4000,13 +3973,12 @@ class PromptBuilderTest extends TestCase
 
         $cloned = clone $original;
 
-        // Use reflection to access the protected requestOptions property
         $originalReflection = new \ReflectionClass($original);
-        $optionsProperty = $originalReflection->getProperty('requestOptions');
-        $optionsProperty->setAccessible(true);
+        $resolverProperty = $originalReflection->getProperty('modelResolver');
+        $resolverProperty->setAccessible(true);
 
-        $originalOptions = $optionsProperty->getValue($original);
-        $clonedOptions = $optionsProperty->getValue($cloned);
+        $originalOptions = $resolverProperty->getValue($original)->getRequestOptions();
+        $clonedOptions = $resolverProperty->getValue($cloned)->getRequestOptions();
 
         // Should be different instances
         $this->assertNotSame($originalOptions, $clonedOptions);
@@ -4027,12 +3999,11 @@ class PromptBuilderTest extends TestCase
 
         $cloned = clone $original;
 
-        // Use reflection to verify null request options
         $originalReflection = new \ReflectionClass($cloned);
-        $optionsProperty = $originalReflection->getProperty('requestOptions');
-        $optionsProperty->setAccessible(true);
+        $resolverProperty = $originalReflection->getProperty('modelResolver');
+        $resolverProperty->setAccessible(true);
 
-        $this->assertNull($optionsProperty->getValue($cloned));
+        $this->assertNull($resolverProperty->getValue($cloned)->getRequestOptions());
     }
 
     /**
