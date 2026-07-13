@@ -44,4 +44,66 @@ class EmbeddingBuilderTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         (new EmbeddingBuilder(['First', 'Second'], new ProviderRegistry()))->generateEmbedding();
     }
+
+    /**
+     * @dataProvider invalidInputsProvider
+     *
+     * @param array<mixed> $inputs Invalid embedding inputs.
+     */
+    public function testRejectsInvalidInputs(array $inputs): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new EmbeddingBuilder($inputs, new ProviderRegistry());
+    }
+
+    /**
+     * @return iterable<string, array{0: array<mixed>}>
+     */
+    public static function invalidInputsProvider(): iterable
+    {
+        yield 'empty list' => [[]];
+        yield 'non-list array' => [['first' => 'First']];
+        yield 'non-string value' => [['First', 2]];
+        yield 'blank string' => [['First', '  ']];
+    }
+
+    public function testRejectsAnEmbeddingResultWithTheWrongBatchSize(): void
+    {
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2]]);
+        $builder = new EmbeddingBuilder(['First', 'Second'], $this->createRegistry());
+        $builder->usingModel($this->createMockEmbeddingGenerationModel($result));
+
+        $this->expectException(\WordPress\AiClient\Common\Exception\RuntimeException::class);
+        $this->expectExceptionMessage('Expected 2 embedding(s) from the model, but received 1.');
+
+        $builder->generateEmbeddings();
+    }
+
+    public function testRejectsAModelWithoutEmbeddingGenerationSupport(): void
+    {
+        $builder = new EmbeddingBuilder(['First'], $this->createRegistry());
+        $builder->usingModel($this->createMockUnsupportedModel('text-only'));
+
+        $this->expectException(\WordPress\AiClient\Common\Exception\RuntimeException::class);
+        $this->expectExceptionMessage('Model "text-only" does not support embedding generation.');
+
+        $builder->generateEmbedding();
+    }
+
+    public function testAppliesDimensionsToAnExplicitModel(): void
+    {
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+        $builder = new EmbeddingBuilder(['First'], $this->createRegistry());
+        $builder->usingModel($model)->usingDimensions(2)->generateEmbedding();
+
+        $this->assertSame(2, $model->getConfig()->getDimensions());
+    }
+
+    private function createRegistry(): ProviderRegistry
+    {
+        $registry = new ProviderRegistry();
+        $registry->registerProvider(MockProvider::class);
+        return $registry;
+    }
 }

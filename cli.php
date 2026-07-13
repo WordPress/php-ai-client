@@ -93,7 +93,7 @@ if (empty($positional_args[0])) {
     logError('Missing required positional argument "prompt input".');
 }
 
-// Prompt input. Allow complex input as a JSON string.
+// Prompt input. Allow complex input as a JSON string for generative output.
 // Use "-" to read from stdin, or "@/path/to/file" to read from a file.
 $promptInput = $positional_args[0];
 if ($promptInput === '-') {
@@ -123,6 +123,13 @@ $providerId = $named_args['providerId'] ?? null;
 $modelId = $named_args['modelId'] ?? null;
 $modelPreference = $named_args['modelPreference'] ?? null;
 $outputFormat = $named_args['outputFormat'] ?? 'message-text';
+
+if (
+    ($outputFormat === 'embedding-json' || $outputFormat === 'embedding-result-json') &&
+    !is_string($promptInput)
+) {
+    logError('Embedding output requires a text prompt input.');
+}
 
 // Any model configuration options.
 $schema = ModelConfig::getJsonSchema()['properties'];
@@ -163,15 +170,15 @@ foreach ($named_args as $key => $value) {
 try {
     $modelConfig = ModelConfig::fromArray($model_config_data);
 
-    $promptBuilder = ($outputFormat === 'embedding-json' || $outputFormat === 'embedding-result-json')
+    $builder = ($outputFormat === 'embedding-json' || $outputFormat === 'embedding-result-json')
         ? AiClient::inputs([$promptInput])
         : AiClient::prompt($promptInput);
-    $promptBuilder = $promptBuilder->usingModelConfig($modelConfig);
+    $builder = $builder->usingModelConfig($modelConfig);
     if ($providerId && $modelId) {
         $providerClassName = AiClient::defaultRegistry()->getProviderClassName($providerId);
-        $promptBuilder = $promptBuilder->usingModel($providerClassName::model($modelId));
+        $builder = $builder->usingModel($providerClassName::model($modelId));
     } elseif ($providerId) {
-        $promptBuilder = $promptBuilder->usingProvider($providerId);
+        $builder = $builder->usingProvider($providerId);
     }
     if ($modelPreference) {
         $modelPreference = array_map(
@@ -184,7 +191,7 @@ try {
             },
             explode(',', $modelPreference)
         );
-        $promptBuilder = $promptBuilder->usingModelPreference(...$modelPreference);
+        $builder = $builder->usingModelPreference(...$modelPreference);
     }
 } catch (InvalidArgumentException $e) {
     logError('Invalid arguments while trying to set up prompt builder: ' . $e->getMessage());
@@ -194,11 +201,11 @@ try {
 
 try {
     if ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
-        $result = $promptBuilder->generateImageResult();
+        $result = $builder->generateImageResult();
     } elseif ($outputFormat === 'embedding-json' || $outputFormat === 'embedding-result-json') {
-        $result = $promptBuilder->generateEmbeddingResult();
+        $result = $builder->generateEmbeddingResult();
     } else {
-        $result = $promptBuilder->generateTextResult();
+        $result = $builder->generateTextResult();
     }
 } catch (InvalidArgumentException $e) {
     logError('Invalid arguments while trying to generate result: ' . $e->getMessage());

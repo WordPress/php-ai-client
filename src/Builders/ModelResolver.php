@@ -141,11 +141,20 @@ class ModelResolver
 
         $candidates = $this->getCandidates($requirements);
         if ($candidates === []) {
+            $requiredCapabilities = $requirements->getRequiredCapabilities();
+            if ($requiredCapabilities === []) {
+                $provider = $this->providerIdOrClassName === null
+                    ? ''
+                    : sprintf(' for provider "%s"', $this->providerIdOrClassName);
+                throw new InvalidArgumentException(
+                    sprintf('No models found%s that meet the requested requirements.', $provider)
+                );
+            }
             $prefix = $this->providerIdOrClassName === null
                 ? 'No models found that support'
                 : sprintf('No models found for provider "%s" that support', $this->providerIdOrClassName);
             throw new InvalidArgumentException(
-                sprintf('%s %s for this %s.', $prefix, $requirements->getRequiredCapabilities()[0]->value, $subject)
+                sprintf('%s %s for this %s.', $prefix, $requiredCapabilities[0]->value, $subject)
             );
         }
 

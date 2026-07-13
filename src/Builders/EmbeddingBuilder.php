@@ -50,6 +50,16 @@ class EmbeddingBuilder
         $this->eventDispatcher = $eventDispatcher;
     }
 
+    /**
+     * Creates an independent copy of the builder configuration.
+     *
+     * @since n.e.x.t
+     */
+    public function __clone()
+    {
+        $this->modelResolver = clone $this->modelResolver;
+    }
+
     public function usingModel(ModelInterface $model): self
     {
         $this->modelResolver->usingModel($model);
