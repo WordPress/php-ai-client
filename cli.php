@@ -160,10 +160,13 @@ foreach ($named_args as $key => $value) {
 
 // --- Main logic ---
 
+$isEmbedding = $outputFormat === 'embedding-json' || $outputFormat === 'embedding-result-json';
+
 try {
     $modelConfig = ModelConfig::fromArray($model_config_data);
 
-    $promptBuilder = AiClient::prompt($promptInput);
+    // Embeddings use a dedicated builder; other output formats use the prompt builder.
+    $promptBuilder = $isEmbedding ? AiClient::embed($promptInput) : AiClient::prompt($promptInput);
     $promptBuilder = $promptBuilder->usingModelConfig($modelConfig);
     if ($providerId && $modelId) {
         $providerClassName = AiClient::defaultRegistry()->getProviderClassName($providerId);
@@ -191,10 +194,10 @@ try {
 }
 
 try {
-    if ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
-        $result = $promptBuilder->generateImageResult();
-    } elseif ($outputFormat === 'embedding-json' || $outputFormat === 'embedding-result-json') {
+    if ($isEmbedding) {
         $result = $promptBuilder->generateEmbeddingResult();
+    } elseif ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
+        $result = $promptBuilder->generateImageResult();
     } else {
         $result = $promptBuilder->generateTextResult();
     }

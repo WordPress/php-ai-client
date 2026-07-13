@@ -93,7 +93,7 @@ $imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in t
 ```php
 use WordPress\AiClient\AiClient;
 
-$embedding = AiClient::prompt('PHP powers a large part of the web.')
+$embedding = AiClient::embed('PHP powers a large part of the web.')
     ->generateEmbedding();
 
 $values = $embedding->getValues();
@@ -104,7 +104,7 @@ $values = $embedding->getValues();
 ```php
 use WordPress\AiClient\AiClient;
 
-$embeddings = AiClient::inputs([
+$embeddings = AiClient::embed([
         'PHP powers a large part of the web.',
         'WordPress makes publishing accessible.',
     ])
@@ -117,12 +117,12 @@ $embeddings = AiClient::inputs([
 ```php
 use WordPress\AiClient\AiClient;
 
-$embedding = AiClient::prompt('PHP powers a large part of the web.')
+$embedding = AiClient::embed('PHP powers a large part of the web.')
     ->usingDimensions(512)
     ->generateEmbedding();
 ```
 
-See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php) and its public methods for all the ways you can configure the prompt.
+See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php) and the [`EmbeddingBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/EmbeddingBuilder.php) and their public methods for all the ways you can configure generation.
 
 **More documentation is coming soon.**
 
