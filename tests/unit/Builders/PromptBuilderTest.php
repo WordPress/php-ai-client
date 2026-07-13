@@ -54,6 +54,30 @@ class PromptBuilderTest extends TestCase
     private ProviderRegistry $registry;
 
     /**
+     * Reads a model-selection property from a builder's underlying ModelResolver.
+     *
+     * Model-selection state (model, provider, request options, preferences) lives on
+     * the ModelResolver owned by the builder, so tests must reach through it.
+     *
+     * @param PromptBuilder $builder The builder to inspect.
+     * @param string $propertyName The ModelResolver property name.
+     * @return mixed The property value.
+     */
+    private function getResolverProperty(PromptBuilder $builder, string $propertyName)
+    {
+        $builderReflection = new \ReflectionClass($builder);
+        $resolverProperty = $builderReflection->getProperty('modelResolver');
+        $resolverProperty->setAccessible(true);
+        $resolver = $resolverProperty->getValue($builder);
+
+        $resolverReflection = new \ReflectionClass($resolver);
+        $property = $resolverReflection->getProperty($propertyName);
+        $property->setAccessible(true);
+
+        return $property->getValue($resolver);
+    }
+
+    /**
      * Creates a test provider metadata instance.
      *
      * @return ProviderMetadata
@@ -662,12 +686,8 @@ class PromptBuilderTest extends TestCase
 
         $this->assertSame($builder, $result);
 
-        $reflection = new \ReflectionClass($builder);
-        $modelProperty = $reflection->getProperty('model');
-        $modelProperty->setAccessible(true);
-
         /** @var ModelInterface $actualModel */
-        $actualModel = $modelProperty->getValue($builder);
+        $actualModel = $this->getResolverProperty($builder, 'model');
         $this->assertSame($model, $actualModel);
     }
 
@@ -703,11 +723,7 @@ class PromptBuilderTest extends TestCase
 
         $this->assertSame($result, $actualResult);
 
-        $reflection = new \ReflectionClass($builder);
-        $modelProperty = $reflection->getProperty('model');
-        $modelProperty->setAccessible(true);
-
-        $this->assertNull($modelProperty->getValue($builder));
+        $this->assertNull($this->getResolverProperty($builder, 'model'));
     }
 
     /**
@@ -1147,11 +1163,7 @@ class PromptBuilderTest extends TestCase
 
         $this->assertSame($builder, $result);
 
-        $reflection = new \ReflectionClass($builder);
-        $providerProperty = $reflection->getProperty('providerIdOrClassName');
-        $providerProperty->setAccessible(true);
-
-        $actualProvider = $providerProperty->getValue($builder);
+        $actualProvider = $this->getResolverProperty($builder, 'providerIdOrClassName');
         $this->assertEquals('test-provider', $actualProvider);
     }
 
@@ -1559,10 +1571,8 @@ class PromptBuilderTest extends TestCase
         $this->assertCount(1, $messages);
         $this->assertCount(2, $messages[0]->getParts()); // Text and image
 
-        $modelProperty = $reflection->getProperty('model');
-        $modelProperty->setAccessible(true);
         /** @var ModelInterface $actualModel */
-        $actualModel = $modelProperty->getValue($builder);
+        $actualModel = $this->getResolverProperty($builder, 'model');
         $this->assertSame($model, $actualModel);
 
         $configProperty = $reflection->getProperty('modelConfig');
@@ -3757,9 +3767,7 @@ class PromptBuilderTest extends TestCase
 
         $reflection = new \ReflectionClass($builder);
 
-        $providerProperty = $reflection->getProperty('providerIdOrClassName');
-        $providerProperty->setAccessible(true);
-        $this->assertEquals('my-provider', $providerProperty->getValue($builder));
+        $this->assertEquals('my-provider', $this->getResolverProperty($builder, 'providerIdOrClassName'));
 
         $configProperty = $reflection->getProperty('modelConfig');
         $configProperty->setAccessible(true);
@@ -4206,13 +4214,9 @@ class PromptBuilderTest extends TestCase
 
         $cloned = clone $original;
 
-        // Use reflection to access the protected requestOptions property
-        $originalReflection = new \ReflectionClass($original);
-        $optionsProperty = $originalReflection->getProperty('requestOptions');
-        $optionsProperty->setAccessible(true);
-
-        $originalOptions = $optionsProperty->getValue($original);
-        $clonedOptions = $optionsProperty->getValue($cloned);
+        // Request options live on the builder's ModelResolver.
+        $originalOptions = $this->getResolverProperty($original, 'requestOptions');
+        $clonedOptions = $this->getResolverProperty($cloned, 'requestOptions');
 
         // Should be different instances
         $this->assertNotSame($originalOptions, $clonedOptions);
@@ -4233,12 +4237,8 @@ class PromptBuilderTest extends TestCase
 
         $cloned = clone $original;
 
-        // Use reflection to verify null request options
-        $originalReflection = new \ReflectionClass($cloned);
-        $optionsProperty = $originalReflection->getProperty('requestOptions');
-        $optionsProperty->setAccessible(true);
-
-        $this->assertNull($optionsProperty->getValue($cloned));
+        // Request options live on the builder's ModelResolver.
+        $this->assertNull($this->getResolverProperty($cloned, 'requestOptions'));
     }
 
     /**
