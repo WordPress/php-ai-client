@@ -138,7 +138,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
-     * Tests generateTextResult() surfaces cached tokens from prompt tokens details.
+     * Tests generateTextResult() surfaces cache token counts from prompt tokens details.
      *
      * @return void
      */
@@ -165,6 +165,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
                     'total_tokens' => 2053,
                     'prompt_tokens_details' => [
                         'cached_tokens' => 1024,
+                        'cache_write_tokens' => 512,
                     ],
                 ],
             ])
@@ -185,6 +186,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         $this->assertEquals(2048, $result->getTokenUsage()->getPromptTokens());
         $this->assertEquals(1024, $result->getTokenUsage()->getCachedTokens());
+        $this->assertEquals(512, $result->getTokenUsage()->getCacheCreationTokens());
     }
 
     /**

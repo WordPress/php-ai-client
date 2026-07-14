@@ -57,7 +57,8 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
  *     completion_tokens?: int,
  *     total_tokens?: int,
  *     prompt_tokens_details?: array{
- *         cached_tokens?: int
+ *         cached_tokens?: int,
+ *         cache_write_tokens?: int
  *     }
  * }
  * @phpstan-type ResponseData array{
@@ -612,7 +613,8 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 $usage['completion_tokens'] ?? 0,
                 $usage['total_tokens'] ?? 0,
                 null,
-                $usage['prompt_tokens_details']['cached_tokens'] ?? null
+                $usage['prompt_tokens_details']['cached_tokens'] ?? null,
+                $usage['prompt_tokens_details']['cache_write_tokens'] ?? null
             );
         } else {
             $tokenUsage = new TokenUsage(0, 0, 0);
