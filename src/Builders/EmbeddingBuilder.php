@@ -71,19 +71,7 @@ class EmbeddingBuilder
             return;
         }
 
-        // A list array is a list of inputs; a single message part array shape is associative,
-        // so it is handled as a single input below.
-        if (is_array($input) && array_is_list($input)) {
-            if ($input === []) {
-                throw new InvalidArgumentException('Inputs must be a non-empty list array.');
-            }
-            foreach ($input as $single) {
-                $this->inputs[] = $this->parseInput($single);
-            }
-            return;
-        }
-
-        $this->inputs[] = $this->parseInput($input);
+        $this->withInput($input);
     }
 
     /**
@@ -114,7 +102,7 @@ class EmbeddingBuilder
      *
      * @since n.e.x.t
      *
-     * @param EmbeddingInput ...$input The inputs to embed, each treated as an independent input.
+     * @param EmbeddingInput|list<EmbeddingInput> ...$input The inputs to embed, each treated as an independent input.
      * @return self
      * @throws InvalidArgumentException If no inputs are provided or an input is invalid.
      */
@@ -125,6 +113,17 @@ class EmbeddingBuilder
         }
 
         foreach ($input as $singleInput) {
+            // List arrays contain multiple inputs; message part array shapes are associative.
+            if (is_array($singleInput) && array_is_list($singleInput)) {
+                if ($singleInput === []) {
+                    throw new InvalidArgumentException('Input lists must not be empty.');
+                }
+                foreach ($singleInput as $listInput) {
+                    $this->inputs[] = $this->parseInput($listInput);
+                }
+                continue;
+            }
+
             $this->inputs[] = $this->parseInput($singleInput);
         }
 

@@ -172,6 +172,19 @@ class EmbeddingBuilderTest extends TestCase
     }
 
     /**
+     * Tests withInput appends a list of inputs.
+     *
+     * @return void
+     */
+    public function testWithInputAppendsInputList(): void
+    {
+        $builder = new EmbeddingBuilder($this->registry, 'First');
+        $builder->withInput(['Second', 'Third']);
+
+        $this->assertCount(3, $this->getInputs($builder));
+    }
+
+    /**
      * Tests withInput appends a single input.
      *
      * @return void
@@ -198,6 +211,21 @@ class EmbeddingBuilderTest extends TestCase
         $this->expectExceptionMessage('At least one input must be provided.');
 
         $builder->withInput();
+    }
+
+    /**
+     * Tests withInput rejects an empty input list.
+     *
+     * @return void
+     */
+    public function testWithInputRejectsEmptyInputList(): void
+    {
+        $builder = new EmbeddingBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Input lists must not be empty.');
+
+        $builder->withInput([]);
     }
 
     /**

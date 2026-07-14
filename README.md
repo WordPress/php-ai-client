@@ -122,7 +122,7 @@ $embedding = AiClient::input('PHP powers a large part of the web.')
     ->generateEmbedding();
 ```
 
-Embedding inputs are independent [`MessagePart`](https://github.com/WordPress/php-ai-client/blob/trunk/src/Messages/DTO/MessagePart.php) values, not a conversation. `input()` accepts one input or a list, while variadic `withInput()` appends one or more inputs. Each input may be a string, `MessagePart`, `File`, or message-part array shape. Model selection accounts for their input modalities and embedding configuration.
+Embedding inputs are independent [`MessagePart`](https://github.com/WordPress/php-ai-client/blob/trunk/src/Messages/DTO/MessagePart.php) values, not a conversation. Both `input()` and variadic `withInput()` accept one input or a list of inputs, and `withInput()` also accepts multiple arguments. Each input may be a string, `MessagePart`, `File`, or message-part array shape. Model selection accounts for their input modalities and embedding configuration.
 
 See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php) and the [`EmbeddingBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/EmbeddingBuilder.php) and their public methods for all the ways you can configure generation.
 
