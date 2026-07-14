@@ -36,7 +36,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
      */
     public function testSingleEmbeddingGeneration(): void
     {
-        $embedding = AiClient::embed('PHP powers a large part of the web.')
+        $embedding = AiClient::input('PHP powers a large part of the web.')
             ->usingProvider('openai')
             ->generateEmbedding();
 
@@ -51,7 +51,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
      */
     public function testSingleEmbeddingGenerationInputs(): void
     {
-        $embedding = AiClient::embed([
+        $embedding = AiClient::input([
             'PHP powers a large part of the web.',
         ])
             ->usingProvider('openai')
@@ -64,14 +64,12 @@ class EmbeddingGenerationIntegrationTest extends TestCase
     }
 
     /**
-     * Tests generating a single embedding using withInputs().
+     * Tests generating a single embedding using withInput().
      */
-    public function testSingleEmbeddingGenerationWithInputs(): void
+    public function testSingleEmbeddingGenerationWithInput(): void
     {
-        $embedding = AiClient::embed()
-            ->withInputs([
-            'PHP powers a large part of the web.',
-        ])
+        $embedding = AiClient::input()
+            ->withInput('PHP powers a large part of the web.')
             ->usingProvider('openai')
             ->generateEmbedding();
 
@@ -86,7 +84,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
      */
     public function testEmbeddingGenerationWithDimensions(): void
     {
-        $embedding = AiClient::embed('PHP powers a large part of the web.')
+        $embedding = AiClient::input('PHP powers a large part of the web.')
             ->usingProvider('openai')
             ->usingDimensions(256)
             ->generateEmbedding();
@@ -100,7 +98,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
      */
     public function testBatchEmbeddingGeneration(): void
     {
-        $embeddings = AiClient::embed([
+        $embeddings = AiClient::input([
             'PHP powers a large part of the web.',
             'WordPress makes publishing accessible.',
         ])
@@ -122,7 +120,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
      */
     public function testEmbeddingResultMetadataAndTokenUsage(): void
     {
-        $result = AiClient::embed('PHP powers a large part of the web.')
+        $result = AiClient::input('PHP powers a large part of the web.')
             ->usingProvider('openai')
             ->generateEmbeddingResult();
 

@@ -1233,6 +1233,7 @@ class PromptBuilder
      */
     private function validateMessages(): void
     {
+        // Work on a copy so reset() and end() do not change the property array's internal pointer.
         $messages = $this->messages;
 
         if (empty($messages)) {

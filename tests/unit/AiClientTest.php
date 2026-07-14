@@ -230,16 +230,16 @@ class AiClientTest extends TestCase
     }
 
     /**
-     * Tests embed() returns an EmbeddingBuilder configured with the given input.
+     * Tests input() returns an EmbeddingBuilder configured with the given input.
      */
-    public function testEmbedReturnsEmbeddingBuilder(): void
+    public function testInputReturnsEmbeddingBuilder(): void
     {
         $embeddings = [[0.1, 0.2], [0.3, 0.4]];
         $expectedResult = $this->createTestEmbeddingResult($embeddings);
         $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
         $registry = $this->createRegistryWithMockProvider();
 
-        $builder = AiClient::embed(['First input', 'Second input'], $registry);
+        $builder = AiClient::input(['First input', 'Second input'], $registry);
 
         $this->assertInstanceOf(EmbeddingBuilder::class, $builder);
 

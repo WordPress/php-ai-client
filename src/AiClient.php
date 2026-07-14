@@ -256,7 +256,7 @@ class AiClient
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return EmbeddingBuilder The embedding builder instance.
      */
-    public static function embed($input = null, ?ProviderRegistry $registry = null): EmbeddingBuilder
+    public static function input($input = null, ?ProviderRegistry $registry = null): EmbeddingBuilder
     {
         return new EmbeddingBuilder(
             $registry ?? self::defaultRegistry(),
@@ -433,7 +433,7 @@ class AiClient
         ?ProviderRegistry $registry = null
     ): EmbeddingResult {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::applyModelOrConfig(self::embed($input, $registry), $modelOrConfig)
+        return self::applyModelOrConfig(self::input($input, $registry), $modelOrConfig)
             ->generateEmbeddingResult();
     }
 
@@ -475,7 +475,7 @@ class AiClient
         ?ProviderRegistry $registry = null
     ): array {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::applyModelOrConfig(self::embed($inputs, $registry), $modelOrConfig)
+        return self::applyModelOrConfig(self::input($inputs, $registry), $modelOrConfig)
             ->generateEmbeddings();
     }
 

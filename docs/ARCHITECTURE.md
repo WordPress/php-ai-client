@@ -295,17 +295,17 @@ $jsonString = AiClient::generateTextResult(
 
 #### Generate an embedding using any suitable model from any provider
 
-_Note: Embeddings use the dedicated `EmbeddingBuilder` (via `AiClient::embed()`) rather than the `PromptBuilder`. Each input is embedded independently, producing one embedding vector per input._
+_Note: Embeddings use the dedicated `EmbeddingBuilder` (via `AiClient::input()`) rather than the `PromptBuilder`. Each input is embedded independently, producing one embedding vector per input._
 
 ##### Fluent API
 
 ```php
 // Single input.
-$embedding = AiClient::embed('PHP powers a large part of the web.')
+$embedding = AiClient::input('PHP powers a large part of the web.')
     ->generateEmbedding();
 
 // Multiple inputs, embedded as a batch.
-$embeddings = AiClient::embed([
+$embeddings = AiClient::input([
         'PHP powers a large part of the web.',
         'WordPress makes publishing accessible.',
     ])
@@ -346,7 +346,7 @@ direction LR
     namespace AiClientNamespace {
         class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
-            +embed($input = null) EmbeddingBuilder$
+            +input($input = null) EmbeddingBuilder$
             +message($input = null) MessageBuilder$
         }
     }
@@ -407,8 +407,7 @@ direction LR
         }
 
         class EmbeddingBuilder {
-            +withInput($input) self
-            +withInputs(array $inputs) self
+            +withInput(...$input) self
             +usingModel(ModelInterface $model) self
             +usingModelPreference(...$preferredModels) self
             +usingModelConfig(ModelConfig $config) self
@@ -521,7 +520,7 @@ direction LR
     namespace AiClientNamespace {
         class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
-            +embed($input = null) EmbeddingBuilder$
+            +input($input = null) EmbeddingBuilder$
             +message($input = null) MessageBuilder$
             +defaultRegistry() ProviderRegistry$
             +isConfigured(ProviderAvailabilityInterface $availability) bool$
@@ -598,8 +597,7 @@ direction LR
         }
 
         class EmbeddingBuilder {
-            +withInput($input) self
-            +withInputs(array $inputs) self
+            +withInput(...$input) self
             +usingModel(ModelInterface $model) self
             +usingModelPreference(...$preferredModels) self
             +usingModelConfig(ModelConfig $config) self

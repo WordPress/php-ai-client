@@ -166,7 +166,7 @@ try {
     $modelConfig = ModelConfig::fromArray($model_config_data);
 
     // Embeddings use a dedicated builder; other output formats use the prompt builder.
-    $promptBuilder = $isEmbedding ? AiClient::embed($promptInput) : AiClient::prompt($promptInput);
+    $promptBuilder = $isEmbedding ? AiClient::input($promptInput) : AiClient::prompt($promptInput);
     $promptBuilder = $promptBuilder->usingModelConfig($modelConfig);
     if ($providerId && $modelId) {
         $providerClassName = AiClient::defaultRegistry()->getProviderClassName($providerId);

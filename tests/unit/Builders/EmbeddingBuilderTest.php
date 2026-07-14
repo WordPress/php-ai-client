@@ -159,14 +159,14 @@ class EmbeddingBuilderTest extends TestCase
     }
 
     /**
-     * Tests withInputs appends to existing inputs.
+     * Tests variadic withInput appends to existing inputs.
      *
      * @return void
      */
-    public function testWithInputsAppends(): void
+    public function testWithInputAppendsMultipleInputs(): void
     {
         $builder = new EmbeddingBuilder($this->registry, 'First');
-        $builder->withInputs(['Second', 'Third']);
+        $builder->withInput('Second', 'Third');
 
         $this->assertCount(3, $this->getInputs($builder));
     }
@@ -186,18 +186,18 @@ class EmbeddingBuilderTest extends TestCase
     }
 
     /**
-     * Tests withInputs rejects an empty list.
+     * Tests withInput rejects an empty invocation.
      *
      * @return void
      */
-    public function testWithInputsRejectsEmptyList(): void
+    public function testWithInputRejectsNoInputs(): void
     {
         $builder = new EmbeddingBuilder($this->registry);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Inputs must be a non-empty list array.');
+        $this->expectExceptionMessage('At least one input must be provided.');
 
-        $builder->withInputs([]);
+        $builder->withInput();
     }
 
     /**
@@ -324,7 +324,7 @@ class EmbeddingBuilderTest extends TestCase
         $builder = new EmbeddingBuilder($this->registry);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot generate embeddings from empty input. Add content using withInputs().');
+        $this->expectExceptionMessage('Cannot generate embeddings from empty input. Add content using withInput().');
 
         $builder->generateEmbeddingResult();
     }

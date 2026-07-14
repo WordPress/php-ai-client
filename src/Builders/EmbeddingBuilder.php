@@ -110,39 +110,23 @@ class EmbeddingBuilder
     }
 
     /**
-     * Adds multiple inputs to embed.
+     * Adds one or more inputs to embed.
      *
      * @since n.e.x.t
      *
-     * @param list<EmbeddingInput> $inputs The inputs to embed, each treated as an independent input.
+     * @param EmbeddingInput ...$input The inputs to embed, each treated as an independent input.
      * @return self
-     * @throws InvalidArgumentException If the inputs are not a non-empty list or contain an invalid input.
+     * @throws InvalidArgumentException If no inputs are provided or an input is invalid.
      */
-    public function withInputs(array $inputs): self
+    public function withInput(...$input): self
     {
-        if (!array_is_list($inputs) || $inputs === []) {
-            throw new InvalidArgumentException('Inputs must be a non-empty list array.');
+        if ($input === []) {
+            throw new InvalidArgumentException('At least one input must be provided.');
         }
 
-        foreach ($inputs as $input) {
-            $this->inputs[] = $this->parseInput($input);
+        foreach ($input as $singleInput) {
+            $this->inputs[] = $this->parseInput($singleInput);
         }
-
-        return $this;
-    }
-
-    /**
-     * Adds a single input to embed.
-     *
-     * @since n.e.x.t
-     *
-     * @param EmbeddingInput $input The input to embed.
-     * @return self
-     * @throws InvalidArgumentException If the input is invalid.
-     */
-    public function withInput($input): self
-    {
-        $this->inputs[] = $this->parseInput($input);
 
         return $this;
     }
@@ -189,7 +173,7 @@ class EmbeddingBuilder
     {
         if ($this->inputs === []) {
             throw new InvalidArgumentException(
-                'Cannot generate embeddings from empty input. Add content using withInputs().'
+                'Cannot generate embeddings from empty input. Add content using withInput().'
             );
         }
 
