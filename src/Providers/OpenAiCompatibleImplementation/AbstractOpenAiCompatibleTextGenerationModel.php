@@ -55,7 +55,10 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
  * @phpstan-type UsageData array{
  *     prompt_tokens?: int,
  *     completion_tokens?: int,
- *     total_tokens?: int
+ *     total_tokens?: int,
+ *     prompt_tokens_details?: array{
+ *         cached_tokens?: int
+ *     }
  * }
  * @phpstan-type ResponseData array{
  *     id?: string,
@@ -607,7 +610,9 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             $tokenUsage = new TokenUsage(
                 $usage['prompt_tokens'] ?? 0,
                 $usage['completion_tokens'] ?? 0,
-                $usage['total_tokens'] ?? 0
+                $usage['total_tokens'] ?? 0,
+                null,
+                $usage['prompt_tokens_details']['cached_tokens'] ?? null
             );
         } else {
             $tokenUsage = new TokenUsage(0, 0, 0);
