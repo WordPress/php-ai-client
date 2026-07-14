@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Builders;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use WordPress\AiClient\Builders\Traits\ModelResolutionTrait;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
@@ -17,7 +18,7 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
-use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
+use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
@@ -49,20 +50,12 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  */
 class PromptBuilder
 {
-    /**
-     * @var ModelResolver Resolves models shared by fluent builders.
-     */
-    private ModelResolver $modelResolver;
+    use ModelResolutionTrait;
 
     /**
      * @var list<Message> The messages in the conversation.
      */
     protected array $messages = [];
-
-    /**
-     * @var ModelConfig The model configuration.
-     */
-    protected ModelConfig $modelConfig;
 
     /**
      * @var EventDispatcherInterface|null The event dispatcher for prompt lifecycle events.
@@ -85,9 +78,8 @@ class PromptBuilder
         $prompt = null,
         ?EventDispatcherInterface $eventDispatcher = null
     ) {
-        $this->modelResolver = new ModelResolver($registry);
         $this->modelConfig = new ModelConfig();
-        $this->modelResolver->setModelConfig($this->modelConfig);
+        $this->modelResolver = new ModelResolver($registry);
         $this->eventDispatcher = $eventDispatcher;
 
         if ($prompt === null) {
@@ -123,9 +115,14 @@ class PromptBuilder
         }
         $this->messages = $clonedMessages;
 
+        // Clone model config (ModelConfig has __clone)
         $this->modelConfig = clone $this->modelConfig;
+
+        // Clone model resolver (ModelResolver has __clone; clones request options)
         $this->modelResolver = clone $this->modelResolver;
-        $this->modelResolver->setModelConfig($this->modelConfig);
+
+        // Note: $eventDispatcher is a service object and is intentionally NOT
+        // cloned - it should be a shared reference.
     }
 
     /**
@@ -216,75 +213,6 @@ class PromptBuilder
         // Prepend the history messages to the beginning of the messages array
         $this->messages = array_merge($messages, $this->messages);
 
-        return $this;
-    }
-
-    /**
-     * Sets the model to use for generation.
-     *
-     * The model's configuration will be merged with the builder's configuration,
-     * with the builder's configuration taking precedence for any overlapping settings.
-     *
-     * @since 0.1.0
-     *
-     * @param ModelInterface $model The model to use.
-     * @return self
-     */
-    public function usingModel(ModelInterface $model): self
-    {
-        $this->modelResolver->usingModel($model);
-        $this->modelConfig = $this->modelResolver->getModelConfig();
-        return $this;
-    }
-
-    /**
-     * Sets preferred models to evaluate in order.
-     *
-     * @since 0.2.0
-     *
-     * @param string|ModelInterface|array{0:string,1:string} ...$preferredModels The preferred models as model IDs,
-     * model instances, or [provider ID, model ID] tuples. For broader compatibility, it is recommended you specify
-     * only model IDs or model instances, as that will allow for different providers that expose the same model to be
-     * considered.
-     * @return self
-     *
-     * @throws InvalidArgumentException When a preferred model has an invalid type or identifier.
-     */
-    public function usingModelPreference(...$preferredModels): self
-    {
-        $this->modelResolver->usingModelPreference(...$preferredModels);
-        return $this;
-    }
-
-    /**
-         * Sets the model configuration.
-         *
-         * Merges the provided configuration with the builder's configuration,
-     * with builder configuration taking precedence.
-     *
-     * @since 0.1.0
-     *
-     * @param ModelConfig $config The model configuration to merge.
-     * @return self
-     */
-    public function usingModelConfig(ModelConfig $config): self
-    {
-        $this->modelResolver->usingModelConfig($config);
-        $this->modelConfig = $this->modelResolver->getModelConfig();
-        return $this;
-    }
-
-    /**
-     * Sets the provider to use for generation.
-     *
-     * @since 0.1.0
-     *
-     * @param string $providerIdOrClassName The provider ID or class name.
-     * @return self
-     */
-    public function usingProvider(string $providerIdOrClassName): self
-    {
-        $this->modelResolver->usingProvider($providerIdOrClassName);
         return $this;
     }
 
@@ -442,20 +370,6 @@ class PromptBuilder
     public function usingWebSearch(WebSearch $webSearch): self
     {
         $this->modelConfig->setWebSearch($webSearch);
-        return $this;
-    }
-
-    /**
-     * Sets the request options for HTTP transport.
-     *
-     * @since 0.3.0
-     *
-     * @param RequestOptions $requestOptions The request options.
-     * @return self
-     */
-    public function usingRequestOptions(RequestOptions $requestOptions): self
-    {
-        $this->modelResolver->usingRequestOptions($requestOptions);
         return $this;
     }
 
@@ -689,8 +603,9 @@ class PromptBuilder
         // If no intended capability provided, infer from output modalities
         if ($capability === null) {
             // First try to infer from a specific model if one is set
-            if ($this->modelResolver->getModel() !== null) {
-                $inferredCapability = $this->inferCapabilityFromModelInterfaces($this->modelResolver->getModel());
+            $model = $this->modelResolver->getModel();
+            if ($model !== null) {
+                $inferredCapability = $this->inferCapabilityFromModelInterfaces($model);
                 if ($inferredCapability !== null) {
                     $capability = $inferredCapability;
                 }
@@ -705,18 +620,7 @@ class PromptBuilder
         // Build requirements with the specified capability
         $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
 
-        // If the model has been set, check if it meets the requirements
-        if ($this->modelResolver->getModel() !== null) {
-            return $requirements->areMetBy($this->modelResolver->getModel()->metadata());
-        }
-
-        try {
-            // Check if any models support these requirements
-            return $this->modelResolver->hasCandidate($requirements);
-        } catch (InvalidArgumentException $e) {
-            // No models support the requirements
-            return false;
-        }
+        return $this->modelResolver->isSupported($requirements);
     }
 
     /**
@@ -792,6 +696,18 @@ class PromptBuilder
     }
 
     /**
+     * Checks if the prompt is supported for embedding generation.
+     *
+     * @since 0.1.0
+     *
+     * @return bool True if embedding generation is supported.
+     */
+    public function isSupportedForEmbeddingGeneration(): bool
+    {
+        return $this->isSupported(CapabilityEnum::embeddingGeneration());
+    }
+
+    /**
      * Generates a result from the prompt.
      *
      * This is the primary execution method that generates a result (containing
@@ -813,8 +729,9 @@ class PromptBuilder
         // If capability is not provided, infer it
         if ($capability === null) {
             // First try to infer from a specific model if one is set
-            if ($this->modelResolver->getModel() !== null) {
-                $inferredCapability = $this->inferCapabilityFromModelInterfaces($this->modelResolver->getModel());
+            $setModel = $this->modelResolver->getModel();
+            if ($setModel !== null) {
+                $inferredCapability = $this->inferCapabilityFromModelInterfaces($setModel);
                 if ($inferredCapability !== null) {
                     $capability = $inferredCapability;
                 }
@@ -1220,26 +1137,9 @@ class PromptBuilder
      */
     private function getConfiguredModel(CapabilityEnum $capability): ModelInterface
     {
-        return $this->getConfiguredModelForMessages($capability, $this->messages);
-    }
+        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
 
-    /**
-     * Gets the model to use for generation for the provided messages.
-     *
-     * @since n.e.x.t
-     *
-     * @param CapabilityEnum $capability The capability the model will be using.
-     * @param list<Message>  $messages The messages to derive requirements from.
-     * @return ModelInterface The model to use.
-     * @throws InvalidArgumentException If no suitable model is found or set model doesn't meet requirements.
-     */
-    private function getConfiguredModelForMessages(CapabilityEnum $capability, array $messages): ModelInterface
-    {
-        $this->modelResolver->setModelConfig($this->modelConfig);
-        return $this->modelResolver->resolve(
-            ModelRequirements::fromPromptData($capability, $messages, $this->modelConfig),
-            'prompt'
-        );
+        return $this->modelResolver->resolve($requirements, $this->modelConfig, 'prompt');
     }
 
     /**
@@ -1327,15 +1227,13 @@ class PromptBuilder
      * - The last message has parts
      *
      * @since 0.1.0
-     * @since n.e.x.t Accepts an optional messages array to validate; defaults to the builder's messages.
      *
-     * @param list<Message>|null $messages The messages to validate. Defaults to the builder's messages.
      * @return void
      * @throws InvalidArgumentException If validation fails.
      */
-    private function validateMessages(?array $messages = null): void
+    private function validateMessages(): void
     {
-        $messages = $messages ?? $this->messages;
+        $messages = $this->messages;
 
         if (empty($messages)) {
             throw new InvalidArgumentException(

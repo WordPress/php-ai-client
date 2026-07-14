@@ -447,6 +447,9 @@ trait MockModelCreationTrait
                 return $this->config;
             }
 
+            /**
+             * @param list<MessagePart> $inputs The inputs to embed.
+             */
             public function generateEmbeddingResult(array $inputs): EmbeddingResult
             {
                 return $this->result;

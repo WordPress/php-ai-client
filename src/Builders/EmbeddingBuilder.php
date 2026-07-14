@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Builders;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use WordPress\AiClient\Builders\Traits\ModelResolutionTrait;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Events\AfterGenerateEmbeddingEvent;
 use WordPress\AiClient\Events\BeforeGenerateEmbeddingEvent;
-use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
-use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
+use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
@@ -20,89 +22,195 @@ use WordPress\AiClient\Results\DTO\Embedding;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 
 /**
- * Fluent builder for transforming text inputs into embeddings.
+ * Fluent builder for generating embeddings.
+ *
+ * Embeddings transform inputs into vector representations rather than generating a conversational
+ * response. Each input is embedded independently, and the builder produces one embedding vector per
+ * input. Model selection and configuration are shared with {@see PromptBuilder} via the
+ * {@see ModelResolutionTrait}.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type MessagePartArrayShape from MessagePart
+ *
+ * @phpstan-type EmbeddingInput string|MessagePart|File|MessagePartArrayShape
  */
 class EmbeddingBuilder
 {
-    /** @var list<string> */
-    private array $inputs;
-    private ModelResolver $modelResolver;
+    use ModelResolutionTrait;
+
+    /**
+     * @var list<MessagePart> The inputs to embed.
+     */
+    protected array $inputs = [];
+
+    /**
+     * @var EventDispatcherInterface|null The event dispatcher for embedding lifecycle events.
+     */
     private ?EventDispatcherInterface $eventDispatcher;
 
-    /** @param list<string> $inputs The text inputs to embed. */
+    /**
+     * Constructor.
+     *
+     * @since n.e.x.t
+     *
+     * @param ProviderRegistry $registry The provider registry for finding suitable models.
+     * @param EmbeddingInput|list<EmbeddingInput>|null $input Optional initial input(s) to embed.
+     * @param EventDispatcherInterface|null $eventDispatcher Optional event dispatcher for lifecycle events.
+     */
     public function __construct(
-        array $inputs,
         ProviderRegistry $registry,
+        $input = null,
         ?EventDispatcherInterface $eventDispatcher = null
     ) {
-        if (!array_is_list($inputs) || $inputs === []) {
-            throw new InvalidArgumentException('Embedding inputs must be a non-empty list array.');
-        }
-        foreach ($inputs as $input) {
-            if (!is_string($input) || trim($input) === '') {
-                throw new InvalidArgumentException('Embedding inputs must be non-empty strings.');
-            }
-        }
-        $this->inputs = $inputs;
+        $this->modelConfig = new ModelConfig();
         $this->modelResolver = new ModelResolver($registry);
         $this->eventDispatcher = $eventDispatcher;
+
+        if ($input === null) {
+            return;
+        }
+
+        // A list array is a list of inputs; a single message part array shape is associative,
+        // so it is handled as a single input below.
+        if (is_array($input) && array_is_list($input)) {
+            if ($input === []) {
+                throw new InvalidArgumentException('Inputs must be a non-empty list array.');
+            }
+            foreach ($input as $single) {
+                $this->inputs[] = $this->parseInput($single);
+            }
+            return;
+        }
+
+        $this->inputs[] = $this->parseInput($input);
     }
 
     /**
-     * Creates an independent copy of the builder configuration.
+     * Creates a deep clone of this builder.
+     *
+     * Clones the inputs and model configuration. Service objects (registry, event dispatcher) are
+     * intentionally NOT cloned as they are shared dependencies.
      *
      * @since n.e.x.t
      */
     public function __clone()
     {
+        $clonedInputs = [];
+        foreach ($this->inputs as $input) {
+            $clonedInputs[] = clone $input;
+        }
+        $this->inputs = $clonedInputs;
+
+        $this->modelConfig = clone $this->modelConfig;
         $this->modelResolver = clone $this->modelResolver;
+
+        // Note: $eventDispatcher is a service object and is intentionally NOT
+        // cloned - it should be a shared reference.
     }
 
-    public function usingModel(ModelInterface $model): self
+    /**
+     * Adds multiple inputs to embed.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<EmbeddingInput> $inputs The inputs to embed, each treated as an independent input.
+     * @return self
+     * @throws InvalidArgumentException If the inputs are not a non-empty list or contain an invalid input.
+     */
+    public function withInputs(array $inputs): self
     {
-        $this->modelResolver->usingModel($model);
+        if (!array_is_list($inputs) || $inputs === []) {
+            throw new InvalidArgumentException('Inputs must be a non-empty list array.');
+        }
+
+        foreach ($inputs as $input) {
+            $this->inputs[] = $this->parseInput($input);
+        }
+
         return $this;
     }
-    public function usingModelConfig(ModelConfig $config): self
+
+    /**
+     * Adds a single input to embed.
+     *
+     * @since n.e.x.t
+     *
+     * @param EmbeddingInput $input The input to embed.
+     * @return self
+     * @throws InvalidArgumentException If the input is invalid.
+     */
+    public function withInput($input): self
     {
-        $this->modelResolver->usingModelConfig($config);
+        $this->inputs[] = $this->parseInput($input);
+
         return $this;
     }
-    /** @param string|ModelInterface|array{0:string,1:string} ...$models Preferred models. */
-    public function usingModelPreference(...$models): self
-    {
-        $this->modelResolver->usingModelPreference(...$models);
-        return $this;
-    }
-    public function usingProvider(string $provider): self
-    {
-        $this->modelResolver->usingProvider($provider);
-        return $this;
-    }
-    public function usingRequestOptions(RequestOptions $options): self
-    {
-        $this->modelResolver->usingRequestOptions($options);
-        return $this;
-    }
+
+    /**
+     * Sets the embedding dimensions.
+     *
+     * @since n.e.x.t
+     *
+     * @param int $dimensions The embedding dimensions.
+     * @return self
+     */
     public function usingDimensions(int $dimensions): self
     {
-        $this->modelResolver->getModelConfig()->setDimensions($dimensions);
+        $this->modelConfig->setDimensions($dimensions);
         return $this;
     }
 
+    /**
+     * Checks whether the current inputs and configuration are supported by an available model.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if a suitable embedding model is available.
+     */
+    public function isSupported(): bool
+    {
+        $requirements = ModelRequirements::fromEmbeddingData($this->inputs, $this->modelConfig);
+
+        return $this->modelResolver->isSupported($requirements);
+    }
+
+    /**
+     * Generates an embedding result from the configured inputs.
+     *
+     * @since n.e.x.t
+     *
+     * @return EmbeddingResult The generated embedding result.
+     * @throws InvalidArgumentException If no inputs are configured or model validation fails.
+     * @throws RuntimeException If the model doesn't support embedding generation, or returns an
+     *                          embedding count that does not match the number of inputs.
+     */
     public function generateEmbeddingResult(): EmbeddingResult
     {
-        $capability = CapabilityEnum::embeddingGeneration();
-        $model = $this->modelResolver->resolve(new ModelRequirements([$capability], []));
-        if (!$model instanceof EmbeddingGenerationModelInterface) {
-            throw new RuntimeException(
-                sprintf('Model "%s" does not support embedding generation.', $model->metadata()->getId())
+        if ($this->inputs === []) {
+            throw new InvalidArgumentException(
+                'Cannot generate embeddings from empty input. Add content using withInputs().'
             );
         }
-        $this->dispatch(new BeforeGenerateEmbeddingEvent($this->inputs, $model, $capability));
+
+        $capability = CapabilityEnum::embeddingGeneration();
+        $requirements = ModelRequirements::fromEmbeddingData($this->inputs, $this->modelConfig);
+        $model = $this->modelResolver->resolve($requirements, $this->modelConfig);
+
+        if (!$model instanceof EmbeddingGenerationModelInterface) {
+            throw new RuntimeException(
+                sprintf(
+                    'Model "%s" does not support embedding generation.',
+                    $model->metadata()->getId()
+                )
+            );
+        }
+
+        $this->dispatchEvent(new BeforeGenerateEmbeddingEvent($this->inputs, $model, $capability));
+
         $result = $model->generateEmbeddingResult($this->inputs);
+
+        // Embeddings map positionally to inputs, so the counts must match.
         if (count($result->getEmbeddings()) !== count($this->inputs)) {
             throw new RuntimeException(
                 sprintf(
@@ -112,27 +220,111 @@ class EmbeddingBuilder
                 )
             );
         }
-        $this->dispatch(new AfterGenerateEmbeddingEvent($this->inputs, $model, $capability, $result));
+
+        $this->dispatchEvent(new AfterGenerateEmbeddingEvent($this->inputs, $model, $capability, $result));
+
         return $result;
     }
 
+    /**
+     * Generates a single embedding from the configured input.
+     *
+     * @since n.e.x.t
+     *
+     * @return Embedding The generated embedding vector.
+     * @throws InvalidArgumentException If no inputs are configured, model validation fails, or
+     *                                  multiple inputs were provided.
+     */
     public function generateEmbedding(): Embedding
     {
-        if (count($this->inputs) !== 1) {
+        if (count($this->inputs) > 1) {
             throw new InvalidArgumentException(
-                'generateEmbedding() requires exactly one input; use generateEmbeddings() for batches.'
+                'generateEmbedding() returns a single vector; use generateEmbeddings() for multiple inputs.'
             );
         }
+
         return $this->generateEmbeddingResult()->getEmbedding();
     }
 
-    /** @return list<Embedding> The generated embeddings. */
+    /**
+     * Generates embeddings from the configured inputs.
+     *
+     * @since n.e.x.t
+     *
+     * @return list<Embedding> The generated embedding vectors.
+     * @throws InvalidArgumentException If no inputs are configured or model validation fails.
+     * @throws RuntimeException If the model doesn't support embedding generation, or returns an
+     *                          embedding count that does not match the number of inputs.
+     */
     public function generateEmbeddings(): array
     {
         return $this->generateEmbeddingResult()->getEmbeddings();
     }
 
-    private function dispatch(object $event): void
+    /**
+     * Parses a single input into a message part.
+     *
+     * @since n.e.x.t
+     *
+     * @param mixed $input The input to parse. Accepts a string, MessagePart, File, or
+     *                     MessagePartArrayShape.
+     * @return MessagePart The parsed message part.
+     * @throws InvalidArgumentException If the input type is not supported or is an invalid part type.
+     */
+    private function parseInput($input): MessagePart
+    {
+        if ($input instanceof MessagePart) {
+            return $this->validatePart($input);
+        }
+
+        if (is_string($input)) {
+            if (trim($input) === '') {
+                throw new InvalidArgumentException('Cannot create an embedding input from an empty string.');
+            }
+            return new MessagePart($input);
+        }
+
+        if ($input instanceof File) {
+            return new MessagePart($input);
+        }
+
+        if (is_array($input) && MessagePart::isArrayShape($input)) {
+            return $this->validatePart(MessagePart::fromArray($input));
+        }
+
+        throw new InvalidArgumentException(
+            'Embedding input must be a string, MessagePart, File, or MessagePartArrayShape.'
+        );
+    }
+
+    /**
+     * Validates that a message part is a valid embedding input.
+     *
+     * @since n.e.x.t
+     *
+     * @param MessagePart $part The part to validate.
+     * @return MessagePart The validated part.
+     * @throws InvalidArgumentException If the part is not a text or file part.
+     */
+    private function validatePart(MessagePart $part): MessagePart
+    {
+        $type = $part->getType();
+        if (!$type->isText() && !$type->isFile()) {
+            throw new InvalidArgumentException('Embedding inputs must be text or file parts.');
+        }
+
+        return $part;
+    }
+
+    /**
+     * Dispatches an event if an event dispatcher is registered.
+     *
+     * @since n.e.x.t
+     *
+     * @param object $event The event to dispatch.
+     * @return void
+     */
+    private function dispatchEvent(object $event): void
     {
         if ($this->eventDispatcher !== null) {
             $this->eventDispatcher->dispatch($event);

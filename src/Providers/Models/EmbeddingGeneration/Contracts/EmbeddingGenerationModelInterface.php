@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts;
 
+use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 
 /**
@@ -18,8 +19,8 @@ interface EmbeddingGenerationModelInterface
      *
      * @since n.e.x.t
      *
-     * @param list<string> $inputs Text inputs to embed.
-     * @return EmbeddingResult Result containing generated embedding vectors.
+     * @param list<MessagePart> $inputs The inputs to embed, one embedding generated per input.
+     * @return EmbeddingResult Result containing one embedding per input, in input order.
      */
     public function generateEmbeddingResult(array $inputs): EmbeddingResult;
 }
