@@ -90,7 +90,7 @@ class AiClient
     /**
      * @var string The version of the AI Client.
      */
-    public const VERSION = '1.3.1';
+    public const VERSION = '1.4.0';
 
     /**
      * @var ProviderRegistry|null The default provider registry instance.
@@ -250,7 +250,7 @@ class AiClient
      * embedding generation method such as generateEmbedding() or generateEmbeddings() to produce
      * one vector per input.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param EmbeddingInput|list<EmbeddingInput>|null $input Optional initial input(s) to embed.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
@@ -415,7 +415,7 @@ class AiClient
     /**
      * Generates embeddings using the traditional API approach.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param EmbeddingInput|list<EmbeddingInput> $input The input(s) to embed.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
@@ -440,7 +440,7 @@ class AiClient
     /**
      * Generates an embedding using the traditional API approach.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param EmbeddingInput $input The input to embed.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
@@ -460,7 +460,7 @@ class AiClient
     /**
      * Generates embeddings for a list of inputs using the traditional API approach.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param list<EmbeddingInput> $inputs The inputs to embed.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,

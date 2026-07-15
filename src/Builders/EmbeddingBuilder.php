@@ -29,7 +29,7 @@ use WordPress\AiClient\Results\DTO\EmbeddingResult;
  * input. Model selection and configuration are shared with {@see PromptBuilder} via the
  * {@see ModelResolutionTrait}.
  *
- * @since n.e.x.t
+ * @since 1.4.0
  *
  * @phpstan-import-type MessagePartArrayShape from MessagePart
  *
@@ -52,7 +52,7 @@ class EmbeddingBuilder
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param ProviderRegistry $registry The provider registry for finding suitable models.
      * @param EmbeddingInput|list<EmbeddingInput>|null $input Optional initial input(s) to embed.
@@ -87,7 +87,7 @@ class EmbeddingBuilder
      * Clones the inputs and model configuration. Service objects (registry, event dispatcher) are
      * intentionally NOT cloned as they are shared dependencies.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      */
     public function __clone()
     {
@@ -107,7 +107,7 @@ class EmbeddingBuilder
     /**
      * Adds one or more inputs to embed.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param EmbeddingInput ...$input The inputs to embed, each treated as an independent input.
      * @return self
@@ -129,7 +129,7 @@ class EmbeddingBuilder
     /**
      * Sets the embedding dimensions.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param int $dimensions The embedding dimensions.
      * @return self
@@ -143,7 +143,7 @@ class EmbeddingBuilder
     /**
      * Checks whether the current inputs and configuration are supported by an available model.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @return bool True if a suitable embedding model is available.
      */
@@ -157,7 +157,7 @@ class EmbeddingBuilder
     /**
      * Generates an embedding result from the configured inputs.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @return EmbeddingResult The generated embedding result.
      * @throws InvalidArgumentException If no inputs are configured or model validation fails.
@@ -208,7 +208,7 @@ class EmbeddingBuilder
     /**
      * Generates a single embedding from the configured input.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @return Embedding The generated embedding vector.
      * @throws InvalidArgumentException If no inputs are configured, model validation fails, or
@@ -228,7 +228,7 @@ class EmbeddingBuilder
     /**
      * Generates embeddings from the configured inputs.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @return list<Embedding> The generated embedding vectors.
      * @throws InvalidArgumentException If no inputs are configured or model validation fails.
@@ -243,7 +243,7 @@ class EmbeddingBuilder
     /**
      * Parses a single input into a message part.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param mixed $input The input to parse. Accepts a string, MessagePart, File, or
      *                     MessagePartArrayShape.
@@ -279,7 +279,7 @@ class EmbeddingBuilder
     /**
      * Validates that a message part is a valid embedding input.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param MessagePart $part The part to validate.
      * @return MessagePart The validated part.
@@ -298,7 +298,7 @@ class EmbeddingBuilder
     /**
      * Dispatches an event if an event dispatcher is registered.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param object $event The event to dispatch.
      * @return void

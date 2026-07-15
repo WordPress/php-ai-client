@@ -18,7 +18,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * fluent API for choosing a model, provider, preferences, request options, and model configuration.
  * Model selection state and logic live on the {@see ModelResolver} owned by the builder.
  *
- * @since n.e.x.t
+ * @since 1.4.0
  */
 trait ModelResolutionTrait
 {
