@@ -9,7 +9,7 @@ use WordPress\AiClient\Messages\Enums\ModalityEnum;
 /**
  * Utility class for building modality combinations.
  *
- * @since n.e.x.t
+ * @since 1.4.0
  */
 class ModalityCombinationsUtil
 {
@@ -22,7 +22,7 @@ class ModalityCombinationsUtil
      * complete combination. Modality lists are unordered, so only unique
      * combinations (not permutations) are produced.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param list<ModalityEnum> $required Required modalities included in every combination.
      * @param list<ModalityEnum> $optional Optional modalities to generate subsets from.

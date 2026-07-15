@@ -207,7 +207,7 @@ class ModelRequirements extends AbstractDataTransferObject
      * conversation, so no chat history capability is inferred. Each input contributes its input
      * modality (text or file) to the requirements.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param list<MessagePart> $inputs The embedding inputs.
      * @param ModelConfig $modelConfig The model configuration.
@@ -246,7 +246,7 @@ class ModelRequirements extends AbstractDataTransferObject
     /**
      * Determines the input modality contributed by a message part, if any.
      *
-     * @since n.e.x.t
+     * @since 1.4.0
      *
      * @param MessagePart $part The message part to analyze.
      * @return ModalityEnum|null The input modality, or null if the part contributes none.
