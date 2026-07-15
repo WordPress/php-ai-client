@@ -88,7 +88,43 @@ $imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in t
     ->generateImage();
 ```
 
-See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php) and its public methods for all the ways you can configure the prompt.
+### Embedding generation using any compatible model
+
+```php
+use WordPress\AiClient\AiClient;
+
+$embedding = AiClient::input('PHP powers a large part of the web.')
+    ->generateEmbedding();
+
+$values = $embedding->getValues();
+```
+
+### Batch embedding generation
+
+```php
+use WordPress\AiClient\AiClient;
+
+$embeddings = AiClient::input([
+        'PHP powers a large part of the web.',
+        'WordPress makes publishing accessible.',
+    ])
+    ->usingProvider('openai')
+    ->generateEmbeddings();
+```
+
+### Embedding generation with dimensions
+
+```php
+use WordPress\AiClient\AiClient;
+
+$embedding = AiClient::input('PHP powers a large part of the web.')
+    ->usingDimensions(512)
+    ->generateEmbedding();
+```
+
+Embedding inputs are independent [`MessagePart`](https://github.com/WordPress/php-ai-client/blob/trunk/src/Messages/DTO/MessagePart.php) values, not a conversation. `input()` accepts one input or a list of inputs. Variadic `withInput()` accepts one or more arguments, and lists can be passed using PHP's spread syntax (`withInput(...$inputs)`). Each input may be a string, `MessagePart`, `File`, or message-part array shape. Model selection accounts for their input modalities and embedding configuration.
+
+See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php) and the [`EmbeddingBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/EmbeddingBuilder.php) and their public methods for all the ways you can configure generation.
 
 **More documentation is coming soon.**
 

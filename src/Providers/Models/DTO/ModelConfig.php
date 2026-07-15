@@ -45,6 +45,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  *     outputMediaOrientation?: string,
  *     outputMediaAspectRatio?: string,
  *     outputSpeechVoice?: string,
+ *     dimensions?: int,
  *     customOptions?: array<string, mixed>
  * }
  *
@@ -72,6 +73,7 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_OUTPUT_MEDIA_ORIENTATION = 'outputMediaOrientation';
     public const KEY_OUTPUT_MEDIA_ASPECT_RATIO = 'outputMediaAspectRatio';
     public const KEY_OUTPUT_SPEECH_VOICE = 'outputSpeechVoice';
+    public const KEY_DIMENSIONS = 'dimensions';
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
 
     /*
@@ -180,6 +182,11 @@ class ModelConfig extends AbstractDataTransferObject
      * @var string|null Output speech voice.
      */
     protected ?string $outputSpeechVoice = null;
+
+    /**
+     * @var int|null Embedding vector dimensions.
+     */
+    protected ?int $dimensions = null;
 
     /**
      * @var array<string, mixed> Custom provider-specific options.
@@ -772,6 +779,34 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Sets the embedding dimensions.
+     *
+     * @since n.e.x.t
+     *
+     * @param int $dimensions The embedding dimensions.
+     */
+    public function setDimensions(int $dimensions): void
+    {
+        if ($dimensions < 1) {
+            throw new InvalidArgumentException('Dimensions must be greater than zero.');
+        }
+
+        $this->dimensions = $dimensions;
+    }
+
+    /**
+     * Gets the embedding dimensions.
+     *
+     * @since n.e.x.t
+     *
+     * @return int|null The embedding dimensions.
+     */
+    public function getDimensions(): ?int
+    {
+        return $this->dimensions;
+    }
+
+    /**
      * Sets a single custom option.
      *
      * @since 0.1.0
@@ -915,6 +950,11 @@ class ModelConfig extends AbstractDataTransferObject
                     'type' => 'string',
                     'description' => 'Output speech voice.',
                 ],
+                self::KEY_DIMENSIONS => [
+                    'type' => 'integer',
+                    'minimum' => 1,
+                    'description' => 'Embedding vector dimensions.',
+                ],
                 self::KEY_CUSTOM_OPTIONS => [
                     'type' => 'object',
                     'additionalProperties' => true,
@@ -1026,6 +1066,10 @@ class ModelConfig extends AbstractDataTransferObject
             $data[self::KEY_OUTPUT_SPEECH_VOICE] = $this->outputSpeechVoice;
         }
 
+        if ($this->dimensions !== null) {
+            $data[self::KEY_DIMENSIONS] = $this->dimensions;
+        }
+
         if (!empty($this->customOptions)) {
             $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
         }
@@ -1129,6 +1173,10 @@ class ModelConfig extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_OUTPUT_SPEECH_VOICE])) {
             $config->setOutputSpeechVoice($array[self::KEY_OUTPUT_SPEECH_VOICE]);
+        }
+
+        if (isset($array[self::KEY_DIMENSIONS])) {
+            $config->setDimensions($array[self::KEY_DIMENSIONS]);
         }
 
         if (isset($array[self::KEY_CUSTOM_OPTIONS])) {
