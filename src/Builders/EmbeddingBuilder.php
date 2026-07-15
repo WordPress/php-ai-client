@@ -71,6 +71,13 @@ class EmbeddingBuilder
             return;
         }
 
+        if (is_array($input) && array_is_list($input)) {
+            /** @var list<EmbeddingInput> $input */
+            $this->withInput(...$input);
+            return;
+        }
+
+        /** @var EmbeddingInput $input */
         $this->withInput($input);
     }
 
@@ -102,7 +109,7 @@ class EmbeddingBuilder
      *
      * @since n.e.x.t
      *
-     * @param EmbeddingInput|list<EmbeddingInput> ...$input The inputs to embed, each treated as an independent input.
+     * @param EmbeddingInput ...$input The inputs to embed, each treated as an independent input.
      * @return self
      * @throws InvalidArgumentException If no inputs are provided or an input is invalid.
      */
@@ -113,17 +120,6 @@ class EmbeddingBuilder
         }
 
         foreach ($input as $singleInput) {
-            // List arrays contain multiple inputs; message part array shapes are associative.
-            if (is_array($singleInput) && array_is_list($singleInput)) {
-                if ($singleInput === []) {
-                    throw new InvalidArgumentException('Input lists must not be empty.');
-                }
-                foreach ($singleInput as $listInput) {
-                    $this->inputs[] = $this->parseInput($listInput);
-                }
-                continue;
-            }
-
             $this->inputs[] = $this->parseInput($singleInput);
         }
 

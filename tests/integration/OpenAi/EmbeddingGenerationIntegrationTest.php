@@ -64,12 +64,12 @@ class EmbeddingGenerationIntegrationTest extends TestCase
     }
 
     /**
-     * Tests generating a single embedding from a list passed to withInput().
+     * Tests generating a single embedding from a spread list passed to withInput().
      */
     public function testSingleEmbeddingGenerationWithInput(): void
     {
         $embedding = AiClient::input()
-            ->withInput(['PHP powers a large part of the web.'])
+            ->withInput(...['PHP powers a large part of the web.'])
             ->usingProvider('openai')
             ->generateEmbedding();
 
