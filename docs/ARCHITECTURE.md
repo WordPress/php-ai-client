@@ -365,6 +365,7 @@ direction LR
             +usingRequestOptions(RequestOptions $requestOptions) self
             +usingSystemInstruction(string $systemInstruction) self
             +usingMaxTokens(int $maxTokens) self
+            +usingTokenCounter(TokenCounterInterface $tokenCounter) self
             +usingTemperature(float $temperature) self
             +usingTopP(float $topP) self
             +usingTopK(int $topK) self
@@ -556,6 +557,7 @@ direction LR
             +usingProvider(string $providerIdOrClassName) self
             +usingSystemInstruction(string $systemInstruction) self
             +usingMaxTokens(int $maxTokens) self
+            +usingTokenCounter(TokenCounterInterface $tokenCounter) self
             +usingTemperature(float $temperature) self
             +usingTopP(float $topP) self
             +usingTopK(int $topK) self
@@ -1103,6 +1105,7 @@ direction LR
             +getName() string
             +getSupportedCapabilities() CapabilityEnum[]
             +getSupportedOptions() SupportedOption[]
+            +getContextWindow() ?int
             +getJsonSchema() array< string, mixed >$
         }
         class ModelRequirements {
