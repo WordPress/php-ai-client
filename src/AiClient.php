@@ -8,6 +8,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\SimpleCache\CacheInterface;
 use WordPress\AiClient\Builders\EmbeddingBuilder;
 use WordPress\AiClient\Builders\PromptBuilder;
+use WordPress\AiClient\Builders\TextExtractionBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
@@ -19,6 +20,7 @@ use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Embedding;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Results\DTO\TextExtractionResult;
 
 /**
  * Main AI Client class providing both fluent and traditional APIs for AI operations.
@@ -84,6 +86,7 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  * @phpstan-import-type Prompt from PromptBuilder
  * @phpstan-import-type EmbeddingInput from EmbeddingBuilder
  * @phpstan-import-type ProviderModelTuple from ModelResolver
+ * @phpstan-import-type DocumentInput from TextExtractionBuilder
  *
  * phpcs:ignore Generic.Files.LineLength.TooLong
  */
@@ -268,6 +271,30 @@ class AiClient
             $registry ?? self::defaultRegistry(),
             $input,
             self::$eventDispatcher
+        );
+    }
+
+    /**
+     * Creates a text extraction builder for fluent document text extraction (OCR / document parsing).
+     *
+     * Chain extractTextResult() to get the structured, per-page result, or extractText() to get
+     * the extracted content as a single markdown string.
+     *
+     * @since n.e.x.t
+     *
+     * @param DocumentInput|null $document Optional document to extract text from: a File instance,
+     *                                     or a string URL, data URI, base64 data, or local file path.
+     *                                     When the MIME type cannot be inferred from the input (e.g.
+     *                                     an extensionless URL), pass a File instance with an explicit
+     *                                     MIME type, or use the builder's withDocument($document, $mimeType).
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
+     * @return TextExtractionBuilder The text extraction builder instance.
+     */
+    public static function document($document = null, ?ProviderRegistry $registry = null): TextExtractionBuilder
+    {
+        return new TextExtractionBuilder(
+            $registry ?? self::defaultRegistry(),
+            $document
         );
     }
 
@@ -493,6 +520,48 @@ class AiClient
     }
 
     /**
+     * Extracts text from a document using the traditional API approach.
+     *
+     * @since n.e.x.t
+     *
+     * @param DocumentInput $document The document to extract text from.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
+     * @return TextExtractionResult The structured extraction result.
+     */
+    public static function extractTextResult(
+        $document,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): TextExtractionResult {
+        self::validateModelOrConfigParameter($modelOrConfig);
+        return self::applyModelOrConfig(self::document($document, $registry), $modelOrConfig)
+            ->extractTextResult();
+    }
+
+    /**
+     * Extracts text from a document and returns it as a single markdown string.
+     *
+     * @since n.e.x.t
+     *
+     * @param DocumentInput $document The document to extract text from.
+     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
+     *                                                        or model configuration for auto-discovery,
+     *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
+     * @return string The extracted content, pages joined in order.
+     */
+    public static function extractText(
+        $document,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): string {
+        return self::extractTextResult($document, $modelOrConfig, $registry)->toMarkdown();
+    }
+
+    /**
      * Creates a new message builder for fluent API usage.
      *
      * This method will be implemented once MessageBuilder is available.
@@ -604,7 +673,7 @@ class AiClient
      * Works with any builder that exposes the shared model resolution methods
      * (see {@see \WordPress\AiClient\Builders\Traits\ModelResolutionTrait}).
      *
-     * @template T of PromptBuilder
+     * @template T of PromptBuilder|TextExtractionBuilder
      *
      * @param T $builder The builder to configure.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Specific model, model configuration,
