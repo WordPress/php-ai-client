@@ -120,6 +120,29 @@ class TextExtractionResultTest extends TestCase
         );
     }
 
+    public function testConstructorRejectsNonExtractedPageEntries(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('All pages must be ExtractedPage instances.');
+
+        new TextExtractionResult(
+            'id',
+            /** @phpstan-ignore-next-line Intentionally passing invalid page entries. */
+            ['not a page'],
+            new TokenUsage(0, 0, 0),
+            new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud()),
+            new ModelMetadata('mock-ocr-model', 'Mock OCR Model', [], [])
+        );
+    }
+
+    public function testPageDimensionsRejectsNonPositiveValues(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Page dimensions must be positive integers.');
+
+        new PageDimensions(0, 2200);
+    }
+
     public function testExtractedPageRejectsZeroPageNumber(): void
     {
         $this->expectException(InvalidArgumentException::class);

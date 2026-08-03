@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\traits;
 
+use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -17,12 +18,15 @@ use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingG
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\TextExtraction\Contracts\TextExtractionModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
+use WordPress\AiClient\Results\DTO\ExtractedPage;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Results\DTO\TextExtractionResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tests\mocks\MockProvider;
@@ -199,6 +203,116 @@ trait MockModelCreationTrait
             [CapabilityEnum::embeddingGeneration()],
             $supportedOptions
         );
+    }
+
+    /**
+     * Creates a test model metadata instance for text extraction.
+     *
+     * @param string $id Optional model ID.
+     * @param string $name Optional model name.
+     * @return ModelMetadata
+     */
+    protected function createTestTextExtractionModelMetadata(
+        string $id = 'test-text-extraction-model',
+        string $name = 'Test Text Extraction Model'
+    ): ModelMetadata {
+        return new ModelMetadata(
+            $id,
+            $name,
+            [CapabilityEnum::textExtraction()],
+            []
+        );
+    }
+
+    /**
+     * Creates a test TextExtractionResult for testing purposes.
+     *
+     * @param list<string>|null $pageContents Optional markdown content, one entry per page.
+     * @return TextExtractionResult
+     */
+    protected function createTestTextExtractionResult(?array $pageContents = null): TextExtractionResult
+    {
+        $pageContents = $pageContents ?? ['# Extracted content'];
+
+        $pages = [];
+        foreach (array_values($pageContents) as $index => $markdown) {
+            $pages[] = new ExtractedPage($index + 1, $markdown);
+        }
+
+        return new TextExtractionResult(
+            'test-extraction-result-id',
+            $pages,
+            new TokenUsage(0, 0, 0),
+            new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud()),
+            $this->createTestTextExtractionModelMetadata()
+        );
+    }
+
+    /**
+     * Creates a mock text extraction model using anonymous class.
+     *
+     * @param TextExtractionResult $result The result to return from extraction.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @return ModelInterface&TextExtractionModelInterface The mock model.
+     */
+    protected function createMockTextExtractionModel(
+        TextExtractionResult $result,
+        ?ModelMetadata $metadata = null
+    ): ModelInterface {
+        $metadata = $metadata ?? $this->createTestTextExtractionModelMetadata();
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, TextExtractionModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private TextExtractionResult $result;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                TextExtractionResult $result
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->result = $result;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function extractTextResult(File $document): TextExtractionResult
+            {
+                return $this->result;
+            }
+        };
     }
 
     /**

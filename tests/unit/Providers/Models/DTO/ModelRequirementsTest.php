@@ -832,4 +832,77 @@ class ModelRequirementsTest extends TestCase
         $this->assertTrue($hasTopP, 'Top P option should be present');
         $this->assertTrue($hasDimensions, 'Dimensions option should be present');
     }
+
+    /**
+     * Tests fromExtractionData method with a document file.
+     *
+     * @return void
+     */
+    public function testFromExtractionDataWithDocument(): void
+    {
+        $document = new File('https://example.com/document.pdf', 'application/pdf');
+
+        $requirements = ModelRequirements::fromExtractionData($document, new ModelConfig());
+
+        $this->assertEquals([CapabilityEnum::textExtraction()], $requirements->getRequiredCapabilities());
+
+        $inputModalityOptions = array_filter(
+            $requirements->getRequiredOptions(),
+            fn($opt) => $opt->getName()->isInputModalities()
+        );
+        $this->assertNotEmpty($inputModalityOptions);
+
+        $modalityValues = array_values($inputModalityOptions)[0]->getValue();
+        $this->assertEquals([ModalityEnum::document()], $modalityValues);
+    }
+
+    /**
+     * Tests fromExtractionData method with an image file.
+     *
+     * @return void
+     */
+    public function testFromExtractionDataWithImage(): void
+    {
+        $image = new File('https://example.com/scan.png', 'image/png');
+
+        $requirements = ModelRequirements::fromExtractionData($image, new ModelConfig());
+
+        $this->assertEquals([CapabilityEnum::textExtraction()], $requirements->getRequiredCapabilities());
+
+        $inputModalityOptions = array_filter(
+            $requirements->getRequiredOptions(),
+            fn($opt) => $opt->getName()->isInputModalities()
+        );
+        $this->assertNotEmpty($inputModalityOptions);
+
+        $modalityValues = array_values($inputModalityOptions)[0]->getValue();
+        $this->assertEquals([ModalityEnum::image()], $modalityValues);
+    }
+
+    /**
+     * Tests fromExtractionData method includes extraction options from the model configuration.
+     *
+     * Extraction options such as page selection are provider-specific and travel as
+     * custom options on the model configuration.
+     *
+     * @return void
+     */
+    public function testFromExtractionDataWithModelConfigOptions(): void
+    {
+        $document = new File('https://example.com/document.pdf', 'application/pdf');
+        $modelConfig = new ModelConfig();
+        $modelConfig->setCustomOption('pages', [0, 1]);
+
+        $requirements = ModelRequirements::fromExtractionData($document, $modelConfig);
+
+        $hasPagesOption = false;
+        foreach ($requirements->getRequiredOptions() as $option) {
+            if ($option->getName()->isCustomOptions()) {
+                $hasPagesOption = true;
+                $this->assertEquals(['pages' => [0, 1]], $option->getValue());
+            }
+        }
+
+        $this->assertTrue($hasPagesOption, 'Custom pages option should be present');
+    }
 }
