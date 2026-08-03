@@ -51,6 +51,8 @@ class AbstractApiBasedModelMetadataDirectoryTest extends TestCase
         $this->assertCount(2, $models);
         $this->assertContains($this->mockModels['model-1'], $models);
         $this->assertContains($this->mockModels['model-2'], $models);
+        $this->assertSame($this->mockModels['model-1'], $directory->getModelMetadata('model-1'));
+        $this->assertSame(1, $directory->getExplicitModelMetadataLookupCount());
     }
 
     /**

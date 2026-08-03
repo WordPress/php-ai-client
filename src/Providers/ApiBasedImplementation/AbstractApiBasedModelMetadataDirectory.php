@@ -56,7 +56,9 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     final public function listModelMetadata(): array
     {
         $modelsMetadata = $this->getModelMetadataMap();
-        return array_values($this->applyExplicitModelMetadataOverrides($modelsMetadata));
+        $explicitModelsMetadata = $this->getExplicitModelMetadataMap(array_keys($modelsMetadata));
+
+        return array_values(array_replace($modelsMetadata, $explicitModelsMetadata));
     }
 
     /**
@@ -66,7 +68,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
      */
     final public function hasModelMetadata(string $modelId): bool
     {
-        if ($this->getExplicitModelMetadata($modelId) !== null) {
+        if (isset($this->getExplicitModelMetadataMap([$modelId])[$modelId])) {
             return true;
         }
 
@@ -81,9 +83,9 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
      */
     final public function getModelMetadata(string $modelId): ModelMetadata
     {
-        $explicitModelMetadata = $this->getExplicitModelMetadata($modelId);
-        if ($explicitModelMetadata !== null) {
-            return $explicitModelMetadata;
+        $explicitModelsMetadata = $this->getExplicitModelMetadataMap([$modelId]);
+        if (isset($explicitModelsMetadata[$modelId])) {
+            return $explicitModelsMetadata[$modelId];
         }
 
         $modelsMetadata = $this->getModelMetadataMap();
@@ -96,40 +98,32 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     }
 
     /**
-     * Applies explicit metadata overrides to listed model metadata.
-     *
-     * @since n.e.x.t
-     *
-     * @param array<string, ModelMetadata> $modelsMetadata Map of model ID to model metadata.
-     * @return array<string, ModelMetadata> Map of model ID to model metadata with explicit overrides applied.
-     */
-    private function applyExplicitModelMetadataOverrides(array $modelsMetadata): array
-    {
-        foreach (array_keys($modelsMetadata) as $modelId) {
-            $explicitModelMetadata = $this->getExplicitModelMetadata($modelId);
-            if ($explicitModelMetadata !== null) {
-                $modelsMetadata[$modelId] = $explicitModelMetadata;
-            }
-        }
-
-        return $modelsMetadata;
-    }
-
-    /**
      * Gets explicit model metadata using request-local memoization.
      *
      * @since n.e.x.t
      *
-     * @param string $modelId The explicit model ID.
-     * @return ModelMetadata|null The model metadata, or null to fall back to listing provider models.
+     * @param list<string> $modelIds Model IDs for which to get explicit metadata.
+     * @return array<string, ModelMetadata> Map of model ID to explicit model metadata.
      */
-    private function getExplicitModelMetadata(string $modelId): ?ModelMetadata
+    private function getExplicitModelMetadataMap(array $modelIds): array
     {
-        if (!array_key_exists($modelId, $this->explicitModelMetadataCache)) {
-            $this->explicitModelMetadataCache[$modelId] = $this->createModelMetadataForExplicitModelId($modelId);
+        $uncheckedModelIds = [];
+        foreach ($modelIds as $modelId) {
+            if (!array_key_exists($modelId, $this->explicitModelMetadataCache)) {
+                $uncheckedModelIds[] = $modelId;
+            }
         }
 
-        return $this->explicitModelMetadataCache[$modelId];
+        if ($uncheckedModelIds) {
+            $explicitModelsMetadata = $this->createModelMetadataForExplicitModelIds($uncheckedModelIds);
+            foreach ($uncheckedModelIds as $modelId) {
+                $this->explicitModelMetadataCache[$modelId] = $explicitModelsMetadata[$modelId] ?? null;
+            }
+        }
+
+        return array_filter(
+            array_intersect_key($this->explicitModelMetadataCache, array_flip($modelIds))
+        );
     }
 
     /**
@@ -170,19 +164,20 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     }
 
     /**
-     * Creates metadata for an explicit model ID without listing provider models.
+     * Creates metadata for explicit model IDs without listing provider models.
      *
      * Providers whose APIs accept arbitrary/current model IDs can override this to avoid a live list-models request
      * when callers already know the model ID they want to instantiate.
      *
      * @since n.e.x.t
      *
-     * @param string $modelId The explicit model ID.
-     * @return ModelMetadata|null The model metadata, or null to fall back to listing provider models.
+     * @param list<string> $modelIds The explicit model IDs.
+     * @return array<string, ModelMetadata> Map of model ID to model metadata. Omit IDs that should fall back to the
+     *                                                provider models list.
      */
-    protected function createModelMetadataForExplicitModelId(string $modelId): ?ModelMetadata
+    protected function createModelMetadataForExplicitModelIds(array $modelIds): array
     {
-        return null;
+        return [];
     }
 
     /**

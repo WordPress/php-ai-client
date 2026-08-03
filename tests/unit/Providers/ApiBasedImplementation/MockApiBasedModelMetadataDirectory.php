@@ -56,15 +56,18 @@ class MockApiBasedModelMetadataDirectory extends AbstractApiBasedModelMetadataDi
     /**
      * @inheritdoc
      */
-    protected function createModelMetadataForExplicitModelId(string $modelId): ?ModelMetadata
+    protected function createModelMetadataForExplicitModelIds(array $modelIds): array
     {
         ++$this->explicitModelMetadataLookupCount;
 
-        if ($this->explicitModelMetadata !== null && $this->explicitModelMetadata->getId() === $modelId) {
-            return $this->explicitModelMetadata;
+        if (
+            $this->explicitModelMetadata !== null &&
+            in_array($this->explicitModelMetadata->getId(), $modelIds, true)
+        ) {
+            return [$this->explicitModelMetadata->getId() => $this->explicitModelMetadata];
         }
 
-        return parent::createModelMetadataForExplicitModelId($modelId);
+        return parent::createModelMetadataForExplicitModelIds($modelIds);
     }
 
     /**
