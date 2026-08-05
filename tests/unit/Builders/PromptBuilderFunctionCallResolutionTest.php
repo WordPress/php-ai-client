@@ -259,6 +259,8 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
         $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
         $this->assertSame(2, $resolution['rounds']);
         $this->assertSame(PromptBuilder::STOP_REASON_MAX_ITERATIONS, $resolution['stopReason']);
+        // Calls from a response beyond the iteration limit must not be inspected or resolved.
+        $this->assertCount(2, $resolver->checkedCalls);
         $this->assertCount(2, $resolver->resolvedCalls);
         // Initial request plus one follow-up per round.
         $this->assertCount(3, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
