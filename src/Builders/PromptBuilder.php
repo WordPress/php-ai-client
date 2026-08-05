@@ -957,6 +957,11 @@ class PromptBuilder
                 break;
             }
 
+            if ($rounds >= $this->maxFunctionCallIterations) {
+                $stopReason = self::STOP_REASON_MAX_ITERATIONS;
+                break;
+            }
+
             /*
              * Check all calls before executing any, so that a round is either
              * fully executed or handed back to the caller untouched.
@@ -966,11 +971,6 @@ class PromptBuilder
                     $stopReason = self::STOP_REASON_UNRESOLVED_FUNCTION_CALLS;
                     break 2;
                 }
-            }
-
-            if ($rounds >= $this->maxFunctionCallIterations) {
-                $stopReason = self::STOP_REASON_MAX_ITERATIONS;
-                break;
             }
 
             $responseParts = [];
