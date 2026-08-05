@@ -85,6 +85,13 @@ class PromptBuilder
     public const STOP_REASON_UNRESOLVED_FUNCTION_CALLS = 'unresolvedFunctionCalls';
 
     /**
+     * Stop reason: the model produced one or more incomplete function calls.
+     *
+     * @since n.e.x.t
+     */
+    public const STOP_REASON_INCOMPLETE_FUNCTION_CALLS = 'incompleteFunctionCalls';
+
+    /**
      * Stop reason: the maximum number of resolution rounds was reached.
      *
      * @since n.e.x.t
@@ -408,9 +415,10 @@ class PromptBuilder
      * loop instead of a single request. Each round executes the function calls
      * requested by the model through the resolver, appends the results to the
      * conversation, and requests a follow-up response. The loop ends when the
-     * model produces a response without function calls, when the resolver
-     * cannot resolve a requested call (the caller gets that response back to
-     * handle it), or when the maximum number of rounds is reached.
+     * model produces a response without function calls, when the model response
+     * contains incomplete function calls, when the resolver cannot resolve a
+     * requested call (the caller gets that response back to handle it), or when
+     * the maximum number of rounds is reached.
      *
      * Resolution follows the first response candidate and only applies to text
      * generation; other capabilities ignore the resolver. Token usage is
@@ -949,7 +957,8 @@ class PromptBuilder
         $stopReason = self::STOP_REASON_COMPLETED;
 
         while (true) {
-            $message = $result->toMessage();
+            $candidate = $result->getCandidates()[0];
+            $message = $candidate->getMessage();
             $functionCalls = $this->getFunctionCalls($message);
 
             if (empty($functionCalls)) {
@@ -959,6 +968,14 @@ class PromptBuilder
 
             if ($rounds >= $this->maxFunctionCallIterations) {
                 $stopReason = self::STOP_REASON_MAX_ITERATIONS;
+                break;
+            }
+
+            if (
+                !$candidate->getFinishReason()->isToolCalls() ||
+                !$this->areFunctionCallsComplete($functionCalls)
+            ) {
+                $stopReason = self::STOP_REASON_INCOMPLETE_FUNCTION_CALLS;
                 break;
             }
 
@@ -1039,6 +1056,29 @@ class PromptBuilder
         }
 
         return $functionCalls;
+    }
+
+    /**
+     * Checks whether all function calls contain the data required for execution.
+     *
+     * Function call IDs are provider-specific and therefore optional, but a
+     * non-empty function name is always required to safely resolve a call.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<FunctionCall> $functionCalls The function calls to check.
+     * @return bool True if every function call is complete, false otherwise.
+     */
+    private function areFunctionCallsComplete(array $functionCalls): bool
+    {
+        foreach ($functionCalls as $functionCall) {
+            $name = $functionCall->getName();
+            if ($name === null || trim($name) === '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
