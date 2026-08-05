@@ -745,7 +745,7 @@ class PromptBuilder
         }
 
         // Build requirements with the specified capability
-        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
+        $requirements = $this->buildModelRequirements($capability);
 
         return $this->modelResolver->isSupported($requirements);
     }
@@ -1441,9 +1441,28 @@ class PromptBuilder
      */
     private function getConfiguredModel(CapabilityEnum $capability): ModelInterface
     {
-        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
+        $requirements = $this->buildModelRequirements($capability);
 
         return $this->modelResolver->resolve($requirements, $this->modelConfig, 'prompt');
+    }
+
+    /**
+     * Builds the model requirements for the prompt's complete execution flow.
+     *
+     * @since n.e.x.t
+     *
+     * @param CapabilityEnum $capability The capability the model will be using.
+     * @return ModelRequirements The requirements for model selection.
+     */
+    private function buildModelRequirements(CapabilityEnum $capability): ModelRequirements
+    {
+        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
+
+        if ($this->functionCallResolver !== null && $capability->isTextGeneration()) {
+            $requirements = $requirements->withRequiredCapability(CapabilityEnum::chatHistory());
+        }
+
+        return $requirements;
     }
 
     /**

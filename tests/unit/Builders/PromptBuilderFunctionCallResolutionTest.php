@@ -15,6 +15,9 @@ use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
+use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -321,6 +324,51 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
         $this->assertSame(PromptBuilder::STOP_REASON_COMPLETED, $resolution['stopReason']);
         $this->assertSame([], $resolution['resolvedCalls']);
         $this->assertCount(2, $resolution['messages']);
+    }
+
+    /**
+     * Tests that automatic resolution requires chat history support.
+     *
+     * @return void
+     */
+    public function testResolverRequiresChatHistorySupport(): void
+    {
+        $metadata = new ModelMetadata(
+            'text-only-model',
+            'Text-only Model',
+            [CapabilityEnum::textGeneration()],
+            [new SupportedOption(OptionEnum::inputModalities())]
+        );
+        $model = $this->createMockTextGenerationModel($this->createTestResult('Answer'), $metadata);
+        $builder = $this->createBuilder()->usingModel($model);
+
+        $this->assertTrue($builder->isSupportedForTextGeneration());
+
+        $builder->usingFunctionCallResolver(new MockFunctionCallResolver());
+
+        $this->assertFalse($builder->isSupportedForTextGeneration());
+    }
+
+    /**
+     * Tests that automatic resolution accepts a model with chat history support.
+     *
+     * @return void
+     */
+    public function testResolverSupportsModelWithChatHistory(): void
+    {
+        $metadata = new ModelMetadata(
+            'chat-model',
+            'Chat Model',
+            [CapabilityEnum::textGeneration(), CapabilityEnum::chatHistory()],
+            [new SupportedOption(OptionEnum::inputModalities())]
+        );
+        $model = $this->createMockTextGenerationModel($this->createTestResult('Answer'), $metadata);
+
+        $builder = $this->createBuilder()
+            ->usingModel($model)
+            ->usingFunctionCallResolver(new MockFunctionCallResolver());
+
+        $this->assertTrue($builder->isSupportedForTextGeneration());
     }
 
     /**

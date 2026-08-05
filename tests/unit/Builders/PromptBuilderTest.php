@@ -36,6 +36,7 @@ use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tests\mocks\MockFunctionCallResolver;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -3305,6 +3306,45 @@ class PromptBuilderTest extends TestCase
         $builder->usingModel($model);
 
         $this->assertTrue($builder->isSupportedForTextGeneration());
+    }
+
+    /**
+     * Tests model discovery requires chat history for automatic function call resolution.
+     *
+     * @return void
+     */
+    public function testModelDiscoveryRequiresChatHistoryForFunctionCallResolution(): void
+    {
+        $result = $this->createTestResult('Answer');
+        $metadata = new ModelMetadata(
+            'chat-model',
+            'Chat Model',
+            [CapabilityEnum::textGeneration(), CapabilityEnum::chatHistory()],
+            [new SupportedOption(OptionEnum::inputModalities())]
+        );
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+        $providerMetadata = $model->providerMetadata();
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->callback(static function (ModelRequirements $requirements): bool {
+                return $requirements->getRequiredCapabilities() === [
+                    CapabilityEnum::textGeneration(),
+                    CapabilityEnum::chatHistory(),
+                ];
+            }))
+            ->willReturn([new ProviderModelsMetadata($providerMetadata, [$metadata])]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with($providerMetadata->getId(), 'chat-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $actualResult = (new PromptBuilder($this->registry, 'Test prompt'))
+            ->usingFunctionCallResolver(new MockFunctionCallResolver())
+            ->generateTextResult();
+
+        $this->assertSame('Answer', $actualResult->toText());
     }
 
     /**
