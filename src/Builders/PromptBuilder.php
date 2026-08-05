@@ -30,6 +30,9 @@ use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToS
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Results\DTO\TokenUsage;
+use WordPress\AiClient\Tools\Contracts\FunctionCallResolverInterface;
+use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 use WordPress\AiClient\Tools\DTO\WebSearch;
@@ -53,9 +56,55 @@ class PromptBuilder
     use ModelResolutionTrait;
 
     /**
+     * Key in the result's additional data under which function call
+     * resolution details are exposed.
+     *
+     * @since n.e.x.t
+     */
+    public const KEY_FUNCTION_CALL_RESOLUTION = 'functionCallResolution';
+
+    /**
+     * Default maximum number of function call resolution rounds.
+     *
+     * @since n.e.x.t
+     */
+    public const DEFAULT_MAX_FUNCTION_CALL_ITERATIONS = 5;
+
+    /**
+     * Stop reason: the model produced a response without function calls.
+     *
+     * @since n.e.x.t
+     */
+    public const STOP_REASON_COMPLETED = 'completed';
+
+    /**
+     * Stop reason: the model requested a function call the resolver cannot resolve.
+     *
+     * @since n.e.x.t
+     */
+    public const STOP_REASON_UNRESOLVED_FUNCTION_CALLS = 'unresolvedFunctionCalls';
+
+    /**
+     * Stop reason: the maximum number of resolution rounds was reached.
+     *
+     * @since n.e.x.t
+     */
+    public const STOP_REASON_MAX_ITERATIONS = 'maxIterations';
+
+    /**
      * @var list<Message> The messages in the conversation.
      */
     protected array $messages = [];
+
+    /**
+     * @var FunctionCallResolverInterface|null The resolver for automatic function call resolution, if enabled.
+     */
+    private ?FunctionCallResolverInterface $functionCallResolver = null;
+
+    /**
+     * @var int The maximum number of function call resolution rounds.
+     */
+    private int $maxFunctionCallIterations = self::DEFAULT_MAX_FUNCTION_CALL_ITERATIONS;
 
     /**
      * @var EventDispatcherInterface|null The event dispatcher for prompt lifecycle events.
@@ -217,6 +266,27 @@ class PromptBuilder
     }
 
     /**
+     * Appends complete messages to the end of the conversation.
+     *
+     * Unlike {@see self::withHistory()}, which prepends messages before the
+     * current message, this method appends the given messages after all
+     * existing messages. This allows continuing a conversation, for example by
+     * appending a model response message and a follow-up user message when
+     * building a manual function call resolution loop.
+     *
+     * @since n.e.x.t
+     *
+     * @param Message ...$messages The messages to append.
+     * @return self
+     */
+    public function withMessages(Message ...$messages): self
+    {
+        $this->messages = array_merge($this->messages, $messages);
+
+        return $this;
+    }
+
+    /**
      * Sets the system instruction.
      *
      * System instructions are stored in the model configuration and guide
@@ -328,6 +398,63 @@ class PromptBuilder
     public function usingFunctionDeclarations(FunctionDeclaration ...$functionDeclarations): self
     {
         $this->modelConfig->setFunctionDeclarations($functionDeclarations);
+        return $this;
+    }
+
+    /**
+     * Enables automatic resolution of function calls during text generation.
+     *
+     * When a resolver is set, the text generation methods run a resolution
+     * loop instead of a single request. Each round executes the function calls
+     * requested by the model through the resolver, appends the results to the
+     * conversation, and requests a follow-up response. The loop ends when the
+     * model produces a response without function calls, when the resolver
+     * cannot resolve a requested call (the caller gets that response back to
+     * handle it), or when the maximum number of rounds is reached.
+     *
+     * Resolution follows the first response candidate and only applies to text
+     * generation; other capabilities ignore the resolver. Token usage is
+     * aggregated across all rounds. Details about the loop are exposed under
+     * the {@see self::KEY_FUNCTION_CALL_RESOLUTION} key of the additional data
+     * of the final result, including the number of rounds, the stop reason,
+     * the resolved calls, and the full conversation.
+     *
+     * The maximum number of rounds can be configured with
+     * {@see self::usingMaxFunctionCallIterations()}.
+     *
+     * @since n.e.x.t
+     *
+     * @param FunctionCallResolverInterface $functionCallResolver The resolver executing function calls.
+     * @return self
+     */
+    public function usingFunctionCallResolver(FunctionCallResolverInterface $functionCallResolver): self
+    {
+        $this->functionCallResolver = $functionCallResolver;
+        return $this;
+    }
+
+    /**
+     * Sets the maximum number of function call resolution rounds.
+     *
+     * Each round executes the function calls from one model response and
+     * requests a follow-up response. Only relevant when a resolver is set with
+     * {@see self::usingFunctionCallResolver()}. Default 5.
+     *
+     * @since n.e.x.t
+     *
+     * @param int $maxIterations The maximum number of resolution rounds.
+     * @return self
+     * @throws InvalidArgumentException If the maximum number of iterations is less than 1.
+     */
+    public function usingMaxFunctionCallIterations(int $maxIterations): self
+    {
+        if ($maxIterations < 1) {
+            throw new InvalidArgumentException(
+                'The maximum number of function call resolution iterations must be at least 1.'
+            );
+        }
+
+        $this->maxFunctionCallIterations = $maxIterations;
         return $this;
     }
 
@@ -745,20 +872,197 @@ class PromptBuilder
 
         $model = $this->getConfiguredModel($capability);
 
+        $result = $this->executeGenerationRound($model, $capability, $this->messages);
+
+        // Run the function call resolution loop if a resolver is configured.
+        if ($this->functionCallResolver !== null && $capability->isTextGeneration()) {
+            $result = $this->resolveFunctionCalls($model, $capability, $result);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Executes a single generation round, dispatching lifecycle events.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $model The model to use for generation.
+     * @param CapabilityEnum $capability The capability to use.
+     * @param list<Message> $messages The messages to send.
+     * @return GenerativeAiResult The generated result.
+     * @throws RuntimeException If the model doesn't support the required capability.
+     */
+    private function executeGenerationRound(
+        ModelInterface $model,
+        CapabilityEnum $capability,
+        array $messages
+    ): GenerativeAiResult {
         // Dispatch BeforeGenerateResultEvent
         $this->dispatchEvent(
-            new BeforeGenerateResultEvent($this->messages, $model, $capability)
+            new BeforeGenerateResultEvent($messages, $model, $capability)
         );
 
         // Route to the appropriate generation method based on capability
-        $result = $this->executeModelGeneration($model, $capability, $this->messages);
+        $result = $this->executeModelGeneration($model, $capability, $messages);
 
         // Dispatch AfterGenerateResultEvent
         $this->dispatchEvent(
-            new AfterGenerateResultEvent($this->messages, $model, $capability, $result)
+            new AfterGenerateResultEvent($messages, $model, $capability, $result)
         );
 
         return $result;
+    }
+
+    /**
+     * Runs the function call resolution loop on a generated result.
+     *
+     * Each round executes the function calls requested by the model through
+     * the configured resolver, appends the model response and the function
+     * responses to a copy of the conversation, and requests a follow-up
+     * response. See {@see self::usingFunctionCallResolver()} for the
+     * termination conditions. The builder's own message list is not modified.
+     *
+     * The returned result carries the aggregated token usage of all rounds and
+     * exposes details about the loop under the
+     * {@see self::KEY_FUNCTION_CALL_RESOLUTION} key of its additional data.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $model The resolved model to use for follow-up rounds.
+     * @param CapabilityEnum $capability The capability in use.
+     * @param GenerativeAiResult $result The result of the initial request.
+     * @return GenerativeAiResult The final result.
+     */
+    private function resolveFunctionCalls(
+        ModelInterface $model,
+        CapabilityEnum $capability,
+        GenerativeAiResult $result
+    ): GenerativeAiResult {
+        /** @var FunctionCallResolverInterface $resolver */
+        $resolver = $this->functionCallResolver;
+
+        $messages = $this->messages;
+        $rounds = 0;
+        $tokenUsage = $result->getTokenUsage();
+        $resolvedCalls = [];
+        $stopReason = self::STOP_REASON_COMPLETED;
+
+        while (true) {
+            $message = $result->toMessage();
+            $functionCalls = $this->getFunctionCalls($message);
+
+            if (empty($functionCalls)) {
+                $stopReason = self::STOP_REASON_COMPLETED;
+                break;
+            }
+
+            /*
+             * Check all calls before executing any, so that a round is either
+             * fully executed or handed back to the caller untouched.
+             */
+            foreach ($functionCalls as $functionCall) {
+                if (!$resolver->canResolve($functionCall)) {
+                    $stopReason = self::STOP_REASON_UNRESOLVED_FUNCTION_CALLS;
+                    break 2;
+                }
+            }
+
+            if ($rounds >= $this->maxFunctionCallIterations) {
+                $stopReason = self::STOP_REASON_MAX_ITERATIONS;
+                break;
+            }
+
+            $responseParts = [];
+            foreach ($functionCalls as $functionCall) {
+                $functionResponse = $resolver->resolve($functionCall);
+                $responseParts[] = new MessagePart($functionResponse);
+                $resolvedCalls[] = [
+                    'id' => $functionCall->getId(),
+                    'name' => $functionCall->getName(),
+                ];
+            }
+
+            $messages[] = $message;
+            $messages[] = new UserMessage($responseParts);
+            $rounds++;
+
+            $result = $this->executeGenerationRound($model, $capability, $messages);
+            $tokenUsage = $this->aggregateTokenUsage($tokenUsage, $result->getTokenUsage());
+        }
+
+        $transcript = $messages;
+        $transcript[] = $result->toMessage();
+
+        $additionalData = $result->getAdditionalData();
+        $additionalData[self::KEY_FUNCTION_CALL_RESOLUTION] = [
+            'rounds' => $rounds,
+            'stopReason' => $stopReason,
+            'resolvedCalls' => $resolvedCalls,
+            'messages' => array_map(
+                static function (Message $message): array {
+                    return $message->toArray();
+                },
+                $transcript
+            ),
+        ];
+
+        return new GenerativeAiResult(
+            $result->getId(),
+            $result->getCandidates(),
+            $tokenUsage,
+            $result->getProviderMetadata(),
+            $result->getModelMetadata(),
+            $additionalData
+        );
+    }
+
+    /**
+     * Retrieves the function calls contained in a message.
+     *
+     * @since n.e.x.t
+     *
+     * @param Message $message The message to inspect.
+     * @return list<FunctionCall> The function calls in the message.
+     */
+    private function getFunctionCalls(Message $message): array
+    {
+        $functionCalls = [];
+
+        foreach ($message->getParts() as $part) {
+            if ($part->getType()->isFunctionCall()) {
+                $functionCall = $part->getFunctionCall();
+                if ($functionCall instanceof FunctionCall) {
+                    $functionCalls[] = $functionCall;
+                }
+            }
+        }
+
+        return $functionCalls;
+    }
+
+    /**
+     * Adds up two token usage objects.
+     *
+     * @since n.e.x.t
+     *
+     * @param TokenUsage $total The running total.
+     * @param TokenUsage $addition The usage to add.
+     * @return TokenUsage The combined token usage.
+     */
+    private function aggregateTokenUsage(TokenUsage $total, TokenUsage $addition): TokenUsage
+    {
+        $thoughtTokens = null;
+        if ($total->getThoughtTokens() !== null || $addition->getThoughtTokens() !== null) {
+            $thoughtTokens = (int) $total->getThoughtTokens() + (int) $addition->getThoughtTokens();
+        }
+
+        return new TokenUsage(
+            $total->getPromptTokens() + $addition->getPromptTokens(),
+            $total->getCompletionTokens() + $addition->getCompletionTokens(),
+            $total->getTotalTokens() + $addition->getTotalTokens(),
+            $thoughtTokens
+        );
     }
 
     /**

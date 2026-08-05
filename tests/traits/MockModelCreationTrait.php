@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\traits;
 
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -264,6 +265,87 @@ trait MockModelCreationTrait
             public function generateTextResult(array $prompt): GenerativeAiResult
             {
                 return $this->result;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock text generation model that returns scripted results in order.
+     *
+     * Each call to generateTextResult() returns the next result from the given
+     * list. Once the list is exhausted, the last result is returned again.
+     *
+     * @param list<GenerativeAiResult> $results The results to return, in order. Must not be empty.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @return ModelInterface&TextGenerationModelInterface The mock model.
+     */
+    protected function createScriptedTextGenerationModel(
+        array $results,
+        ?ModelMetadata $metadata = null
+    ): ModelInterface {
+        if (empty($results)) {
+            throw new InvalidArgumentException('At least one scripted result must be provided.');
+        }
+
+        $metadata = $metadata ?? $this->createTestTextModelMetadata();
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $results
+        ) implements ModelInterface, TextGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            /** @var list<GenerativeAiResult> */
+            private array $results;
+            private int $callCount = 0;
+            private ModelConfig $config;
+
+            /**
+             * @param list<GenerativeAiResult> $results
+             */
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                array $results
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->results = $results;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateTextResult(array $prompt): GenerativeAiResult
+            {
+                $index = min($this->callCount, count($this->results) - 1);
+                $this->callCount++;
+                return $this->results[$index];
             }
         };
     }
