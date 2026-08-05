@@ -73,7 +73,11 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
             $parts[] = new MessagePart($functionCall);
         }
 
-        return $this->createResultWithMessage(new ModelMessage($parts));
+        return $this->createResultWithMessage(
+            new ModelMessage($parts),
+            null,
+            FinishReasonEnum::toolCalls()
+        );
     }
 
     /**
@@ -81,13 +85,17 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
      *
      * @param Message $message The model message.
      * @param TokenUsage|null $tokenUsage Optional token usage. Defaults to 10/20/30.
+     * @param FinishReasonEnum|null $finishReason Optional finish reason. Defaults to stop.
      * @return GenerativeAiResult The result.
      */
-    private function createResultWithMessage(Message $message, ?TokenUsage $tokenUsage = null): GenerativeAiResult
-    {
+    private function createResultWithMessage(
+        Message $message,
+        ?TokenUsage $tokenUsage = null,
+        ?FinishReasonEnum $finishReason = null
+    ): GenerativeAiResult {
         return new GenerativeAiResult(
             'test-result-id',
-            [new Candidate($message, FinishReasonEnum::stop())],
+            [new Candidate($message, $finishReason ?? FinishReasonEnum::stop())],
             $tokenUsage ?? new TokenUsage(10, 20, 30),
             new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud()),
             new ModelMetadata('mock-model', 'Mock Model', [], [])
@@ -241,6 +249,100 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
     }
 
     /**
+     * Tests that a truncated function call response is not executed.
+     *
+     * @return void
+     */
+    public function testDoesNotResolveFunctionCallsFromTruncatedResponse(): void
+    {
+        $truncatedResult = $this->createResultWithMessage(
+            new ModelMessage([
+                new MessagePart(new FunctionCall('call-1', 'get_weather', ['city' => 'Ber']))
+            ]),
+            null,
+            FinishReasonEnum::length()
+        );
+        $model = $this->createScriptedTextGenerationModel([
+            $truncatedResult,
+            $this->createTestResult('Never reached'),
+        ]);
+        $resolver = new MockFunctionCallResolver();
+
+        $result = $this->createBuilder()
+            ->usingModel($model)
+            ->usingFunctionCallResolver($resolver)
+            ->generateTextResult();
+
+        $this->assertSame([], $resolver->checkedCalls);
+        $this->assertSame([], $resolver->resolvedCalls);
+        $this->assertTrue($result->toMessage()->getParts()[0]->getType()->isFunctionCall());
+        $this->assertCount(1, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
+
+        $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
+        $this->assertSame(0, $resolution['rounds']);
+        $this->assertSame(PromptBuilder::STOP_REASON_INCOMPLETE_FUNCTION_CALLS, $resolution['stopReason']);
+        $this->assertSame([], $resolution['resolvedCalls']);
+    }
+
+    /**
+     * Tests that one incomplete call prevents a parallel batch from executing.
+     *
+     * @return void
+     */
+    public function testDoesNotResolveParallelCallsWhenOneHasNoName(): void
+    {
+        $model = $this->createScriptedTextGenerationModel([
+            $this->createFunctionCallResult(
+                new FunctionCall('call-1', 'get_weather', []),
+                new FunctionCall('call-2', null, [])
+            ),
+            $this->createTestResult('Never reached'),
+        ]);
+        $resolver = new MockFunctionCallResolver();
+
+        $result = $this->createBuilder()
+            ->usingModel($model)
+            ->usingFunctionCallResolver($resolver)
+            ->generateTextResult();
+
+        $this->assertSame([], $resolver->checkedCalls);
+        $this->assertSame([], $resolver->resolvedCalls);
+
+        $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
+        $this->assertSame(0, $resolution['rounds']);
+        $this->assertSame(PromptBuilder::STOP_REASON_INCOMPLETE_FUNCTION_CALLS, $resolution['stopReason']);
+        $this->assertSame([], $resolution['resolvedCalls']);
+    }
+
+    /**
+     * Tests that a completed name-only function call remains resolvable.
+     *
+     * @return void
+     */
+    public function testResolvesCompletedFunctionCallWithoutId(): void
+    {
+        $model = $this->createScriptedTextGenerationModel([
+            $this->createFunctionCallResult(new FunctionCall(null, 'get_weather', [])),
+            $this->createTestResult('Final answer'),
+        ]);
+        $resolver = new MockFunctionCallResolver();
+
+        $result = $this->createBuilder()
+            ->usingModel($model)
+            ->usingFunctionCallResolver($resolver)
+            ->generateTextResult();
+
+        $this->assertSame('Final answer', $result->toText());
+        $this->assertCount(1, $resolver->checkedCalls);
+        $this->assertCount(1, $resolver->resolvedCalls);
+        $this->assertSame('get_weather', $resolver->resolvedCalls[0]->getName());
+
+        $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
+        $this->assertSame(1, $resolution['rounds']);
+        $this->assertSame(PromptBuilder::STOP_REASON_COMPLETED, $resolution['stopReason']);
+    }
+
+    /**
      * Tests that the loop stops after the maximum number of iterations.
      *
      * @return void
@@ -279,7 +381,8 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
         $model = $this->createScriptedTextGenerationModel([
             $this->createResultWithMessage(
                 new ModelMessage([new MessagePart(new FunctionCall('call-1', 'get_weather', []))]),
-                new TokenUsage(1, 2, 3)
+                new TokenUsage(1, 2, 3),
+                FinishReasonEnum::toolCalls()
             ),
             $this->createResultWithMessage(
                 new ModelMessage([new MessagePart('Final answer')]),
