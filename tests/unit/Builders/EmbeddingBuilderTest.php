@@ -660,6 +660,42 @@ class EmbeddingBuilderTest extends TestCase
     }
 
     /**
+     * Tests isSupported returns false when the model's provider is not configured.
+     *
+     * @return void
+     */
+    public function testIsSupportedReturnsFalseWhenProviderNotConfigured(): void
+    {
+        $registry = $this->createMock(ProviderRegistry::class);
+        $registry->method('isProviderConfigured')->willReturn(false);
+
+        $model = $this->createMockEmbeddingGenerationModel($this->createTestEmbeddingResult());
+
+        $builder = new EmbeddingBuilder($registry, 'Embed this');
+        $builder->usingModel($model);
+
+        $this->assertFalse($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported returns false when the provider has no model with the given ID.
+     *
+     * @return void
+     */
+    public function testIsSupportedReturnsFalseForUnknownProviderModel(): void
+    {
+        $this->registry->method('getProviderModel')
+            ->willThrowException(
+                new InvalidArgumentException('No model with ID no-such-model was found in the provider')
+            );
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingProviderModel('mock', 'no-such-model');
+
+        $this->assertFalse($builder->isSupported());
+    }
+
+    /**
      * Tests isSupported throws when no model was specified.
      *
      * @return void

@@ -139,7 +139,7 @@ $embedding = AiClient::input('PHP powers a large part of the web.')
 
 Embedding inputs are independent [`MessagePart`](https://github.com/WordPress/php-ai-client/blob/trunk/src/Messages/DTO/MessagePart.php) values, not a conversation. `input()` accepts one input or a list of inputs. Variadic `withInput()` accepts one or more arguments, and lists can be passed using PHP's spread syntax (`withInput(...$inputs)`). Each input may be a string, `MessagePart`, `File`, or message-part array shape.
 
-The model you name is verified before any request is sent: it must support embedding generation, accept the input modalities of your inputs, and support every configuration option you set. If it does not, an `InvalidArgumentException` explains which capability or option is unsupported. To check without triggering an exception, call `isSupported()`.
+The model you name is verified before any request is sent: it must support embedding generation, accept the input modalities of your inputs, and support every configuration option you set. If it does not, an `InvalidArgumentException` explains which capability or option is unsupported. To check without triggering an exception, call `isSupported()`, which returns `false` for any model that cannot fulfill the request — including one whose provider is not registered or configured, or a model ID the provider does not offer. Only omitting the model entirely still throws, since that is a programming error rather than an unsupported model.
 
 ### Discovering available embedding models
 

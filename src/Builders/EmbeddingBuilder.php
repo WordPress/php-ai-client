@@ -51,6 +51,13 @@ class EmbeddingBuilder
     use ModelConfigurationTrait;
 
     /**
+     * @var string Message used when no model was specified.
+     */
+    private const NO_MODEL_MESSAGE = 'An embedding model must be specified. Embeddings are only comparable to '
+        . 'other embeddings from the same model, so no model is selected automatically. '
+        . 'Use usingModel() or usingProviderModel().';
+
+    /**
      * @var ProviderRegistry The provider registry used to prepare the model.
      */
     protected ProviderRegistry $registry;
@@ -244,20 +251,33 @@ class EmbeddingBuilder
     /**
      * Checks whether the specified model supports the current inputs and configuration.
      *
-     * As of version 1.5.0 this reports whether the model set via {@see self::usingModel()} or
+     * This reports whether the model set via {@see self::usingModel()} or
      * {@see self::usingProviderModel()} can fulfill the request, rather than whether any available
-     * model can. Because a model is mandatory, this method throws if none was specified.
+     * model can.
+     *
+     * Any reason the specified model cannot fulfill the request is reported as `false`, including an
+     * unregistered or unconfigured provider and a model ID the provider does not offer. Only failing
+     * to specify a model at all is treated as a programming error and throws.
      *
      * @since 1.4.0
      *
      * @return bool True if the specified model supports embedding generation for the current
      *              inputs and configuration.
-     * @throws InvalidArgumentException If no model was specified, the model's provider is not
-     *                                  configured, or the model could not be retrieved.
+     * @throws InvalidArgumentException If no model was specified.
      */
     public function isSupported(): bool
     {
-        $model = $this->prepareModel();
+        if ($this->providerModel === null && $this->model === null) {
+            throw new InvalidArgumentException(self::NO_MODEL_MESSAGE);
+        }
+
+        try {
+            $model = $this->prepareModel();
+        } catch (InvalidArgumentException $e) {
+            // The model is unusable: its provider is not registered or configured, or the provider
+            // has no model with the given ID. Either way it cannot fulfill the request.
+            return false;
+        }
 
         if (!$model instanceof EmbeddingGenerationModelInterface) {
             return false;
@@ -409,11 +429,7 @@ class EmbeddingBuilder
             $model->setConfig($this->modelConfig);
             $this->registry->bindModelDependencies($model);
         } else {
-            throw new InvalidArgumentException(
-                'An embedding model must be specified. Embeddings are only comparable to other '
-                . 'embeddings from the same model, so no model is selected automatically. '
-                . 'Use usingModel() or usingProviderModel().'
-            );
+            throw new InvalidArgumentException(self::NO_MODEL_MESSAGE);
         }
 
         // Request options are only applicable to API-based models that make HTTP requests.
