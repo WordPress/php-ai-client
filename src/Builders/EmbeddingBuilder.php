@@ -171,7 +171,9 @@ class EmbeddingBuilder
      * Sets the model to use for embedding generation.
      *
      * The model's configuration will be merged with the builder's configuration,
-     * with the builder's configuration taking precedence for any overlapping settings.
+     * with the builder's configuration taking precedence for any overlapping settings. The merge
+     * happens when the model is used rather than here, so replacing the model replaces its
+     * configuration along with it.
      *
      * @since 1.4.0
      *
@@ -182,9 +184,6 @@ class EmbeddingBuilder
     {
         $this->model = $model;
         $this->providerModel = null;
-
-        // Merge model's config with builder's config, with builder's config taking precedence
-        $this->mergeModelConfig($model->getConfig());
 
         return $this;
     }
@@ -259,6 +258,10 @@ class EmbeddingBuilder
      * unregistered or unconfigured provider and a model ID the provider does not offer. Only failing
      * to specify a model at all is treated as a programming error and throws.
      *
+     * A model instance provided via {@see self::usingModel()} is left untouched, so that checking
+     * for support does not alter it. Determining whether the model's provider is configured may
+     * require a request to the provider, which is cached for the remainder of the request.
+     *
      * @since 1.4.0
      *
      * @return bool True if the specified model supports embedding generation for the current
@@ -272,7 +275,7 @@ class EmbeddingBuilder
         }
 
         try {
-            $model = $this->prepareModel();
+            $model = $this->locateModel();
         } catch (InvalidArgumentException $e) {
             // The model is unusable: its provider is not registered or configured, or the provider
             // has no model with the given ID. Either way it cannot fulfill the request.
@@ -404,6 +407,40 @@ class EmbeddingBuilder
     }
 
     /**
+     * Locates the specified model, without preparing it for use.
+     *
+     * Unlike {@see self::prepareModel()}, this leaves a model instance provided by the caller
+     * untouched, so that it can be inspected without altering it.
+     *
+     * @since n.e.x.t
+     *
+     * @return ModelInterface The located model.
+     * @throws InvalidArgumentException If no model was specified, the model's provider is not
+     *                                  configured, or the model could not be retrieved.
+     */
+    private function locateModel(): ModelInterface
+    {
+        if ($this->providerModel !== null) {
+            [$providerIdOrClassName, $modelId] = $this->providerModel;
+
+            $this->assertProviderConfigured($providerIdOrClassName);
+
+            // Retrieving the model also binds its provider dependencies.
+            return $this->registry->getProviderModel($providerIdOrClassName, $modelId, $this->modelConfig);
+        }
+
+        if ($this->model !== null) {
+            $model = $this->model;
+
+            $this->assertProviderConfigured($model->providerMetadata()->getId());
+
+            return $model;
+        }
+
+        throw new InvalidArgumentException(self::NO_MODEL_MESSAGE);
+    }
+
+    /**
      * Prepares the specified model for use, without verifying that it can fulfill the request.
      *
      * @since n.e.x.t
@@ -414,22 +451,13 @@ class EmbeddingBuilder
      */
     private function prepareModel(): ModelInterface
     {
-        if ($this->providerModel !== null) {
-            [$providerIdOrClassName, $modelId] = $this->providerModel;
+        $model = $this->locateModel();
 
-            $this->assertProviderConfigured($providerIdOrClassName);
-
-            // Retrieving the model also binds its provider dependencies.
-            $model = $this->registry->getProviderModel($providerIdOrClassName, $modelId, $this->modelConfig);
-        } elseif ($this->model !== null) {
-            $model = $this->model;
-
-            $this->assertProviderConfigured($model->providerMetadata()->getId());
-
-            $model->setConfig($this->modelConfig);
+        // A model retrieved from the registry is already bound and configured, so only a model
+        // instance provided by the caller needs its dependencies and configuration bound here.
+        if ($model === $this->model) {
+            $model->setConfig($this->effectiveModelConfig($model));
             $this->registry->bindModelDependencies($model);
-        } else {
-            throw new InvalidArgumentException(self::NO_MODEL_MESSAGE);
         }
 
         // Request options are only applicable to API-based models that make HTTP requests.
@@ -438,6 +466,26 @@ class EmbeddingBuilder
         }
 
         return $model;
+    }
+
+    /**
+     * Combines a model's own configuration with the configuration set on this builder.
+     *
+     * The builder's configuration takes precedence for any overlapping settings. Combining happens
+     * here, when the model is used, rather than when the model is set, so that the configuration of
+     * a model that was subsequently replaced is not applied to its replacement.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $model The model whose configuration to combine with the builder's.
+     * @return ModelConfig The effective configuration for the given model.
+     */
+    private function effectiveModelConfig(ModelInterface $model): ModelConfig
+    {
+        return ModelConfig::fromArray(array_merge(
+            $model->getConfig()->toArray(),
+            $this->modelConfig->toArray()
+        ));
     }
 
     /**
@@ -475,7 +523,7 @@ class EmbeddingBuilder
      */
     private function describeUnmetRequirements(ModelInterface $model): ?string
     {
-        $requirements = ModelRequirements::fromEmbeddingData($this->inputs, $this->modelConfig);
+        $requirements = ModelRequirements::fromEmbeddingData($this->inputs, $this->effectiveModelConfig($model));
 
         /** @var UnmetModelRequirementsShape $unmetRequirements */
         $unmetRequirements = $requirements->getUnmetRequirements($model->metadata());

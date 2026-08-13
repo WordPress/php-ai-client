@@ -610,6 +610,89 @@ class EmbeddingBuilderTest extends TestCase
     }
 
     /**
+     * Tests the model's own configuration is applied unless the builder overrides it.
+     *
+     * @return void
+     */
+    public function testSpecifiedModelKeepsItsOwnConfigUnlessOverridden(): void
+    {
+        $modelConfig = new ModelConfig();
+        $modelConfig->setDimensions(1024);
+        $modelConfig->setCustomOption('encodingFormat', 'float');
+
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+        $model->setConfig($modelConfig);
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingModel($model);
+        $builder->usingDimensions(256);
+
+        $builder->generateEmbeddingResult();
+
+        // The builder's dimensions win, while the model's other configuration is retained.
+        $this->assertSame(256, $model->getConfig()->getDimensions());
+        $this->assertSame(['encodingFormat' => 'float'], $model->getConfig()->getCustomOptions());
+    }
+
+    /**
+     * Tests replacing a model does not leave its configuration behind for the replacement.
+     *
+     * @return void
+     */
+    public function testUsingProviderModelDiscardsReplacedModelConfig(): void
+    {
+        $replacedConfig = new ModelConfig();
+        $replacedConfig->setDimensions(3072);
+
+        $replaced = $this->createMockEmbeddingGenerationModel($this->createTestEmbeddingResult());
+        $replaced->setConfig($replacedConfig);
+
+        $replacement = $this->createMockEmbeddingGenerationModel($this->createTestEmbeddingResult([[0.1, 0.2]]));
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with(
+                'mock',
+                'test-embedding-model',
+                $this->callback(
+                    static fn (ModelConfig $config): bool => $config->getDimensions() === null
+                )
+            )
+            ->willReturn($replacement);
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingModel($replaced);
+        $builder->usingProviderModel('mock', 'test-embedding-model');
+
+        $this->assertCount(1, $builder->generateEmbeddings());
+    }
+
+    /**
+     * Tests isSupported leaves a caller-provided model instance untouched.
+     *
+     * @return void
+     */
+    public function testIsSupportedDoesNotAlterSpecifiedModel(): void
+    {
+        $modelConfig = new ModelConfig();
+        $modelConfig->setDimensions(1024);
+
+        $model = $this->createMockEmbeddingGenerationModel($this->createTestEmbeddingResult());
+        $model->setConfig($modelConfig);
+
+        $this->registry->expects($this->never())->method('bindModelDependencies');
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingModel($model);
+        $builder->usingDimensions(256);
+
+        $this->assertTrue($builder->isSupported());
+        $this->assertSame($modelConfig, $model->getConfig());
+        $this->assertSame(1024, $model->getConfig()->getDimensions());
+    }
+
+    /**
      * Tests isSupported returns true when the specified model supports the request.
      *
      * @return void

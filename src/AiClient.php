@@ -575,7 +575,7 @@ class AiClient
     ): EmbeddingBuilder {
         $builder = self::input($input, $registry);
 
-        // Apply the configuration first, so that it takes precedence over the model's own config.
+        // The builder's configuration takes precedence over the model's own configuration.
         if ($modelConfig !== null) {
             $builder->usingModelConfig($modelConfig);
         }
