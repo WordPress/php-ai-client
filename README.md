@@ -88,15 +88,29 @@ $imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in t
     ->generateImage();
 ```
 
-### Embedding generation using any compatible model
+### Embedding generation using a specific model
+
+Unlike the other capabilities, embedding generation always requires you to name the model. Embedding vectors are only comparable to other vectors produced by the same model, so a stored set of embeddings is permanently tied to the model that created it. If the library picked a model for you, that choice could change between requests — for example when the registered providers change — silently making new vectors incomparable to the ones you already stored. Omitting the model therefore raises an error rather than falling back to a default.
 
 ```php
 use WordPress\AiClient\AiClient;
 
 $embedding = AiClient::input('PHP powers a large part of the web.')
+    ->usingProviderModel('google', 'gemini-embedding-001')
     ->generateEmbedding();
 
 $values = $embedding->getValues();
+```
+
+You can also pass a model instance, which is useful when you already have one or want to reference the provider class directly:
+
+```php
+use WordPress\AiClient\AiClient;
+use WordPress\GoogleAiProvider\Provider\GoogleProvider;
+
+$embedding = AiClient::input('PHP powers a large part of the web.')
+    ->usingModel(GoogleProvider::model('gemini-embedding-001'))
+    ->generateEmbedding();
 ```
 
 ### Batch embedding generation
@@ -108,7 +122,7 @@ $embeddings = AiClient::input([
         'PHP powers a large part of the web.',
         'WordPress makes publishing accessible.',
     ])
-    ->usingProvider('openai')
+    ->usingProviderModel('openai', 'text-embedding-3-small')
     ->generateEmbeddings();
 ```
 
@@ -118,11 +132,34 @@ $embeddings = AiClient::input([
 use WordPress\AiClient\AiClient;
 
 $embedding = AiClient::input('PHP powers a large part of the web.')
+    ->usingProviderModel('openai', 'text-embedding-3-small')
     ->usingDimensions(512)
     ->generateEmbedding();
 ```
 
-Embedding inputs are independent [`MessagePart`](https://github.com/WordPress/php-ai-client/blob/trunk/src/Messages/DTO/MessagePart.php) values, not a conversation. `input()` accepts one input or a list of inputs. Variadic `withInput()` accepts one or more arguments, and lists can be passed using PHP's spread syntax (`withInput(...$inputs)`). Each input may be a string, `MessagePart`, `File`, or message-part array shape. Model selection accounts for their input modalities and embedding configuration.
+Embedding inputs are independent [`MessagePart`](https://github.com/WordPress/php-ai-client/blob/trunk/src/Messages/DTO/MessagePart.php) values, not a conversation. `input()` accepts one input or a list of inputs. Variadic `withInput()` accepts one or more arguments, and lists can be passed using PHP's spread syntax (`withInput(...$inputs)`). Each input may be a string, `MessagePart`, `File`, or message-part array shape.
+
+The model you name is verified before any request is sent: it must support embedding generation, accept the input modalities of your inputs, and support every configuration option you set. If it does not, an `InvalidArgumentException` explains which capability or option is unsupported. To check without triggering an exception, call `isSupported()`.
+
+### Discovering available embedding models
+
+Since no model is chosen for you, you may need to find out which embedding models the configured providers offer:
+
+```php
+use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+
+$requirements = new ModelRequirements([CapabilityEnum::embeddingGeneration()], []);
+
+foreach (AiClient::defaultRegistry()->findModelsMetadataForSupport($requirements) as $providerModels) {
+    $providerId = $providerModels->getProvider()->getId();
+
+    foreach ($providerModels->getModels() as $modelMetadata) {
+        echo $providerId . ' / ' . $modelMetadata->getId() . "\n";
+    }
+}
+```
 
 See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php) and the [`EmbeddingBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/EmbeddingBuilder.php) and their public methods for all the ways you can configure generation.
 
@@ -136,6 +173,8 @@ The AI Client supports PSR-14 event dispatching for prompt lifecycle events. Thi
 
 - `BeforeGenerateResultEvent` - Dispatched before a prompt is sent to the model
 - `AfterGenerateResultEvent` - Dispatched after a result is received from the model
+- `BeforeGenerateEmbeddingEvent` - Dispatched before embedding inputs are sent to the model
+- `AfterGenerateEmbeddingEvent` - Dispatched after an embedding result is received from the model
 
 **Important:** Event listeners should not return a value, as they will be ignored. In order to modify data that is passed with the event object, you need to rely on setters on the event object. Any event data for which there are no setters on the event object is meant to be immutable or, in other words, read-only for the event listener.
 
