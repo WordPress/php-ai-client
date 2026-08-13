@@ -414,7 +414,9 @@ class EmbeddingBuilderTest extends TestCase
         $builder->usingModel($model);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Provider "mock" is not registered or not configured.');
+        $this->expectExceptionMessage(
+            'Provider "mock" is not registered, or is not configured with valid credentials.'
+        );
 
         $builder->generateEmbeddingResult();
     }

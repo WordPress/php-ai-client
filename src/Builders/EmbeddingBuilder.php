@@ -431,15 +431,18 @@ class EmbeddingBuilder
      *
      * @param string $providerIdOrClassName The provider ID or class name.
      * @return void
-     * @throws InvalidArgumentException If the provider is not registered or not configured.
+     * @throws InvalidArgumentException If the provider is not registered or not usable.
      */
     private function assertProviderConfigured(string $providerIdOrClassName): void
     {
+        // A provider reports itself unconfigured for any reason it cannot be used, including
+        // credentials that are missing, invalid, or rejected, so the message covers all of them.
         if (!$this->registry->isProviderConfigured($providerIdOrClassName)) {
             throw new InvalidArgumentException(
                 sprintf(
-                    'Provider "%s" is not registered or not configured. Ensure the provider is '
-                    . 'registered and its credentials are available before generating embeddings.',
+                    'Provider "%s" is not registered, or is not configured with valid credentials. '
+                    . 'Ensure the provider is registered and its credentials are present and valid '
+                    . 'before generating embeddings.',
                     $providerIdOrClassName
                 )
             );
