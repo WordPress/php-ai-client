@@ -12,6 +12,9 @@ use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
+use function array_is_list;
+use function array_map;
+
 /**
  * Represents configuration for an AI model.
  *
@@ -698,7 +701,7 @@ class ModelConfig extends AbstractDataTransferObject
      */
     public function setOutputMediaAspectRatio(string $outputMediaAspectRatio): void
     {
-        if (!preg_match('/^\d+:\d+$/', $outputMediaAspectRatio)) {
+        if (!\preg_match('/^\d+:\d+$/', $outputMediaAspectRatio)) {
             throw new InvalidArgumentException(
                 'Output media aspect ratio must be in the format "width:height" (e.g. 3:2, 16:9).'
             );
@@ -736,7 +739,7 @@ class ModelConfig extends AbstractDataTransferObject
         MediaOrientationEnum $orientation,
         string $aspectRatio
     ): void {
-        $aspectRatioParts = explode(':', $aspectRatio);
+        $aspectRatioParts = \explode(':', $aspectRatio);
         if ($orientation->isSquare() && $aspectRatioParts[0] !== $aspectRatioParts[1]) {
             throw new InvalidArgumentException(
                 'The aspect ratio "' . $aspectRatio . '" is not compatible with the square orientation.'

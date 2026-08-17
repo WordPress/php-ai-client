@@ -13,6 +13,9 @@ use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
+use function array_keys;
+use function count;
+
 /**
  * @covers \WordPress\AiClient\Providers\Models\DTO\ModelMetadata
  */
@@ -270,8 +273,8 @@ class ModelMetadataTest extends TestCase
             [new SupportedOption(OptionEnum::outputSchema(), [256, 512, 1024])]
         );
 
-        $json = json_encode($metadata);
-        $decoded = json_decode($json, true);
+        $json = \json_encode($metadata);
+        $decoded = \json_decode($json, true);
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);
@@ -320,7 +323,7 @@ class ModelMetadataTest extends TestCase
         $this->assertCount(count($allCapabilities), $array[ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);
 
         // Verify all capabilities are preserved
-        $expectedValues = array_map(function ($cap) {
+        $expectedValues = \array_map(function ($cap) {
             return $cap->value;
         }, $allCapabilities);
         $this->assertEquals($expectedValues, $array[ModelMetadata::KEY_SUPPORTED_CAPABILITIES]);

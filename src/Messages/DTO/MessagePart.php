@@ -97,7 +97,7 @@ class MessagePart extends AbstractDataTransferObject
         $this->channel = $channel ?? MessagePartChannelEnum::content();
         $this->thoughtSignature = $thoughtSignature;
 
-        if (is_string($content)) {
+        if (\is_string($content)) {
             $this->type = MessagePartTypeEnum::text();
             $this->text = $content;
         } elseif ($content instanceof File) {
@@ -110,9 +110,9 @@ class MessagePart extends AbstractDataTransferObject
             $this->type = MessagePartTypeEnum::functionResponse();
             $this->functionResponse = $content;
         } else {
-            $type = is_object($content) ? get_class($content) : gettype($content);
+            $type = \is_object($content) ? \get_class($content) : \gettype($content);
             throw new InvalidArgumentException(
-                sprintf(
+                \sprintf(
                     'Unsupported content type %s. Expected string, File, '
                     . 'FunctionCall, or FunctionResponse.',
                     $type

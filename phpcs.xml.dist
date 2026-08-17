@@ -40,4 +40,31 @@
 			<property name="searchAnnotations" value="true" />
 		</properties>
 	</rule>
+
+	<!--
+		Forbid referencing global functions and constants via the namespace fallback.
+		A bare `sprintf()` inside a namespace makes PHP look in the current namespace
+		first and only then fall back to the global one, which costs a runtime lookup
+		on every call and blocks opcache from using its optimized handlers.
+
+		Both accepted forms pass: a leading backslash (`\sprintf()`) for a name used
+		once in a file, and a `use function` / `use const` import for a name used more
+		than once. The count-based split between those two is a convention documented
+		in AGENTS.md and is not machine-enforceable.
+
+		ReferenceViaFullyQualifiedName is excluded so this rule stays scoped to the
+		fallback problem and does not also start policing how classes are referenced.
+	-->
+	<rule ref="SlevomatCodingStandard.Namespaces.ReferenceUsedNamesOnly">
+		<properties>
+			<property name="allowFallbackGlobalFunctions" value="false" />
+			<property name="allowFallbackGlobalConstants" value="false" />
+			<property name="allowFullyQualifiedGlobalFunctions" value="true" />
+			<property name="allowFullyQualifiedGlobalConstants" value="true" />
+			<property name="allowFullyQualifiedGlobalClasses" value="true" />
+			<property name="searchAnnotations" value="false" />
+		</properties>
+		<exclude name="SlevomatCodingStandard.Namespaces.ReferenceUsedNamesOnly.ReferenceViaFullyQualifiedName" />
+		<exclude name="SlevomatCodingStandard.Namespaces.ReferenceUsedNamesOnly.PartialUse" />
+	</rule>
 </ruleset>

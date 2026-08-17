@@ -9,6 +9,8 @@ use WordPress\AiClient\Common\AbstractEnum;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
+use function is_array;
+
 /**
  * Represents a supported configuration option for an AI model.
  *
@@ -51,7 +53,7 @@ class SupportedOption extends AbstractDataTransferObject
      */
     public function __construct(OptionEnum $name, ?array $supportedValues = null)
     {
-        if ($supportedValues !== null && !array_is_list($supportedValues)) {
+        if ($supportedValues !== null && !\array_is_list($supportedValues)) {
             throw new InvalidArgumentException('Supported values must be a list array.');
         }
 
@@ -144,8 +146,8 @@ class SupportedOption extends AbstractDataTransferObject
      */
     private static function normalizeArrayForComparison(array $items): array
     {
-        $normalized = array_map([self::class, 'normalizeValue'], $items);
-        sort($normalized);
+        $normalized = \array_map([self::class, 'normalizeValue'], $items);
+        \sort($normalized);
         return $normalized;
     }
 

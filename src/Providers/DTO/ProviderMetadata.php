@@ -101,9 +101,9 @@ class ProviderMetadata extends AbstractDataTransferObject
         ?string $description = null,
         ?string $logoPath = null
     ) {
-        if (!preg_match('/^[a-z0-9\-_]+$/', $id)) {
+        if (!\preg_match('/^[a-z0-9\-_]+$/', $id)) {
             throw new InvalidArgumentException(
-                sprintf(
+                \sprintf(
                     // phpcs:ignore Generic.Files.LineLength.TooLong
                     'Invalid provider ID "%s". Only lowercase alphanumeric characters, hyphens, and underscores are allowed.',
                     $id
@@ -239,7 +239,7 @@ class ProviderMetadata extends AbstractDataTransferObject
                 ],
                 self::KEY_AUTHENTICATION_METHOD => [
                     'type' => ['string', 'null'],
-                    'enum' => array_merge(RequestAuthenticationMethod::getValues(), [null]),
+                    'enum' => \array_merge(RequestAuthenticationMethod::getValues(), [null]),
                     'description' => 'The authentication method.',
                 ],
                 self::KEY_LOGO_PATH => [

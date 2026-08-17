@@ -16,6 +16,8 @@ use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
+use function count;
+
 /**
  * @covers \WordPress\AiClient\Providers\DTO\ProviderModelsMetadata
  */
@@ -263,8 +265,8 @@ class ProviderModelsMetadataTest extends TestCase
             [$this->createModelMetadata('json-model', 'JSON Model')]
         );
 
-        $json = json_encode($metadata);
-        $decoded = json_decode($json, true);
+        $json = \json_encode($metadata);
+        $decoded = \json_decode($json, true);
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);
@@ -346,7 +348,10 @@ class ProviderModelsMetadataTest extends TestCase
         // Ensure models array has numeric keys starting from 0
         $this->assertArrayHasKey(0, $array[ProviderModelsMetadata::KEY_MODELS]);
         $this->assertArrayHasKey(1, $array[ProviderModelsMetadata::KEY_MODELS]);
-        $this->assertEquals(['models' => array_keys($array[ProviderModelsMetadata::KEY_MODELS])], ['models' => [0, 1]]);
+        $this->assertEquals(
+            ['models' => \array_keys($array[ProviderModelsMetadata::KEY_MODELS])],
+            ['models' => [0, 1]]
+        );
     }
 
     /**

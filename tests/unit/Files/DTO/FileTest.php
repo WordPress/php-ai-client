@@ -11,6 +11,11 @@ use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\ValueObjects\MimeType;
 
+use function file_put_contents;
+use function sys_get_temp_dir;
+use function tempnam;
+use function unlink;
+
 /**
  * @covers \WordPress\AiClient\Files\DTO\File
  */
@@ -142,7 +147,7 @@ class FileTest extends TestCase
 
             $this->assertEquals(FileTypeEnum::inline(), $file->getFileType());
             $this->assertNull($file->getUrl());
-            $this->assertEquals(base64_encode('Hello World'), $file->getBase64Data());
+            $this->assertEquals(\base64_encode('Hello World'), $file->getBase64Data());
             $this->assertEquals('text/plain', $file->getMimeType());
         } finally {
             unlink($tempFile);
@@ -183,8 +188,8 @@ class FileTest extends TestCase
     public function testDirectoryThrowsException(): void
     {
         // Create a directory instead of a file
-        $tempDir = sys_get_temp_dir() . '/test_dir_' . uniqid();
-        mkdir($tempDir);
+        $tempDir = sys_get_temp_dir() . '/test_dir_' . \uniqid();
+        \mkdir($tempDir);
 
         try {
             $this->expectException(InvalidArgumentException::class);
@@ -194,7 +199,7 @@ class FileTest extends TestCase
 
             new File($tempDir, 'text/plain');
         } finally {
-            rmdir($tempDir);
+            \rmdir($tempDir);
         }
     }
 

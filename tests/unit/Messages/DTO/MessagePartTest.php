@@ -118,7 +118,7 @@ class MessagePartTest extends TestCase
     public function testUnsupportedContentThrowsException($content, string $expectedType): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf(
+        $this->expectExceptionMessage(\sprintf(
             'Unsupported content type %s. Expected string, File, FunctionCall, or FunctionResponse.',
             $expectedType
         ));

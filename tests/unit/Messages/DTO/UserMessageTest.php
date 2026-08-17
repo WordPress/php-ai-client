@@ -288,7 +288,7 @@ class UserMessageTest extends TestCase
             ]),
             function ($original, $restored) {
                 $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
-                $this->assertCount(count($original->getParts()), $restored->getParts());
+                $this->assertCount(\count($original->getParts()), $restored->getParts());
                 $this->assertEquals(
                     $original->getParts()[0]->getText(),
                     $restored->getParts()[0]->getText()

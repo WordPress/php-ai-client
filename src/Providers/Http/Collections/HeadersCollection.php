@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Collections;
 
+use function strtolower;
+
 /**
  * Simple collection for managing HTTP headers with case-insensitive access.
  *
@@ -80,7 +82,7 @@ class HeadersCollection
     public function getAsString(string $name): ?string
     {
         $values = $this->get($name);
-        return $values !== null ? implode(', ', $values) : null;
+        return $values !== null ? \implode(', ', $values) : null;
     }
 
     /**
@@ -107,11 +109,11 @@ class HeadersCollection
      */
     private function set(string $name, $value): void
     {
-        if (is_array($value)) {
-            $normalizedValues = array_values($value);
+        if (\is_array($value)) {
+            $normalizedValues = \array_values($value);
         } else {
             // Split comma-separated string into array
-            $normalizedValues = array_map('trim', explode(',', $value));
+            $normalizedValues = \array_map('trim', \explode(',', $value));
         }
         $lowerName = strtolower($name);
 

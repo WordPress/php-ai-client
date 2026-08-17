@@ -351,7 +351,7 @@ class MessageTest extends TestCase
         $restored = Message::fromArray($json);
 
         $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
-        $this->assertCount(count($original->getParts()), $restored->getParts());
+        $this->assertCount(\count($original->getParts()), $restored->getParts());
         $this->assertEquals($original->getParts()[0]->getText(), $restored->getParts()[0]->getText());
         $this->assertEquals(
             $original->getParts()[1]->getFile()->getUrl(),

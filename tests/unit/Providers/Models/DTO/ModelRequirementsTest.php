@@ -20,6 +20,11 @@ use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
+use function array_filter;
+use function array_keys;
+use function array_values;
+use function count;
+
 /**
  * @covers \WordPress\AiClient\Providers\Models\DTO\ModelRequirements
  */
@@ -234,8 +239,8 @@ class ModelRequirementsTest extends TestCase
             [new RequiredOption(OptionEnum::outputSchema(), 1536)]
         );
 
-        $json = json_encode($requirements);
-        $decoded = json_decode($json, true);
+        $json = \json_encode($requirements);
+        $decoded = \json_decode($json, true);
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);
@@ -273,7 +278,7 @@ class ModelRequirementsTest extends TestCase
         $this->assertCount(count($allCapabilities), $array[ModelRequirements::KEY_REQUIRED_CAPABILITIES]);
 
         // Verify all capabilities are preserved with correct values
-        $expectedValues = array_map(function ($cap) {
+        $expectedValues = \array_map(function ($cap) {
             return $cap->value;
         }, $allCapabilities);
         $this->assertEquals($expectedValues, $array[ModelRequirements::KEY_REQUIRED_CAPABILITIES]);

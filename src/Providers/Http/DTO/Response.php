@@ -185,14 +185,14 @@ class Response extends AbstractDataTransferObject
             return null;
         }
 
-        $data = json_decode($this->body, true);
+        $data = \json_decode($this->body, true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (\json_last_error() !== \JSON_ERROR_NONE) {
             return null;
         }
 
         /** @var array<string, mixed>|null $data */
-        return is_array($data) ? $data : null;
+        return \is_array($data) ? $data : null;
     }
 
     /**

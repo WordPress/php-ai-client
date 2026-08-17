@@ -8,6 +8,9 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Messages\Util\ModalityCombinationsUtil;
 
+use function array_map;
+use function count;
+
 /**
  * @covers \WordPress\AiClient\Messages\Util\ModalityCombinationsUtil
  */
@@ -96,13 +99,13 @@ class ModalityCombinationsUtilTest extends TestCase
                     },
                     $combo
                 );
-                sort($values);
-                return implode(',', $values);
+                \sort($values);
+                return \implode(',', $values);
             },
             $combinations
         );
 
-        $this->assertCount(count($normalised), array_unique($normalised));
+        $this->assertCount(count($normalised), \array_unique($normalised));
     }
 
     /**
@@ -153,10 +156,10 @@ class ModalityCombinationsUtilTest extends TestCase
 
         foreach ($optional as $modality) {
             $appearances = count(
-                array_filter(
+                \array_filter(
                     $combinations,
                     static function (array $combo) use ($modality): bool {
-                        return in_array($modality, $combo, true);
+                        return \in_array($modality, $combo, true);
                     }
                 )
             );
@@ -164,7 +167,7 @@ class ModalityCombinationsUtilTest extends TestCase
             $this->assertSame(
                 (int) $expectedAppearances,
                 $appearances,
-                sprintf('Modality "%s" should appear in exactly half the combinations.', $modality->value)
+                \sprintf('Modality "%s" should appear in exactly half the combinations.', $modality->value)
             );
         }
     }

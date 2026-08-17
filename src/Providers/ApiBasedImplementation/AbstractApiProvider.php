@@ -48,6 +48,6 @@ abstract class AbstractApiProvider extends AbstractProvider
             return static::baseUrl();
         }
 
-        return static::baseUrl() . '/' . ltrim($path, '/');
+        return static::baseUrl() . '/' . \ltrim($path, '/');
     }
 }

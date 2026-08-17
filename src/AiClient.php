@@ -19,6 +19,11 @@ use WordPress\AiClient\Results\DTO\Embedding;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 
+use function get_class;
+use function gettype;
+use function is_object;
+use function sprintf;
+
 /**
  * Main AI Client class providing both fluent and traditional APIs for AI operations.
  *
@@ -206,7 +211,7 @@ class AiClient
         }
 
         // Handle string input (provider ID or class name) via registry
-        if (is_string($availabilityOrIdOrClassName)) {
+        if (\is_string($availabilityOrIdOrClassName)) {
             return self::defaultRegistry()->isProviderConfigured($availabilityOrIdOrClassName);
         }
 

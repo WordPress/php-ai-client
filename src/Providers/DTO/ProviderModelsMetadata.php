@@ -8,6 +8,8 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
+use function array_map;
+
 /**
  * Represents metadata about a provider and its available models.
  *
@@ -53,7 +55,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
      */
     public function __construct(ProviderMetadata $provider, array $models)
     {
-        if (!array_is_list($models)) {
+        if (!\array_is_list($models)) {
             throw new InvalidArgumentException('Models must be a list array.');
         }
 

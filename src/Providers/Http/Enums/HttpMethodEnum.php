@@ -6,6 +6,8 @@ namespace WordPress\AiClient\Providers\Http\Enums;
 
 use WordPress\AiClient\Common\AbstractEnum;
 
+use function in_array;
+
 /**
  * Represents HTTP request methods.
  *

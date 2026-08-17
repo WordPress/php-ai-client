@@ -12,6 +12,11 @@ use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
+use function json_decode;
+use function json_encode;
+use function serialize;
+use function unserialize;
+
 /**
  * @covers \WordPress\AiClient\Providers\Models\DTO\SupportedOption
  */
@@ -191,7 +196,7 @@ class SupportedOptionTest extends TestCase
         $this->assertArrayHasKey('oneOf', $schema['properties'][SupportedOption::KEY_SUPPORTED_VALUES]['items']);
 
         // Verify all allowed types in items
-        $types = array_map(function ($item) {
+        $types = \array_map(function ($item) {
             return $item['type'];
         }, $schema['properties'][SupportedOption::KEY_SUPPORTED_VALUES]['items']['oneOf']);
         $this->assertContains('string', $types);
@@ -378,7 +383,7 @@ class SupportedOptionTest extends TestCase
         $array = $option->toArray();
 
         // Ensure supportedValues array has numeric keys starting from 0
-        $this->assertEquals([0, 1, 2], array_keys($array[SupportedOption::KEY_SUPPORTED_VALUES]));
+        $this->assertEquals([0, 1, 2], \array_keys($array[SupportedOption::KEY_SUPPORTED_VALUES]));
     }
 
     /**

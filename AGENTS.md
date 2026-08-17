@@ -27,6 +27,44 @@ Key constraints include:
 *   PER Coding Style (extending PSR-12).
 *   Strict type hinting for all parameters, return values, and properties.
 
+### Global function and constant references
+
+Inside a namespace, PHP resolves an unqualified function or constant name by first looking in the current namespace and only then falling back to the global namespace. That fallback is a runtime lookup on every call, and it prevents opcache from substituting the optimized handlers for common built-ins. Both `src/` and `tests/` are fully normalized to avoid it, and new code must stay that way.
+
+The rule is per file, based on how many times the name is referenced in that file:
+
+*   **Referenced once:** prefix it with a leading backslash, e.g. `\gettype($value)` or `\PATHINFO_EXTENSION`.
+*   **Referenced two or more times:** import it at the top with `use function` or `use const`, and leave the call sites unqualified.
+
+```php
+namespace WordPress\AiClient\Files\ValueObjects;
+
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+
+use function sprintf;
+use function strtolower;
+
+// ...
+
+if (!\is_string($other)) {                                  // used once: leading backslash
+    throw new InvalidArgumentException(
+        sprintf('Invalid MIME type: %s', \gettype($other))  // sprintf imported, gettype used once
+    );
+}
+
+return $this->value === strtolower($other);
+```
+
+Notes:
+
+*   `composer phpcs` enforces the first half of this automatically. The `SlevomatCodingStandard.Namespaces.ReferenceUsedNamesOnly` rule in `phpcs.xml.dist` fails the build on any global function or constant referenced via the namespace fallback, so a bare `sprintf(...)` is a hard error. It accepts both approved forms equally, so the choice between a leading backslash and an import is a convention that reviewers need to check by eye.
+*   `composer phpcbf` can fix a fallback reference, but it always fixes by adding an import. For a name used only once, prefer prefixing with `\` by hand instead.
+*   PSR-12 treats class imports, `use function` imports, and `use const` imports as separate header blocks, each separated by a blank line and each sorted alphabetically. `composer phpcbf` fixes the spacing automatically.
+*   This applies to global **functions and constants** only. Classes need no equivalent treatment: PHP has no global fallback for class names, so a global class such as `Throwable` or `ReflectionClass` must already be imported or fully qualified for the code to run at all. Keep importing those with a plain `use` statement as usual.
+*   `true`, `false`, and `null` are language constructs, not constants, and must not be prefixed.
+*   Files with no namespace declaration, such as `cli.php` and `src/polyfills.php`, are already in the global namespace and need no qualification.
+*   Do not qualify calls to functions defined by this project or by a dependency inside a namespace; the rule covers global built-ins (including the `src/polyfills.php` shims, which are defined globally).
+
 ## Core Principles
 
 *   **Provider Agnostic:** The client is designed to work with any AI provider, avoiding vendor lock-in.
@@ -79,6 +117,7 @@ For a more detailed overview, refer to the `docs/ARCHITECTURE.md` file.
 *   **Write Tests:** All new features or bug fixes must be accompanied by corresponding unit tests.
 *   **Use the Fluent API:** When writing examples or tests for the implementer API, prefer the fluent API for readability.
 *   **Use `{@inheritDoc}`:** When implementing an interface method, use `{@inheritDoc}` in the PHPDoc block to avoid duplicating documentation, as specified in `CONTRIBUTING.md`.
+*   **Qualify Global Functions and Constants:** Within a namespace, prefix a global function or constant with `\` when it is referenced once in the file, or import it with `use function` / `use const` when it is referenced more than once. See "Global function and constant references" above.
 
 ### DON'T:
 
@@ -101,3 +140,4 @@ All exceptions must use the project's custom exception classes rather than PHP b
 *   **Direct HTTP Client Usage:** A common mistake is to instantiate a PSR-18 client directly in a model. This is incorrect. Instead, the model should receive an `HttpTransporter` instance and use it to send requests.
 *   **Ignoring the Fluent API:** While the traditional API is available, the fluent API is the preferred way for implementers to use the client. Avoid writing complex, nested method calls when the fluent API provides a cleaner alternative.
 *   **Duplicating Interface Documentation:** Manually writing PHPDoc descriptions for methods that implement an interface is a common pitfall. The `{@inheritDoc}` tag should be used instead to inherit the documentation from the interface.
+*   **Unqualified Global Functions:** Writing `sprintf(...)` or `is_array(...)` bare inside a namespace is easy to do by habit, but it forces a runtime namespace fallback lookup on every call. Either prefix with `\` or add a `use function` import, depending on how many times the name appears in the file.

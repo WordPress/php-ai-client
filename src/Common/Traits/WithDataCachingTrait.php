@@ -63,7 +63,7 @@ trait WithDataCachingTrait
             return $cache->has($fullKey);
         }
 
-        return array_key_exists($fullKey, $this->localCache);
+        return \array_key_exists($fullKey, $this->localCache);
     }
 
     /**

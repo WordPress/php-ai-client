@@ -47,7 +47,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     final public function listModelMetadata(): array
     {
         $modelsMetadata = $this->getModelMetadataMap();
-        return array_values($modelsMetadata);
+        return \array_values($modelsMetadata);
     }
 
     /**
@@ -71,7 +71,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
         $modelsMetadata = $this->getModelMetadataMap();
         if (!isset($modelsMetadata[$modelId])) {
             throw new InvalidArgumentException(
-                sprintf('No model with ID %s was found in the provider', $modelId)
+                \sprintf('No model with ID %s was found in the provider', $modelId)
             );
         }
         return $modelsMetadata[$modelId];
@@ -111,7 +111,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
      */
     protected function getBaseCacheKey(): string
     {
-        return 'ai_client_' . AiClient::VERSION . '_' . md5(static::class);
+        return 'ai_client_' . AiClient::VERSION . '_' . \md5(static::class);
     }
 
     /**

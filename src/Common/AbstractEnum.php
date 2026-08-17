@@ -10,6 +10,9 @@ use ReflectionClass;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 
+use function sprintf;
+use function strtoupper;
+
 /**
  * Abstract base class for enum-like behavior in PHP 7.4.
  *
@@ -204,7 +207,7 @@ abstract class AbstractEnum implements JsonSerializable
      */
     final public static function getValues(): array
     {
-        return array_values(static::getConstants());
+        return \array_values(static::getConstants());
     }
 
     /**
@@ -217,7 +220,7 @@ abstract class AbstractEnum implements JsonSerializable
      */
     final public static function isValidValue(string $value): bool
     {
-        return in_array($value, self::getValues(), true);
+        return \in_array($value, self::getValues(), true);
     }
 
     /**
@@ -286,7 +289,7 @@ abstract class AbstractEnum implements JsonSerializable
         $enumConstants = [];
         foreach ($constants as $name => $value) {
             // Check if constant name follows uppercase snake_case pattern
-            if (!preg_match('/^[A-Z][A-Z0-9_]*$/', $name)) {
+            if (!\preg_match('/^[A-Z][A-Z0-9_]*$/', $name)) {
                 throw new RuntimeException(
                     sprintf(
                         'Invalid enum constant name "%s" in %s. Constants must be UPPER_SNAKE_CASE.',
@@ -297,14 +300,14 @@ abstract class AbstractEnum implements JsonSerializable
             }
 
             // Check if value is valid type
-            if (!is_string($value)) {
+            if (!\is_string($value)) {
                 throw new RuntimeException(
                     sprintf(
                         'Invalid enum value type for constant %s::%s. ' .
                         'Only string values are allowed, %s given.',
                         $className,
                         $name,
-                        gettype($value)
+                        \gettype($value)
                     )
                 );
             }
@@ -328,8 +331,8 @@ abstract class AbstractEnum implements JsonSerializable
     final public function __call(string $name, array $arguments): bool
     {
         // Handle is* methods
-        if (str_starts_with($name, 'is')) {
-            $constantName = self::camelCaseToConstant(substr($name, 2));
+        if (\str_starts_with($name, 'is')) {
+            $constantName = self::camelCaseToConstant(\substr($name, 2));
             $constants = static::getConstants();
 
             if (isset($constants[$constantName])) {
@@ -376,7 +379,7 @@ abstract class AbstractEnum implements JsonSerializable
      */
     private static function camelCaseToConstant(string $camelCase): string
     {
-        $snakeCase = preg_replace('/([a-z])([A-Z])/', '$1_$2', $camelCase);
+        $snakeCase = \preg_replace('/([a-z])([A-Z])/', '$1_$2', $camelCase);
         if ($snakeCase === null) {
             return strtoupper($camelCase);
         }

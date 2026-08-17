@@ -10,6 +10,9 @@ use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\ValueObjects\MimeType;
 
+use function preg_match;
+use function sprintf;
+
 /**
  * Represents a file in the AI client.
  *
@@ -101,7 +104,7 @@ class File extends AbstractDataTransferObject
         }
 
         // Check if it's a local file path (before base64 check)
-        if (file_exists($file) && is_file($file)) {
+        if (\file_exists($file) && \is_file($file)) {
             $this->fileType = FileTypeEnum::inline();
             $this->base64Data = $this->convertFileToBase64($file);
             $this->mimeType = $this->determineMimeType($providedMimeType, null, $file);
@@ -136,7 +139,7 @@ class File extends AbstractDataTransferObject
      */
     private function isUrl(string $string): bool
     {
-        return filter_var($string, FILTER_VALIDATE_URL) !== false
+        return \filter_var($string, \FILTER_VALIDATE_URL) !== false
             && preg_match('/^https?:\/\//i', $string);
     }
 
@@ -151,7 +154,7 @@ class File extends AbstractDataTransferObject
      */
     private function convertFileToBase64(string $filePath): string
     {
-        $fileContent = @file_get_contents($filePath);
+        $fileContent = @\file_get_contents($filePath);
 
         if ($fileContent === false) {
             throw new RuntimeException(
@@ -159,7 +162,7 @@ class File extends AbstractDataTransferObject
             );
         }
 
-        return base64_encode($fileContent);
+        return \base64_encode($fileContent);
     }
 
     /**
@@ -364,16 +367,16 @@ class File extends AbstractDataTransferObject
 
         // Try to determine from file extension
         if ($pathOrUrl !== null) {
-            $parsedUrl = parse_url($pathOrUrl);
+            $parsedUrl = \parse_url($pathOrUrl);
             $path = $parsedUrl['path'] ?? $pathOrUrl;
 
             // Remove query string and fragment if present
-            $cleanPath = strtok($path, '?#');
+            $cleanPath = \strtok($path, '?#');
             if ($cleanPath === false) {
                 $cleanPath = $path;
             }
 
-            $extension = pathinfo($cleanPath, PATHINFO_EXTENSION);
+            $extension = \pathinfo($cleanPath, \PATHINFO_EXTENSION);
             if (!empty($extension)) {
                 try {
                     return MimeType::fromExtension($extension);

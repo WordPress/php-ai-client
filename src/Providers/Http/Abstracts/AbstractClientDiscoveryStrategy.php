@@ -30,7 +30,7 @@ abstract class AbstractClientDiscoveryStrategy implements DiscoveryStrategy
      */
     public static function init(): void
     {
-        if (!class_exists('\Http\Discovery\Psr18ClientDiscovery')) {
+        if (!\class_exists('\Http\Discovery\Psr18ClientDiscovery')) {
             return;
         }
 
@@ -67,7 +67,7 @@ abstract class AbstractClientDiscoveryStrategy implements DiscoveryStrategy
             'Psr\Http\Message\UriFactoryInterface',
         ];
 
-        if (in_array($type, $psr17Factories, true)) {
+        if (\in_array($type, $psr17Factories, true)) {
             return [
                 [
                     'class' => Psr17Factory::class,

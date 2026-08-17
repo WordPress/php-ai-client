@@ -8,6 +8,9 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
+use function array_is_list;
+use function array_map;
+
 /**
  * Represents metadata about an AI model.
  *

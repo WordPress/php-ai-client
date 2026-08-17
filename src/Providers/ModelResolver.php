@@ -12,6 +12,10 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 
+use function is_string;
+use function reset;
+use function sprintf;
+
 /**
  * Resolves the concrete AI model to use based on selection preferences.
  *
@@ -124,9 +128,9 @@ class ModelResolver
         $preferenceKeys = [];
 
         foreach ($preferredModels as $preferredModel) {
-            if (is_array($preferredModel)) {
+            if (\is_array($preferredModel)) {
                 // [model identifier, provider ID] tuple
-                if (!array_is_list($preferredModel) || count($preferredModel) !== 2) {
+                if (!\array_is_list($preferredModel) || \count($preferredModel) !== 2) {
                     throw new InvalidArgumentException(
                         'Model preference tuple must contain model identifier and provider ID.'
                     );
@@ -277,14 +281,14 @@ class ModelResolver
         // Check if any preferred models match the candidates, in priority order.
         if (!empty($this->modelPreferenceKeys)) {
             // Find preferences that match available candidates, preserving preference order.
-            $matchingPreferences = array_intersect_key(
-                array_flip($this->modelPreferenceKeys),
+            $matchingPreferences = \array_intersect_key(
+                \array_flip($this->modelPreferenceKeys),
                 $candidateMap
             );
 
             if (!empty($matchingPreferences)) {
                 // Get the first matching preference key
-                $firstMatchKey = key($matchingPreferences);
+                $firstMatchKey = \key($matchingPreferences);
                 [$providerId, $modelId] = $candidateMap[$firstMatchKey];
 
                 $model = $this->registry->getProviderModel($providerId, $modelId, $modelConfig);
@@ -428,7 +432,7 @@ class ModelResolver
             throw new InvalidArgumentException($emptyMessage);
         }
 
-        $trimmed = trim($value);
+        $trimmed = \trim($value);
         if ($trimmed === '') {
             throw new InvalidArgumentException($emptyMessage);
         }

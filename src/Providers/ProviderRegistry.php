@@ -22,6 +22,14 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 
+use function get_class;
+use function is_array;
+use function is_subclass_of;
+use function preg_replace;
+use function sprintf;
+use function str_replace;
+use function strtoupper;
+
 /**
  * Registry for managing AI providers and their models.
  *
@@ -63,7 +71,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
      */
     public function registerProvider(string $className): void
     {
-        if (!class_exists($className)) {
+        if (!\class_exists($className)) {
             throw new InvalidArgumentException(
                 sprintf('Provider class does not exist: %s', $className)
             );
@@ -136,7 +144,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
      */
     public function getRegisteredProviderIds(): array
     {
-        return array_keys($this->registeredIdsToClassNames);
+        return \array_keys($this->registeredIdsToClassNames);
     }
 
     /**
@@ -540,13 +548,13 @@ class ProviderRegistry implements WithHttpTransporterInterface
                 $envVarName = $this->getEnvVarName($providerId, $property);
 
                 // Try to get the value from environment variable or constant.
-                $envValue = getenv($envVarName);
+                $envValue = \getenv($envVarName);
                 if ($envValue === false) {
-                    if (!defined($envVarName)) {
+                    if (!\defined($envVarName)) {
                         continue; // Skip if neither environment variable nor constant is defined.
                     }
-                    $envValue = constant($envVarName);
-                    if (!is_scalar($envValue)) {
+                    $envValue = \constant($envVarName);
+                    if (!\is_scalar($envValue)) {
                         continue;
                     }
                 }
@@ -554,7 +562,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
                 if (isset($details['type'])) {
                     switch ($details['type']) {
                         case 'boolean':
-                            $authenticationData[$property] = filter_var($envValue, FILTER_VALIDATE_BOOLEAN);
+                            $authenticationData[$property] = \filter_var($envValue, \FILTER_VALIDATE_BOOLEAN);
                             break;
                         case 'number':
                             $authenticationData[$property] = (int) $envValue;
@@ -573,7 +581,7 @@ class ProviderRegistry implements WithHttpTransporterInterface
             if (isset($authenticationSchema['required']) && is_array($authenticationSchema['required'])) {
                 /** @var list<string> $requiredProperties */
                 $requiredProperties = $authenticationSchema['required'];
-                if (array_diff_key(array_flip($requiredProperties), $authenticationData)) {
+                if (\array_diff_key(\array_flip($requiredProperties), $authenticationData)) {
                     return null;
                 }
             }

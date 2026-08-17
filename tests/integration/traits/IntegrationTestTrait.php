@@ -20,7 +20,7 @@ trait IntegrationTestTrait
     protected function requireApiKey(string $envVar): void
     {
         // Check both $_ENV (populated by symfony/dotenv) and getenv() (shell environment)
-        $value = $_ENV[$envVar] ?? getenv($envVar);
+        $value = $_ENV[$envVar] ?? \getenv($envVar);
         if ($value === false || $value === '' || $value === null) {
             $this->markTestSkipped("Skipping: {$envVar} environment variable is not set.");
         }

@@ -12,6 +12,13 @@ use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
+use function array_is_list;
+use function array_map;
+use function array_unique;
+use function array_values;
+
+use const SORT_REGULAR;
+
 /**
  * Represents requirements that implementing code has for AI model selection.
  *
@@ -155,7 +162,7 @@ class ModelRequirements extends AbstractDataTransferObject
         $inputModalities = [];
 
         // Check if we have chat history (multiple messages)
-        if (count($messages) > 1) {
+        if (\count($messages) > 1) {
             $capabilities[] = CapabilityEnum::chatHistory();
         }
 

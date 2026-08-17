@@ -6,6 +6,9 @@ namespace WordPress\AiClient\Files\ValueObjects;
 
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 
+use function sprintf;
+use function strtolower;
+
 /**
  * Value object representing a MIME type.
  *
@@ -142,7 +145,7 @@ final class MimeType
     public function toExtension(): string
     {
         // Reverse lookup for the MIME type to find the extension.
-        $extension = array_search($this->value, self::$extensionMap, true);
+        $extension = \array_search($this->value, self::$extensionMap, true);
         if ($extension === false) {
             throw new InvalidArgumentException(
                 sprintf('No known extension for MIME type: %s', $this->value)
@@ -185,7 +188,7 @@ final class MimeType
     public static function isValid(string $mimeType): bool
     {
         // Basic MIME type validation: type/subtype
-        return (bool) preg_match(
+        return (bool) \preg_match(
             '/^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*$/',
             $mimeType
         );
@@ -204,7 +207,7 @@ final class MimeType
      */
     public function isType(string $mimeType): bool
     {
-        return str_starts_with($this->value, strtolower($mimeType) . '/');
+        return \str_starts_with($this->value, strtolower($mimeType) . '/');
     }
 
     /**
@@ -264,7 +267,7 @@ final class MimeType
      */
     public function isDocument(): bool
     {
-        return in_array($this->value, self::$documentTypes, true);
+        return \in_array($this->value, self::$documentTypes, true);
     }
 
     /**
@@ -282,12 +285,12 @@ final class MimeType
             return $this->value === $other->value;
         }
 
-        if (is_string($other)) {
+        if (\is_string($other)) {
             return $this->value === strtolower($other);
         }
 
         throw new InvalidArgumentException(
-            sprintf('Invalid MIME type comparison: %s', gettype($other))
+            sprintf('Invalid MIME type comparison: %s', \gettype($other))
         );
     }
 

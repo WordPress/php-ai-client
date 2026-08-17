@@ -10,6 +10,8 @@ use WordPress\AiClient\Results\DTO\Embedding;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Tests\integration\traits\IntegrationTestTrait;
 
+use function count;
+
 /**
  * Integration tests for OpenAI embedding generation.
  *

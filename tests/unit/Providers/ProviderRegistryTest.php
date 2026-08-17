@@ -21,6 +21,8 @@ use WordPress\AiClient\Tests\mocks\MockNoAuthProvider;
 use WordPress\AiClient\Tests\mocks\MockProvider;
 use WordPress\AiClient\Tests\mocks\MockProviderAvailability;
 
+use function putenv;
+
 /**
  * @covers \WordPress\AiClient\Providers\ProviderRegistry
  */

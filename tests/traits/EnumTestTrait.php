@@ -7,6 +7,8 @@ namespace WordPress\AiClient\Tests\traits;
 use BadMethodCallException;
 use WordPress\AiClient\Common\AbstractEnum;
 
+use function reset;
+
 /**
  * Trait for testing enum classes.
  */
@@ -37,7 +39,7 @@ trait EnumTestTrait
         $actualValues = $enumClass::getValues();
 
         // Since getValues() now returns just the values, we need to extract values from expected
-        $expectedValuesList = array_values($expectedValues);
+        $expectedValuesList = \array_values($expectedValues);
 
         $this->assertEquals($expectedValuesList, $actualValues);
     }
@@ -52,7 +54,7 @@ trait EnumTestTrait
 
         $cases = $enumClass::cases();
 
-        $this->assertCount(count($expectedValues), $cases);
+        $this->assertCount(\count($expectedValues), $cases);
 
         foreach ($cases as $case) {
             $this->assertInstanceOf($enumClass, $case);

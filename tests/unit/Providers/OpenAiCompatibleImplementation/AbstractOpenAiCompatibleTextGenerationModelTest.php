@@ -27,6 +27,8 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
+use function json_encode;
+
 /**
  * @covers \WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCompatibleTextGenerationModel
  */
@@ -1156,7 +1158,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            sprintf(
+            \sprintf(
                 'Unexpected TestProvider API response: Invalid "%s" key: Invalid finish reason "unknown".',
                 'choices[0].finish_reason'
             )

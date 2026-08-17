@@ -55,7 +55,7 @@ class MessageBuilder
         // Handle different input types
         if ($input instanceof MessagePart) {
             $this->parts[] = $input;
-        } elseif (is_string($input)) {
+        } elseif (\is_string($input)) {
             $this->withText($input);
         } elseif ($input instanceof File) {
             $this->withFile($input);
@@ -63,7 +63,7 @@ class MessageBuilder
             $this->withFunctionCall($input);
         } elseif ($input instanceof FunctionResponse) {
             $this->withFunctionResponse($input);
-        } elseif (is_array($input) && MessagePart::isArrayShape($input)) {
+        } elseif (\is_array($input) && MessagePart::isArrayShape($input)) {
             $this->parts[] = MessagePart::fromArray($input);
         } else {
             throw new InvalidArgumentException(
@@ -141,7 +141,7 @@ class MessageBuilder
      */
     public function withText(string $text): self
     {
-        if (trim($text) === '') {
+        if (\trim($text) === '') {
             throw new InvalidArgumentException('Text content cannot be empty.');
         }
 

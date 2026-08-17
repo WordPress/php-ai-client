@@ -101,9 +101,9 @@ class MockOpenAiCompatibleModelMetadataDirectory extends AbstractOpenAiCompatibl
     {
         $data = $response->getData();
         $modelsMetadata = [];
-        if (isset($data['data']) && is_array($data['data'])) {
+        if (isset($data['data']) && \is_array($data['data'])) {
             foreach ($data['data'] as $modelData) {
-                if (isset($modelData['id']) && is_string($modelData['id'])) {
+                if (isset($modelData['id']) && \is_string($modelData['id'])) {
                     if ($this->useRealModelMetadata) {
                         $modelsMetadata[] = $this->createRealModelMetadata($modelData['id']);
                     } elseif ($this->modelMetadataStubFactory !== null) {
@@ -126,7 +126,7 @@ class MockOpenAiCompatibleModelMetadataDirectory extends AbstractOpenAiCompatibl
     {
         return new ModelMetadata(
             $modelId,
-            ucfirst($modelId),
+            \ucfirst($modelId),
             [CapabilityEnum::textGeneration()],
             []
         );

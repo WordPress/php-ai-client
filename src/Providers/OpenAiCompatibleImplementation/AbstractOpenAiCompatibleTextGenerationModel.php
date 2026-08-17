@@ -25,6 +25,16 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
+use function array_filter;
+use function array_is_list;
+use function array_map;
+use function array_values;
+use function count;
+use function is_array;
+use function is_string;
+use function json_encode;
+use function sprintf;
+
 /**
  * Base class for a text generation model for providers that implement OpenAI's API format.
  *
@@ -247,7 +257,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         );
 
         if ($systemInstruction) {
-            array_unshift(
+            \array_unshift(
                 $messagesParam,
                 [
                     /*
@@ -766,7 +776,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
 
         $functionArguments = is_string($toolCallData['function']['arguments'])
-            ? json_decode($toolCallData['function']['arguments'], true)
+            ? \json_decode($toolCallData['function']['arguments'], true)
             : $toolCallData['function']['arguments'];
 
         $functionCall = new FunctionCall(
