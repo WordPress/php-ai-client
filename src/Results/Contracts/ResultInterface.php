@@ -32,9 +32,9 @@ interface ResultInterface
      *
      * @since 0.1.0
      *
-     * @return TokenUsage Token usage statistics.
+     * @return TokenUsage|null Token usage statistics, or null when the provider did not supply them.
      */
-    public function getTokenUsage(): TokenUsage;
+    public function getTokenUsage(): ?TokenUsage;
 
     /**
      * Gets the provider metadata.
