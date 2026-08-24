@@ -19,6 +19,8 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
  * composed {@see ModelConfigurationTrait}.
  *
  * @since 1.4.0
+ *
+ * @phpstan-import-type ProviderModelTuple from ModelResolver
  */
 trait ModelResolutionTrait
 {
@@ -55,7 +57,7 @@ trait ModelResolutionTrait
      *
      * @since 0.2.0
      *
-     * @param string|ModelInterface|array{0:string,1:string} ...$preferredModels The preferred models as model IDs,
+     * @param string|ModelInterface|ProviderModelTuple ...$preferredModels The preferred models as model IDs,
      * model instances, or [provider ID, model ID] tuples. For broader compatibility, it is recommended you specify
      * only model IDs or model instances, as that will allow for different providers that expose the same model to be
      * considered.

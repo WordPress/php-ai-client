@@ -12,6 +12,7 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
+use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
@@ -82,6 +83,7 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *
  * @phpstan-import-type Prompt from PromptBuilder
  * @phpstan-import-type EmbeddingInput from EmbeddingBuilder
+ * @phpstan-import-type ProviderModelTuple from ModelResolver
  *
  * phpcs:ignore Generic.Files.LineLength.TooLong
  */
@@ -425,9 +427,7 @@ class AiClient
      * @since 1.4.0
      *
      * @param EmbeddingInput|list<EmbeddingInput> $input The input(s) to embed.
-     * @param ModelInterface|array{0: string, 1: string} $model The model to use, either as an
-     *                                                          instance or as a
-     *                                                          [provider ID, model ID] tuple.
+     * @param ModelInterface|ProviderModelTuple $model The model to use.
      * @param ModelConfig|null $modelConfig Optional model configuration to apply.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return EmbeddingResult The embedding result.
@@ -454,9 +454,7 @@ class AiClient
      * @since 1.4.0
      *
      * @param EmbeddingInput $input The input to embed.
-     * @param ModelInterface|array{0: string, 1: string} $model The model to use, either as an
-     *                                                          instance or as a
-     *                                                          [provider ID, model ID] tuple.
+     * @param ModelInterface|ProviderModelTuple $model The model to use.
      * @param ModelConfig|null $modelConfig Optional model configuration to apply.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return Embedding The generated embedding vector.
@@ -479,9 +477,7 @@ class AiClient
      * @since 1.4.0
      *
      * @param list<EmbeddingInput> $inputs The inputs to embed.
-     * @param ModelInterface|array{0: string, 1: string} $model The model to use, either as an
-     *                                                          instance or as a
-     *                                                          [provider ID, model ID] tuple.
+     * @param ModelInterface|ProviderModelTuple $model The model to use.
      * @param ModelConfig|null $modelConfig Optional model configuration to apply.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return list<Embedding> The generated embedding vectors.
@@ -560,8 +556,8 @@ class AiClient
      * Configures an EmbeddingBuilder with the required model and optional configuration.
      *
      * @param EmbeddingInput|list<EmbeddingInput> $input The input(s) to embed.
-     * @param mixed $model The model to use, either as a ModelInterface instance or as a
-     *                     [provider ID, model ID] tuple.
+     * @param mixed $model The model to use, expected to be a ModelInterface instance or a
+     *                     ProviderModelTuple; any other value is rejected.
      * @param ModelConfig|null $modelConfig Optional model configuration to apply.
      * @param ProviderRegistry|null $registry Optional custom registry to use.
      * @return EmbeddingBuilder Configured embedding builder.

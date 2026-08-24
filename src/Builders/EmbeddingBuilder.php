@@ -15,6 +15,7 @@ use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Providers\ApiBasedImplementation\Contracts\ApiBasedModelInterface;
 use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
+use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
@@ -43,6 +44,7 @@ use WordPress\AiClient\Results\DTO\EmbeddingResult;
  *
  * @phpstan-import-type MessagePartArrayShape from MessagePart
  * @phpstan-import-type UnmetModelRequirementsShape from ModelRequirements
+ * @phpstan-import-type ProviderModelTuple from ModelResolver
  *
  * @phpstan-type EmbeddingInput string|MessagePart|File|MessagePartArrayShape
  */
@@ -73,7 +75,7 @@ class EmbeddingBuilder
     protected ?ModelInterface $model = null;
 
     /**
-     * @var array{0: string, 1: string}|null The provider ID or class name and model ID, if any.
+     * @var ProviderModelTuple|null The provider ID or class name and model ID, if any.
      */
     protected ?array $providerModel = null;
 
