@@ -17,7 +17,8 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
  * @phpstan-type RequestOptionsArrayShape array{
  *     timeout?: float|null,
  *     connectTimeout?: float|null,
- *     maxRedirects?: int|null
+ *     maxRedirects?: int|null,
+ *     stream?: bool|null
  * }
  *
  * @extends AbstractDataTransferObject<RequestOptionsArrayShape>
@@ -27,6 +28,7 @@ class RequestOptions extends AbstractDataTransferObject
     public const KEY_TIMEOUT = 'timeout';
     public const KEY_CONNECT_TIMEOUT = 'connectTimeout';
     public const KEY_MAX_REDIRECTS = 'maxRedirects';
+    public const KEY_STREAM = 'stream';
 
     /**
      * @var float|null Maximum duration in seconds to wait for the full response.
@@ -42,6 +44,11 @@ class RequestOptions extends AbstractDataTransferObject
      * @var int|null Maximum number of redirects to follow. 0 disables redirects, null is unspecified.
      */
     protected ?int $maxRedirects = null;
+
+    /**
+     * @var bool|null Whether to request the response body as a stream. Null is unspecified.
+     */
+    protected ?bool $stream = null;
 
     /**
      * Sets the request timeout in seconds.
@@ -154,6 +161,31 @@ class RequestOptions extends AbstractDataTransferObject
     }
 
     /**
+     * Sets whether to request the response body as a stream.
+     *
+     * @since n.e.x.t
+     *
+     * @param bool $stream Whether to stream the response body.
+     * @return void
+     */
+    public function setStream(bool $stream): void
+    {
+        $this->stream = $stream;
+    }
+
+    /**
+     * Gets whether the response body should be requested as a stream.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool|null True to stream, false to buffer, or null when unspecified.
+     */
+    public function isStream(): ?bool
+    {
+        return $this->stream;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.2.0
@@ -174,6 +206,10 @@ class RequestOptions extends AbstractDataTransferObject
 
         if ($this->maxRedirects !== null) {
             $data[self::KEY_MAX_REDIRECTS] = $this->maxRedirects;
+        }
+
+        if ($this->stream !== null) {
+            $data[self::KEY_STREAM] = $this->stream;
         }
 
         return $data;
@@ -198,6 +234,10 @@ class RequestOptions extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_MAX_REDIRECTS])) {
             $instance->setMaxRedirects((int) $array[self::KEY_MAX_REDIRECTS]);
+        }
+
+        if (isset($array[self::KEY_STREAM])) {
+            $instance->setStream((bool) $array[self::KEY_STREAM]);
         }
 
         return $instance;
@@ -227,6 +267,10 @@ class RequestOptions extends AbstractDataTransferObject
                     'type' => ['integer', 'null'],
                     'minimum' => 0,
                     'description' => 'Maximum redirects to follow. 0 disables, null is unspecified.',
+                ],
+                self::KEY_STREAM => [
+                    'type' => ['boolean', 'null'],
+                    'description' => 'Whether to request the response body as a stream.',
                 ],
             ],
             'additionalProperties' => false,

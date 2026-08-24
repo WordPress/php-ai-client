@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Providers\OpenAiCompatibleImplementation
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -15,6 +16,8 @@ use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Http\Exception\ResponseException;
@@ -22,7 +25,13 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Results\StreamedGenerativeAiResult;
+use WordPress\AiClient\Results\ValueObjects\CandidateDelta;
+use WordPress\AiClient\Results\ValueObjects\GenerativeAiResultChunk;
+use WordPress\AiClient\Tests\mocks\ChunkStream;
+use WordPress\AiClient\Tests\mocks\FailingChunkStream;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -163,6 +172,38 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $this->expectExceptionMessage('Bad Request (400) - Invalid parameter.');
 
         $model->generateTextResult($prompt);
+    }
+
+    /**
+     * Tests that token usage defaults to zero when the response omits usage.
+     *
+     * @return void
+     */
+    public function testGenerateTextResultDefaultsTokenUsageWhenUsageAbsent(): void
+    {
+        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Hello')])];
+        $response = new Response(
+            200,
+            [],
+            json_encode([
+                'id' => 'chatcmpl-123',
+                'choices' => [
+                    [
+                        'message' => ['role' => 'assistant', 'content' => 'Hi there!'],
+                        'finish_reason' => 'stop',
+                    ],
+                ],
+            ])
+        );
+
+        $this->mockRequestAuthentication->method('authenticateRequest')->willReturnArgument(0);
+        $this->mockHttpTransporter->method('send')->willReturn($response);
+
+        $result = $this->createModel()->generateTextResult($prompt);
+
+        $this->assertSame(0, $result->getTokenUsage()->getPromptTokens());
+        $this->assertSame(0, $result->getTokenUsage()->getCompletionTokens());
+        $this->assertSame(0, $result->getTokenUsage()->getTotalTokens());
     }
 
     /**
@@ -1327,5 +1368,839 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         // Should be skipped because OpenAI API doesn't support receiving thoughts.
         $this->assertNull($data);
+    }
+
+    /**
+     * @return list<Message>
+     */
+    private function createStreamPrompt(): array
+    {
+        return [new Message(MessageRoleEnum::user(), [new MessagePart('Hello')])];
+    }
+
+    /**
+     * Builds one SSE "data:" frame for the given decoded payload.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function createSseDataLine(array $payload): string
+    {
+        return 'data: ' . json_encode($payload) . "\n\n";
+    }
+
+    /**
+     * Wraps SSE frames in a streamed Response, one frame per read.
+     *
+     * @param list<string> $sseFrames
+     */
+    private function createStreamResponse(array $sseFrames, int $statusCode = 200): Response
+    {
+        return new Response($statusCode, [], new ChunkStream($sseFrames));
+    }
+
+    /**
+     * Configures auth passthrough and the transporter to return the given response.
+     */
+    private function givenStreamResponse(Response $response): void
+    {
+        $this->mockRequestAuthentication->method('authenticateRequest')->willReturnArgument(0);
+        $this->mockHttpTransporter->method('send')->willReturn($response);
+    }
+
+    /**
+     * Drains a handle into a list of chunks.
+     *
+     * @return list<GenerativeAiResultChunk>
+     */
+    private function consumeChunks(StreamedGenerativeAiResult $handle): array
+    {
+        return array_values(iterator_to_array($handle, false));
+    }
+
+    /**
+     * Tests that creating the handle does not perform the request.
+     */
+    public function testStreamGenerateTextResultReturnsHandleWithoutPerformingRequest(): void
+    {
+        $this->mockHttpTransporter->expects($this->never())->method('send');
+
+        $handle = $this->createModel()->streamGenerateTextResult($this->createStreamPrompt());
+
+        $this->assertInstanceOf(StreamedGenerativeAiResult::class, $handle);
+    }
+
+    /**
+     * Tests that the streamed request enables streaming and usage reporting.
+     */
+    public function testStreamGenerateTextResultEnablesStreamingOnTheRequest(): void
+    {
+        $this->mockRequestAuthentication
+            ->expects($this->once())
+            ->method('authenticateRequest')
+            ->willReturnArgument(0);
+
+        $this->mockHttpTransporter
+            ->expects($this->once())
+            ->method('send')
+            ->willReturnCallback(function (Request $request, ?RequestOptions $options = null) {
+                $params = $request->getData() ?? [];
+                $this->assertTrue($params['stream'] ?? null);
+                $this->assertSame(['include_usage' => true], $params['stream_options'] ?? null);
+                $this->assertInstanceOf(RequestOptions::class, $options);
+                $this->assertTrue($options->isStream());
+
+                return $this->createStreamResponse(["data: [DONE]\n\n"]);
+            });
+
+        $handle = $this->createModel()->streamGenerateTextResult($this->createStreamPrompt());
+
+        $this->assertSame([], $this->consumeChunks($handle));
+    }
+
+    /**
+     * Tests that content deltas, the finish reason, and usage are assembled.
+     */
+    public function testStreamAssemblesContentFinishReasonAndUsage(): void
+    {
+        $this->givenStreamResponse($this->createStreamResponse([
+            $this->createSseDataLine([
+                'id' => 'chatcmpl-1',
+                'choices' => [['index' => 0, 'delta' => ['role' => 'assistant', 'content' => 'Hel']]],
+            ]),
+            $this->createSseDataLine(['choices' => [['index' => 0, 'delta' => ['content' => 'lo']]]]),
+            $this->createSseDataLine(['choices' => [['index' => 0, 'delta' => [], 'finish_reason' => 'stop']]]),
+            $this->createSseDataLine([
+                'choices' => [],
+                'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 5, 'total_tokens' => 15],
+            ]),
+            "data: [DONE]\n\n",
+        ]));
+
+        $result = $this->createModel()
+            ->streamGenerateTextResult($this->createStreamPrompt())
+            ->getFinalResult();
+
+        $this->assertSame('chatcmpl-1', $result->getId());
+        $this->assertSame('Hello', $result->toText());
+        $this->assertTrue($result->getCandidates()[0]->getFinishReason()->is(FinishReasonEnum::stop()));
+        $this->assertSame(10, $result->getTokenUsage()->getPromptTokens());
+        $this->assertSame(5, $result->getTokenUsage()->getCompletionTokens());
+        $this->assertSame(15, $result->getTokenUsage()->getTotalTokens());
+    }
+
+    /**
+     * Tests that each event yields a chunk and the [DONE] sentinel is skipped.
+     */
+    public function testStreamYieldsOneChunkPerEventAndSkipsTheDoneSentinel(): void
+    {
+        $this->givenStreamResponse($this->createStreamResponse([
+            $this->createSseDataLine(['choices' => [['index' => 0, 'delta' => ['content' => 'Hel']]]]),
+            "data: \n\n",
+            $this->createSseDataLine(['choices' => [['index' => 0, 'delta' => ['content' => 'lo']]]]),
+            $this->createSseDataLine([
+                'choices' => [],
+                'usage' => ['prompt_tokens' => 1, 'completion_tokens' => 2, 'total_tokens' => 3],
+            ]),
+            "data: [DONE]\n\n",
+        ]));
+
+        $chunks = $this->consumeChunks(
+            $this->createModel()->streamGenerateTextResult($this->createStreamPrompt())
+        );
+
+        $this->assertCount(3, $chunks);
+        $this->assertSame('Hel', $chunks[0]->getDeltaText());
+        $this->assertSame('lo', $chunks[1]->getDeltaText());
+        $this->assertSame('', $chunks[2]->getDeltaText());
+        $this->assertInstanceOf(TokenUsage::class, $chunks[2]->getTokenUsage());
+        $this->assertSame(3, $chunks[2]->getTokenUsage()->getTotalTokens());
+    }
+
+    /**
+     * Tests that additional data is extracted onto chunks and the result.
+     */
+    public function testStreamExtractsAdditionalDataIntoChunksAndResult(): void
+    {
+        $this->givenStreamResponse($this->createStreamResponse([
+            $this->createSseDataLine([
+                'id' => 'chatcmpl-1',
+                'object' => 'chat.completion.chunk',
+                'system_fingerprint' => 'fp_abc',
+                'choices' => [['index' => 0, 'delta' => ['content' => 'Hi'], 'finish_reason' => 'stop']],
+                'usage' => ['prompt_tokens' => 1, 'completion_tokens' => 1, 'total_tokens' => 2],
+            ]),
+            "data: [DONE]\n\n",
+        ]));
+
+        $handle = $this->createModel()->streamGenerateTextResult($this->createStreamPrompt());
+        $chunks = $this->consumeChunks($handle);
+
+        $expected = ['object' => 'chat.completion.chunk', 'system_fingerprint' => 'fp_abc'];
+        $this->assertSame($expected, $chunks[0]->getAdditionalData());
+        $this->assertSame($expected, $handle->getFinalResult()->getAdditionalData());
+    }
+
+    /**
+     * Tests that reasoning deltas route to the thought channel with thought tokens.
+     */
+    public function testStreamRoutesReasoningToThoughtChannelWithThoughtTokens(): void
+    {
+        $this->givenStreamResponse($this->createStreamResponse([
+            $this->createSseDataLine(['choices' => [['index' => 0, 'delta' => ['reasoning_content' => 'Think']]]]),
+            $this->createSseDataLine(['choices' => [['index' => 0, 'delta' => ['reasoning' => 'ing']]]]),
+            $this->createSseDataLine([
+                'choices' => [['index' => 0, 'delta' => ['content' => 'Answer'], 'finish_reason' => 'stop']],
+            ]),
+            $this->createSseDataLine([
+                'choices' => [],
+                'usage' => [
+                    'prompt_tokens' => 15,
+                    'completion_tokens' => 20,
+                    'total_tokens' => 35,
+                    'completion_tokens_details' => ['reasoning_tokens' => 10],
+                ],
+            ]),
+            "data: [DONE]\n\n",
+        ]));
+
+        $result = $this->createModel()
+            ->streamGenerateTextResult($this->createStreamPrompt())
+            ->getFinalResult();
+
+        $thought = '';
+        $content = '';
+        foreach ($result->getCandidates()[0]->getMessage()->getParts() as $part) {
+            if ($part->getText() === null) {
+                continue;
+            }
+            if ($part->getChannel()->is(MessagePartChannelEnum::thought())) {
+                $thought .= $part->getText();
+            } else {
+                $content .= $part->getText();
+            }
+        }
+
+        $this->assertSame('Thinking', $thought);
+        $this->assertSame('Answer', $content);
+        $this->assertSame(10, $result->getTokenUsage()->getThoughtTokens());
+    }
+
+    /**
+     * Builds one streamed-choice SSE frame carrying tool-call deltas.
+     *
+     * @param list<array{0: int, 1: ?string, 2: ?string, 3: ?string}> $toolCalls
+     */
+    private function toolCallFrame(array $toolCalls, ?string $finishReason = null): string
+    {
+        $deltas = [];
+        foreach ($toolCalls as [$index, $id, $name, $arguments]) {
+            $function = [];
+            if ($name !== null) {
+                $function['name'] = $name;
+            }
+            if ($arguments !== null) {
+                $function['arguments'] = $arguments;
+            }
+
+            $toolCall = ['index' => $index];
+            if ($id !== null) {
+                $toolCall['id'] = $id;
+            }
+            $toolCall['function'] = $function;
+            $deltas[] = $toolCall;
+        }
+
+        $choice = ['index' => 0, 'delta' => ['tool_calls' => $deltas]];
+        if ($finishReason !== null) {
+            $choice['finish_reason'] = $finishReason;
+        }
+
+        return $this->createSseDataLine(['choices' => [$choice]]);
+    }
+
+    /**
+     * @return array<string, array{0: list<string>, 1: list<array{id: ?string, name: ?string, args: mixed}>}>
+     */
+    public function assembledToolCallProvider(): array
+    {
+        return [
+            'arguments split across frames' => [
+                [
+                    $this->toolCallFrame([[0, 'call_1', 'get_weather', '']]),
+                    $this->toolCallFrame([[0, null, null, '{"ci']]),
+                    $this->toolCallFrame([[0, null, null, 'ty": "San']]),
+                    $this->toolCallFrame([[0, null, null, ' Francisco"}']], 'tool_calls'),
+                ],
+                [['id' => 'call_1', 'name' => 'get_weather', 'args' => ['city' => 'San Francisco']]],
+            ],
+            'whole tool call in one frame' => [
+                [
+                    $this->toolCallFrame([[0, 'call_1', 'get_weather', '{"city": "London"}']], 'tool_calls'),
+                ],
+                [['id' => 'call_1', 'name' => 'get_weather', 'args' => ['city' => 'London']]],
+            ],
+            'missing type field (Azure AI Foundry / Mistral)' => [
+                [
+                    $this->toolCallFrame([[0, 'call_abc', 'test-tool', '{"value"']]),
+                    $this->toolCallFrame([[0, null, null, ':"hello"}']], 'tool_calls'),
+                ],
+                [['id' => 'call_abc', 'name' => 'test-tool', 'args' => ['value' => 'hello']]],
+            ],
+            'trailing empty argument frame does not duplicate' => [
+                [
+                    $this->toolCallFrame([[0, 'call_1', 'searchGoogle', null]]),
+                    $this->toolCallFrame([[0, null, null, '{"query": "ai"}']]),
+                    $this->toolCallFrame([[0, null, null, '']], 'tool_calls'),
+                ],
+                [['id' => 'call_1', 'name' => 'searchGoogle', 'args' => ['query' => 'ai']]],
+            ],
+            'parallel tool calls reassembled independently' => [
+                [
+                    $this->toolCallFrame([
+                        [0, 'call_a', 'get_weather', '{"city":'],
+                        [1, 'call_b', 'get_time', '{"tz":'],
+                    ]),
+                    $this->toolCallFrame([[1, null, null, '"UTC"}'], [0, null, null, '"Paris"}']], 'tool_calls'),
+                ],
+                [
+                    ['id' => 'call_a', 'name' => 'get_weather', 'args' => ['city' => 'Paris']],
+                    ['id' => 'call_b', 'name' => 'get_time', 'args' => ['tz' => 'UTC']],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Tests that tool-call deltas are reassembled into function calls.
+     *
+     * @dataProvider assembledToolCallProvider
+     *
+     * @param list<string> $sseFrames
+     * @param list<array{id: ?string, name: ?string, args: mixed}> $expectedCalls
+     */
+    public function testStreamReassemblesToolCalls(array $sseFrames, array $expectedCalls): void
+    {
+        $this->givenStreamResponse($this->createStreamResponse(array_merge($sseFrames, ["data: [DONE]\n\n"])));
+
+        $candidate = $this->createModel()
+            ->streamGenerateTextResult($this->createStreamPrompt())
+            ->getFinalResult()
+            ->getCandidates()[0];
+
+        $actualCalls = [];
+        foreach ($candidate->getMessage()->getParts() as $part) {
+            $call = $part->getFunctionCall();
+            if ($call !== null) {
+                $actualCalls[] = ['id' => $call->getId(), 'name' => $call->getName(), 'args' => $call->getArgs()];
+            }
+        }
+
+        $this->assertEquals($expectedCalls, $actualCalls);
+    }
+
+    /**
+     * Tests that choices at different indices become separate candidates.
+     */
+    public function testStreamSeparatesMultipleCandidatesByIndex(): void
+    {
+        $this->givenStreamResponse($this->createStreamResponse([
+            $this->createSseDataLine(['choices' => [
+                ['index' => 0, 'delta' => ['content' => 'First']],
+                ['index' => 1, 'delta' => ['content' => 'Second']],
+            ]]),
+            $this->createSseDataLine(['choices' => [
+                ['index' => 0, 'delta' => [], 'finish_reason' => 'stop'],
+                ['index' => 1, 'delta' => [], 'finish_reason' => 'stop'],
+            ]]),
+            "data: [DONE]\n\n",
+        ]));
+
+        $candidates = $this->createModel()
+            ->streamGenerateTextResult($this->createStreamPrompt())
+            ->getFinalResult()
+            ->getCandidates();
+
+        $this->assertCount(2, $candidates);
+        $this->assertSame('First', $candidates[0]->getMessage()->getParts()[0]->getText());
+        $this->assertSame('Second', $candidates[1]->getMessage()->getParts()[0]->getText());
+    }
+
+    /**
+     * Tests that an unknown finish reason defaults to stop.
+     */
+    public function testStreamUnknownFinishReasonDefaultsToStop(): void
+    {
+        $this->givenStreamResponse($this->createStreamResponse([
+            $this->createSseDataLine([
+                'choices' => [['index' => 0, 'delta' => ['content' => 'Hi'], 'finish_reason' => 'something_new']],
+            ]),
+            "data: [DONE]\n\n",
+        ]));
+
+        $candidate = $this->createModel()
+            ->streamGenerateTextResult($this->createStreamPrompt())
+            ->getFinalResult()
+            ->getCandidates()[0];
+
+        $this->assertTrue($candidate->getFinishReason()->is(FinishReasonEnum::stop()));
+    }
+
+    /**
+     * Tests that a malformed JSON frame is skipped without aborting the stream.
+     */
+    public function testStreamSkipsUnparsableJsonLineButKeepsValidChunks(): void
+    {
+        $this->givenStreamResponse($this->createStreamResponse([
+            $this->createSseDataLine(['choices' => [['index' => 0, 'delta' => ['content' => 'Hel']]]]),
+            "data: {unparsable}\n\n",
+            $this->createSseDataLine([
+                'choices' => [['index' => 0, 'delta' => ['content' => 'lo'], 'finish_reason' => 'stop']],
+            ]),
+            "data: [DONE]\n\n",
+        ]));
+
+        $handle = $this->createModel()->streamGenerateTextResult($this->createStreamPrompt());
+        $chunks = $this->consumeChunks($handle);
+
+        $this->assertCount(2, $chunks);
+        $this->assertSame('Hello', $handle->getFinalResult()->toText());
+    }
+
+    /**
+     * Tests that a [DONE]-only stream produces no result.
+     */
+    public function testStreamWithOnlyDoneSentinelProducesNoResult(): void
+    {
+        $this->givenStreamResponse($this->createStreamResponse(["data: [DONE]\n\n"]));
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('no candidates');
+        $this->createModel()->streamGenerateTextResult($this->createStreamPrompt())->getFinalResult();
+    }
+
+    /**
+     * Tests that an error frame raises a ResponseException with the provider message.
+     */
+    public function testStreamThrowsResponseExceptionOnErrorEvent(): void
+    {
+        $this->givenStreamResponse($this->createStreamResponse([
+            $this->createSseDataLine(['error' => ['message' => 'bad request', 'type' => 'provider_error']]),
+            "data: [DONE]\n\n",
+        ]));
+
+        $handle = $this->createModel()->streamGenerateTextResult($this->createStreamPrompt());
+
+        $thrown = null;
+        try {
+            $this->consumeChunks($handle);
+        } catch (ResponseException $e) {
+            $thrown = $e;
+        }
+
+        $this->assertInstanceOf(ResponseException::class, $thrown);
+        $this->assertSame('Error while streaming the TestProvider API response: bad request', $thrown->getMessage());
+    }
+
+    /**
+     * Tests that chunks before a mid-stream error are delivered, then it propagates.
+     */
+    public function testStreamYieldsContentBeforeMidStreamErrorThenThrows(): void
+    {
+        $this->givenStreamResponse($this->createStreamResponse([
+            $this->createSseDataLine(['choices' => [['index' => 0, 'delta' => ['content' => 'Hello']]]]),
+            $this->createSseDataLine(['error' => ['message' => 'stream failed after output']]),
+            "data: [DONE]\n\n",
+        ]));
+
+        $handle = $this->createModel()->streamGenerateTextResult($this->createStreamPrompt());
+
+        $collected = [];
+        $thrown = null;
+        try {
+            foreach ($handle as $chunk) {
+                $collected[] = $chunk;
+            }
+        } catch (ResponseException $e) {
+            $thrown = $e;
+        }
+
+        $this->assertCount(1, $collected);
+        $this->assertSame('Hello', $collected[0]->getDeltaText());
+        $this->assertInstanceOf(ResponseException::class, $thrown);
+        $this->assertStringContainsString('stream failed after output', $thrown->getMessage());
+    }
+
+    /**
+     * Tests that a non-successful response is surfaced before streaming begins.
+     */
+    public function testStreamThrowsClientExceptionWhenResponseIsNotSuccessful(): void
+    {
+        $this->givenStreamResponse(new Response(400, [], '{"error": "Invalid parameter."}'));
+
+        $handle = $this->createModel()->streamGenerateTextResult($this->createStreamPrompt());
+
+        $this->expectException(ClientException::class);
+        $this->consumeChunks($handle);
+    }
+
+    /**
+     * Tests that a mid-read failure is wrapped as a ResponseException with its cause.
+     */
+    public function testStreamWrapsMidReadFailureAsResponseException(): void
+    {
+        $response = new Response(200, [], new FailingChunkStream(
+            [$this->createSseDataLine(['choices' => [['index' => 0, 'delta' => ['content' => 'Hello']]]])],
+            'Connection reset by peer'
+        ));
+        $this->givenStreamResponse($response);
+
+        $handle = $this->createModel()->streamGenerateTextResult($this->createStreamPrompt());
+
+        $collected = [];
+        $thrown = null;
+        try {
+            foreach ($handle as $chunk) {
+                $collected[] = $chunk;
+            }
+        } catch (ResponseException $e) {
+            $thrown = $e;
+        }
+
+        $this->assertCount(1, $collected);
+        $this->assertSame('Hello', $collected[0]->getDeltaText());
+        $this->assertInstanceOf(ResponseException::class, $thrown);
+        $this->assertStringContainsString('Connection reset by peer', $thrown->getMessage());
+        $this->assertInstanceOf(\RuntimeException::class, $thrown->getPrevious());
+    }
+
+    /**
+     * Tests that throwIfStreamError() is a no-op without an error payload.
+     */
+    public function testThrowIfStreamErrorIgnoresEventsWithoutError(): void
+    {
+        $model = $this->createModel();
+        $model->exposeThrowIfStreamError(['choices' => []]);
+
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @return array<string, array{0: array<string, mixed>, 1: string}>
+     */
+    public function streamErrorMessageProvider(): array
+    {
+        return [
+            'object error with message' => [
+                ['error' => ['message' => 'boom', 'type' => 'server_error']],
+                'Error while streaming the TestProvider API response: boom',
+            ],
+            'object error without message' => [
+                ['error' => ['type' => 'server_error']],
+                'Error while streaming the TestProvider API response: The provider reported an error.',
+            ],
+            'non-array error' => [
+                ['error' => 'oops'],
+                'Error while streaming the TestProvider API response: The provider reported an error.',
+            ],
+            'non-string message' => [
+                ['error' => ['message' => 123]],
+                'Error while streaming the TestProvider API response: The provider reported an error.',
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider streamErrorMessageProvider
+     *
+     * @param array<string, mixed> $event
+     */
+    public function testThrowIfStreamErrorMessage(array $event, string $expectedMessage): void
+    {
+        $model = $this->createModel();
+
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage($expectedMessage);
+        $model->exposeThrowIfStreamError($event);
+    }
+
+    /**
+     * Tests that parseStreamEvent() returns null for an unusable event.
+     */
+    public function testParseStreamEventReturnsNullWhenEventCarriesNothingUsable(): void
+    {
+        $model = $this->createModel();
+
+        $this->assertNull($model->exposeParseStreamEvent([]));
+        $this->assertNull($model->exposeParseStreamEvent(['choices' => []]));
+    }
+
+    /**
+     * Tests that parseStreamEvent() ignores a non-string id and non-array usage and choices.
+     */
+    public function testParseStreamEventIgnoresNonStringIdAndNonArrayUsageAndChoices(): void
+    {
+        $model = $this->createModel();
+
+        $chunk = $model->exposeParseStreamEvent([
+            'id' => 123,
+            'usage' => 'nope',
+            'choices' => 'nope',
+            'system_fingerprint' => 'fp_1',
+        ]);
+
+        $this->assertInstanceOf(GenerativeAiResultChunk::class, $chunk);
+        $this->assertNull($chunk->getId());
+        $this->assertNull($chunk->getTokenUsage());
+        $this->assertSame([], $chunk->getCandidateDeltas());
+        $this->assertSame(['system_fingerprint' => 'fp_1'], $chunk->getAdditionalData());
+    }
+
+    /**
+     * Tests that parseStreamEvent() skips non-array choice entries.
+     */
+    public function testParseStreamEventSkipsNonArrayChoiceEntries(): void
+    {
+        $model = $this->createModel();
+
+        $chunk = $model->exposeParseStreamEvent([
+            'choices' => [
+                'not-an-array',
+                ['index' => 0, 'delta' => ['content' => 'Hi']],
+            ],
+        ]);
+
+        $this->assertInstanceOf(GenerativeAiResultChunk::class, $chunk);
+        $this->assertCount(1, $chunk->getCandidateDeltas());
+        $this->assertSame('Hi', $chunk->getDeltaText());
+    }
+
+    /**
+     * @return array<string, array{0: array<string, mixed>, 1: int, 2: bool}>
+     */
+    public function streamChoiceGuardProvider(): array
+    {
+        return [
+            'missing index defaults to 0' => [['delta' => ['content' => 'x']], 0, false],
+            'non-int index defaults to 0' => [['index' => '5', 'delta' => ['content' => 'x']], 0, false],
+            'non-array delta yields no parts' => [['index' => 2, 'delta' => 'nope'], 2, false],
+            'non-string finish reason is dropped' => [['index' => 0, 'delta' => [], 'finish_reason' => 7], 0, false],
+            'unknown finish reason is dropped' => [
+                ['index' => 0, 'delta' => [], 'finish_reason' => 'mystery'],
+                0,
+                false,
+            ],
+            'known finish reason is kept' => [['index' => 0, 'delta' => [], 'finish_reason' => 'stop'], 0, true],
+        ];
+    }
+
+    /**
+     * @dataProvider streamChoiceGuardProvider
+     *
+     * @param array<string, mixed> $choice
+     */
+    public function testParseStreamChoiceGuards(array $choice, int $expectedIndex, bool $hasFinishReason): void
+    {
+        $delta = $this->createModel()->exposeParseStreamChoice($choice);
+
+        $this->assertInstanceOf(CandidateDelta::class, $delta);
+        $this->assertSame($expectedIndex, $delta->getIndex());
+        if ($hasFinishReason) {
+            $this->assertInstanceOf(FinishReasonEnum::class, $delta->getFinishReason());
+        } else {
+            $this->assertNull($delta->getFinishReason());
+        }
+    }
+
+    /**
+     * Tests that parseStreamDeltaParts() maps channels and ignores non-string values.
+     */
+    public function testParseStreamDeltaPartsMapsChannels(): void
+    {
+        $parts = $this->createModel()->exposeParseStreamDeltaParts([
+            'reasoning_content' => 'A',
+            'reasoning' => 'B',
+            'content' => 'C',
+        ]);
+
+        $this->assertCount(3, $parts);
+        $this->assertSame('A', $parts[0]->getText());
+        $this->assertTrue($parts[0]->getChannel()->is(MessagePartChannelEnum::thought()));
+        $this->assertSame('B', $parts[1]->getText());
+        $this->assertTrue($parts[1]->getChannel()->is(MessagePartChannelEnum::thought()));
+        $this->assertSame('C', $parts[2]->getText());
+        $this->assertTrue($parts[2]->getChannel()->is(MessagePartChannelEnum::content()));
+
+        $this->assertSame([], $this->createModel()->exposeParseStreamDeltaParts([
+            'reasoning_content' => 1,
+            'reasoning' => 2,
+            'content' => 3,
+        ]));
+    }
+
+    /**
+     * @return array<string, array{0: array<string, mixed>, 1: array<string, mixed>}>
+     */
+    public function streamToolCallDeltaGuardProvider(): array
+    {
+        return [
+            'tool_calls not an array' => [
+                ['tool_calls' => 'nope'],
+                ['count' => 0],
+            ],
+            'tool call entry not an array' => [
+                ['tool_calls' => ['nope']],
+                ['count' => 0],
+            ],
+            'missing index falls back to position' => [
+                ['tool_calls' => [['id' => 'a', 'function' => ['name' => 'fn', 'arguments' => '{}']]]],
+                ['count' => 1, 'index' => 0, 'id' => 'a', 'name' => 'fn', 'arguments' => '{}'],
+            ],
+            'non-int index falls back to position' => [
+                ['tool_calls' => [['index' => 'x', 'id' => 'a', 'function' => ['name' => 'fn']]]],
+                ['count' => 1, 'index' => 0, 'id' => 'a', 'name' => 'fn', 'arguments' => ''],
+            ],
+            'non-string id becomes null' => [
+                ['tool_calls' => [['index' => 0, 'id' => 9, 'function' => ['name' => 'fn']]]],
+                ['count' => 1, 'index' => 0, 'id' => null, 'name' => 'fn', 'arguments' => ''],
+            ],
+            'non-array function yields null name and empty arguments' => [
+                ['tool_calls' => [['index' => 0, 'id' => 'a', 'function' => 'nope']]],
+                ['count' => 1, 'index' => 0, 'id' => 'a', 'name' => null, 'arguments' => ''],
+            ],
+            'non-string name and arguments are dropped' => [
+                ['tool_calls' => [['index' => 0, 'id' => 'a', 'function' => ['name' => 1, 'arguments' => 2]]]],
+                ['count' => 1, 'index' => 0, 'id' => 'a', 'name' => null, 'arguments' => ''],
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider streamToolCallDeltaGuardProvider
+     *
+     * @param array<string, mixed> $delta
+     * @param array<string, mixed> $expected
+     */
+    public function testParseStreamToolCallDeltasGuards(array $delta, array $expected): void
+    {
+        $deltas = $this->createModel()->exposeParseStreamToolCallDeltas($delta);
+
+        $this->assertCount($expected['count'], $deltas);
+        if ($expected['count'] === 0) {
+            return;
+        }
+
+        $this->assertSame($expected['index'], $deltas[0]->getIndex());
+        $this->assertSame($expected['id'], $deltas[0]->getId());
+        $this->assertSame($expected['name'], $deltas[0]->getFunctionName());
+        $this->assertSame($expected['arguments'], $deltas[0]->getArgumentsFragment());
+    }
+
+    /**
+     * @return array<string, array{0: array<string, mixed>, 1: int, 2: int, 3: int, 4: int|null}>
+     */
+    public function usageDataProvider(): array
+    {
+        return [
+            'full usage with reasoning tokens' => [
+                [
+                    'prompt_tokens' => 15,
+                    'completion_tokens' => 20,
+                    'total_tokens' => 35,
+                    'completion_tokens_details' => ['reasoning_tokens' => 10],
+                ],
+                15,
+                20,
+                35,
+                10,
+            ],
+            'usage without reasoning tokens' => [
+                ['prompt_tokens' => 8, 'completion_tokens' => 4, 'total_tokens' => 12],
+                8,
+                4,
+                12,
+                null,
+            ],
+            'partial usage defaults missing counts to zero' => [
+                ['prompt_tokens' => 20],
+                20,
+                0,
+                0,
+                null,
+            ],
+            'non-int reasoning tokens are ignored' => [
+                [
+                    'prompt_tokens' => 1,
+                    'completion_tokens' => 1,
+                    'total_tokens' => 2,
+                    'completion_tokens_details' => ['reasoning_tokens' => 'x'],
+                ],
+                1,
+                1,
+                2,
+                null,
+            ],
+            'numeric-string tokens are coerced to int' => [
+                ['prompt_tokens' => '15', 'completion_tokens' => '20', 'total_tokens' => '35'],
+                15,
+                20,
+                35,
+                null,
+            ],
+            'float tokens are coerced to int' => [
+                ['prompt_tokens' => 15.0, 'completion_tokens' => 20.0, 'total_tokens' => 35.0],
+                15,
+                20,
+                35,
+                null,
+            ],
+            'numeric-string reasoning tokens are coerced to int' => [
+                [
+                    'prompt_tokens' => 1,
+                    'completion_tokens' => 1,
+                    'total_tokens' => 2,
+                    'completion_tokens_details' => ['reasoning_tokens' => '10'],
+                ],
+                1,
+                1,
+                2,
+                10,
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider usageDataProvider
+     *
+     * @param array<string, mixed> $usage
+     */
+    public function testParseUsageData(
+        array $usage,
+        int $prompt,
+        int $completion,
+        int $total,
+        ?int $thought
+    ): void {
+        $tokenUsage = $this->createModel()->exposeParseUsageData($usage);
+
+        $this->assertSame($prompt, $tokenUsage->getPromptTokens());
+        $this->assertSame($completion, $tokenUsage->getCompletionTokens());
+        $this->assertSame($total, $tokenUsage->getTotalTokens());
+        $this->assertSame($thought, $tokenUsage->getThoughtTokens());
+    }
+
+    /**
+     * Tests that extractAdditionalData() strips id, choices, and usage.
+     */
+    public function testExtractAdditionalDataStripsKnownKeys(): void
+    {
+        $data = $this->createModel()->exposeExtractAdditionalData([
+            'id' => 'x',
+            'choices' => [],
+            'usage' => [],
+            'object' => 'chat.completion.chunk',
+            'system_fingerprint' => 'fp_1',
+        ]);
+
+        $this->assertSame(['object' => 'chat.completion.chunk', 'system_fingerprint' => 'fp_1'], $data);
     }
 }

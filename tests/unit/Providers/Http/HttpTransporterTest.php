@@ -347,4 +347,188 @@ class HttpTransporterTest extends TestCase
         $this->assertSame(5.0, $lastOptions['connect_timeout']); // From request (not overridden)
         $this->assertFalse($lastOptions['allow_redirects']); // From parameter (0 = disabled)
     }
+
+    /**
+     * Creates a transporter backed by the given Guzzle-like client.
+     *
+     * @param GuzzleLikeClient $client The Guzzle-like client.
+     * @return HttpTransporter
+     */
+    private function createGuzzleTransporter(GuzzleLikeClient $client): HttpTransporter
+    {
+        return new HttpTransporter($client, $this->httpFactory, $this->httpFactory);
+    }
+
+    /**
+     * Tests that streaming forwards stream:true to Guzzle and passes the body through.
+     *
+     * @return void
+     */
+    public function testStreamForwardsStreamOptionToGuzzleAndPassesBodyThrough(): void
+    {
+        $psr7Response = new Psr7Response(200, [], 'streamed body');
+        $body = $psr7Response->getBody();
+        $guzzleClient = new GuzzleLikeClient($psr7Response);
+        $transporter = $this->createGuzzleTransporter($guzzleClient);
+
+        $options = new RequestOptions();
+        $options->setStream(true);
+
+        $request = new Request(HttpMethodEnum::GET(), 'https://api.example.com/stream');
+        $result = $transporter->send($request, $options);
+
+        $lastOptions = $guzzleClient->getLastOptions();
+        $this->assertIsArray($lastOptions);
+        $this->assertTrue($lastOptions['stream']);
+
+        $this->assertSame($body, $result->getStream());
+    }
+
+    /**
+     * Tests that a non-streaming Guzzle request omits the stream option and buffers the body.
+     *
+     * @return void
+     */
+    public function testNonStreamGuzzleRequestOmitsStreamOptionAndBuffersBody(): void
+    {
+        $psr7Response = new Psr7Response(200, [], 'buffered body');
+        $guzzleClient = new GuzzleLikeClient($psr7Response);
+        $transporter = $this->createGuzzleTransporter($guzzleClient);
+
+        $options = new RequestOptions();
+        $options->setStream(false);
+
+        $request = new Request(HttpMethodEnum::GET(), 'https://api.example.com/buffered');
+        $result = $transporter->send($request, $options);
+
+        $lastOptions = $guzzleClient->getLastOptions();
+        $this->assertIsArray($lastOptions);
+        $this->assertArrayNotHasKey('stream', $lastOptions);
+
+        $this->assertSame('buffered body', $result->getBody());
+    }
+
+    /**
+     * Tests that a request-level stream option streams the response.
+     *
+     * @return void
+     */
+    public function testRequestLevelStreamOptionStreamsResponse(): void
+    {
+        $psr7Response = new Psr7Response(200, [], 'streamed body');
+        $body = $psr7Response->getBody();
+        $guzzleClient = new GuzzleLikeClient($psr7Response);
+        $transporter = $this->createGuzzleTransporter($guzzleClient);
+
+        $requestOptions = new RequestOptions();
+        $requestOptions->setStream(true);
+
+        $request = new Request(HttpMethodEnum::GET(), 'https://api.example.com/stream', [], null, $requestOptions);
+        $result = $transporter->send($request);
+
+        $lastOptions = $guzzleClient->getLastOptions();
+        $this->assertIsArray($lastOptions);
+        $this->assertTrue($lastOptions['stream']);
+        $this->assertSame($body, $result->getStream());
+    }
+
+    /**
+     * Tests that parameter stream:false overrides request stream:true.
+     *
+     * @return void
+     */
+    public function testParameterStreamFalseOverridesRequestStreamTrue(): void
+    {
+        $psr7Response = new Psr7Response(200, [], 'buffered body');
+        $guzzleClient = new GuzzleLikeClient($psr7Response);
+        $transporter = $this->createGuzzleTransporter($guzzleClient);
+
+        $requestOptions = new RequestOptions();
+        $requestOptions->setStream(true);
+        $request = new Request(HttpMethodEnum::GET(), 'https://api.example.com/x', [], null, $requestOptions);
+
+        $parameterOptions = new RequestOptions();
+        $parameterOptions->setStream(false);
+
+        $result = $transporter->send($request, $parameterOptions);
+
+        $lastOptions = $guzzleClient->getLastOptions();
+        $this->assertIsArray($lastOptions);
+        $this->assertArrayNotHasKey('stream', $lastOptions);
+        $this->assertSame('buffered body', $result->getBody());
+    }
+
+    /**
+     * Tests that parameter stream:true overrides request stream:false.
+     *
+     * @return void
+     */
+    public function testParameterStreamTrueOverridesRequestStreamFalse(): void
+    {
+        $psr7Response = new Psr7Response(200, [], 'streamed body');
+        $body = $psr7Response->getBody();
+        $guzzleClient = new GuzzleLikeClient($psr7Response);
+        $transporter = $this->createGuzzleTransporter($guzzleClient);
+
+        $requestOptions = new RequestOptions();
+        $requestOptions->setStream(false);
+        $request = new Request(HttpMethodEnum::GET(), 'https://api.example.com/x', [], null, $requestOptions);
+
+        $parameterOptions = new RequestOptions();
+        $parameterOptions->setStream(true);
+
+        $result = $transporter->send($request, $parameterOptions);
+
+        $lastOptions = $guzzleClient->getLastOptions();
+        $this->assertIsArray($lastOptions);
+        $this->assertTrue($lastOptions['stream']);
+        $this->assertSame($body, $result->getStream());
+    }
+
+    /**
+     * Tests that a request-level stream flag is kept when parameter options omit it.
+     *
+     * @return void
+     */
+    public function testRequestStreamIsMergedWhenParameterDoesNotSpecifyStream(): void
+    {
+        $psr7Response = new Psr7Response(200, [], 'streamed body');
+        $body = $psr7Response->getBody();
+        $guzzleClient = new GuzzleLikeClient($psr7Response);
+        $transporter = $this->createGuzzleTransporter($guzzleClient);
+
+        $requestOptions = new RequestOptions();
+        $requestOptions->setStream(true);
+        $request = new Request(HttpMethodEnum::GET(), 'https://api.example.com/x', [], null, $requestOptions);
+
+        $parameterOptions = new RequestOptions();
+        $parameterOptions->setTimeout(5.0);
+
+        $result = $transporter->send($request, $parameterOptions);
+
+        $lastOptions = $guzzleClient->getLastOptions();
+        $this->assertIsArray($lastOptions);
+        $this->assertTrue($lastOptions['stream']);
+        $this->assertSame($body, $result->getStream());
+    }
+
+    /**
+     * Tests that the streamed response is passed through with a non-Guzzle client.
+     *
+     * @return void
+     */
+    public function testStreamingResponseIsPassedThroughWithNonGuzzleClient(): void
+    {
+        $psr7Response = new Psr7Response(200, [], 'streamed body');
+        $body = $psr7Response->getBody();
+        $this->mockClient->addResponse($psr7Response);
+
+        $options = new RequestOptions();
+        $options->setStream(true);
+
+        $request = new Request(HttpMethodEnum::GET(), 'https://api.example.com/stream');
+        $result = $this->transporter->send($request, $options);
+
+        $this->assertSame($body, $result->getStream());
+    }
 }

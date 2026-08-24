@@ -17,6 +17,10 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCompatibleTextGenerationModel;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Results\DTO\TokenUsage;
+use WordPress\AiClient\Results\ValueObjects\CandidateDelta;
+use WordPress\AiClient\Results\ValueObjects\GenerativeAiResultChunk;
+use WordPress\AiClient\Results\ValueObjects\ToolCallDelta;
 
 /**
  * Mock class for testing AbstractOpenAiCompatibleTextGenerationModel.
@@ -176,5 +180,55 @@ class MockOpenAiCompatibleTextGenerationModel extends AbstractOpenAiCompatibleTe
     public function exposeParseResponseChoiceMessageToolCallPart(array $toolCallData): ?MessagePart
     {
         return $this->parseResponseChoiceMessageToolCallPart($toolCallData);
+    }
+
+    public function exposeThrowIfStreamError(array $event): void
+    {
+        $this->throwIfStreamError($event);
+    }
+
+    public function exposeParseStreamEvent(array $data): ?GenerativeAiResultChunk
+    {
+        return $this->parseStreamEvent($data);
+    }
+
+    public function exposeParseStreamChoice(array $choice): CandidateDelta
+    {
+        return $this->parseStreamChoice($choice);
+    }
+
+    /**
+     * @param array<string, mixed> $delta
+     * @return list<MessagePart>
+     */
+    public function exposeParseStreamDeltaParts(array $delta): array
+    {
+        return $this->parseStreamDeltaParts($delta);
+    }
+
+    /**
+     * @param array<string, mixed> $delta
+     * @return list<ToolCallDelta>
+     */
+    public function exposeParseStreamToolCallDeltas(array $delta): array
+    {
+        return $this->parseStreamToolCallDeltas($delta);
+    }
+
+    /**
+     * @param array<string, mixed> $usage
+     */
+    public function exposeParseUsageData(array $usage): TokenUsage
+    {
+        return $this->parseUsageData($usage);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public function exposeExtractAdditionalData(array $data): array
+    {
+        return $this->extractAdditionalData($data);
     }
 }
