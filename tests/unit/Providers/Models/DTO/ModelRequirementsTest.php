@@ -494,6 +494,60 @@ class ModelRequirementsTest extends TestCase
     }
 
     /**
+     * Tests getUnmetRequiredOptions returns the options the model does not support.
+     *
+     * @return void
+     */
+    public function testGetUnmetRequiredOptionsReturnsUnsupportedOptions(): void
+    {
+        $missingOption = new RequiredOption(OptionEnum::topP(), 0.9);
+        $unsupportedValueOption = new RequiredOption(OptionEnum::temperature(), 0.5);
+        $supportedOption = new RequiredOption(OptionEnum::maxTokens(), 1000);
+
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration()],
+            [$missingOption, $unsupportedValueOption, $supportedOption]
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::temperature(), [0.1, 0.7, 1.0]),
+            new SupportedOption(OptionEnum::maxTokens(), [500, 1000, 2000])
+        ]);
+
+        $this->assertSame(
+            [$missingOption, $unsupportedValueOption],
+            $requirements->getUnmetRequiredOptions($metadata)
+        );
+    }
+
+    /**
+     * Tests getUnmetRequiredOptions returns an empty list when all options are supported.
+     *
+     * @return void
+     */
+    public function testGetUnmetRequiredOptionsWithAllOptionsSupported(): void
+    {
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration()],
+            [new RequiredOption(OptionEnum::temperature(), 0.7)]
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::temperature(), [0.1, 0.7, 1.0])
+        ]);
+
+        $this->assertSame([], $requirements->getUnmetRequiredOptions($metadata));
+    }
+
+    /**
      * Tests fromPromptData method with simple text generation.
      *
      * @return void
