@@ -11,6 +11,8 @@ use JsonSerializable;
 use Traversable;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 
+use function array_is_list;
+
 /**
  * Represents a single generated embedding vector.
  *
@@ -54,7 +56,7 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
             throw new InvalidArgumentException('Embedding values must be integers or floats.');
         }
 
-        if (count($values) !== $dimensions) {
+        if (\count($values) !== $dimensions) {
             throw new InvalidArgumentException('Embedding vector length must match dimensions.');
         }
 
@@ -74,12 +76,12 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
      */
     private static function isEmbeddingList($values): bool
     {
-        if (!is_array($values) || !array_is_list($values)) {
+        if (!\is_array($values) || !array_is_list($values)) {
             return false;
         }
 
         foreach ($values as $value) {
-            if (!is_int($value) && !is_float($value)) {
+            if (!\is_int($value) && !\is_float($value)) {
                 return false;
             }
         }

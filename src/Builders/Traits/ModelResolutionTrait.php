@@ -10,6 +10,8 @@ use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 
+use function array_merge;
+
 /**
  * Provides shared model selection and configuration methods for builders.
  *

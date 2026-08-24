@@ -882,7 +882,7 @@ class GenerativeAiResultTest extends TestCase
             ),
             function ($original, $restored) {
                 $this->assertEquals($original->getId(), $restored->getId());
-                $this->assertCount(count($original->getCandidates()), $restored->getCandidates());
+                $this->assertCount(\count($original->getCandidates()), $restored->getCandidates());
                 $this->assertEquals(
                     $original->getTokenUsage()->getTotalTokens(),
                     $restored->getTokenUsage()->getTotalTokens()

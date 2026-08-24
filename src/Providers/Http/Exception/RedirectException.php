@@ -7,6 +7,8 @@ namespace WordPress\AiClient\Providers\Http\Exception;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 
+use function sprintf;
+
 /**
  * Exception thrown for 3xx HTTP redirect responses.
  *

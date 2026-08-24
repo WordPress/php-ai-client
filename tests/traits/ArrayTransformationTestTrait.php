@@ -51,7 +51,7 @@ trait ArrayTransformationTestTrait
     protected function assertArrayRoundTrip($original, callable $assertCallback): void
     {
         $array = $original->toArray();
-        $className = get_class($original);
+        $className = \get_class($original);
         $restored = $className::fromArray($array);
 
         $this->assertInstanceOf($className, $restored, 'fromArray() should return instance of ' . $className);

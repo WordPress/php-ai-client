@@ -6,6 +6,8 @@ namespace WordPress\AiClient\Providers\Http\Exception;
 
 use WordPress\AiClient\Common\Exception\RuntimeException;
 
+use function sprintf;
+
 /**
  * Exception class for HTTP response errors.
  *

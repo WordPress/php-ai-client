@@ -247,7 +247,7 @@ class RequestOptions extends AbstractDataTransferObject
     {
         if ($value !== null && $value < 0) {
             throw new InvalidArgumentException(
-                sprintf('Request option "%s" must be greater than or equal to 0.', $fieldName)
+                \sprintf('Request option "%s" must be greater than or equal to 0.', $fieldName)
             );
         }
     }

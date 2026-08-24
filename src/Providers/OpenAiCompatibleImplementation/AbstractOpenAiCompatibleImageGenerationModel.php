@@ -23,6 +23,9 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
+use function is_array;
+use function is_string;
+
 /**
  * Base class for an image generation model for providers that implement OpenAI's API format.
  *
@@ -125,7 +128,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
 
         $outputMimeType = $config->getOutputMimeType();
         if ($outputMimeType !== null) {
-            $params['output_format'] = preg_replace('/^image\//', '', $outputMimeType);
+            $params['output_format'] = \preg_replace('/^image\//', '', $outputMimeType);
         }
 
         $outputMediaOrientation = $config->getOutputMediaOrientation();
@@ -142,7 +145,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
         foreach ($customOptions as $key => $value) {
             if (isset($params[$key])) {
                 throw new InvalidArgumentException(
-                    sprintf(
+                    \sprintf(
                         'The custom option "%s" conflicts with an existing parameter.',
                         $key
                     )
@@ -166,7 +169,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
      */
     protected function preparePromptParam(array $messages): string
     {
-        if (count($messages) !== 1) {
+        if (\count($messages) !== 1) {
             throw new InvalidArgumentException(
                 'The API requires a single user message as prompt.'
             );
@@ -304,7 +307,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
 
         $candidates = [];
         foreach ($responseData['data'] as $index => $choiceData) {
-            if (!is_array($choiceData) || array_is_list($choiceData)) {
+            if (!is_array($choiceData) || \array_is_list($choiceData)) {
                 throw ResponseException::fromInvalidData(
                     $this->providerMetadata()->getName(),
                     "data[{$index}]",

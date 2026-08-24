@@ -103,7 +103,7 @@ trait MockModelCreationTrait
         return new EmbeddingResult(
             'test-embedding-result-id',
             $embeddings,
-            count($embeddings[0]),
+            \count($embeddings[0]),
             new TokenUsage(10, 0, 10),
             $providerMetadata,
             $modelMetadata

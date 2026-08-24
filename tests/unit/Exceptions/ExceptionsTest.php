@@ -14,6 +14,8 @@ use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Http\Exception\NetworkException;
 use WordPress\AiClient\Providers\Http\Exception\ServerException;
 
+use function json_encode;
+
 /**
  * Tests for AI Client exceptions.
  *

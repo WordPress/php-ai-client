@@ -11,6 +11,10 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Http\Collections\HeadersCollection;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 
+use function http_build_query;
+use function is_array;
+use function is_string;
+
 /**
  * Represents an HTTP request.
  *
@@ -153,7 +157,7 @@ class Request extends AbstractDataTransferObject
     {
         // If GET request with data, append as query parameters
         if ($this->method === HttpMethodEnum::GET() && $this->data !== null && !empty($this->data)) {
-            $separator = str_contains($this->uri, '?') ? '&' : '?';
+            $separator = \str_contains($this->uri, '?') ? '&' : '?';
             return $this->uri . $separator . http_build_query($this->data);
         }
 
@@ -242,8 +246,8 @@ class Request extends AbstractDataTransferObject
             $contentType = $this->getContentType();
 
             // JSON encoding
-            if ($contentType !== null && stripos($contentType, 'application/json') !== false) {
-                return json_encode($this->data, JSON_THROW_ON_ERROR);
+            if ($contentType !== null && \stripos($contentType, 'application/json') !== false) {
+                return \json_encode($this->data, \JSON_THROW_ON_ERROR);
             }
 
             // Default to URL encoding for forms

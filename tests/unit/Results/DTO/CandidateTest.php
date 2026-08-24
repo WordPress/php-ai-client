@@ -360,7 +360,7 @@ class CandidateTest extends TestCase
             function ($original, $restored) {
                 $this->assertEquals($original->getFinishReason()->value, $restored->getFinishReason()->value);
                 $this->assertCount(
-                    count($original->getMessage()->getParts()),
+                    \count($original->getMessage()->getParts()),
                     $restored->getMessage()->getParts()
                 );
                 $this->assertEquals(

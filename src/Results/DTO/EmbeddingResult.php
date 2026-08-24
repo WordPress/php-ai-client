@@ -270,7 +270,7 @@ class EmbeddingResult extends AbstractDataTransferObject implements ResultInterf
     {
         $data = [
             self::KEY_ID => $this->id,
-            self::KEY_EMBEDDINGS => array_map(
+            self::KEY_EMBEDDINGS => \array_map(
                 static fn (Embedding $embedding): array => $embedding->toArray(),
                 $this->embeddings
             ),

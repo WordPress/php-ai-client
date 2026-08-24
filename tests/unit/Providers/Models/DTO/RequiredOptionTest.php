@@ -160,7 +160,7 @@ class RequiredOptionTest extends TestCase
         $this->assertCount(6, $schema['properties'][RequiredOption::KEY_VALUE]['oneOf']);
 
         // Verify all allowed types
-        $types = array_map(function ($item) {
+        $types = \array_map(function ($item) {
             return $item['type'];
         }, $schema['properties'][RequiredOption::KEY_VALUE]['oneOf']);
         $this->assertContains('string', $types);
@@ -326,8 +326,8 @@ class RequiredOptionTest extends TestCase
     {
         $option = new RequiredOption(OptionEnum::outputSchema(), ['enabled' => true, 'count' => 5]);
 
-        $json = json_encode($option);
-        $decoded = json_decode($json, true);
+        $json = \json_encode($option);
+        $decoded = \json_decode($json, true);
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);

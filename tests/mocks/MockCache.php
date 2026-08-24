@@ -132,7 +132,7 @@ class MockCache implements CacheInterface
     public function has($key): bool
     {
         $this->operations[] = ['operation' => 'has', 'key' => $key];
-        return array_key_exists($key, $this->cache);
+        return \array_key_exists($key, $this->cache);
     }
 
     /**
@@ -153,7 +153,7 @@ class MockCache implements CacheInterface
      */
     public function getOperationsOfType(string $operation): array
     {
-        return array_values(array_filter(
+        return \array_values(\array_filter(
             $this->operations,
             static function (array $op) use ($operation): bool {
                 return $op['operation'] === $operation;

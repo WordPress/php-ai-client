@@ -9,6 +9,8 @@ use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Util\ErrorMessageExtractor;
 
+use function sprintf;
+
 /**
  * Exception thrown for 4xx HTTP client errors.
  *

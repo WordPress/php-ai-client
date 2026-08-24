@@ -19,7 +19,7 @@ class EmbeddingTest extends TestCase
 
         $this->assertSame([0.1, 1, 0.3], $embedding->getValues());
         $this->assertSame(3, $embedding->getDimensions());
-        $this->assertSame(3, count($embedding));
+        $this->assertSame(3, \count($embedding));
         $this->assertSame([0.1, 1, 0.3], $embedding->toArray());
         $this->assertSame([0.1, 1, 0.3], $embedding->jsonSerialize());
     }

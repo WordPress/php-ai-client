@@ -234,8 +234,8 @@ class ProviderMetadataTest extends TestCase
     public function testJsonSerialize(): void
     {
         $metadata = new ProviderMetadata('json-provider', 'JSON Provider', ProviderTypeEnum::cloud());
-        $json = json_encode($metadata);
-        $decoded = json_decode($json, true);
+        $json = \json_encode($metadata);
+        $decoded = \json_decode($json, true);
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);

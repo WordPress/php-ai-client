@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Util;
 
+use function is_array;
+use function is_string;
+
 /**
  * Utility for extracting error messages from API response data.
  *

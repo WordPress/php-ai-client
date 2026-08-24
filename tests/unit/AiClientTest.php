@@ -208,7 +208,7 @@ class AiClientTest extends TestCase
 
         $embeddings = AiClient::generateEmbeddings(['First prompt', 'Second prompt'], $mockModel, $registry);
 
-        $this->assertSame($expectedEmbeddings, array_map(
+        $this->assertSame($expectedEmbeddings, \array_map(
             static fn ($embedding): array => $embedding->getValues(),
             $embeddings
         ));

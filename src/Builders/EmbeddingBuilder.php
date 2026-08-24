@@ -21,6 +21,10 @@ use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Embedding;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 
+use function count;
+use function is_array;
+use function sprintf;
+
 /**
  * Fluent builder for generating embeddings.
  *
@@ -71,7 +75,7 @@ class EmbeddingBuilder
             return;
         }
 
-        if (is_array($input) && array_is_list($input)) {
+        if (is_array($input) && \array_is_list($input)) {
             /** @var list<EmbeddingInput> $input */
             $this->withInput(...$input);
             return;
@@ -256,8 +260,8 @@ class EmbeddingBuilder
             return $this->validatePart($input);
         }
 
-        if (is_string($input)) {
-            if (trim($input) === '') {
+        if (\is_string($input)) {
+            if (\trim($input) === '') {
                 throw new InvalidArgumentException('Cannot create an embedding input from an empty string.');
             }
             return new MessagePart($input);

@@ -13,6 +13,11 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
 
+use function array_filter;
+use function array_map;
+use function array_values;
+use function sprintf;
+
 /**
  * Represents the result of a generative AI operation.
  *
@@ -183,7 +188,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      */
     public function getCandidateCount(): int
     {
-        return count($this->candidates);
+        return \count($this->candidates);
     }
 
     /**

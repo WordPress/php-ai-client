@@ -57,7 +57,7 @@ class NetworkException extends RuntimeException
     public static function fromPsr18NetworkException(RequestInterface $psrRequest, \Throwable $networkException): self
     {
         $request = Request::fromPsrRequest($psrRequest);
-        $message = sprintf(
+        $message = \sprintf(
             'Network error occurred while sending request to %s: %s',
             $request->getUri(),
             $networkException->getMessage()

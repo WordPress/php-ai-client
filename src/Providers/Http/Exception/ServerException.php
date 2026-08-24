@@ -8,6 +8,8 @@ use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Util\ErrorMessageExtractor;
 
+use function sprintf;
+
 /**
  * Exception thrown for 5xx HTTP server errors.
  *

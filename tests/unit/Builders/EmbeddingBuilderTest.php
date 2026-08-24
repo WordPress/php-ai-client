@@ -126,7 +126,7 @@ class EmbeddingBuilderTest extends TestCase
         $builder = new EmbeddingBuilder($this->registry, ['First input', 'Second input']);
         $builder->usingModel($model);
 
-        $this->assertSame($embeddings, array_map(
+        $this->assertSame($embeddings, \array_map(
             static fn ($embedding): array => $embedding->getValues(),
             $builder->generateEmbeddings()
         ));

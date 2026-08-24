@@ -58,7 +58,7 @@ class ResponseUtil
         }
 
         throw new \RuntimeException(
-            sprintf('Response returned invalid status code: %s', $response->getStatusCode())
+            \sprintf('Response returned invalid status code: %s', $response->getStatusCode())
         );
     }
 }

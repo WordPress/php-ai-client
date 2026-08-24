@@ -11,6 +11,8 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 
+use function json_encode;
+
 /**
  * Tests for the AbstractDataTransferObject class.
  *
@@ -97,7 +99,7 @@ class AbstractDataTransferObjectTest extends TestCase
         // Verify JSON encoding produces correct output
         $json = json_encode($result);
         $this->assertIsString($json);
-        $decoded = json_decode($json, true);
+        $decoded = \json_decode($json, true);
 
         // In JSON, empty object should be {} not []
         $this->assertStringContainsString('"emptyObject":{}', $json);

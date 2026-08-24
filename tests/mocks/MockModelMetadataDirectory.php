@@ -43,7 +43,7 @@ class MockModelMetadataDirectory implements
      */
     public function listModelMetadata(): array
     {
-        return array_values($this->models);
+        return \array_values($this->models);
     }
 
     /**
@@ -61,7 +61,7 @@ class MockModelMetadataDirectory implements
     {
         if (!isset($this->models[$modelId])) {
             throw new InvalidArgumentException(
-                sprintf('Model not found: %s', $modelId)
+                \sprintf('Model not found: %s', $modelId)
             );
         }
 

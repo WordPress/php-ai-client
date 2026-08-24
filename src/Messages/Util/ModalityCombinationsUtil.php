@@ -33,7 +33,7 @@ class ModalityCombinationsUtil
     public static function buildCombinations(array $required, array $optional): array
     {
         $combinations = [];
-        $count        = count($optional);
+        $count        = \count($optional);
         $subsetCount  = 1 << $count; // 2^count.
 
         for ($i = 0; $i < $subsetCount; $i++) {

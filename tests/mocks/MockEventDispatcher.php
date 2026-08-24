@@ -34,7 +34,7 @@ class MockEventDispatcher implements EventDispatcherInterface
     {
         $this->dispatchedEvents[] = $event;
 
-        $eventClass = get_class($event);
+        $eventClass = \get_class($event);
         if (isset($this->listeners[$eventClass])) {
             foreach ($this->listeners[$eventClass] as $listener) {
                 $listener($event);
@@ -78,7 +78,7 @@ class MockEventDispatcher implements EventDispatcherInterface
      */
     public function getDispatchedEventsOfType(string $eventClass): array
     {
-        return array_values(array_filter(
+        return \array_values(\array_filter(
             $this->dispatchedEvents,
             static function (object $event) use ($eventClass): bool {
                 return $event instanceof $eventClass;

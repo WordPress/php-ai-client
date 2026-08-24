@@ -10,6 +10,8 @@ use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 
+use function is_array;
+
 /**
  * Abstract base class for all Data Value Objects in the AI Client.
  *
@@ -46,17 +48,17 @@ abstract class AbstractDataTransferObject implements
         $missingKeys = [];
 
         foreach ($requiredKeys as $key) {
-            if (!array_key_exists($key, $data)) {
+            if (!\array_key_exists($key, $data)) {
                 $missingKeys[] = $key;
             }
         }
 
         if (!empty($missingKeys)) {
             throw new InvalidArgumentException(
-                sprintf(
+                \sprintf(
                     '%s::fromArray() missing required keys: %s',
                     static::class,
-                    implode(', ', $missingKeys)
+                    \implode(', ', $missingKeys)
                 )
             );
         }

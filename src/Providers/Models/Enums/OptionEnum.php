@@ -99,13 +99,13 @@ class OptionEnum extends AbstractEnum
 
         // Add ModelConfig constants that start with KEY_
         foreach ($modelConfigConstants as $constantName => $constantValue) {
-            if (str_starts_with($constantName, 'KEY_')) {
+            if (\str_starts_with($constantName, 'KEY_')) {
                 // Remove KEY_ prefix to get the enum constant name
-                $enumConstantName = substr($constantName, 4);
+                $enumConstantName = \substr($constantName, 4);
 
                 // The value is the snake_case version stored in ModelConfig
                 // ModelConfig already stores these as snake_case strings
-                if (is_string($constantValue)) {
+                if (\is_string($constantValue)) {
                     $constants[$enumConstantName] = $constantValue;
                 }
             }

@@ -25,6 +25,8 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tests\mocks\MockOpenAiCompatibleImageGenerationModel;
 
+use function json_encode;
+
 /**
  * @covers \WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCompatibleImageGenerationModel
  */

@@ -14,6 +14,8 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
+use function stripos;
+
 /**
  * Integration tests for Google function calling.
  *

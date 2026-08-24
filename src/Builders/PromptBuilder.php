@@ -34,6 +34,13 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
+use function array_is_list;
+use function array_merge;
+use function end;
+use function is_array;
+use function is_string;
+use function sprintf;
+
 /**
  * Fluent builder for constructing AI prompts.
  *
@@ -536,7 +543,7 @@ class PromptBuilder
 
         // Multi-modal output (multiple modalities) defaults to text generation. This is temporary
         // as a multi-modal interface will be implemented in the future.
-        if (count($outputModalities) > 1) {
+        if (\count($outputModalities) > 1) {
             return CapabilityEnum::textGeneration();
         }
 
@@ -1114,7 +1121,7 @@ class PromptBuilder
 
         if ($lastMessage instanceof Message && $lastMessage->getRole()->isUser()) {
             // Replace the last message with a new one containing the appended part
-            array_pop($this->messages);
+            \array_pop($this->messages);
             $this->messages[] = $lastMessage->withPart($part);
             return;
         }
@@ -1166,7 +1173,7 @@ class PromptBuilder
 
         // Handle string input
         if (is_string($input)) {
-            if (trim($input) === '') {
+            if (\trim($input) === '') {
                 throw new InvalidArgumentException('Cannot create a message from an empty string.');
             }
             return new Message($defaultRole, [new MessagePart($input)]);
@@ -1242,7 +1249,7 @@ class PromptBuilder
             );
         }
 
-        $firstMessage = reset($messages);
+        $firstMessage = \reset($messages);
         if (!$firstMessage->getRole()->isUser()) {
             throw new InvalidArgumentException(
                 'The first message must be from a user role, not from ' . $firstMessage->getRole()->value

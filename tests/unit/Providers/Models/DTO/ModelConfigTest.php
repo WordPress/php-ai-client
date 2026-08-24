@@ -16,6 +16,8 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
+use function array_keys;
+
 /**
  * @covers \WordPress\AiClient\Providers\Models\DTO\ModelConfig
  */
@@ -521,8 +523,8 @@ class ModelConfigTest extends TestCase
         $config->setMaxTokens(1000);
         $config->setSystemInstruction('JSON test');
 
-        $json = json_encode($config);
-        $decoded = json_decode($json, true);
+        $json = \json_encode($config);
+        $decoded = \json_decode($json, true);
 
         $this->assertIsString($json);
         $this->assertIsArray($decoded);

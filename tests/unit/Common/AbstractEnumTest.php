@@ -12,6 +12,8 @@ use WordPress\AiClient\Tests\mocks\Enums\InvalidNameTestEnum;
 use WordPress\AiClient\Tests\mocks\Enums\InvalidTypeTestEnum;
 use WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum;
 
+use function array_map;
+
 /**
  * @covers \WordPress\AiClient\Common\AbstractEnum
  */
