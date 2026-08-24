@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Builders;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Builders\Traits\ModelConfigurationTrait;
 use WordPress\AiClient\Common\AbstractEnum;
+use WordPress\AiClient\Common\Contracts\AiClientExceptionInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Events\AfterGenerateEmbeddingEvent;
@@ -257,8 +258,9 @@ class EmbeddingBuilder
      * model can.
      *
      * Any reason the specified model cannot fulfill the request is reported as `false`, including an
-     * unregistered or unconfigured provider and a model ID the provider does not offer. Only failing
-     * to specify a model at all is treated as a programming error and throws.
+     * unregistered or unconfigured provider, a model ID the provider does not offer, and a provider
+     * that could not be reached. Only failing to specify a model at all is treated as a programming
+     * error and throws.
      *
      * A model instance provided via {@see self::usingModel()} is left untouched, so that checking
      * for support does not alter it. Determining whether the model's provider is configured may
@@ -278,9 +280,10 @@ class EmbeddingBuilder
 
         try {
             $model = $this->locateModel();
-        } catch (InvalidArgumentException $e) {
-            // The model is unusable: its provider is not registered or configured, or the provider
-            // has no model with the given ID. Either way it cannot fulfill the request.
+        } catch (AiClientExceptionInterface $e) {
+            // The model is unusable: its provider is not registered or configured, the provider has
+            // no model with the given ID, or the provider could not be reached. Either way it cannot
+            // fulfill the request.
             return false;
         }
 

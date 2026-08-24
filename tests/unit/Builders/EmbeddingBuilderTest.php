@@ -11,6 +11,7 @@ use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
@@ -774,6 +775,27 @@ class EmbeddingBuilderTest extends TestCase
 
         $builder = new EmbeddingBuilder($this->registry, 'Embed this');
         $builder->usingProviderModel('mock', 'no-such-model');
+
+        $this->assertFalse($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported returns false when the provider cannot be reached.
+     *
+     * Retrieving a model by provider and model ID can trigger the provider's list-models request,
+     * which fails with a ResponseException rather than an InvalidArgumentException.
+     *
+     * @return void
+     */
+    public function testIsSupportedReturnsFalseWhenProviderRequestFails(): void
+    {
+        $this->registry->method('getProviderModel')
+            ->willThrowException(
+                ResponseException::fromMissingData('Mock', 'data')
+            );
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingProviderModel('mock', 'mock-embedding-model');
 
         $this->assertFalse($builder->isSupported());
     }
