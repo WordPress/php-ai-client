@@ -148,6 +148,72 @@ class FunctionDeclaration extends AbstractDataTransferObject
      *
      * @since 0.1.0
      */
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize()
+    {
+        $data = $this->toArray();
+
+        if ($this->parameters !== null) {
+            $data[self::KEY_PARAMETERS] = $this->prepareJsonSchemaObjectMaps(
+                $this->parameters,
+                self::KEY_PARAMETERS
+            );
+        }
+
+        return $data;
+    }
+
+    /**
+     * Recursively prepares JSON Schema object-map fields for JSON serialization.
+     *
+     * @since n.e.x.t
+     *
+     * @param mixed $value The value to prepare.
+     * @param string|null $key The current JSON Schema key, if available.
+     * @return mixed The prepared value.
+     */
+    private function prepareJsonSchemaObjectMaps($value, ?string $key = null)
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        if ($value === [] && $this->isJsonSchemaObjectMapKey($key)) {
+            return new \stdClass();
+        }
+
+        foreach ($value as $childKey => $childValue) {
+            $value[$childKey] = $this->prepareJsonSchemaObjectMaps(
+                $childValue,
+                is_string($childKey) ? $childKey : null
+            );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Checks whether the given JSON Schema key represents an object map.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|null $key The JSON Schema key.
+     * @return bool True if the key represents an object map, false otherwise.
+     */
+    private function isJsonSchemaObjectMapKey(?string $key): bool
+    {
+        return in_array(
+            $key,
+            [self::KEY_PARAMETERS, 'properties', 'patternProperties', '$defs', 'definitions', 'dependentSchemas'],
+            true
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 0.1.0
+     */
     public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [self::KEY_NAME, self::KEY_DESCRIPTION]);
