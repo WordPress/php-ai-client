@@ -38,6 +38,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  *     logprobs?: bool,
  *     topLogprobs?: int,
  *     functionDeclarations?: list<FunctionDeclarationArrayShape>,
+ *     toolSearch?: bool,
  *     webSearch?: WebSearchArrayShape,
  *     outputFileType?: string,
  *     outputMimeType?: string,
@@ -66,6 +67,7 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_LOGPROBS = 'logprobs';
     public const KEY_TOP_LOGPROBS = 'topLogprobs';
     public const KEY_FUNCTION_DECLARATIONS = 'functionDeclarations';
+    public const KEY_TOOL_SEARCH = 'toolSearch';
     public const KEY_WEB_SEARCH = 'webSearch';
     public const KEY_OUTPUT_FILE_TYPE = 'outputFileType';
     public const KEY_OUTPUT_MIME_TYPE = 'outputMimeType';
@@ -147,6 +149,11 @@ class ModelConfig extends AbstractDataTransferObject
      * @var list<FunctionDeclaration>|null Function declarations available to the model.
      */
     protected ?array $functionDeclarations = null;
+
+    /**
+     * @var bool|null Whether native tool search should be enabled for deferred function declarations.
+     */
+    protected ?bool $toolSearch = null;
 
     /**
      * @var WebSearch|null Web search configuration for the model.
@@ -554,6 +561,30 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Sets whether native tool search should be enabled for deferred function declarations.
+     *
+     * @since 1.5.0
+     *
+     * @param bool $toolSearch Whether native tool search should be enabled.
+     */
+    public function setToolSearch(bool $toolSearch): void
+    {
+        $this->toolSearch = $toolSearch;
+    }
+
+    /**
+     * Gets whether native tool search should be enabled for deferred function declarations.
+     *
+     * @since 1.5.0
+     *
+     * @return bool|null Whether native tool search should be enabled, or null if not configured.
+     */
+    public function getToolSearch(): ?bool
+    {
+        return $this->toolSearch;
+    }
+
+    /**
      * Sets the web search configuration.
      *
      * @since 0.1.0
@@ -921,6 +952,10 @@ class ModelConfig extends AbstractDataTransferObject
                     'items' => FunctionDeclaration::getJsonSchema(),
                     'description' => 'Function declarations available to the model.',
                 ],
+                self::KEY_TOOL_SEARCH => [
+                    'type' => 'boolean',
+                    'description' => 'Whether native tool search is enabled for deferred function declarations.',
+                ],
                 self::KEY_WEB_SEARCH => WebSearch::getJsonSchema(),
                 self::KEY_OUTPUT_FILE_TYPE => [
                     'type' => 'string',
@@ -1038,6 +1073,10 @@ class ModelConfig extends AbstractDataTransferObject
             );
         }
 
+        if ($this->toolSearch !== null) {
+            $data[self::KEY_TOOL_SEARCH] = $this->toolSearch;
+        }
+
         if ($this->webSearch !== null) {
             $data[self::KEY_WEB_SEARCH] = $this->webSearch->toArray();
         }
@@ -1145,6 +1184,10 @@ class ModelConfig extends AbstractDataTransferObject
                 },
                 $array[self::KEY_FUNCTION_DECLARATIONS]
             ));
+        }
+
+        if (isset($array[self::KEY_TOOL_SEARCH])) {
+            $config->setToolSearch($array[self::KEY_TOOL_SEARCH]);
         }
 
         if (isset($array[self::KEY_WEB_SEARCH])) {

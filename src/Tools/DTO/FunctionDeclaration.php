@@ -17,7 +17,8 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * @phpstan-type FunctionDeclarationArrayShape array{
  *     name: string,
  *     description: string,
- *     parameters?: array<string, mixed>
+ *     parameters?: array<string, mixed>,
+ *     deferLoading?: bool
  * }
  *
  * @extends AbstractDataTransferObject<FunctionDeclarationArrayShape>
@@ -27,6 +28,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     public const KEY_NAME = 'name';
     public const KEY_DESCRIPTION = 'description';
     public const KEY_PARAMETERS = 'parameters';
+    public const KEY_DEFER_LOADING = 'deferLoading';
     /**
      * @var string The name of the function.
      */
@@ -43,6 +45,11 @@ class FunctionDeclaration extends AbstractDataTransferObject
     private ?array $parameters;
 
     /**
+     * @var bool Whether loading this function declaration should be deferred until discovered.
+     */
+    private bool $deferLoading;
+
+    /**
      * Constructor.
      *
      * @since 0.1.0
@@ -50,12 +57,18 @@ class FunctionDeclaration extends AbstractDataTransferObject
      * @param string $name The name of the function.
      * @param string $description A description of what the function does.
      * @param array<string, mixed>|null $parameters The JSON schema for the function parameters.
+     * @param bool $deferLoading Whether loading this function declaration should be deferred until discovered.
      */
-    public function __construct(string $name, string $description, ?array $parameters = null)
-    {
+    public function __construct(
+        string $name,
+        string $description,
+        ?array $parameters = null,
+        bool $deferLoading = false
+    ) {
         $this->name = $name;
         $this->description = $description;
         $this->parameters = $parameters;
+        $this->deferLoading = $deferLoading;
     }
 
     /**
@@ -95,6 +108,18 @@ class FunctionDeclaration extends AbstractDataTransferObject
     }
 
     /**
+     * Checks whether loading this function declaration should be deferred until discovered.
+     *
+     * @since 1.5.0
+     *
+     * @return bool True if loading should be deferred, false otherwise.
+     */
+    public function isLoadingDeferred(): bool
+    {
+        return $this->deferLoading;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -116,6 +141,10 @@ class FunctionDeclaration extends AbstractDataTransferObject
                     'type' => 'object',
                     'description' => 'The JSON schema for the function parameters.',
                     'additionalProperties' => true,
+                ],
+                self::KEY_DEFER_LOADING => [
+                    'type' => 'boolean',
+                    'description' => 'Whether loading this function declaration should be deferred until discovered.',
                 ],
             ],
             'required' => [self::KEY_NAME, self::KEY_DESCRIPTION],
@@ -140,6 +169,10 @@ class FunctionDeclaration extends AbstractDataTransferObject
             $data[self::KEY_PARAMETERS] = $this->parameters;
         }
 
+        if ($this->deferLoading) {
+            $data[self::KEY_DEFER_LOADING] = true;
+        }
+
         return $data;
     }
 
@@ -155,7 +188,8 @@ class FunctionDeclaration extends AbstractDataTransferObject
         return new self(
             $array[self::KEY_NAME],
             $array[self::KEY_DESCRIPTION],
-            $array[self::KEY_PARAMETERS] ?? null
+            $array[self::KEY_PARAMETERS] ?? null,
+            $array[self::KEY_DEFER_LOADING] ?? false
         );
     }
 }

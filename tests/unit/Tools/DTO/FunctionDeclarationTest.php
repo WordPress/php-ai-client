@@ -38,6 +38,7 @@ class FunctionDeclarationTest extends TestCase
         $this->assertEquals($name, $declaration->getName());
         $this->assertEquals($description, $declaration->getDescription());
         $this->assertEquals($parameters, $declaration->getParameters());
+        $this->assertFalse($declaration->isLoadingDeferred());
     }
 
     /**
@@ -112,6 +113,7 @@ class FunctionDeclarationTest extends TestCase
         $this->assertArrayHasKey(FunctionDeclaration::KEY_NAME, $schema['properties']);
         $this->assertArrayHasKey(FunctionDeclaration::KEY_DESCRIPTION, $schema['properties']);
         $this->assertArrayHasKey(FunctionDeclaration::KEY_PARAMETERS, $schema['properties']);
+        $this->assertArrayHasKey(FunctionDeclaration::KEY_DEFER_LOADING, $schema['properties']);
 
         // Check name property
         $this->assertEquals('string', $schema['properties'][FunctionDeclaration::KEY_NAME]['type']);
@@ -125,6 +127,7 @@ class FunctionDeclarationTest extends TestCase
         // Parameters should be object type (for JSON schema)
         $this->assertEquals('object', $schema['properties'][FunctionDeclaration::KEY_PARAMETERS]['type']);
         $this->assertTrue($schema['properties'][FunctionDeclaration::KEY_PARAMETERS]['additionalProperties']);
+        $this->assertEquals('boolean', $schema['properties'][FunctionDeclaration::KEY_DEFER_LOADING]['type']);
 
         // Check required fields - parameters should NOT be required
         $this->assertArrayHasKey('required', $schema);
@@ -222,8 +225,25 @@ class FunctionDeclarationTest extends TestCase
 
         $this->assertArrayHasKeys($json, [FunctionDeclaration::KEY_NAME, FunctionDeclaration::KEY_DESCRIPTION]);
         $this->assertArrayNotHasKey(FunctionDeclaration::KEY_PARAMETERS, $json);
+        $this->assertArrayNotHasKey(FunctionDeclaration::KEY_DEFER_LOADING, $json);
         $this->assertEquals('getTimestamp', $json[FunctionDeclaration::KEY_NAME]);
         $this->assertEquals('Returns the current Unix timestamp', $json[FunctionDeclaration::KEY_DESCRIPTION]);
+    }
+
+    /**
+     * Tests deferred loading is opt-in and survives array transformation.
+     *
+     * @return void
+     */
+    public function testDeferredLoadingRoundTrip(): void
+    {
+        $declaration = new FunctionDeclaration('search', 'Search the catalog', null, true);
+
+        $array = $declaration->toArray();
+        $restored = FunctionDeclaration::fromArray($array);
+
+        $this->assertTrue($array[FunctionDeclaration::KEY_DEFER_LOADING]);
+        $this->assertTrue($restored->isLoadingDeferred());
     }
 
     /**
@@ -306,6 +326,7 @@ class FunctionDeclarationTest extends TestCase
                 $this->assertEquals($original->getName(), $restored->getName());
                 $this->assertEquals($original->getDescription(), $restored->getDescription());
                 $this->assertEquals($original->getParameters(), $restored->getParameters());
+                $this->assertEquals($original->isLoadingDeferred(), $restored->isLoadingDeferred());
             }
         );
     }

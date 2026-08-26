@@ -3625,6 +3625,28 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests usingToolSearch method.
+     *
+     * @return void
+     */
+    public function testUsingToolSearch(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $result = $builder->usingToolSearch();
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertTrue($config->getToolSearch());
+    }
+
+    /**
      * Tests usingPresencePenalty method.
      *
      * @return void

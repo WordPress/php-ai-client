@@ -382,6 +382,18 @@ class ModelRequirements extends AbstractDataTransferObject
             $requiredOptions[] = new RequiredOption(OptionEnum::functionDeclarations(), true);
         }
 
+        $requiresToolSearch = $modelConfig->getToolSearch() === true;
+        foreach ($modelConfig->getFunctionDeclarations() ?? [] as $functionDeclaration) {
+            if ($functionDeclaration->isLoadingDeferred()) {
+                $requiresToolSearch = true;
+                break;
+            }
+        }
+
+        if ($requiresToolSearch) {
+            $requiredOptions[] = new RequiredOption(OptionEnum::toolSearch(), true);
+        }
+
         if ($modelConfig->getWebSearch() !== null) {
             $requiredOptions[] = new RequiredOption(OptionEnum::webSearch(), true);
         }
