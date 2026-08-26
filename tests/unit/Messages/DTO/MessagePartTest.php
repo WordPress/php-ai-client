@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -161,6 +162,44 @@ class MessagePartTest extends TestCase
             'null' => [null, 'NULL'],
             'stdClass' => [new stdClass(), 'stdClass'],
         ];
+    }
+
+    /**
+     * Tests toArray rejects an internally invalid part without content.
+     *
+     * @return void
+     */
+    public function testToArrayWithoutContentThrowsException(): void
+    {
+        $part = new MessagePart('content');
+        $textProperty = new \ReflectionProperty(MessagePart::class, 'text');
+        $textProperty->setAccessible(true);
+        $textProperty->setValue($part, null);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'MessagePart requires one of: text, file, functionCall, functionResponse, or providerData.'
+        );
+
+        $part->toArray();
+    }
+
+    /**
+     * Tests fromArray rejects data without supported content.
+     *
+     * @return void
+     */
+    public function testFromArrayWithoutContentThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'MessagePart requires one of: text, file, functionCall, functionResponse, or providerData.'
+        );
+
+        MessagePart::fromArray([
+            MessagePart::KEY_CHANNEL => MessagePartChannelEnum::content()->value,
+            MessagePart::KEY_TYPE => MessagePartTypeEnum::providerData()->value,
+        ]);
     }
 
     /**
