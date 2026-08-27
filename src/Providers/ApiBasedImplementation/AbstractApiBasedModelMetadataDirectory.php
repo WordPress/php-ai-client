@@ -40,6 +40,15 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     private const MODELS_CACHE_KEY = 'models';
 
     /**
+     * Request-local cache for explicit model metadata lookups.
+     *
+     * @since n.e.x.t
+     *
+     * @var array<string, ModelMetadata|null>
+     */
+    private array $explicitModelMetadataCache = [];
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -47,7 +56,9 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     final public function listModelMetadata(): array
     {
         $modelsMetadata = $this->getModelMetadataMap();
-        return array_values($modelsMetadata);
+        $explicitModelsMetadata = $this->getExplicitModelMetadataMap(array_keys($modelsMetadata));
+
+        return array_values(array_replace($modelsMetadata, $explicitModelsMetadata));
     }
 
     /**
@@ -57,6 +68,10 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
      */
     final public function hasModelMetadata(string $modelId): bool
     {
+        if (isset($this->getExplicitModelMetadataMap([$modelId])[$modelId])) {
+            return true;
+        }
+
         $modelsMetadata = $this->getModelMetadataMap();
         return isset($modelsMetadata[$modelId]);
     }
@@ -68,6 +83,11 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
      */
     final public function getModelMetadata(string $modelId): ModelMetadata
     {
+        $explicitModelsMetadata = $this->getExplicitModelMetadataMap([$modelId]);
+        if (isset($explicitModelsMetadata[$modelId])) {
+            return $explicitModelsMetadata[$modelId];
+        }
+
         $modelsMetadata = $this->getModelMetadataMap();
         if (!isset($modelsMetadata[$modelId])) {
             throw new InvalidArgumentException(
@@ -75,6 +95,35 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
             );
         }
         return $modelsMetadata[$modelId];
+    }
+
+    /**
+     * Gets explicit model metadata using request-local memoization.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<string> $modelIds Model IDs for which to get explicit metadata.
+     * @return array<string, ModelMetadata> Map of model ID to explicit model metadata.
+     */
+    private function getExplicitModelMetadataMap(array $modelIds): array
+    {
+        $uncheckedModelIds = [];
+        foreach ($modelIds as $modelId) {
+            if (!array_key_exists($modelId, $this->explicitModelMetadataCache)) {
+                $uncheckedModelIds[] = $modelId;
+            }
+        }
+
+        if ($uncheckedModelIds) {
+            $explicitModelsMetadata = $this->createModelMetadataForExplicitModelIds($uncheckedModelIds);
+            foreach ($uncheckedModelIds as $modelId) {
+                $this->explicitModelMetadataCache[$modelId] = $explicitModelsMetadata[$modelId] ?? null;
+            }
+        }
+
+        return array_filter(
+            array_intersect_key($this->explicitModelMetadataCache, array_flip($modelIds))
+        );
     }
 
     /**
@@ -112,6 +161,23 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     protected function getBaseCacheKey(): string
     {
         return 'ai_client_' . AiClient::VERSION . '_' . md5(static::class);
+    }
+
+    /**
+     * Creates metadata for explicit model IDs without listing provider models.
+     *
+     * Providers whose APIs accept arbitrary/current model IDs can override this to avoid a live list-models request
+     * when callers already know the model ID they want to instantiate.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<string> $modelIds The explicit model IDs.
+     * @return array<string, ModelMetadata> Map of model ID to model metadata. Omit IDs that should fall back to the
+     *                                                provider models list.
+     */
+    protected function createModelMetadataForExplicitModelIds(array $modelIds): array
+    {
+        return [];
     }
 
     /**
