@@ -19,6 +19,7 @@ use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
+use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
 /**
  * @covers \WordPress\AiClient\Providers\Models\DTO\ModelRequirements
@@ -831,5 +832,59 @@ class ModelRequirementsTest extends TestCase
         $this->assertTrue($hasMaxTokens, 'Max tokens option should be present');
         $this->assertTrue($hasTopP, 'Top P option should be present');
         $this->assertTrue($hasDimensions, 'Dimensions option should be present');
+    }
+
+    /**
+     * Tests deferred function declarations require native tool search support.
+     *
+     * @return void
+     */
+    public function testFromPromptDataWithDeferredFunctionDeclaration(): void
+    {
+        $messages = [new UserMessage([new MessagePart('Find the right tool')])];
+        $modelConfig = new ModelConfig();
+        $modelConfig->setFunctionDeclarations([
+            new FunctionDeclaration('search_catalog', 'Search the catalog', null, true),
+        ]);
+
+        $requirements = ModelRequirements::fromPromptData(
+            CapabilityEnum::textGeneration(),
+            $messages,
+            $modelConfig
+        );
+
+        $toolSearchOptions = array_filter(
+            $requirements->getRequiredOptions(),
+            static fn(RequiredOption $option): bool => $option->getName()->isToolSearch()
+        );
+
+        $this->assertCount(1, $toolSearchOptions);
+        $this->assertTrue(array_values($toolSearchOptions)[0]->getValue());
+    }
+
+    /**
+     * Tests explicitly enabling tool search requires native support.
+     *
+     * @return void
+     */
+    public function testFromPromptDataWithExplicitToolSearch(): void
+    {
+        $messages = [new UserMessage([new MessagePart('Find the right tool')])];
+        $modelConfig = new ModelConfig();
+        $modelConfig->setToolSearch(true);
+
+        $requirements = ModelRequirements::fromPromptData(
+            CapabilityEnum::textGeneration(),
+            $messages,
+            $modelConfig
+        );
+
+        $toolSearchOptions = array_filter(
+            $requirements->getRequiredOptions(),
+            static fn(RequiredOption $option): bool => $option->getName()->isToolSearch()
+        );
+
+        $this->assertCount(1, $toolSearchOptions);
+        $this->assertTrue(array_values($toolSearchOptions)[0]->getValue());
     }
 }

@@ -37,6 +37,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * @method static self stopSequences() Creates an instance for STOP_SEQUENCES option.
  * @method static self systemInstruction() Creates an instance for SYSTEM_INSTRUCTION option.
  * @method static self temperature() Creates an instance for TEMPERATURE option.
+ * @method static self toolSearch() Creates an instance for TOOL_SEARCH option.
  * @method static self topK() Creates an instance for TOP_K option.
  * @method static self topLogprobs() Creates an instance for TOP_LOGPROBS option.
  * @method static self topP() Creates an instance for TOP_P option.
@@ -59,6 +60,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * @method bool isStopSequences() Checks if the option is STOP_SEQUENCES.
  * @method bool isSystemInstruction() Checks if the option is SYSTEM_INSTRUCTION.
  * @method bool isTemperature() Checks if the option is TEMPERATURE.
+ * @method bool isToolSearch() Checks if the option is TOOL_SEARCH.
  * @method bool isTopK() Checks if the option is TOP_K.
  * @method bool isTopLogprobs() Checks if the option is TOP_LOGPROBS.
  * @method bool isTopP() Checks if the option is TOP_P.

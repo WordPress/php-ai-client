@@ -8,9 +8,11 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\DTO\ProviderData;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -94,6 +96,25 @@ class MessagePartTest extends TestCase
     }
 
     /**
+     * Tests creating MessagePart with opaque provider data.
+     *
+     * @return void
+     */
+    public function testCreateWithProviderDataContent(): void
+    {
+        $providerData = new ProviderData('openai', ['type' => 'tool_search_call', 'id' => 'search_123']);
+        $part = new MessagePart($providerData);
+
+        $this->assertEquals(MessagePartTypeEnum::providerData(), $part->getType());
+        $this->assertEquals(MessagePartChannelEnum::content(), $part->getChannel());
+        $this->assertSame($providerData, $part->getProviderData());
+        $this->assertNull($part->getText());
+        $this->assertNull($part->getFile());
+        $this->assertNull($part->getFunctionCall());
+        $this->assertNull($part->getFunctionResponse());
+    }
+
+    /**
      * Tests creating MessagePart with empty string.
      *
      * @return void
@@ -119,7 +140,7 @@ class MessagePartTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(sprintf(
-            'Unsupported content type %s. Expected string, File, FunctionCall, or FunctionResponse.',
+            'Unsupported content type %s. Expected string, File, FunctionCall, FunctionResponse, or ProviderData.',
             $expectedType
         ));
 
@@ -144,6 +165,44 @@ class MessagePartTest extends TestCase
     }
 
     /**
+     * Tests toArray rejects an internally invalid part without content.
+     *
+     * @return void
+     */
+    public function testToArrayWithoutContentThrowsException(): void
+    {
+        $part = new MessagePart('content');
+        $textProperty = new \ReflectionProperty(MessagePart::class, 'text');
+        $textProperty->setAccessible(true);
+        $textProperty->setValue($part, null);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'MessagePart requires one of: text, file, functionCall, functionResponse, or providerData.'
+        );
+
+        $part->toArray();
+    }
+
+    /**
+     * Tests fromArray rejects data without supported content.
+     *
+     * @return void
+     */
+    public function testFromArrayWithoutContentThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'MessagePart requires one of: text, file, functionCall, functionResponse, or providerData.'
+        );
+
+        MessagePart::fromArray([
+            MessagePart::KEY_CHANNEL => MessagePartChannelEnum::content()->value,
+            MessagePart::KEY_TYPE => MessagePartTypeEnum::providerData()->value,
+        ]);
+    }
+
+    /**
      * Tests JSON schema.
      *
      * @return void
@@ -154,7 +213,7 @@ class MessagePartTest extends TestCase
 
         $this->assertIsArray($schema);
         $this->assertArrayHasKey('oneOf', $schema);
-        $this->assertCount(4, $schema['oneOf']); // text, file, function_call, function_response
+        $this->assertCount(5, $schema['oneOf']);
 
         // Check text variant
         $textSchema = $schema['oneOf'][0];
@@ -197,6 +256,18 @@ class MessagePartTest extends TestCase
         $this->assertEquals(
             [MessagePart::KEY_TYPE, MessagePart::KEY_FUNCTION_RESPONSE],
             $functionResponseSchema['required']
+        );
+
+        // Check provider_data variant
+        $providerDataSchema = $schema['oneOf'][4];
+        $this->assertEquals(
+            MessagePartTypeEnum::providerData()->value,
+            $providerDataSchema['properties'][MessagePart::KEY_TYPE]['const']
+        );
+        $this->assertArrayHasKey(MessagePart::KEY_PROVIDER_DATA, $providerDataSchema['properties']);
+        $this->assertEquals(
+            [MessagePart::KEY_TYPE, MessagePart::KEY_PROVIDER_DATA],
+            $providerDataSchema['required']
         );
     }
 
@@ -278,6 +349,7 @@ class MessagePartTest extends TestCase
         $this->assertArrayNotHasKey(MessagePart::KEY_FILE, $json);
         $this->assertArrayNotHasKey(MessagePart::KEY_FUNCTION_CALL, $json);
         $this->assertArrayNotHasKey(MessagePart::KEY_FUNCTION_RESPONSE, $json);
+        $this->assertArrayNotHasKey(MessagePart::KEY_PROVIDER_DATA, $json);
     }
 
     /**
@@ -377,6 +449,14 @@ class MessagePartTest extends TestCase
         $this->assertEquals($functionCall->getName(), $restoredFunc->getFunctionCall()->getName());
         $this->assertEquals($functionCall->getArgs(), $restoredFunc->getFunctionCall()->getArgs());
         $this->assertEquals($funcPart->getChannel(), $restoredFunc->getChannel());
+
+        // Test with provider data
+        $providerData = new ProviderData('anthropic', ['type' => 'tool_reference', 'tool_name' => 'calendar']);
+        $providerPart = new MessagePart($providerData);
+        $providerJson = $providerPart->toArray();
+        $restoredProvider = MessagePart::fromArray($providerJson);
+        $this->assertEquals($providerData->getProviderId(), $restoredProvider->getProviderData()->getProviderId());
+        $this->assertEquals($providerData->getData(), $restoredProvider->getProviderData()->getData());
     }
 
     /**
@@ -485,6 +565,21 @@ class MessagePartTest extends TestCase
         $cloned = clone $original;
 
         $this->assertNotSame($original->getFunctionResponse(), $cloned->getFunctionResponse());
+    }
+
+    /**
+     * Tests that cloning MessagePart with ProviderData creates an independent copy.
+     *
+     * @return void
+     */
+    public function testCloneClonesProviderData(): void
+    {
+        $providerData = new ProviderData('openai', ['type' => 'tool_search_output']);
+        $original = new MessagePart($providerData);
+        $cloned = clone $original;
+
+        $this->assertNotSame($original->getProviderData(), $cloned->getProviderData());
+        $this->assertEquals($original->getProviderData(), $cloned->getProviderData());
     }
 
     /**

@@ -50,6 +50,7 @@ class OptionEnumTest extends TestCase
             'LOGPROBS' => 'logprobs',
             'TOP_LOGPROBS' => 'topLogprobs',
             'FUNCTION_DECLARATIONS' => 'functionDeclarations',
+            'TOOL_SEARCH' => 'toolSearch',
             'WEB_SEARCH' => 'webSearch',
             'OUTPUT_FILE_TYPE' => 'outputFileType',
             'OUTPUT_MIME_TYPE' => 'outputMimeType',
@@ -108,6 +109,7 @@ class OptionEnumTest extends TestCase
         $this->assertInstanceOf(OptionEnum::class, OptionEnum::logprobs());
         $this->assertInstanceOf(OptionEnum::class, OptionEnum::topLogprobs());
         $this->assertInstanceOf(OptionEnum::class, OptionEnum::functionDeclarations());
+        $this->assertInstanceOf(OptionEnum::class, OptionEnum::toolSearch());
         $this->assertInstanceOf(OptionEnum::class, OptionEnum::webSearch());
         $this->assertInstanceOf(OptionEnum::class, OptionEnum::outputFileType());
         $this->assertInstanceOf(OptionEnum::class, OptionEnum::outputMediaOrientation());
@@ -132,6 +134,7 @@ class OptionEnumTest extends TestCase
         $this->assertContains('logprobs', $values);
         $this->assertContains('topLogprobs', $values);
         $this->assertContains('functionDeclarations', $values);
+        $this->assertContains('toolSearch', $values);
         $this->assertContains('webSearch', $values);
         $this->assertContains('outputFileType', $values);
         $this->assertContains('outputMediaOrientation', $values);

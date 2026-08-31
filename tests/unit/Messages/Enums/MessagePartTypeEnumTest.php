@@ -37,6 +37,7 @@ class MessagePartTypeEnumTest extends TestCase
             'FILE' => 'file',
             'FUNCTION_CALL' => 'function_call',
             'FUNCTION_RESPONSE' => 'function_response',
+            'PROVIDER_DATA' => 'provider_data',
         ];
     }
 
@@ -58,5 +59,9 @@ class MessagePartTypeEnumTest extends TestCase
         $functionCall = MessagePartTypeEnum::functionCall();
         $this->assertTrue($functionCall->isFunctionCall());
         $this->assertFalse($functionCall->isFunctionResponse());
+
+        $providerData = MessagePartTypeEnum::providerData();
+        $this->assertTrue($providerData->isProviderData());
+        $this->assertFalse($providerData->isText());
     }
 }

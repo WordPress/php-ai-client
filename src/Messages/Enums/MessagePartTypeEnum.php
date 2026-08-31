@@ -15,10 +15,12 @@ use WordPress\AiClient\Common\AbstractEnum;
  * @method static self file() Creates an instance for FILE type.
  * @method static self functionCall() Creates an instance for FUNCTION_CALL type.
  * @method static self functionResponse() Creates an instance for FUNCTION_RESPONSE type.
+ * @method static self providerData() Creates an instance for PROVIDER_DATA type.
  * @method bool isText() Checks if the type is TEXT.
  * @method bool isFile() Checks if the type is FILE.
  * @method bool isFunctionCall() Checks if the type is FUNCTION_CALL.
  * @method bool isFunctionResponse() Checks if the type is FUNCTION_RESPONSE.
+ * @method bool isProviderData() Checks if the type is PROVIDER_DATA.
  */
 class MessagePartTypeEnum extends AbstractEnum
 {
@@ -41,4 +43,9 @@ class MessagePartTypeEnum extends AbstractEnum
      * Function response.
      */
     public const FUNCTION_RESPONSE = 'function_response';
+
+    /**
+     * Opaque provider-native message data.
+     */
+    public const PROVIDER_DATA = 'provider_data';
 }

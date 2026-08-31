@@ -332,6 +332,19 @@ class PromptBuilder
     }
 
     /**
+     * Enables native tool search for deferred function declarations.
+     *
+     * @since 1.5.0
+     *
+     * @return self
+     */
+    public function usingToolSearch(): self
+    {
+        $this->modelConfig->setToolSearch(true);
+        return $this;
+    }
+
+    /**
      * Sets the presence penalty for generation.
      *
      * @since 0.1.0
