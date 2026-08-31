@@ -613,7 +613,12 @@ class PromptBuilder
 
             // If still no capability, infer from output modalities
             if ($capability === null) {
-                $capability = $this->inferCapabilityFromOutputModalities();
+                try {
+                    $capability = $this->inferCapabilityFromOutputModalities();
+                } catch (RuntimeException $e) {
+                    // The output modality maps to no capability, so no model can support it.
+                    return false;
+                }
             }
         }
 

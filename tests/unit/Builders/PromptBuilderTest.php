@@ -3865,6 +3865,19 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests isSupported returns false for an output modality without a matching capability.
+     *
+     * @return void
+     */
+    public function testIsSupportedReturnsFalseForUnsupportedOutputModality(): void
+    {
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->asOutputModalities(ModalityEnum::document());
+
+        $this->assertFalse($builder->isSupported());
+    }
+
+    /**
      * Tests isSupported method with inferred capability from model interfaces.
      *
      * @return void
