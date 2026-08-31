@@ -138,6 +138,105 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests generateTextResult() surfaces cache token counts from prompt tokens details.
+     *
+     * @return void
+     */
+    public function testGenerateTextResultParsesCachedTokens(): void
+    {
+        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Hello')])];
+        $response = new Response(
+            200,
+            [],
+            json_encode([
+                'id' => 'chatcmpl-123',
+                'choices' => [
+                    [
+                        'message' => [
+                            'role' => 'assistant',
+                            'content' => 'Hi there!',
+                        ],
+                        'finish_reason' => 'stop',
+                    ],
+                ],
+                'usage' => [
+                    'prompt_tokens' => 2048,
+                    'completion_tokens' => 5,
+                    'total_tokens' => 2053,
+                    'prompt_tokens_details' => [
+                        'cached_tokens' => 1024,
+                        'cache_write_tokens' => 512,
+                    ],
+                ],
+            ])
+        );
+
+        $this->mockRequestAuthentication
+            ->expects($this->once())
+            ->method('authenticateRequest')
+            ->willReturnArgument(0);
+
+        $this->mockHttpTransporter
+            ->expects($this->once())
+            ->method('send')
+            ->willReturn($response);
+
+        $model = $this->createModel();
+        $result = $model->generateTextResult($prompt);
+
+        $this->assertEquals(2048, $result->getTokenUsage()->getPromptTokens());
+        $this->assertEquals(1024, $result->getTokenUsage()->getCachedTokens());
+        $this->assertEquals(512, $result->getTokenUsage()->getCacheCreationTokens());
+    }
+
+    /**
+     * Tests generateTextResult() returns null cached tokens when the provider omits prompt tokens details.
+     *
+     * @return void
+     */
+    public function testGenerateTextResultWithoutCachedTokens(): void
+    {
+        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Hello')])];
+        $response = new Response(
+            200,
+            [],
+            json_encode([
+                'id' => 'chatcmpl-123',
+                'choices' => [
+                    [
+                        'message' => [
+                            'role' => 'assistant',
+                            'content' => 'Hi there!',
+                        ],
+                        'finish_reason' => 'stop',
+                    ],
+                ],
+                'usage' => [
+                    'prompt_tokens' => 10,
+                    'completion_tokens' => 5,
+                    'total_tokens' => 15,
+                ],
+            ])
+        );
+
+        $this->mockRequestAuthentication
+            ->expects($this->once())
+            ->method('authenticateRequest')
+            ->willReturnArgument(0);
+
+        $this->mockHttpTransporter
+            ->expects($this->once())
+            ->method('send')
+            ->willReturn($response);
+
+        $model = $this->createModel();
+        $result = $model->generateTextResult($prompt);
+
+        $this->assertNull($result->getTokenUsage()->getCachedTokens());
+        $this->assertNull($result->getTokenUsage()->getCacheCreationTokens());
+    }
+
+    /**
      * Tests generateTextResult() method on API failure.
      *
      * @return void
