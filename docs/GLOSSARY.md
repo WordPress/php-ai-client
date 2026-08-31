@@ -5,6 +5,7 @@ This glossary defines common terms relevant for the PHP AI Client and related pr
 * **Agent**: An autonomous system that can perceive its environment, make decisions, and take actions to achieve specific goals, often leveraging AI models.
 * **Candidate Count**: The number of different response options an LLM generates internally.
 * **Capability**: A specific skill, function, or type of task that an AI model can perform, e.g. text generation or image generation.
+* **Context Window**: The total number of tokens (input plus output) a _Model_ can process in a single request. Exposed as model metadata (`ModelMetadata::getContextWindow()`) and used for an advisory pre-flight check. Distinct from the _Max Tokens_ option, which caps only the generated output.
 * **Extender API**: The API used by developers that want to enable the use of additional _Providers_ or _Models_.
 * **Generative AI**: Overarching term describing AI models that generate content as requested in a prompt.
 * **Implementer API**: The API used by people that want to _implement_ AI features in their own software/products.
