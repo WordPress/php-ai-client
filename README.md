@@ -72,10 +72,10 @@ $texts = AiClient::prompt('Write a 2-verse poem about PHP.')
 ```php
 use WordPress\AiClient\AiClient;
 
-$text = AiClient::prompt('Write a 80-verse poem with long stanzas about PHP.')
+$text = AiClient::prompt('Write an 80-verse poem with long stanzas about PHP.')
     ->usingSystemInstruction('You are a famous poet from the 17th century.')
     ->usingTemperature(0.8)
-    ->usingMaxTokens(8000);
+    ->usingMaxTokens(8000)
     ->generateText();
 ```
 
