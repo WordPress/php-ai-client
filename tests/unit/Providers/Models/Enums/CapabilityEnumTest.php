@@ -38,6 +38,7 @@ class CapabilityEnumTest extends TestCase
             'TEXT_TO_SPEECH_CONVERSION' => 'text_to_speech_conversion',
             'SPEECH_GENERATION' => 'speech_generation',
             'MUSIC_GENERATION' => 'music_generation',
+            'SOUND_GENERATION' => 'sound_generation',
             'VIDEO_GENERATION' => 'video_generation',
             'EMBEDDING_GENERATION' => 'embedding_generation',
             'CHAT_HISTORY' => 'chat_history',
