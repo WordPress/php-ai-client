@@ -15,8 +15,9 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  *
  * Unlike {@see GenerativeAiResult}, extraction results are not candidate-based: they hold the
  * structured, per-page content of a processed document. Providers that bill per page report a
- * zero {@see TokenUsage}; the meaningful unit is {@see self::getPageCount()}. The raw decoded
- * provider payload should be preserved under the `raw` key of the additional data.
+ * zero {@see TokenUsage}; the meaningful unit is {@see self::getPageCount()}, which is the only
+ * billing signal such providers put in the result. The raw decoded provider payload should be
+ * preserved under the `raw` key of the additional data.
  *
  * @since n.e.x.t
  *
@@ -28,6 +29,7 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  * @phpstan-type TextExtractionResultArrayShape array{
  *     id: string,
  *     pages: list<ExtractedPageArrayShape>,
+ *     pageCount: int,
  *     tokenUsage: TokenUsageArrayShape,
  *     providerMetadata: ProviderMetadataArrayShape,
  *     modelMetadata: ModelMetadataArrayShape,
@@ -40,6 +42,7 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
 {
     public const KEY_ID = 'id';
     public const KEY_PAGES = 'pages';
+    public const KEY_PAGE_COUNT = 'pageCount';
     public const KEY_TOKEN_USAGE = 'tokenUsage';
     public const KEY_PROVIDER_METADATA = 'providerMetadata';
     public const KEY_MODEL_METADATA = 'modelMetadata';
@@ -54,6 +57,11 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
      * @var list<ExtractedPage> The extracted pages.
      */
     private array $pages;
+
+    /**
+     * @var int The number of pages the provider processed.
+     */
+    private int $pageCount;
 
     /**
      * @var TokenUsage Token usage statistics.
@@ -87,6 +95,10 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
      * @param ModelMetadata $modelMetadata Model metadata.
      * @param array<string, mixed> $additionalData Additional data; the raw provider payload
      *                                             should be preserved under the `raw` key.
+     * @param int|null $pageCount The number of pages the provider reports having processed. Pass
+     *                            the provider's own count when it reports one (e.g. Mistral's
+     *                            `usage_info.pages_processed`), since it can differ from the
+     *                            number of returned pages. Defaults to the number of pages given.
      */
     public function __construct(
         string $id,
@@ -94,7 +106,8 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
         TokenUsage $tokenUsage,
         ProviderMetadata $providerMetadata,
         ModelMetadata $modelMetadata,
-        array $additionalData = []
+        array $additionalData = [],
+        ?int $pageCount = null
     ) {
         if (empty($pages)) {
             throw new InvalidArgumentException('At least one extracted page must be provided.');
@@ -106,8 +119,13 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
             }
         }
 
+        if ($pageCount !== null && $pageCount < 1) {
+            throw new InvalidArgumentException('Page count must be 1 or greater.');
+        }
+
         $this->id = $id;
         $this->pages = $pages;
+        $this->pageCount = $pageCount ?? count($pages);
         $this->tokenUsage = $tokenUsage;
         $this->providerMetadata = $providerMetadata;
         $this->modelMetadata = $modelMetadata;
@@ -137,9 +155,12 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
     }
 
     /**
-     * Gets the number of pages processed.
+     * Gets the number of pages the provider processed.
      *
-     * For page-priced providers this is the billing-relevant unit.
+     * For page-priced providers this is the billing-relevant unit, and it can exceed the number
+     * of pages returned by {@see self::getPages()} (for example when a page range was requested
+     * but the provider bills for the whole document). Falls back to the number of returned pages
+     * when the provider reports no count of its own.
      *
      * @since n.e.x.t
      *
@@ -147,7 +168,7 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
      */
     public function getPageCount(): int
     {
-        return count($this->pages);
+        return $this->pageCount;
     }
 
     /**
@@ -168,20 +189,6 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
                 $this->pages
             )
         );
-    }
-
-    /**
-     * Gets the full extracted content as a single string.
-     *
-     * Alias of {@see self::toMarkdown()}.
-     *
-     * @since n.e.x.t
-     *
-     * @return string The extracted content.
-     */
-    public function toText(): string
-    {
-        return $this->toMarkdown();
     }
 
     /**
@@ -246,6 +253,11 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
                     'minItems' => 1,
                     'description' => 'The extracted pages.',
                 ],
+                self::KEY_PAGE_COUNT => [
+                    'type' => 'integer',
+                    'minimum' => 1,
+                    'description' => 'The number of pages the provider processed.',
+                ],
                 self::KEY_TOKEN_USAGE => TokenUsage::getJsonSchema(),
                 self::KEY_PROVIDER_METADATA => ProviderMetadata::getJsonSchema(),
                 self::KEY_MODEL_METADATA => ModelMetadata::getJsonSchema(),
@@ -258,6 +270,7 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
             'required' => [
                 self::KEY_ID,
                 self::KEY_PAGES,
+                self::KEY_PAGE_COUNT,
                 self::KEY_TOKEN_USAGE,
                 self::KEY_PROVIDER_METADATA,
                 self::KEY_MODEL_METADATA,
@@ -280,6 +293,7 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
                 static fn (ExtractedPage $page): array => $page->toArray(),
                 $this->pages
             ),
+            self::KEY_PAGE_COUNT => $this->pageCount,
             self::KEY_TOKEN_USAGE => $this->tokenUsage->toArray(),
             self::KEY_PROVIDER_METADATA => $this->providerMetadata->toArray(),
             self::KEY_MODEL_METADATA => $this->modelMetadata->toArray(),
@@ -321,7 +335,8 @@ class TextExtractionResult extends AbstractDataTransferObject implements ResultI
             TokenUsage::fromArray($array[self::KEY_TOKEN_USAGE]),
             ProviderMetadata::fromArray($array[self::KEY_PROVIDER_METADATA]),
             ModelMetadata::fromArray($array[self::KEY_MODEL_METADATA]),
-            $array[self::KEY_ADDITIONAL_DATA] ?? []
+            $array[self::KEY_ADDITIONAL_DATA] ?? [],
+            isset($array[self::KEY_PAGE_COUNT]) ? (int) $array[self::KEY_PAGE_COUNT] : null
         );
     }
 

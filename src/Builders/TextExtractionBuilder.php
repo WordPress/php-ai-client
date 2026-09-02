@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Builders;
 
+use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Builders\Traits\ModelResolutionTrait;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Events\AfterExtractTextEvent;
+use WordPress\AiClient\Events\BeforeExtractTextEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\TextExtraction\Contracts\TextExtractionModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\TextExtractionResult;
@@ -36,17 +40,27 @@ class TextExtractionBuilder
     protected ?File $document = null;
 
     /**
+     * @var EventDispatcherInterface|null The event dispatcher for extraction lifecycle events.
+     */
+    private ?EventDispatcherInterface $eventDispatcher;
+
+    /**
      * Constructor.
      *
      * @since n.e.x.t
      *
      * @param ProviderRegistry $registry The provider registry for finding suitable models.
      * @param DocumentInput|null $document Optional initial document to extract text from.
+     * @param EventDispatcherInterface|null $eventDispatcher Optional event dispatcher for lifecycle events.
      */
-    public function __construct(ProviderRegistry $registry, $document = null)
-    {
+    public function __construct(
+        ProviderRegistry $registry,
+        $document = null,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
         $this->modelConfig = new ModelConfig();
         $this->modelResolver = new ModelResolver($registry);
+        $this->eventDispatcher = $eventDispatcher;
 
         if ($document !== null) {
             $this->withDocument($document);
@@ -56,8 +70,8 @@ class TextExtractionBuilder
     /**
      * Creates a deep clone of this builder.
      *
-     * Clones the document and model configuration. Service objects are intentionally NOT cloned
-     * as they are shared dependencies.
+     * Clones the document and model configuration. Service objects (resolver, event dispatcher)
+     * are intentionally NOT cloned as they are shared dependencies.
      *
      * @since n.e.x.t
      */
@@ -83,20 +97,23 @@ class TextExtractionBuilder
      *                              URL such as `https://arxiv.org/pdf/1805.04770`). Ignored
      *                              when a File instance is given.
      * @return self
-     * @throws InvalidArgumentException If the document input is invalid.
+     * @throws InvalidArgumentException If the document input is invalid, or if its MIME type is
+     *                                  not supported for text extraction.
      */
     public function withDocument($document, ?string $mimeType = null): self
     {
         if (is_string($document)) {
-            if (trim($document) === '') {
-                throw new InvalidArgumentException('Cannot create a document from an empty string.');
-            }
             $document = new File($document, $mimeType);
         }
 
         if (!$document instanceof File) {
             throw new InvalidArgumentException('Document must be a File instance or a string.');
         }
+
+        // Reject unsupported MIME types here, where the file is still the caller's own input, so
+        // that the error names the offending type instead of surfacing later as a resolution or
+        // provider failure.
+        ModelRequirements::extractionInputModality($document);
 
         $this->document = $document;
 
@@ -132,13 +149,16 @@ class TextExtractionBuilder
      */
     public function extractTextResult(): TextExtractionResult
     {
-        if ($this->document === null) {
+        $document = $this->document;
+
+        if ($document === null) {
             throw new InvalidArgumentException(
                 'Cannot extract text without a document. Add one using withDocument().'
             );
         }
 
-        $requirements = ModelRequirements::fromExtractionData($this->document, $this->modelConfig);
+        $capability = CapabilityEnum::textExtraction();
+        $requirements = ModelRequirements::fromExtractionData($document, $this->modelConfig);
         $model = $this->modelResolver->resolve($requirements, $this->modelConfig);
 
         if (!$model instanceof TextExtractionModelInterface) {
@@ -150,7 +170,13 @@ class TextExtractionBuilder
             );
         }
 
-        return $model->extractTextResult($this->document);
+        $this->dispatchEvent(new BeforeExtractTextEvent($document, $model, $capability));
+
+        $result = $model->extractTextResult($document);
+
+        $this->dispatchEvent(new AfterExtractTextEvent($document, $model, $capability, $result));
+
+        return $result;
     }
 
     /**
@@ -165,5 +191,20 @@ class TextExtractionBuilder
     public function extractText(): string
     {
         return $this->extractTextResult()->toMarkdown();
+    }
+
+    /**
+     * Dispatches an event if an event dispatcher is registered.
+     *
+     * @since n.e.x.t
+     *
+     * @param object $event The event to dispatch.
+     * @return void
+     */
+    private function dispatchEvent(object $event): void
+    {
+        if ($this->eventDispatcher !== null) {
+            $this->eventDispatcher->dispatch($event);
+        }
     }
 }

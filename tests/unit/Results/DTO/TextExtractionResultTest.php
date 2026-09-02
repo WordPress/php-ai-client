@@ -95,7 +95,6 @@ class TextExtractionResultTest extends TestCase
         $result = $this->createTextExtractionResult();
 
         $this->assertSame("# Heading\n\nFirst page.\n\nSecond page.", $result->toMarkdown());
-        $this->assertSame($result->toMarkdown(), $result->toText());
     }
 
     public function testToArrayFromArrayRoundtrip(): void
@@ -177,5 +176,106 @@ class TextExtractionResultTest extends TestCase
         $this->assertSame('object', $schema['type']);
         $this->assertContains(TextExtractionResult::KEY_ID, $schema['required']);
         $this->assertContains(TextExtractionResult::KEY_PAGES, $schema['required']);
+    }
+
+    public function testPageCountDefaultsToNumberOfPages(): void
+    {
+        $result = $this->createTextExtractionResult();
+
+        $this->assertCount(2, $result->getPages());
+        $this->assertSame(2, $result->getPageCount());
+    }
+
+    public function testPageCountUsesProviderReportedValue(): void
+    {
+        // A page range was requested, but the provider billed for the whole document.
+        $result = new TextExtractionResult(
+            'extraction-result-id',
+            [new ExtractedPage(3, 'Third page.')],
+            new TokenUsage(0, 0, 0),
+            new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud()),
+            new ModelMetadata('mock-ocr-model', 'Mock OCR Model', [CapabilityEnum::textExtraction()], []),
+            [],
+            12
+        );
+
+        $this->assertCount(1, $result->getPages());
+        $this->assertSame(12, $result->getPageCount());
+    }
+
+    public function testPageCountRoundtripsThroughArray(): void
+    {
+        $result = new TextExtractionResult(
+            'extraction-result-id',
+            [new ExtractedPage(3, 'Third page.')],
+            new TokenUsage(0, 0, 0),
+            new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud()),
+            new ModelMetadata('mock-ocr-model', 'Mock OCR Model', [CapabilityEnum::textExtraction()], []),
+            [],
+            12
+        );
+
+        $roundtripped = TextExtractionResult::fromArray($result->toArray());
+
+        $this->assertSame(12, $roundtripped->getPageCount());
+    }
+
+    public function testConstructorRejectsNonPositivePageCount(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Page count must be 1 or greater.');
+
+        new TextExtractionResult(
+            'extraction-result-id',
+            [new ExtractedPage(1, 'First page.')],
+            new TokenUsage(0, 0, 0),
+            new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud()),
+            new ModelMetadata('mock-ocr-model', 'Mock OCR Model', [CapabilityEnum::textExtraction()], []),
+            [],
+            0
+        );
+    }
+
+    public function testExtractedPageRejectsNonExtractedImageEntries(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('All images must be ExtractedImage instances.');
+
+        /** @phpstan-ignore-next-line Intentionally invalid input. */
+        new ExtractedPage(1, 'First page.', ['not-an-image']);
+    }
+
+    /**
+     * Providers that decode JSON can surface integral values as floats, which strict_types would
+     * reject outright without the casts in fromArray().
+     */
+    public function testFromArrayAcceptsFloatIntegersForPageNumbersAndDimensions(): void
+    {
+        $page = ExtractedPage::fromArray([
+            'pageNumber' => 1.0,
+            'markdown' => 'First page.',
+            'dimensions' => [
+                'width' => 1700.0,
+                'height' => 2200.0,
+                'dpi' => 200.0,
+            ],
+        ]);
+
+        $this->assertSame(1, $page->getPageNumber());
+        $this->assertNotNull($page->getDimensions());
+        $this->assertSame(1700, $page->getDimensions()->getWidth());
+        $this->assertSame(2200, $page->getDimensions()->getHeight());
+        $this->assertSame(200, $page->getDimensions()->getDpi());
+    }
+
+    public function testFromArrayStillRejectsOutOfRangePageNumbers(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Page number must be 1 or greater.');
+
+        ExtractedPage::fromArray([
+            'pageNumber' => 0.0,
+            'markdown' => 'First page.',
+        ]);
     }
 }

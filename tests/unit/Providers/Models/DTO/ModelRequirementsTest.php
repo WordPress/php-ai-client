@@ -8,6 +8,7 @@ use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
@@ -904,5 +905,82 @@ class ModelRequirementsTest extends TestCase
         }
 
         $this->assertTrue($hasPagesOption, 'Custom pages option should be present');
+    }
+
+    /**
+     * Tests fromExtractionData maps a text file to the document modality.
+     *
+     * @return void
+     */
+    public function testFromExtractionDataWithTextFile(): void
+    {
+        $document = new File('https://example.com/notes.txt', 'text/plain');
+
+        $requirements = ModelRequirements::fromExtractionData($document, new ModelConfig());
+
+        $inputModalities = null;
+        foreach ($requirements->getRequiredOptions() as $option) {
+            if ($option->getName()->isInputModalities()) {
+                $inputModalities = $option->getValue();
+            }
+        }
+
+        $this->assertEquals([ModalityEnum::document()], $inputModalities);
+    }
+
+    /**
+     * Tests fromExtractionData rejects file types that carry no readable text.
+     *
+     * Mapping these to the document modality would either surface as an unhelpful "no model
+     * found" error or select a model that then fails provider-side.
+     *
+     * @dataProvider dataUnsupportedExtractionFiles
+     *
+     * @param string $url The file URL.
+     * @param string $mimeType The expected MIME type named in the error message.
+     * @return void
+     */
+    public function testFromExtractionDataRejectsUnsupportedFileTypes(string $url, string $mimeType): void
+    {
+        $file = new File($url);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            sprintf('Text extraction supports image and document files, got "%s".', $mimeType)
+        );
+
+        ModelRequirements::fromExtractionData($file, new ModelConfig());
+    }
+
+    /**
+     * Provides unsupported extraction input files.
+     *
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public function dataUnsupportedExtractionFiles(): array
+    {
+        return [
+            'audio' => ['https://example.com/podcast.mp3', 'audio/mpeg'],
+            'video' => ['https://example.com/clip.mp4', 'video/mp4'],
+        ];
+    }
+
+    /**
+     * Tests extractionInputModality returns the modality a model must support.
+     *
+     * @return void
+     */
+    public function testExtractionInputModality(): void
+    {
+        $this->assertTrue(
+            ModelRequirements::extractionInputModality(
+                new File('https://example.com/report.pdf')
+            )->isDocument()
+        );
+        $this->assertTrue(
+            ModelRequirements::extractionInputModality(
+                new File('https://example.com/scan.png')
+            )->isImage()
+        );
     }
 }

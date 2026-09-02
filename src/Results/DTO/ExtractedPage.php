@@ -71,6 +71,12 @@ class ExtractedPage extends AbstractDataTransferObject
             throw new InvalidArgumentException('Page number must be 1 or greater.');
         }
 
+        foreach ($images as $image) {
+            if (!$image instanceof ExtractedImage) {
+                throw new InvalidArgumentException('All images must be ExtractedImage instances.');
+            }
+        }
+
         $this->pageNumber = $pageNumber;
         $this->markdown = $markdown;
         $this->images = $images;
@@ -213,7 +219,7 @@ class ExtractedPage extends AbstractDataTransferObject
         }
 
         return new self(
-            $array[self::KEY_PAGE_NUMBER],
+            (int) $array[self::KEY_PAGE_NUMBER],
             $array[self::KEY_MARKDOWN],
             $images,
             isset($array[self::KEY_DIMENSIONS]) ? PageDimensions::fromArray($array[self::KEY_DIMENSIONS]) : null

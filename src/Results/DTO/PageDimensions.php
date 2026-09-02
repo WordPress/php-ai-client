@@ -168,9 +168,9 @@ class PageDimensions extends AbstractDataTransferObject
         ]);
 
         return new self(
-            $array[self::KEY_WIDTH],
-            $array[self::KEY_HEIGHT],
-            $array[self::KEY_DPI] ?? null
+            (int) $array[self::KEY_WIDTH],
+            (int) $array[self::KEY_HEIGHT],
+            isset($array[self::KEY_DPI]) ? (int) $array[self::KEY_DPI] : null
         );
     }
 }

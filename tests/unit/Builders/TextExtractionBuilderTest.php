@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Builders;
 
 use PHPUnit\Framework\TestCase;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Builders\TextExtractionBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Events\AfterExtractTextEvent;
+use WordPress\AiClient\Events\BeforeExtractTextEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
@@ -139,10 +142,42 @@ class TextExtractionBuilderTest extends TestCase
     {
         $builder = new TextExtractionBuilder($this->registry);
 
+        // Validation is left to File, so that all builders reject the same inputs identically.
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot create a document from an empty string.');
+        $this->expectExceptionMessage('Invalid file provided.');
 
         $builder->withDocument('   ');
+    }
+
+    /**
+     * Tests withDocument rejects file types text extraction cannot consume.
+     *
+     * @return void
+     */
+    public function testWithDocumentRejectsUnsupportedMimeType(): void
+    {
+        $builder = new TextExtractionBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Text extraction supports image and document files, got "audio/mpeg".');
+
+        $builder->withDocument('https://example.com/podcast.mp3');
+    }
+
+    /**
+     * Tests withDocument accepts image and document files.
+     *
+     * @return void
+     */
+    public function testWithDocumentAcceptsImagesAndDocuments(): void
+    {
+        $builder = new TextExtractionBuilder($this->registry);
+
+        $builder->withDocument('https://example.com/scan.png');
+        $this->assertSame('image/png', $this->getDocument($builder)->getMimeType());
+
+        $builder->withDocument('https://example.com/report.pdf');
+        $this->assertSame('application/pdf', $this->getDocument($builder)->getMimeType());
     }
 
     /**
@@ -378,5 +413,60 @@ class TextExtractionBuilderTest extends TestCase
 
         $this->assertNull($this->getDocument($cloned));
         $this->assertNotSame($this->getModelConfig($original), $this->getModelConfig($cloned));
+    }
+
+    /**
+     * Tests the builder dispatches lifecycle events around extraction.
+     *
+     * @return void
+     */
+    public function testExtractTextResultDispatchesLifecycleEvents(): void
+    {
+        $result = $this->createTestTextExtractionResult(['# Page one']);
+        $model = $this->createMockTextExtractionModel($result);
+
+        $events = [];
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher
+            ->expects($this->exactly(2))
+            ->method('dispatch')
+            ->willReturnCallback(static function (object $event) use (&$events): object {
+                $events[] = $event;
+                return $event;
+            });
+
+        $builder = new TextExtractionBuilder(
+            $this->registry,
+            'https://example.com/document.pdf',
+            $dispatcher
+        );
+        $builder->usingModel($model);
+        $builder->extractTextResult();
+
+        $this->assertInstanceOf(BeforeExtractTextEvent::class, $events[0]);
+        $this->assertInstanceOf(AfterExtractTextEvent::class, $events[1]);
+
+        $this->assertSame('application/pdf', $events[0]->getDocument()->getMimeType());
+        $this->assertSame($model, $events[0]->getModel());
+        $this->assertTrue($events[0]->getCapability()->isTextExtraction());
+
+        $this->assertSame($result, $events[1]->getResult());
+        $this->assertTrue($events[1]->getCapability()->isTextExtraction());
+    }
+
+    /**
+     * Tests the builder works without an event dispatcher.
+     *
+     * @return void
+     */
+    public function testExtractTextResultWorksWithoutEventDispatcher(): void
+    {
+        $result = $this->createTestTextExtractionResult(['# Page one']);
+        $model = $this->createMockTextExtractionModel($result);
+
+        $builder = new TextExtractionBuilder($this->registry, 'https://example.com/document.pdf');
+        $builder->usingModel($model);
+
+        $this->assertSame($result, $builder->extractTextResult());
     }
 }

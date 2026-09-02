@@ -279,6 +279,8 @@ class ModelRequirements extends AbstractDataTransferObject
      * @param File $document The document to extract text from.
      * @param ModelConfig $modelConfig The model configuration.
      * @return self The created requirements.
+     *
+     * @throws InvalidArgumentException If the file's MIME type is not supported for text extraction.
      */
     public static function fromExtractionData(File $document, ModelConfig $modelConfig): self
     {
@@ -286,13 +288,47 @@ class ModelRequirements extends AbstractDataTransferObject
 
         $requiredOptions = self::toRequiredOptions($modelConfig);
 
-        $inputModality = $document->isImage() ? ModalityEnum::image() : ModalityEnum::document();
+        $inputModality = self::extractionInputModality($document);
         $requiredOptions = self::includeInRequiredOptions(
             $requiredOptions,
             new RequiredOption(OptionEnum::inputModalities(), [$inputModality])
         );
 
         return new self($capabilities, $requiredOptions);
+    }
+
+    /**
+     * Determines the input modality required to extract text from the given file.
+     *
+     * Text extraction only accepts modalities that carry readable content, so audio, video, and
+     * files of an unrecognized type are rejected here rather than being mapped to a modality they
+     * do not match. Mapping them to `document` would either surface as an unhelpful "no model
+     * found" error or select a model that then fails provider-side.
+     *
+     * Exposed separately from {@see self::fromExtractionData()} so that callers can validate a
+     * file, or declare the modality a model must support, without building full requirements.
+     *
+     * @since n.e.x.t
+     *
+     * @param File $file The file to analyze.
+     * @return ModalityEnum The required input modality.
+     *
+     * @throws InvalidArgumentException If the file's MIME type is not supported for text extraction.
+     */
+    public static function extractionInputModality(File $file): ModalityEnum
+    {
+        $modality = self::modalityForFile($file);
+
+        if ($modality === null || !($modality->isImage() || $modality->isDocument())) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Text extraction supports image and document files, got "%s".',
+                    $file->getMimeType()
+                )
+            );
+        }
+
+        return $modality;
     }
 
     /**
@@ -315,16 +351,40 @@ class ModelRequirements extends AbstractDataTransferObject
             $file = $part->getFile();
 
             if ($file !== null) {
-                if ($file->isImage()) {
-                    return ModalityEnum::image();
-                } elseif ($file->isAudio()) {
-                    return ModalityEnum::audio();
-                } elseif ($file->isVideo()) {
-                    return ModalityEnum::video();
-                } elseif ($file->isDocument() || $file->isText()) {
-                    return ModalityEnum::document();
-                }
+                return self::modalityForFile($file);
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * Determines the input modality contributed by a file, if any.
+     *
+     * Text files are treated as documents, since they carry document-shaped content rather than
+     * a text prompt.
+     *
+     * @since n.e.x.t
+     *
+     * @param File $file The file to analyze.
+     * @return ModalityEnum|null The input modality, or null if the MIME type is not recognized.
+     */
+    private static function modalityForFile(File $file): ?ModalityEnum
+    {
+        if ($file->isImage()) {
+            return ModalityEnum::image();
+        }
+
+        if ($file->isAudio()) {
+            return ModalityEnum::audio();
+        }
+
+        if ($file->isVideo()) {
+            return ModalityEnum::video();
+        }
+
+        if ($file->isDocument() || $file->isText()) {
+            return ModalityEnum::document();
         }
 
         return null;

@@ -294,7 +294,8 @@ class AiClient
     {
         return new TextExtractionBuilder(
             $registry ?? self::defaultRegistry(),
-            $document
+            $document,
+            self::$eventDispatcher
         );
     }
 
