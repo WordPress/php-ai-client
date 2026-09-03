@@ -281,6 +281,11 @@ class PromptBuilder
      * appending a model response message and a follow-up user message when
      * building a manual function call resolution loop.
      *
+     * The last message must be a user message before generating, so a model
+     * message should always be followed by a user message. The last appended
+     * user message becomes the current message. Any parts added afterwards,
+     * for example with {@see self::withText()}, are added to that message.
+     *
      * @since n.e.x.t
      *
      * @param Message ...$messages The messages to append.
@@ -421,11 +426,16 @@ class PromptBuilder
      * the maximum number of rounds is reached.
      *
      * Resolution follows the first response candidate and only applies to text
-     * generation; other capabilities ignore the resolver. Token usage is
+     * generation. Other capabilities ignore the resolver. Token usage is
      * aggregated across all rounds. Details about the loop are exposed under
      * the {@see self::KEY_FUNCTION_CALL_RESOLUTION} key of the additional data
      * of the final result, including the number of rounds, the stop reason,
      * the resolved calls, and the full conversation.
+     *
+     * When the loop stops early, the final response usually contains function
+     * calls and no text. Use {@see self::generateTextResult()} to receive that
+     * response, since {@see self::generateText()} throws when the response has
+     * no text.
      *
      * The maximum number of rounds can be configured with
      * {@see self::usingMaxFunctionCallIterations()}.
@@ -962,7 +972,6 @@ class PromptBuilder
             $functionCalls = $this->getFunctionCalls($message);
 
             if (empty($functionCalls)) {
-                $stopReason = self::STOP_REASON_COMPLETED;
                 break;
             }
 
@@ -1008,8 +1017,7 @@ class PromptBuilder
             $tokenUsage = $this->aggregateTokenUsage($tokenUsage, $result->getTokenUsage());
         }
 
-        $transcript = $messages;
-        $transcript[] = $result->toMessage();
+        $messages[] = $result->toMessage();
 
         $additionalData = $result->getAdditionalData();
         $additionalData[self::KEY_FUNCTION_CALL_RESOLUTION] = [
@@ -1020,7 +1028,7 @@ class PromptBuilder
                 static function (Message $message): array {
                     return $message->toArray();
                 },
-                $transcript
+                $messages
             ),
         ];
 
@@ -1280,10 +1288,15 @@ class PromptBuilder
     /**
      * Generates text from the prompt.
      *
+     * When a function call resolver is set and the resolution loop stops
+     * early, the final response may contain no text. Use
+     * {@see self::generateTextResult()} to handle that case.
+     *
      * @since 0.1.0
      *
      * @return string The generated text.
      * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the final response contains no text.
      */
     public function generateText(): string
     {
@@ -1292,6 +1305,11 @@ class PromptBuilder
 
     /**
      * Generates multiple text candidates from the prompt.
+     *
+     * When a function call resolver is set and the resolution loop stops
+     * early, the final response may contain no text, and candidates without
+     * text are skipped. Use {@see self::generateTextResult()} to handle that
+     * case.
      *
      * @since 0.1.0
      *
