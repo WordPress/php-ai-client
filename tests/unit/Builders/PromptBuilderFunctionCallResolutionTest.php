@@ -376,6 +376,33 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
     }
 
     /**
+     * Tests that a missing thought token count in one round counts as zero.
+     *
+     * @return void
+     */
+    public function testAggregatesThoughtTokensWhenOnlySomeRoundsReportThem(): void
+    {
+        $model = $this->createScriptedTextGenerationModel([
+            $this->createTestResultWithMessage(
+                new ModelMessage([new MessagePart(new FunctionCall('call-1', 'get_weather', []))]),
+                new TokenUsage(1, 2, 3),
+                FinishReasonEnum::toolCalls()
+            ),
+            $this->createTestResultWithMessage(
+                new ModelMessage([new MessagePart('Final answer')]),
+                new TokenUsage(10, 20, 30, 5)
+            ),
+        ]);
+
+        $result = $this->createBuilder()
+            ->usingModel($model)
+            ->usingFunctionCallResolver(new MockFunctionCallResolver())
+            ->generateTextResult();
+
+        $this->assertSame(5, $result->getTokenUsage()->getThoughtTokens());
+    }
+
+    /**
      * Tests that a response without function calls completes with zero rounds.
      *
      * @return void

@@ -1103,6 +1103,9 @@ class PromptBuilder
     /**
      * Adds up two token usage objects.
      *
+     * A missing thought token count counts as zero, since providers omit it
+     * when no thinking happened.
+     *
      * @since n.e.x.t
      *
      * @param TokenUsage $total The running total.
