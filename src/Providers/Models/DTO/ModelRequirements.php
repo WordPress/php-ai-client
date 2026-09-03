@@ -86,6 +86,28 @@ class ModelRequirements extends AbstractDataTransferObject
     }
 
     /**
+     * Returns requirements that also include the given capability.
+     *
+     * @since n.e.x.t
+     *
+     * @param CapabilityEnum $capability The capability to require.
+     * @return self The updated requirements.
+     */
+    public function withRequiredCapability(CapabilityEnum $capability): self
+    {
+        foreach ($this->requiredCapabilities as $requiredCapability) {
+            if ($requiredCapability->equals($capability)) {
+                return $this;
+            }
+        }
+
+        $requiredCapabilities = $this->requiredCapabilities;
+        $requiredCapabilities[] = $capability;
+
+        return new self($requiredCapabilities, $this->requiredOptions);
+    }
+
+    /**
      * Gets the options that the model must support with specific values.
      *
      * @since 0.1.0
