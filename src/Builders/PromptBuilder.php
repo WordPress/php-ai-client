@@ -426,11 +426,22 @@ class PromptBuilder
      * the maximum number of rounds is reached.
      *
      * Resolution follows the first response candidate and only applies to text
-     * generation. Other capabilities ignore the resolver. Token usage is
-     * aggregated across all rounds. Details about the loop are exposed under
-     * the {@see self::KEY_FUNCTION_CALL_RESOLUTION} key of the additional data
-     * of the final result, including the number of rounds, the stop reason,
-     * the resolved calls, and the full conversation.
+     * generation. Other capabilities ignore the resolver. When more than one
+     * candidate is requested, the other candidates are not followed, and the
+     * final result only contains the candidates of the last round. Token usage
+     * is aggregated across all rounds. Details about the loop are exposed
+     * under the {@see self::KEY_FUNCTION_CALL_RESOLUTION} key of the
+     * additional data of the final result, including the number of rounds,
+     * the stop reason, the resolved calls, and the full conversation.
+     *
+     * Follow-up rounds send the full conversation, so the model must support
+     * chat history. This capability is added to the requirements when a model
+     * is discovered. An explicitly set model is used as is, like for every
+     * other requirement.
+     *
+     * Each round dispatches its own {@see BeforeGenerateResultEvent} and
+     * {@see AfterGenerateResultEvent} with the messages and result of that
+     * round. No event is dispatched for the final aggregated result.
      *
      * When the loop stops early, the final response usually contains function
      * calls and no text. Use {@see self::generateTextResult()} to receive that

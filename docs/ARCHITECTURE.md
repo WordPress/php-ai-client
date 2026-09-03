@@ -375,6 +375,7 @@ direction LR
             +withFunctionResponse(FunctionResponse $functionResponse) self
             +withMessageParts(...MessagePart $parts) self
             +withHistory(...Message $messages) self
+            +withMessages(...Message $messages) self
             +usingModel(ModelInterface $model) self
             +usingModelPreference(...$preferredModels) self
             +usingModelConfig(ModelConfig $config) self
@@ -388,6 +389,8 @@ direction LR
             +usingStopSequences(...string $stopSequences) self
             +usingCandidateCount(int $candidateCount) self
             +usingFunctionDeclarations(...FunctionDeclaration $functionDeclarations) self
+            +usingFunctionCallResolver(FunctionCallResolverInterface $functionCallResolver) self
+            +usingMaxFunctionCallIterations(int $maxIterations) self
             +usingPresencePenalty(float $presencePenalty) self
             +usingFrequencyPenalty(float $frequencyPenalty) self
             +usingWebSearch(WebSearch $webSearch) self
@@ -567,6 +570,7 @@ direction LR
             +withFunctionResponse(FunctionResponse $functionResponse) self
             +withMessageParts(...MessagePart $parts) self
             +withHistory(...Message $messages) self
+            +withMessages(...Message $messages) self
             +usingModel(ModelInterface $model) self
             +usingModelConfig(ModelConfig $config) self
             +usingProvider(string $providerIdOrClassName) self
@@ -578,6 +582,8 @@ direction LR
             +usingStopSequences(...string $stopSequences) self
             +usingCandidateCount(int $candidateCount) self
             +usingFunctionDeclarations(...FunctionDeclaration $functionDeclarations) self
+            +usingFunctionCallResolver(FunctionCallResolverInterface $functionCallResolver) self
+            +usingMaxFunctionCallIterations(int $maxIterations) self
             +usingPresencePenalty(float $presencePenalty) self
             +usingFrequencyPenalty(float $frequencyPenalty) self
             +usingWebSearch(WebSearch $webSearch) self
