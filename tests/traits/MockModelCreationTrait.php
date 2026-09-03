@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\traits;
 
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -55,11 +56,24 @@ trait MockModelCreationTrait
      */
     protected function createTestResult(string $content = 'Test response'): GenerativeAiResult
     {
-        $candidate = new Candidate(
-            new ModelMessage([new MessagePart($content)]),
-            FinishReasonEnum::stop()
-        );
-        $tokenUsage = new TokenUsage(10, 20, 30);
+        return $this->createTestResultWithMessage(new ModelMessage([new MessagePart($content)]));
+    }
+
+    /**
+     * Creates a test GenerativeAiResult with the given model message.
+     *
+     * @param Message $message The model message.
+     * @param TokenUsage|null $tokenUsage Optional token usage. Defaults to 10/20/30.
+     * @param FinishReasonEnum|null $finishReason Optional finish reason. Defaults to stop.
+     * @return GenerativeAiResult
+     */
+    protected function createTestResultWithMessage(
+        Message $message,
+        ?TokenUsage $tokenUsage = null,
+        ?FinishReasonEnum $finishReason = null
+    ): GenerativeAiResult {
+        $candidate = new Candidate($message, $finishReason ?? FinishReasonEnum::stop());
+        $tokenUsage = $tokenUsage ?? new TokenUsage(10, 20, 30);
 
         $providerMetadata = new ProviderMetadata(
             'mock',
@@ -213,60 +227,7 @@ trait MockModelCreationTrait
         GenerativeAiResult $result,
         ?ModelMetadata $metadata = null
     ): ModelInterface {
-        $metadata = $metadata ?? $this->createTestTextModelMetadata();
-
-        $providerMetadata = new ProviderMetadata(
-            'mock',
-            'Mock Provider',
-            ProviderTypeEnum::cloud()
-        );
-
-        return new class (
-            $metadata,
-            $providerMetadata,
-            $result
-        ) implements ModelInterface, TextGenerationModelInterface {
-            private ModelMetadata $metadata;
-            private ProviderMetadata $providerMetadata;
-            private GenerativeAiResult $result;
-            private ModelConfig $config;
-
-            public function __construct(
-                ModelMetadata $metadata,
-                ProviderMetadata $providerMetadata,
-                GenerativeAiResult $result
-            ) {
-                $this->metadata = $metadata;
-                $this->providerMetadata = $providerMetadata;
-                $this->result = $result;
-                $this->config = new ModelConfig();
-            }
-
-            public function metadata(): ModelMetadata
-            {
-                return $this->metadata;
-            }
-
-            public function providerMetadata(): ProviderMetadata
-            {
-                return $this->providerMetadata;
-            }
-
-            public function setConfig(ModelConfig $config): void
-            {
-                $this->config = $config;
-            }
-
-            public function getConfig(): ModelConfig
-            {
-                return $this->config;
-            }
-
-            public function generateTextResult(array $prompt): GenerativeAiResult
-            {
-                return $this->result;
-            }
-        };
+        return $this->createScriptedTextGenerationModel([$result], $metadata);
     }
 
     /**

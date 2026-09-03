@@ -8,24 +8,19 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
-use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
-use WordPress\AiClient\Providers\DTO\ProviderMetadata;
-use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
-use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tests\mocks\MockEventDispatcher;
 use WordPress\AiClient\Tests\mocks\MockFunctionCallResolver;
-use WordPress\AiClient\Tests\mocks\MockProvider;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 
@@ -55,8 +50,7 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->registry = new ProviderRegistry();
-        $this->registry->registerProvider(MockProvider::class);
+        $this->registry = $this->createRegistryWithMockProvider();
         $this->dispatcher = new MockEventDispatcher();
     }
 
@@ -73,32 +67,10 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
             $parts[] = new MessagePart($functionCall);
         }
 
-        return $this->createResultWithMessage(
+        return $this->createTestResultWithMessage(
             new ModelMessage($parts),
             null,
             FinishReasonEnum::toolCalls()
-        );
-    }
-
-    /**
-     * Creates a result with the given model message and token usage.
-     *
-     * @param Message $message The model message.
-     * @param TokenUsage|null $tokenUsage Optional token usage. Defaults to 10/20/30.
-     * @param FinishReasonEnum|null $finishReason Optional finish reason. Defaults to stop.
-     * @return GenerativeAiResult The result.
-     */
-    private function createResultWithMessage(
-        Message $message,
-        ?TokenUsage $tokenUsage = null,
-        ?FinishReasonEnum $finishReason = null
-    ): GenerativeAiResult {
-        return new GenerativeAiResult(
-            'test-result-id',
-            [new Candidate($message, $finishReason ?? FinishReasonEnum::stop())],
-            $tokenUsage ?? new TokenUsage(10, 20, 30),
-            new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud()),
-            new ModelMetadata('mock-model', 'Mock Model', [], [])
         );
     }
 
@@ -255,7 +227,7 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
      */
     public function testDoesNotResolveFunctionCallsFromTruncatedResponse(): void
     {
-        $truncatedResult = $this->createResultWithMessage(
+        $truncatedResult = $this->createTestResultWithMessage(
             new ModelMessage([
                 new MessagePart(new FunctionCall('call-1', 'get_weather', ['city' => 'Ber']))
             ]),
@@ -379,12 +351,12 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
     public function testAggregatesTokenUsageAcrossRounds(): void
     {
         $model = $this->createScriptedTextGenerationModel([
-            $this->createResultWithMessage(
+            $this->createTestResultWithMessage(
                 new ModelMessage([new MessagePart(new FunctionCall('call-1', 'get_weather', []))]),
                 new TokenUsage(1, 2, 3),
                 FinishReasonEnum::toolCalls()
             ),
-            $this->createResultWithMessage(
+            $this->createTestResultWithMessage(
                 new ModelMessage([new MessagePart('Final answer')]),
                 new TokenUsage(10, 20, 30)
             ),
