@@ -584,6 +584,28 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests prepareMessagesParam() with a function response mixed with other parts (should throw exception).
+     *
+     * @return void
+     */
+    public function testPrepareMessagesParamFunctionResponseMixedWithOtherParts(): void
+    {
+        $message = new Message(
+            MessageRoleEnum::user(),
+            [
+                new MessagePart(new FunctionResponse('call_1', 'get_weather', ['temperature' => 18])),
+                new MessagePart('Some extra text'),
+            ]
+        );
+        $model = $this->createModel();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Function responses cannot be combined with other message parts.');
+
+        $model->exposePrepareMessagesParam([$message]);
+    }
+
+    /**
      * Tests getMessageRoleString() method.
      *
      * @dataProvider messageRoleProvider
@@ -748,9 +770,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'The API only allows a single function response, as the only content of the message.'
-        );
+        $this->expectExceptionMessage('Function responses cannot be combined with other message parts.');
 
         $model->exposeGetMessagePartContentData($part);
     }

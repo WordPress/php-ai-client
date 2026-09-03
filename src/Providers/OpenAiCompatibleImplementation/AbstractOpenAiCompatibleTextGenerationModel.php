@@ -378,9 +378,9 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             return null;
         }
         if ($type->isFunctionResponse()) {
-            // Special case: Function response.
+            // Special case: Function responses are handled in `prepareMessagesParam()`.
             throw new InvalidArgumentException(
-                'The API only allows a single function response, as the only content of the message.'
+                'Function responses cannot be combined with other message parts.'
             );
         }
         throw new InvalidArgumentException(
