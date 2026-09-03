@@ -96,7 +96,7 @@ class ModelRequirements extends AbstractDataTransferObject
     public function withRequiredCapability(CapabilityEnum $capability): self
     {
         foreach ($this->requiredCapabilities as $requiredCapability) {
-            if ($requiredCapability->value === $capability->value) {
+            if ($requiredCapability->equals($capability)) {
                 return $this;
             }
         }
