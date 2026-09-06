@@ -87,6 +87,12 @@ class Citation extends AbstractDataTransferObject
         ?int $endIndex = null,
         ?string $quotedText = null
     ) {
+        if ($documentIndex !== null && $documentIndex < 0) {
+            throw new InvalidArgumentException(
+                sprintf('Citation documentIndex must be non-negative, got %d.', $documentIndex)
+            );
+        }
+
         if ($startIndex !== null && $startIndex < 0) {
             throw new InvalidArgumentException(
                 sprintf('Citation startIndex must be non-negative, got %d.', $startIndex)
@@ -205,6 +211,7 @@ class Citation extends AbstractDataTransferObject
                 ],
                 self::KEY_DOCUMENT_INDEX => [
                     'type' => ['integer', 'null'],
+                    'minimum' => 0,
                     'description' => 'The index into the request\'s documents array.',
                 ],
                 self::KEY_TITLE => [

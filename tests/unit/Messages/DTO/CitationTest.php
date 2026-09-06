@@ -112,6 +112,19 @@ class CitationTest extends TestCase
     }
 
     /**
+     * Tests that negative documentIndex throws exception.
+     *
+     * @return void
+     */
+    public function testNegativeDocumentIndexThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Citation documentIndex must be non-negative, got -1.');
+
+        new Citation(null, -1);
+    }
+
+    /**
      * Tests that negative startIndex throws exception.
      *
      * @return void
@@ -210,6 +223,7 @@ class CitationTest extends TestCase
     {
         $schema = Citation::getJsonSchema();
 
+        $this->assertEquals(0, $schema['properties'][Citation::KEY_DOCUMENT_INDEX]['minimum']);
         $this->assertEquals(0, $schema['properties'][Citation::KEY_START_INDEX]['minimum']);
         $this->assertEquals(0, $schema['properties'][Citation::KEY_END_INDEX]['minimum']);
     }
