@@ -24,6 +24,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * @phpstan-import-type FileArrayShape from File
  * @phpstan-import-type FunctionCallArrayShape from FunctionCall
  * @phpstan-import-type FunctionResponseArrayShape from FunctionResponse
+ * @phpstan-import-type CitationArrayShape from Citation
  *
  * @phpstan-type MessagePartArrayShape array{
  *     channel: string,
@@ -32,7 +33,8 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  *     text?: string,
  *     file?: FileArrayShape,
  *     functionCall?: FunctionCallArrayShape,
- *     functionResponse?: FunctionResponseArrayShape
+ *     functionResponse?: FunctionResponseArrayShape,
+ *     citations?: array<CitationArrayShape>|null
  * }
  *
  * @extends AbstractDataTransferObject<MessagePartArrayShape>
@@ -46,6 +48,7 @@ class MessagePart extends AbstractDataTransferObject
     public const KEY_FILE = 'file';
     public const KEY_FUNCTION_CALL = 'functionCall';
     public const KEY_FUNCTION_RESPONSE = 'functionResponse';
+    public const KEY_CITATIONS = 'citations';
 
     /**
      * @var MessagePartChannelEnum The channel this message part belongs to.
@@ -83,6 +86,11 @@ class MessagePart extends AbstractDataTransferObject
     private ?FunctionResponse $functionResponse = null;
 
     /**
+     * @var Citation[]|null Optional citations or source attributions.
+     */
+    private ?array $citations = null;
+
+    /**
      * Constructor that accepts various content types and infers the message part type.
      *
      * @since 0.1.0
@@ -90,12 +98,18 @@ class MessagePart extends AbstractDataTransferObject
      * @param mixed $content The content of this message part.
      * @param MessagePartChannelEnum|null $channel The channel this part belongs to. Defaults to CONTENT.
      * @param string|null $thoughtSignature Optional thought signature for extended thinking.
+     * @param Citation[]|null $citations Optional citations for the content.
      * @throws InvalidArgumentException If an unsupported content type is provided.
      */
-    public function __construct($content, ?MessagePartChannelEnum $channel = null, ?string $thoughtSignature = null)
-    {
+    public function __construct(
+        $content,
+        ?MessagePartChannelEnum $channel = null,
+        ?string $thoughtSignature = null,
+        ?array $citations = null
+    ) {
         $this->channel = $channel ?? MessagePartChannelEnum::content();
         $this->thoughtSignature = $thoughtSignature;
+        $this->citations = $citations;
 
         if (is_string($content)) {
             $this->type = MessagePartTypeEnum::text();
@@ -206,6 +220,18 @@ class MessagePart extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the citations.
+     *
+     * @since 1.4.0
+     *
+     * @return Citation[]|null The citations or null if not set.
+     */
+    public function getCitations(): ?array
+    {
+        return $this->citations;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -223,6 +249,12 @@ class MessagePart extends AbstractDataTransferObject
             'description' => 'Thought signature for extended thinking.',
         ];
 
+        $citationsSchema = [
+            'type' => 'array',
+            'items' => Citation::getJsonSchema(),
+            'description' => 'Optional citations or source attributions.',
+        ];
+
         return [
             'oneOf' => [
                 [
@@ -238,6 +270,7 @@ class MessagePart extends AbstractDataTransferObject
                             'description' => 'Text content.',
                         ],
                         self::KEY_THOUGHT_SIGNATURE => $thoughtSignatureSchema,
+                        self::KEY_CITATIONS => $citationsSchema,
                     ],
                     'required' => [self::KEY_TYPE, self::KEY_TEXT],
                     'additionalProperties' => false,
@@ -252,6 +285,7 @@ class MessagePart extends AbstractDataTransferObject
                         ],
                         self::KEY_FILE => File::getJsonSchema(),
                         self::KEY_THOUGHT_SIGNATURE => $thoughtSignatureSchema,
+                        self::KEY_CITATIONS => $citationsSchema,
                     ],
                     'required' => [self::KEY_TYPE, self::KEY_FILE],
                     'additionalProperties' => false,
@@ -266,6 +300,7 @@ class MessagePart extends AbstractDataTransferObject
                         ],
                         self::KEY_FUNCTION_CALL => FunctionCall::getJsonSchema(),
                         self::KEY_THOUGHT_SIGNATURE => $thoughtSignatureSchema,
+                        self::KEY_CITATIONS => $citationsSchema,
                     ],
                     'required' => [self::KEY_TYPE, self::KEY_FUNCTION_CALL],
                     'additionalProperties' => false,
@@ -280,6 +315,7 @@ class MessagePart extends AbstractDataTransferObject
                         ],
                         self::KEY_FUNCTION_RESPONSE => FunctionResponse::getJsonSchema(),
                         self::KEY_THOUGHT_SIGNATURE => $thoughtSignatureSchema,
+                        self::KEY_CITATIONS => $citationsSchema,
                     ],
                     'required' => [self::KEY_TYPE, self::KEY_FUNCTION_RESPONSE],
                     'additionalProperties' => false,
@@ -321,6 +357,13 @@ class MessagePart extends AbstractDataTransferObject
             $data[self::KEY_THOUGHT_SIGNATURE] = $this->thoughtSignature;
         }
 
+        if ($this->citations !== null) {
+            $data[self::KEY_CITATIONS] = array_map(
+                static fn (Citation $citation) => $citation->toArray(),
+                $this->citations
+            );
+        }
+
         return $data;
     }
 
@@ -339,18 +382,37 @@ class MessagePart extends AbstractDataTransferObject
 
         $thoughtSignature = $array[self::KEY_THOUGHT_SIGNATURE] ?? null;
 
+        $citations = null;
+        if (isset($array[self::KEY_CITATIONS])) {
+            $citations = array_map(
+                static fn (array $citationArray) => Citation::fromArray($citationArray),
+                $array[self::KEY_CITATIONS]
+            );
+        }
+
         // Check which properties are set to determine how to construct the MessagePart
         if (isset($array[self::KEY_TEXT])) {
-            return new self($array[self::KEY_TEXT], $channel, $thoughtSignature);
+            return new self($array[self::KEY_TEXT], $channel, $thoughtSignature, $citations);
         } elseif (isset($array[self::KEY_FILE])) {
-            return new self(File::fromArray($array[self::KEY_FILE]), $channel, $thoughtSignature);
+            return new self(
+                File::fromArray($array[self::KEY_FILE]),
+                $channel,
+                $thoughtSignature,
+                $citations
+            );
         } elseif (isset($array[self::KEY_FUNCTION_CALL])) {
-            return new self(FunctionCall::fromArray($array[self::KEY_FUNCTION_CALL]), $channel, $thoughtSignature);
+            return new self(
+                FunctionCall::fromArray($array[self::KEY_FUNCTION_CALL]),
+                $channel,
+                $thoughtSignature,
+                $citations
+            );
         } elseif (isset($array[self::KEY_FUNCTION_RESPONSE])) {
             return new self(
                 FunctionResponse::fromArray($array[self::KEY_FUNCTION_RESPONSE]),
                 $channel,
-                $thoughtSignature
+                $thoughtSignature,
+                $citations
             );
         } else {
             throw new InvalidArgumentException(
@@ -377,6 +439,12 @@ class MessagePart extends AbstractDataTransferObject
         }
         if ($this->functionResponse !== null) {
             $this->functionResponse = clone $this->functionResponse;
+        }
+        if ($this->citations !== null) {
+            $this->citations = array_map(
+                static fn (Citation $citation) => clone $citation,
+                $this->citations
+            );
         }
     }
 }
