@@ -24,7 +24,6 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * @phpstan-import-type FileArrayShape from File
  * @phpstan-import-type FunctionCallArrayShape from FunctionCall
  * @phpstan-import-type FunctionResponseArrayShape from FunctionResponse
- * @phpstan-import-type ProviderDataArrayShape from ProviderData
  *
  * @phpstan-type MessagePartArrayShape array{
  *     channel: string,
@@ -33,8 +32,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  *     text?: string,
  *     file?: FileArrayShape,
  *     functionCall?: FunctionCallArrayShape,
- *     functionResponse?: FunctionResponseArrayShape,
- *     providerData?: ProviderDataArrayShape
+ *     functionResponse?: FunctionResponseArrayShape
  * }
  *
  * @extends AbstractDataTransferObject<MessagePartArrayShape>
@@ -48,7 +46,6 @@ class MessagePart extends AbstractDataTransferObject
     public const KEY_FILE = 'file';
     public const KEY_FUNCTION_CALL = 'functionCall';
     public const KEY_FUNCTION_RESPONSE = 'functionResponse';
-    public const KEY_PROVIDER_DATA = 'providerData';
 
     /**
      * @var MessagePartChannelEnum The channel this message part belongs to.
@@ -86,11 +83,6 @@ class MessagePart extends AbstractDataTransferObject
     private ?FunctionResponse $functionResponse = null;
 
     /**
-     * @var ProviderData|null Opaque provider-native data (when type is PROVIDER_DATA).
-     */
-    private ?ProviderData $providerData = null;
-
-    /**
      * Constructor that accepts various content types and infers the message part type.
      *
      * @since 0.1.0
@@ -117,15 +109,12 @@ class MessagePart extends AbstractDataTransferObject
         } elseif ($content instanceof FunctionResponse) {
             $this->type = MessagePartTypeEnum::functionResponse();
             $this->functionResponse = $content;
-        } elseif ($content instanceof ProviderData) {
-            $this->type = MessagePartTypeEnum::providerData();
-            $this->providerData = $content;
         } else {
             $type = is_object($content) ? get_class($content) : gettype($content);
             throw new InvalidArgumentException(
                 sprintf(
                     'Unsupported content type %s. Expected string, File, '
-                    . 'FunctionCall, FunctionResponse, or ProviderData.',
+                    . 'FunctionCall, or FunctionResponse.',
                     $type
                 )
             );
@@ -217,18 +206,6 @@ class MessagePart extends AbstractDataTransferObject
     }
 
     /**
-     * Gets the opaque provider-native data.
-     *
-     * @since n.e.x.t
-     *
-     * @return ProviderData|null The provider-native data or null if not a provider data part.
-     */
-    public function getProviderData(): ?ProviderData
-    {
-        return $this->providerData;
-    }
-
-    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -307,20 +284,6 @@ class MessagePart extends AbstractDataTransferObject
                     'required' => [self::KEY_TYPE, self::KEY_FUNCTION_RESPONSE],
                     'additionalProperties' => false,
                 ],
-                [
-                    'type' => 'object',
-                    'properties' => [
-                        self::KEY_CHANNEL => $channelSchema,
-                        self::KEY_TYPE => [
-                            'type' => 'string',
-                            'const' => MessagePartTypeEnum::providerData()->value,
-                        ],
-                        self::KEY_PROVIDER_DATA => ProviderData::getJsonSchema(),
-                        self::KEY_THOUGHT_SIGNATURE => $thoughtSignatureSchema,
-                    ],
-                    'required' => [self::KEY_TYPE, self::KEY_PROVIDER_DATA],
-                    'additionalProperties' => false,
-                ],
             ],
         ];
     }
@@ -347,11 +310,9 @@ class MessagePart extends AbstractDataTransferObject
             $data[self::KEY_FUNCTION_CALL] = $this->functionCall->toArray();
         } elseif ($this->functionResponse !== null) {
             $data[self::KEY_FUNCTION_RESPONSE] = $this->functionResponse->toArray();
-        } elseif ($this->providerData !== null) {
-            $data[self::KEY_PROVIDER_DATA] = $this->providerData->toArray();
         } else {
             throw new RuntimeException(
-                'MessagePart requires one of: text, file, functionCall, functionResponse, or providerData. '
+                'MessagePart requires one of: text, file, functionCall, or functionResponse. '
                 . 'This should not be a possible condition.'
             );
         }
@@ -391,11 +352,9 @@ class MessagePart extends AbstractDataTransferObject
                 $channel,
                 $thoughtSignature
             );
-        } elseif (isset($array[self::KEY_PROVIDER_DATA])) {
-            return new self(ProviderData::fromArray($array[self::KEY_PROVIDER_DATA]), $channel, $thoughtSignature);
         } else {
             throw new InvalidArgumentException(
-                'MessagePart requires one of: text, file, functionCall, functionResponse, or providerData.'
+                'MessagePart requires one of: text, file, functionCall, or functionResponse.'
             );
         }
     }
@@ -403,7 +362,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Performs a deep clone of the message part.
      *
-     * This method ensures that nested objects (file, function call, function response, provider data)
+     * This method ensures that nested objects (file, function call, function response)
      * are cloned to prevent modifications to the cloned part from affecting the original.
      *
      * @since 0.4.2
@@ -418,9 +377,6 @@ class MessagePart extends AbstractDataTransferObject
         }
         if ($this->functionResponse !== null) {
             $this->functionResponse = clone $this->functionResponse;
-        }
-        if ($this->providerData !== null) {
-            $this->providerData = clone $this->providerData;
         }
     }
 }

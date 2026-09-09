@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
@@ -319,5 +320,83 @@ class FunctionDeclarationTest extends TestCase
     {
         $declaration = new FunctionDeclaration('test', 'test function');
         $this->assertImplementsArrayTransformation($declaration);
+    }
+
+    /**
+     * Tests legacy declarations keep their serialized shape without empty metadata.
+     *
+     * @return void
+     */
+    public function testMetadataDefaultsPreserveCompatibility(): void
+    {
+        $legacy = ['name' => 'get_weather', 'description' => 'Gets the weather'];
+        $declarations = [
+            new FunctionDeclaration('get_weather', 'Gets the weather'),
+            new FunctionDeclaration('get_weather', 'Gets the weather', null, []),
+            FunctionDeclaration::fromArray($legacy),
+        ];
+        foreach ($declarations as $declaration) {
+            $this->assertSame([], $declaration->getMetadata());
+            $this->assertSame($legacy, $declaration->toArray());
+            $this->assertSame($legacy, json_decode((string) json_encode($declaration), true));
+        }
+    }
+
+    /**
+     * Tests arbitrary annotations survive array and JSON serialization unchanged.
+     *
+     * @return void
+     */
+    public function testMetadataRoundTrip(): void
+    {
+        $metadata = [
+            'deferredLoading' => true,
+            'readOnlyHint' => false,
+            'vendor' => ['labels' => ['weather', 'public'], 'priority' => 0, 'optional' => null],
+        ];
+        $declaration = new FunctionDeclaration('get_weather', 'Gets the weather', null, $metadata);
+        $this->assertSame($metadata, $declaration->getMetadata());
+        $this->assertNull($declaration->getParameters());
+        $this->assertSame($metadata, $declaration->toArray()['metadata']);
+        $this->assertSame($metadata, FunctionDeclaration::fromArray($declaration->toArray())->getMetadata());
+
+        $json = json_decode((string) json_encode($declaration), true);
+        $this->assertSame($metadata, FunctionDeclaration::fromArray($json)->getMetadata());
+    }
+
+    /**
+     * Tests metadata is optional and unconstrained in the declaration schema.
+     *
+     * @return void
+     */
+    public function testMetadataSchema(): void
+    {
+        $schema = FunctionDeclaration::getJsonSchema();
+        $this->assertSame('object', $schema['properties']['metadata']['type']);
+        $this->assertTrue($schema['properties']['metadata']['additionalProperties']);
+        $this->assertNotContains('metadata', $schema['required']);
+    }
+
+    /**
+     * Tests model configuration preserves metadata and clones declarations independently.
+     *
+     * @return void
+     */
+    public function testMetadataSurvivesModelConfigRoundTripAndClone(): void
+    {
+        $metadata = ['vendor' => ['enabled' => false]];
+        $declaration = new FunctionDeclaration('lookup', 'Looks up a record', ['type' => 'object'], $metadata);
+        $config = new ModelConfig();
+        $config->setFunctionDeclarations([$declaration]);
+        $restored = ModelConfig::fromArray($config->toArray());
+        $cloned = clone $config;
+        $this->assertSame($metadata, $restored->getFunctionDeclarations()[0]->getMetadata());
+        $this->assertSame($metadata, $cloned->getFunctionDeclarations()[0]->getMetadata());
+        $this->assertNotSame($declaration, $cloned->getFunctionDeclarations()[0]);
+
+        $copy = $cloned->getFunctionDeclarations()[0]->getMetadata();
+        $copy['vendor']['enabled'] = true;
+        $this->assertSame($metadata, $declaration->getMetadata());
+        $this->assertSame($metadata, $cloned->getFunctionDeclarations()[0]->getMetadata());
     }
 }

@@ -10,14 +10,15 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * Represents a function declaration for AI models.
  *
  * This DTO describes a function that can be called by the AI model,
- * including its name, description, and parameter schema.
+ * including its name, description, parameter schema, and optional metadata.
  *
  * @since 0.1.0
  *
  * @phpstan-type FunctionDeclarationArrayShape array{
  *     name: string,
  *     description: string,
- *     parameters?: array<string, mixed>
+ *     parameters?: array<string, mixed>,
+ *     metadata?: array<string, mixed>
  * }
  *
  * @extends AbstractDataTransferObject<FunctionDeclarationArrayShape>
@@ -27,6 +28,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     public const KEY_NAME = 'name';
     public const KEY_DESCRIPTION = 'description';
     public const KEY_PARAMETERS = 'parameters';
+    public const KEY_METADATA = 'metadata';
     /**
      * @var string The name of the function.
      */
@@ -43,19 +45,31 @@ class FunctionDeclaration extends AbstractDataTransferObject
     private ?array $parameters;
 
     /**
+     * @var array<string, mixed> Optional annotations interpreted by consumers, not the core SDK.
+     */
+    private array $metadata;
+
+    /**
      * Constructor.
      *
      * @since 0.1.0
+     * @since n.e.x.t Adds the optional $metadata parameter.
      *
      * @param string $name The name of the function.
      * @param string $description A description of what the function does.
      * @param array<string, mixed>|null $parameters The JSON schema for the function parameters.
+     * @param array<string, mixed> $metadata Optional metadata with JSON-serializable values.
      */
-    public function __construct(string $name, string $description, ?array $parameters = null)
-    {
+    public function __construct(
+        string $name,
+        string $description,
+        ?array $parameters = null,
+        array $metadata = []
+    ) {
         $this->name = $name;
         $this->description = $description;
         $this->parameters = $parameters;
+        $this->metadata = $metadata;
     }
 
     /**
@@ -95,6 +109,18 @@ class FunctionDeclaration extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the function metadata without interpreting its annotations.
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed> The metadata, or an empty array if none was provided.
+     */
+    public function getMetadata(): array
+    {
+        return $this->metadata;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -115,6 +141,11 @@ class FunctionDeclaration extends AbstractDataTransferObject
                 self::KEY_PARAMETERS => [
                     'type' => 'object',
                     'description' => 'The JSON schema for the function parameters.',
+                    'additionalProperties' => true,
+                ],
+                self::KEY_METADATA => [
+                    'type' => 'object',
+                    'description' => 'Optional metadata whose annotations are interpreted by consumers.',
                     'additionalProperties' => true,
                 ],
             ],
@@ -140,6 +171,10 @@ class FunctionDeclaration extends AbstractDataTransferObject
             $data[self::KEY_PARAMETERS] = $this->parameters;
         }
 
+        if ($this->metadata !== []) {
+            $data[self::KEY_METADATA] = $this->metadata;
+        }
+
         return $data;
     }
 
@@ -155,7 +190,8 @@ class FunctionDeclaration extends AbstractDataTransferObject
         return new self(
             $array[self::KEY_NAME],
             $array[self::KEY_DESCRIPTION],
-            $array[self::KEY_PARAMETERS] ?? null
+            $array[self::KEY_PARAMETERS] ?? null,
+            $array[self::KEY_METADATA] ?? []
         );
     }
 }
