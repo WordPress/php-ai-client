@@ -13,7 +13,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * replay them in their original order without exposing provider wire formats as
  * provider-agnostic message part types.
  *
- * @since 1.5.0
+ * @since n.e.x.t
  *
  * @phpstan-type ProviderDataArrayShape array{
  *     providerId: string,
@@ -40,7 +40,7 @@ class ProviderData extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since 1.5.0
+     * @since n.e.x.t
      *
      * @param string $providerId The identifier of the provider that owns this data.
      * @param array<string, mixed> $data The opaque provider-native data.
@@ -54,7 +54,7 @@ class ProviderData extends AbstractDataTransferObject
     /**
      * Gets the identifier of the provider that owns this data.
      *
-     * @since 1.5.0
+     * @since n.e.x.t
      *
      * @return string The provider identifier.
      */
@@ -66,7 +66,7 @@ class ProviderData extends AbstractDataTransferObject
     /**
      * Gets the opaque provider-native data.
      *
-     * @since 1.5.0
+     * @since n.e.x.t
      *
      * @return array<string, mixed> The provider-native data.
      */
@@ -78,7 +78,7 @@ class ProviderData extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since 1.5.0
+     * @since n.e.x.t
      */
     public static function getJsonSchema(): array
     {
@@ -103,7 +103,7 @@ class ProviderData extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since 1.5.0
+     * @since n.e.x.t
      *
      * @return ProviderDataArrayShape
      */
@@ -118,7 +118,7 @@ class ProviderData extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since 1.5.0
+     * @since n.e.x.t
      */
     public static function fromArray(array $array): self
     {

@@ -219,7 +219,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the opaque provider-native data.
      *
-     * @since 1.5.0
+     * @since n.e.x.t
      *
      * @return ProviderData|null The provider-native data or null if not a provider data part.
      */
@@ -403,7 +403,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Performs a deep clone of the message part.
      *
-     * This method ensures that nested objects (file, function call, function response)
+     * This method ensures that nested objects (file, function call, function response, provider data)
      * are cloned to prevent modifications to the cloned part from affecting the original.
      *
      * @since 0.4.2

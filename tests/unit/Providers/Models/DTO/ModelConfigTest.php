@@ -67,7 +67,6 @@ class ModelConfigTest extends TestCase
         $this->assertNull($config->getLogprobs());
         $this->assertNull($config->getTopLogprobs());
         $this->assertNull($config->getFunctionDeclarations());
-        $this->assertNull($config->getToolSearch());
         $this->assertNull($config->getWebSearch());
         $this->assertNull($config->getOutputFileType());
         $this->assertNull($config->getOutputMimeType());
@@ -144,10 +143,6 @@ class ModelConfigTest extends TestCase
         $config->setFunctionDeclarations($functionDeclarations);
         $this->assertEquals($functionDeclarations, $config->getFunctionDeclarations());
 
-        // Test tool search
-        $config->setToolSearch(true);
-        $this->assertTrue($config->getToolSearch());
-
         // Test web search
         $webSearch = $this->createSampleWebSearch();
         $config->setWebSearch($webSearch);
@@ -222,7 +217,6 @@ class ModelConfigTest extends TestCase
             ModelConfig::KEY_LOGPROBS,
             ModelConfig::KEY_TOP_LOGPROBS,
             ModelConfig::KEY_FUNCTION_DECLARATIONS,
-            ModelConfig::KEY_TOOL_SEARCH,
             ModelConfig::KEY_WEB_SEARCH,
             ModelConfig::KEY_OUTPUT_FILE_TYPE,
             ModelConfig::KEY_OUTPUT_MIME_TYPE,
@@ -244,7 +238,6 @@ class ModelConfigTest extends TestCase
         $this->assertEquals('integer', $schema['properties'][ModelConfig::KEY_CANDIDATE_COUNT]['type']);
         $this->assertEquals('number', $schema['properties'][ModelConfig::KEY_TEMPERATURE]['type']);
         $this->assertEquals('boolean', $schema['properties'][ModelConfig::KEY_LOGPROBS]['type']);
-        $this->assertEquals('boolean', $schema['properties'][ModelConfig::KEY_TOOL_SEARCH]['type']);
         $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_MIME_TYPE]['type']);
         $this->assertEquals('object', $schema['properties'][ModelConfig::KEY_OUTPUT_SCHEMA]['type']);
         $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_FILE_TYPE]['type']);
@@ -284,7 +277,6 @@ class ModelConfigTest extends TestCase
         $config->setLogprobs(true);
         $config->setTopLogprobs(10);
         $config->setFunctionDeclarations([$this->createSampleFunctionDeclaration()]);
-        $config->setToolSearch(true);
         $config->setWebSearch($this->createSampleWebSearch());
         $config->setOutputFileType(FileTypeEnum::remote());
         $config->setOutputMimeType('application/json');
@@ -311,7 +303,6 @@ class ModelConfigTest extends TestCase
         $this->assertTrue($array[ModelConfig::KEY_LOGPROBS]);
         $this->assertEquals(10, $array[ModelConfig::KEY_TOP_LOGPROBS]);
         $this->assertCount(1, $array[ModelConfig::KEY_FUNCTION_DECLARATIONS]);
-        $this->assertTrue($array[ModelConfig::KEY_TOOL_SEARCH]);
         $this->assertEquals($this->createSampleWebSearch()->toArray(), $array[ModelConfig::KEY_WEB_SEARCH]);
         $this->assertEquals('remote', $array[ModelConfig::KEY_OUTPUT_FILE_TYPE]);
         $this->assertEquals('application/json', $array[ModelConfig::KEY_OUTPUT_MIME_TYPE]);
@@ -422,7 +413,6 @@ class ModelConfigTest extends TestCase
                     'parameters' => ['type' => 'object']
                 ]
             ],
-            ModelConfig::KEY_TOOL_SEARCH => true,
             ModelConfig::KEY_WEB_SEARCH => [
                 'allowedDomains' => ['example.com'],
                 'disallowedDomains' => ['disallowed.com'],
@@ -455,7 +445,6 @@ class ModelConfigTest extends TestCase
         $this->assertFalse($config->getLogprobs());
         $this->assertEquals(3, $config->getTopLogprobs());
         $this->assertCount(1, $config->getFunctionDeclarations());
-        $this->assertTrue($config->getToolSearch());
         $this->assertInstanceOf(WebSearch::class, $config->getWebSearch());
         $this->assertEquals(['example.com'], $config->getWebSearch()->getAllowedDomains());
         $this->assertEquals(['disallowed.com'], $config->getWebSearch()->getDisallowedDomains());
