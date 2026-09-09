@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\integration\OpenAi;
+namespace WordPress\AiClient\Tests\integration\Google;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\AiClient;
@@ -11,19 +11,19 @@ use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Results\DTO\Embedding;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Tests\integration\traits\IntegrationTestTrait;
-use WordPress\OpenAiAiProvider\Provider\OpenAiProvider;
+use WordPress\GoogleAiProvider\Provider\GoogleProvider;
 
 /**
- * Integration tests for OpenAI embedding generation.
+ * Integration tests for Google embedding generation.
  *
- * These tests make real API calls to OpenAI and require the OPENAI_API_KEY
+ * These tests make real API calls to Google and require the GOOGLE_API_KEY
  * environment variable to be set.
  *
  * An embedding model must always be named explicitly, since embedding vectors are only comparable
  * to other vectors produced by the same model.
  *
  * @group integration
- * @group openai
+ * @group google
  *
  * @coversNothing
  */
@@ -34,17 +34,17 @@ class EmbeddingGenerationIntegrationTest extends TestCase
     /**
      * The embedding model used by these tests. It supports a configurable output dimensionality.
      */
-    private const MODEL_ID = 'text-embedding-3-small';
+    private const MODEL_ID = 'gemini-embedding-001';
 
     /**
-     * An OpenAI model that generates text rather than embeddings.
+     * A Google model that generates text rather than embeddings.
      */
-    private const TEXT_MODEL_ID = 'gpt-4o-mini';
+    private const TEXT_MODEL_ID = 'gemini-2.5-flash';
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->requireApiKey('OPENAI_API_KEY');
+        $this->requireApiKey('GOOGLE_API_KEY');
     }
 
     /**
@@ -53,7 +53,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
     public function testSingleEmbeddingGeneration(): void
     {
         $embedding = AiClient::input('PHP powers a large part of the web.')
-            ->usingProviderModel('openai', self::MODEL_ID)
+            ->usingProviderModel('google', self::MODEL_ID)
             ->generateEmbedding();
 
         $this->assertInstanceOf(Embedding::class, $embedding);
@@ -70,7 +70,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
         $embedding = AiClient::input([
             'PHP powers a large part of the web.',
         ])
-            ->usingProviderModel('openai', self::MODEL_ID)
+            ->usingProviderModel('google', self::MODEL_ID)
             ->generateEmbedding();
 
         $this->assertInstanceOf(Embedding::class, $embedding);
@@ -80,13 +80,15 @@ class EmbeddingGenerationIntegrationTest extends TestCase
     }
 
     /**
-     * Tests generating a single embedding from a spread list passed to withInput().
+     * Tests generating a single embedding using withInput().
      */
     public function testSingleEmbeddingGenerationWithInput(): void
     {
         $embedding = AiClient::input()
-            ->withInput(...['PHP powers a large part of the web.'])
-            ->usingProviderModel('openai', self::MODEL_ID)
+            ->withInput(...[
+                'PHP powers a large part of the web.',
+            ])
+            ->usingProviderModel('google', self::MODEL_ID)
             ->generateEmbedding();
 
         $this->assertInstanceOf(Embedding::class, $embedding);
@@ -104,7 +106,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
     public function testEmbeddingGenerationWithModelInstance(): void
     {
         $embedding = AiClient::input('PHP powers a large part of the web.')
-            ->usingModel(OpenAiProvider::model(self::MODEL_ID))
+            ->usingModel(GoogleProvider::model(self::MODEL_ID))
             ->generateEmbedding();
 
         $this->assertInstanceOf(Embedding::class, $embedding);
@@ -117,7 +119,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
     public function testEmbeddingGenerationWithDimensions(): void
     {
         $embedding = AiClient::input('PHP powers a large part of the web.')
-            ->usingProviderModel('openai', self::MODEL_ID)
+            ->usingProviderModel('google', self::MODEL_ID)
             ->usingDimensions(256)
             ->generateEmbedding();
 
@@ -134,7 +136,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
             'PHP powers a large part of the web.',
             'WordPress makes publishing accessible.',
         ])
-            ->usingProviderModel('openai', self::MODEL_ID)
+            ->usingProviderModel('google', self::MODEL_ID)
             ->usingDimensions(256)
             ->generateEmbeddings();
 
@@ -154,7 +156,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
     {
         $embedding = AiClient::generateEmbedding(
             'PHP powers a large part of the web.',
-            ['openai', self::MODEL_ID]
+            ['google', self::MODEL_ID]
         );
 
         $this->assertInstanceOf(Embedding::class, $embedding);
@@ -163,19 +165,22 @@ class EmbeddingGenerationIntegrationTest extends TestCase
 
     /**
      * Tests that the embedding result exposes provider metadata and token usage.
+     *
+     * Unlike OpenAI, Google's embedding endpoint does not return usage metadata,
+     * so token counts are expected to be zero rather than positive.
      */
     public function testEmbeddingResultMetadataAndTokenUsage(): void
     {
         $result = AiClient::input('PHP powers a large part of the web.')
-            ->usingProviderModel('openai', self::MODEL_ID)
+            ->usingProviderModel('google', self::MODEL_ID)
             ->generateEmbeddingResult();
 
         $this->assertInstanceOf(EmbeddingResult::class, $result);
         $this->assertCount(1, $result->getEmbeddings());
-        $this->assertSame('openai', $result->getProviderMetadata()->getId());
+        $this->assertSame('google', $result->getProviderMetadata()->getId());
         $this->assertSame(self::MODEL_ID, $result->getModelMetadata()->getId());
-        $this->assertGreaterThan(0, $result->getTokenUsage()->getPromptTokens());
-        $this->assertGreaterThan(0, $result->getTokenUsage()->getTotalTokens());
+        $this->assertGreaterThanOrEqual(0, $result->getTokenUsage()->getPromptTokens());
+        $this->assertGreaterThanOrEqual(0, $result->getTokenUsage()->getTotalTokens());
     }
 
     /**
@@ -197,20 +202,20 @@ class EmbeddingGenerationIntegrationTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
             sprintf(
-                'Model "%s" from provider "openai" does not support embedding generation.',
+                'Model "%s" from provider "google" does not support embedding generation.',
                 self::TEXT_MODEL_ID
             )
         );
 
         AiClient::input('PHP powers a large part of the web.')
-            ->usingProviderModel('openai', self::TEXT_MODEL_ID)
+            ->usingProviderModel('google', self::TEXT_MODEL_ID)
             ->generateEmbedding();
     }
 
     /**
      * Tests that a file input is rejected for a text-only embedding model.
      *
-     * The failure is local: OpenAI's embedding models advertise text input only, so this never
+     * The failure is local: Google's embedding models advertise text input only, so this never
      * reaches the API.
      */
     public function testFileInputIsRejected(): void
@@ -219,7 +224,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
         $this->expectExceptionMessage('Unsupported options: inputModalities ([image]).');
 
         AiClient::input(new File('https://example.com/image.jpg', 'image/jpeg'))
-            ->usingProviderModel('openai', self::MODEL_ID)
+            ->usingProviderModel('google', self::MODEL_ID)
             ->generateEmbedding();
     }
 
@@ -231,7 +236,7 @@ class EmbeddingGenerationIntegrationTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         AiClient::input('PHP powers a large part of the web.')
-            ->usingProviderModel('openai', 'definitely-not-a-real-model')
+            ->usingProviderModel('google', 'definitely-not-a-real-model')
             ->generateEmbedding();
     }
 }

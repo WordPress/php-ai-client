@@ -12,6 +12,7 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
+use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
@@ -82,6 +83,7 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *
  * @phpstan-import-type Prompt from PromptBuilder
  * @phpstan-import-type EmbeddingInput from EmbeddingBuilder
+ * @phpstan-import-type ProviderModelTuple from ModelResolver
  *
  * phpcs:ignore Generic.Files.LineLength.TooLong
  */
@@ -250,6 +252,10 @@ class AiClient
      * embedding generation method such as generateEmbedding() or generateEmbeddings() to produce
      * one vector per input.
      *
+     * A model must be specified on the returned builder via usingModel() or usingProviderModel().
+     * Embedding vectors are only comparable to other vectors from the same model, so no model is
+     * selected automatically.
+     *
      * @since 1.4.0
      *
      * @param EmbeddingInput|list<EmbeddingInput>|null $input Optional initial input(s) to embed.
@@ -415,67 +421,74 @@ class AiClient
     /**
      * Generates embeddings using the traditional API approach.
      *
+     * A model is required. Embedding vectors are only comparable to other vectors from the same
+     * model, so no model is selected automatically.
+     *
      * @since 1.4.0
      *
      * @param EmbeddingInput|list<EmbeddingInput> $input The input(s) to embed.
-     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
-     *                                                        or model configuration for auto-discovery,
-     *                                                        or null for defaults.
+     * @param ModelInterface|ProviderModelTuple $model The model to use.
+     * @param ModelConfig|null $modelConfig Optional model configuration to apply.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return EmbeddingResult The embedding result.
      *
-     * @throws \InvalidArgumentException If the input format is invalid.
-     * @throws \RuntimeException If no suitable model is found.
+     * @throws \InvalidArgumentException If the input or model format is invalid, or if the model
+     *                                   cannot fulfill the request.
      */
     public static function generateEmbeddingResult(
         $input,
-        $modelOrConfig = null,
+        $model,
+        ?ModelConfig $modelConfig = null,
         ?ProviderRegistry $registry = null
     ): EmbeddingResult {
-        self::validateModelOrConfigParameter($modelOrConfig);
-        return self::applyModelOrConfig(self::input($input, $registry), $modelOrConfig)
+        return self::getConfiguredEmbeddingBuilder($input, $model, $modelConfig, $registry)
             ->generateEmbeddingResult();
     }
 
     /**
      * Generates an embedding using the traditional API approach.
      *
+     * A model is required. Embedding vectors are only comparable to other vectors from the same
+     * model, so no model is selected automatically.
+     *
      * @since 1.4.0
      *
      * @param EmbeddingInput $input The input to embed.
-     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
-     *                                                        or model configuration for auto-discovery,
-     *                                                        or null for defaults.
+     * @param ModelInterface|ProviderModelTuple $model The model to use.
+     * @param ModelConfig|null $modelConfig Optional model configuration to apply.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return Embedding The generated embedding vector.
      */
     public static function generateEmbedding(
         $input,
-        $modelOrConfig = null,
+        $model,
+        ?ModelConfig $modelConfig = null,
         ?ProviderRegistry $registry = null
     ): Embedding {
-        return self::generateEmbeddingResult($input, $modelOrConfig, $registry)->getEmbedding();
+        return self::generateEmbeddingResult($input, $model, $modelConfig, $registry)->getEmbedding();
     }
 
     /**
      * Generates embeddings for a list of inputs using the traditional API approach.
      *
+     * A model is required. Embedding vectors are only comparable to other vectors from the same
+     * model, so no model is selected automatically.
+     *
      * @since 1.4.0
      *
      * @param list<EmbeddingInput> $inputs The inputs to embed.
-     * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
-     *                                                        or model configuration for auto-discovery,
-     *                                                        or null for defaults.
+     * @param ModelInterface|ProviderModelTuple $model The model to use.
+     * @param ModelConfig|null $modelConfig Optional model configuration to apply.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return list<Embedding> The generated embedding vectors.
      */
     public static function generateEmbeddings(
         array $inputs,
-        $modelOrConfig = null,
+        $model,
+        ?ModelConfig $modelConfig = null,
         ?ProviderRegistry $registry = null
     ): array {
-        self::validateModelOrConfigParameter($modelOrConfig);
-        return self::applyModelOrConfig(self::input($inputs, $registry), $modelOrConfig)
+        return self::getConfiguredEmbeddingBuilder($inputs, $model, $modelConfig, $registry)
             ->generateEmbeddings();
     }
 
@@ -540,12 +553,58 @@ class AiClient
     }
 
     /**
+     * Configures an EmbeddingBuilder with the required model and optional configuration.
+     *
+     * @param EmbeddingInput|list<EmbeddingInput> $input The input(s) to embed.
+     * @param mixed $model The model to use, expected to be a ModelInterface instance or a
+     *                     ProviderModelTuple; any other value is rejected.
+     * @param ModelConfig|null $modelConfig Optional model configuration to apply.
+     * @param ProviderRegistry|null $registry Optional custom registry to use.
+     * @return EmbeddingBuilder Configured embedding builder.
+     * @throws InvalidArgumentException If the model parameter is not of a supported type.
+     */
+    private static function getConfiguredEmbeddingBuilder(
+        $input,
+        $model,
+        ?ModelConfig $modelConfig = null,
+        ?ProviderRegistry $registry = null
+    ): EmbeddingBuilder {
+        $builder = self::input($input, $registry);
+
+        // The builder's configuration takes precedence over the model's own configuration.
+        if ($modelConfig !== null) {
+            $builder->usingModelConfig($modelConfig);
+        }
+
+        if ($model instanceof ModelInterface) {
+            return $builder->usingModel($model);
+        }
+
+        if (
+            is_array($model)
+            && array_is_list($model)
+            && count($model) === 2
+            && is_string($model[0])
+            && is_string($model[1])
+        ) {
+            return $builder->usingProviderModel($model[0], $model[1]);
+        }
+
+        throw new InvalidArgumentException(
+            'Model must be a ModelInterface instance or a [provider ID, model ID] tuple. ' .
+            'Embeddings are only comparable to other embeddings from the same model, so a model ' .
+            'is required. ' .
+            sprintf('Received: %s', is_object($model) ? get_class($model) : gettype($model))
+        );
+    }
+
+    /**
      * Applies a model or model configuration to a builder.
      *
      * Works with any builder that exposes the shared model resolution methods
      * (see {@see \WordPress\AiClient\Builders\Traits\ModelResolutionTrait}).
      *
-     * @template T of PromptBuilder|EmbeddingBuilder
+     * @template T of PromptBuilder
      *
      * @param T $builder The builder to configure.
      * @param ModelInterface|ModelConfig|null $modelOrConfig Specific model, model configuration,

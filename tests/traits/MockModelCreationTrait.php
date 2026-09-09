@@ -6,13 +6,16 @@ namespace WordPress\AiClient\Tests\traits;
 
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
+use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
+use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
@@ -170,19 +173,31 @@ trait MockModelCreationTrait
     /**
      * Creates a test model metadata instance for embedding generation.
      *
+     * The default supported options mirror what the Google and OpenAI providers declare for their
+     * embedding models: text-only input, any dimensions, and any custom options. Pass an explicit
+     * list to simulate a model with narrower support.
+     *
      * @param string $id Optional model ID.
      * @param string $name Optional model name.
+     * @param list<SupportedOption>|null $supportedOptions Optional supported options.
      * @return ModelMetadata
      */
     protected function createTestEmbeddingModelMetadata(
         string $id = 'test-embedding-model',
-        string $name = 'Test Embedding Model'
+        string $name = 'Test Embedding Model',
+        ?array $supportedOptions = null
     ): ModelMetadata {
+        $supportedOptions = $supportedOptions ?? [
+            new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
+            new SupportedOption(OptionEnum::dimensions()),
+            new SupportedOption(OptionEnum::customOptions()),
+        ];
+
         return new ModelMetadata(
             $id,
             $name,
             [CapabilityEnum::embeddingGeneration()],
-            []
+            $supportedOptions
         );
     }
 

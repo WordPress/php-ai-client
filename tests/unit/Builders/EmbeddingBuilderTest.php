@@ -11,13 +11,10 @@ use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
-use WordPress\AiClient\Providers\DTO\ProviderMetadata;
-use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
-use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
-use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
+use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
-use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
-use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -38,6 +35,10 @@ class EmbeddingBuilderTest extends TestCase
     {
         parent::setUp();
         $this->registry = $this->createMock(ProviderRegistry::class);
+
+        // A model is mandatory, and its provider must be configured to be usable. Tests that need an
+        // unconfigured provider create their own registry mock.
+        $this->registry->method('isProviderConfigured')->willReturn(true);
     }
 
     /**
@@ -369,79 +370,206 @@ class EmbeddingBuilderTest extends TestCase
      */
     public function testGenerateEmbeddingResultThrowsForUnsupportedModel(): void
     {
-        $metadata = $this->createMock(ModelMetadata::class);
-        $metadata->method('getId')->willReturn('test-model');
-
-        $model = $this->createMock(ModelInterface::class);
-        $model->method('metadata')->willReturn($metadata);
+        $model = $this->createMockUnsupportedModel('test-model');
 
         $builder = new EmbeddingBuilder($this->registry, 'Generate embedding');
         $builder->usingModel($model);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Model "test-model" does not support embedding generation');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Model "test-model" from provider "mock" does not support embedding generation.'
+        );
 
         $builder->generateEmbeddingResult();
     }
 
     /**
-     * Tests model selection derives text input modality from the inputs.
+     * Tests generateEmbeddingResult throws when no model was specified.
      *
      * @return void
      */
-    public function testModelSelectionUsesInputModalities(): void
+    public function testGenerateEmbeddingResultThrowsWhenNoModelSpecified(): void
     {
-        $result = $this->createTestEmbeddingResult([[0.1, 0.2], [0.3, 0.4]]);
-        $model = $this->createMockEmbeddingGenerationModel($result);
-        $modelMetadata = $this->createTestEmbeddingModelMetadata('batch-embedding-model');
-        $providerMetadata = new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud());
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
 
-        $this->registry->expects($this->once())
-            ->method('findModelsMetadataForSupport')
-            ->with($this->callback(static function (ModelRequirements $requirements): bool {
-                foreach ($requirements->getRequiredOptions() as $requiredOption) {
-                    if ($requiredOption->getName()->isInputModalities()) {
-                        return [ModalityEnum::text()] === $requiredOption->getValue();
-                    }
-                }
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('An embedding model must be specified.');
 
-                return false;
-            }))
-            ->willReturn([new ProviderModelsMetadata($providerMetadata, [$modelMetadata])]);
-
-        $this->registry->expects($this->once())
-            ->method('getProviderModel')
-            ->with('mock', 'batch-embedding-model', $this->isInstanceOf(ModelConfig::class))
-            ->willReturn($model);
-
-        $builder = new EmbeddingBuilder($this->registry, ['First input', 'Second input']);
-
-        $this->assertCount(2, $builder->generateEmbeddings());
+        $builder->generateEmbeddingResult();
     }
 
     /**
-     * Tests model preferences are honored through the shared trait.
+     * Tests generateEmbeddingResult throws when the model's provider is not configured.
      *
      * @return void
      */
-    public function testModelPreferenceSelectsModel(): void
+    public function testGenerateEmbeddingResultThrowsWhenProviderNotConfigured(): void
+    {
+        $registry = $this->createMock(ProviderRegistry::class);
+        $registry->method('isProviderConfigured')->willReturn(false);
+
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+
+        $builder = new EmbeddingBuilder($registry, 'Embed this');
+        $builder->usingModel($model);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Provider "mock" is not registered, or is not configured with valid credentials.'
+        );
+
+        $builder->generateEmbeddingResult();
+    }
+
+    /**
+     * Tests generateEmbeddingResult throws when the model does not support the configured dimensions.
+     *
+     * @return void
+     */
+    public function testGenerateEmbeddingResultThrowsForUnsupportedOption(): void
+    {
+        // A model that supports text input, but does not advertise support for dimensions.
+        $metadata = $this->createTestEmbeddingModelMetadata(
+            'fixed-dimensions-model',
+            'Fixed Dimensions Model',
+            [new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]])]
+        );
+        $model = $this->createMockEmbeddingGenerationModel(
+            $this->createTestEmbeddingResult([[0.1, 0.2]]),
+            $metadata
+        );
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingModel($model);
+        $builder->usingDimensions(256);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Model "fixed-dimensions-model" from provider "mock" cannot fulfill this embedding request. '
+            . 'Unsupported options: dimensions (256).'
+        );
+
+        $builder->generateEmbeddingResult();
+    }
+
+    /**
+     * Tests generateEmbeddingResult throws when the model does not support the input modality.
+     *
+     * @return void
+     */
+    public function testGenerateEmbeddingResultThrowsForUnsupportedInputModality(): void
+    {
+        // The default embedding metadata supports text input only.
+        $model = $this->createMockEmbeddingGenerationModel($this->createTestEmbeddingResult([[0.1, 0.2]]));
+
+        $builder = new EmbeddingBuilder($this->registry);
+        $builder->withInput(new File('https://example.com/image.jpg', 'image/jpeg'));
+        $builder->usingModel($model);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported options: inputModalities ([image]).');
+
+        $builder->generateEmbeddingResult();
+    }
+
+    /**
+     * Tests usingProviderModel retrieves the model from the registry.
+     *
+     * @return void
+     */
+    public function testUsingProviderModelResolvesModelFromRegistry(): void
     {
         $result = $this->createTestEmbeddingResult([[0.1, 0.2]]);
-        $metadata = $this->createTestEmbeddingModelMetadata('preferred-embedding-model');
-        $model = $this->createMockEmbeddingGenerationModel($result, $metadata);
-        $providerMetadata = new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud());
-
-        $this->registry->expects($this->once())
-            ->method('findModelsMetadataForSupport')
-            ->willReturn([new ProviderModelsMetadata($providerMetadata, [$metadata])]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
 
         $this->registry->expects($this->once())
             ->method('getProviderModel')
-            ->with('mock', 'preferred-embedding-model', $this->isInstanceOf(ModelConfig::class))
+            ->with('mock', 'test-embedding-model', $this->isInstanceOf(ModelConfig::class))
             ->willReturn($model);
 
         $builder = new EmbeddingBuilder($this->registry, 'Embed this');
-        $builder->usingModelPreference('preferred-embedding-model');
+        $builder->usingProviderModel('mock', 'test-embedding-model');
+
+        $this->assertCount(1, $builder->generateEmbeddings());
+    }
+
+    /**
+     * Tests usingProviderModel defers resolution so later configuration still reaches the model.
+     *
+     * @return void
+     */
+    public function testUsingProviderModelAppliesLaterConfiguration(): void
+    {
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with(
+                'mock',
+                'test-embedding-model',
+                $this->callback(
+                    static fn (ModelConfig $config): bool => $config->getDimensions() === 256
+                )
+            )
+            ->willReturn($model);
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingProviderModel('mock', 'test-embedding-model');
+
+        // Configured after the model, so resolution must be deferred until generation.
+        $builder->usingDimensions(256);
+
+        $this->assertCount(1, $builder->generateEmbeddings());
+    }
+
+    /**
+     * Tests usingProviderModel rejects empty identifiers.
+     *
+     * @return void
+     */
+    public function testUsingProviderModelRejectsEmptyProviderIdentifier(): void
+    {
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Provider identifier cannot be empty.');
+
+        $builder->usingProviderModel('  ', 'test-embedding-model');
+    }
+
+    /**
+     * Tests usingProviderModel rejects an empty model identifier.
+     *
+     * @return void
+     */
+    public function testUsingProviderModelRejectsEmptyModelIdentifier(): void
+    {
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model identifier cannot be empty.');
+
+        $builder->usingProviderModel('mock', '  ');
+    }
+
+    /**
+     * Tests usingModel supersedes a previously set provider model.
+     *
+     * @return void
+     */
+    public function testUsingModelSupersedesProviderModel(): void
+    {
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+
+        // The registry must not be asked for a model once an instance is provided.
+        $this->registry->expects($this->never())->method('getProviderModel');
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingProviderModel('mock', 'test-embedding-model');
+        $builder->usingModel($model);
 
         $this->assertCount(1, $builder->generateEmbeddings());
     }
@@ -460,17 +588,231 @@ class EmbeddingBuilderTest extends TestCase
     }
 
     /**
-     * Tests isSupported delegates to the resolver.
+     * Tests the model configuration is applied to the specified model during generation.
      *
      * @return void
      */
-    public function testIsSupportedReturnsFalseWhenNoModels(): void
+    public function testModelConfigIsAppliedToSpecifiedModel(): void
     {
-        $this->registry->method('findModelsMetadataForSupport')->willReturn([]);
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+
+        $this->registry->expects($this->once())
+            ->method('bindModelDependencies')
+            ->with($model);
 
         $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingModel($model);
+        $builder->usingDimensions(256);
+
+        $builder->generateEmbeddingResult();
+
+        $this->assertSame(256, $model->getConfig()->getDimensions());
+    }
+
+    /**
+     * Tests the model's own configuration is applied unless the builder overrides it.
+     *
+     * @return void
+     */
+    public function testSpecifiedModelKeepsItsOwnConfigUnlessOverridden(): void
+    {
+        $modelConfig = new ModelConfig();
+        $modelConfig->setDimensions(1024);
+        $modelConfig->setCustomOption('encodingFormat', 'float');
+
+        $result = $this->createTestEmbeddingResult([[0.1, 0.2]]);
+        $model = $this->createMockEmbeddingGenerationModel($result);
+        $model->setConfig($modelConfig);
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingModel($model);
+        $builder->usingDimensions(256);
+
+        $builder->generateEmbeddingResult();
+
+        // The builder's dimensions win, while the model's other configuration is retained.
+        $this->assertSame(256, $model->getConfig()->getDimensions());
+        $this->assertSame(['encodingFormat' => 'float'], $model->getConfig()->getCustomOptions());
+    }
+
+    /**
+     * Tests replacing a model does not leave its configuration behind for the replacement.
+     *
+     * @return void
+     */
+    public function testUsingProviderModelDiscardsReplacedModelConfig(): void
+    {
+        $replacedConfig = new ModelConfig();
+        $replacedConfig->setDimensions(3072);
+
+        $replaced = $this->createMockEmbeddingGenerationModel($this->createTestEmbeddingResult());
+        $replaced->setConfig($replacedConfig);
+
+        $replacement = $this->createMockEmbeddingGenerationModel($this->createTestEmbeddingResult([[0.1, 0.2]]));
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with(
+                'mock',
+                'test-embedding-model',
+                $this->callback(
+                    static fn (ModelConfig $config): bool => $config->getDimensions() === null
+                )
+            )
+            ->willReturn($replacement);
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingModel($replaced);
+        $builder->usingProviderModel('mock', 'test-embedding-model');
+
+        $this->assertCount(1, $builder->generateEmbeddings());
+    }
+
+    /**
+     * Tests isSupported leaves a caller-provided model instance untouched.
+     *
+     * @return void
+     */
+    public function testIsSupportedDoesNotAlterSpecifiedModel(): void
+    {
+        $modelConfig = new ModelConfig();
+        $modelConfig->setDimensions(1024);
+
+        $model = $this->createMockEmbeddingGenerationModel($this->createTestEmbeddingResult());
+        $model->setConfig($modelConfig);
+
+        $this->registry->expects($this->never())->method('bindModelDependencies');
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingModel($model);
+        $builder->usingDimensions(256);
+
+        $this->assertTrue($builder->isSupported());
+        $this->assertSame($modelConfig, $model->getConfig());
+        $this->assertSame(1024, $model->getConfig()->getDimensions());
+    }
+
+    /**
+     * Tests isSupported returns true when the specified model supports the request.
+     *
+     * @return void
+     */
+    public function testIsSupportedReturnsTrueForSupportedModel(): void
+    {
+        $model = $this->createMockEmbeddingGenerationModel($this->createTestEmbeddingResult());
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingModel($model);
+        $builder->usingDimensions(256);
+
+        $this->assertTrue($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported returns false when the specified model does not support an option.
+     *
+     * @return void
+     */
+    public function testIsSupportedReturnsFalseForUnsupportedOption(): void
+    {
+        $metadata = $this->createTestEmbeddingModelMetadata(
+            'fixed-dimensions-model',
+            'Fixed Dimensions Model',
+            [new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]])]
+        );
+        $model = $this->createMockEmbeddingGenerationModel($this->createTestEmbeddingResult(), $metadata);
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingModel($model);
+        $builder->usingDimensions(256);
 
         $this->assertFalse($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported returns false when the specified model cannot generate embeddings.
+     *
+     * @return void
+     */
+    public function testIsSupportedReturnsFalseForNonEmbeddingModel(): void
+    {
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingModel($this->createMockUnsupportedModel('test-model'));
+
+        $this->assertFalse($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported returns false when the model's provider is not configured.
+     *
+     * @return void
+     */
+    public function testIsSupportedReturnsFalseWhenProviderNotConfigured(): void
+    {
+        $registry = $this->createMock(ProviderRegistry::class);
+        $registry->method('isProviderConfigured')->willReturn(false);
+
+        $model = $this->createMockEmbeddingGenerationModel($this->createTestEmbeddingResult());
+
+        $builder = new EmbeddingBuilder($registry, 'Embed this');
+        $builder->usingModel($model);
+
+        $this->assertFalse($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported returns false when the provider has no model with the given ID.
+     *
+     * @return void
+     */
+    public function testIsSupportedReturnsFalseForUnknownProviderModel(): void
+    {
+        $this->registry->method('getProviderModel')
+            ->willThrowException(
+                new InvalidArgumentException('No model with ID no-such-model was found in the provider')
+            );
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingProviderModel('mock', 'no-such-model');
+
+        $this->assertFalse($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported returns false when the provider cannot be reached.
+     *
+     * Retrieving a model by provider and model ID can trigger the provider's list-models request,
+     * which fails with a ResponseException rather than an InvalidArgumentException.
+     *
+     * @return void
+     */
+    public function testIsSupportedReturnsFalseWhenProviderRequestFails(): void
+    {
+        $this->registry->method('getProviderModel')
+            ->willThrowException(
+                ResponseException::fromMissingData('Mock', 'data')
+            );
+
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+        $builder->usingProviderModel('mock', 'mock-embedding-model');
+
+        $this->assertFalse($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported throws when no model was specified.
+     *
+     * @return void
+     */
+    public function testIsSupportedThrowsWhenNoModelSpecified(): void
+    {
+        $builder = new EmbeddingBuilder($this->registry, 'Embed this');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('An embedding model must be specified.');
+
+        $builder->isSupported();
     }
 
     /**
