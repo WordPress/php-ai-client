@@ -45,7 +45,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     private ?array $parameters;
 
     /**
-     * @var array<string, mixed> The function annotations.
+     * @var array<string, mixed> Open-ended annotations which may be consumed by Providers.
      */
     private array $annotations;
 
