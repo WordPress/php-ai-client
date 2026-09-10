@@ -12,9 +12,10 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * Enum for model options.
  *
  * This enum dynamically includes all options from ModelConfig KEY_* constants
- * in addition to the explicitly defined constants below.
+ * in addition to the explicitly defined constants below. Values folded in from
+ * ModelConfig are copied verbatim and are therefore camelCase, not snake_case.
  *
- * Explicitly defined option (not in ModelConfig):
+ * Explicitly defined option (also defined in ModelConfig, which takes precedence):
  * @method static self inputModalities() Creates an instance for INPUT_MODALITIES option.
  * @method bool isInputModalities() Checks if the option is INPUT_MODALITIES.
  *
@@ -71,8 +72,11 @@ class OptionEnum extends AbstractEnum
     /**
      * Input modalities option.
      *
-     * This constant is not in ModelConfig as it's derived from message content,
-     * not configured directly.
+     * Input modalities are derived from message content rather than configured
+     * directly, but ModelConfig still defines KEY_INPUT_MODALITIES for model
+     * discovery. That constant is folded in by
+     * {@see self::determineClassEnumerations()} and takes precedence over this
+     * one, so the effective value of this option is 'inputModalities'.
      */
     public const INPUT_MODALITIES = 'input_modalities';
 
@@ -80,8 +84,11 @@ class OptionEnum extends AbstractEnum
      * Determines the class enumerations by reflecting on class constants.
      *
      * Overrides the parent method to dynamically add constants from ModelConfig
-     * that are prefixed with KEY_. These are transformed to remove the KEY_ prefix
-     * and converted to snake_case values.
+     * that are prefixed with KEY_. The enum constant name is the ModelConfig
+     * constant name without that prefix, while the value is copied from
+     * ModelConfig verbatim and is therefore camelCase. For example,
+     * KEY_FUNCTION_DECLARATIONS becomes FUNCTION_DECLARATIONS with the value
+     * 'functionDeclarations'.
      *
      * @since 0.1.0
      *
@@ -103,8 +110,8 @@ class OptionEnum extends AbstractEnum
                 // Remove KEY_ prefix to get the enum constant name
                 $enumConstantName = substr($constantName, 4);
 
-                // The value is the snake_case version stored in ModelConfig
-                // ModelConfig already stores these as snake_case strings
+                // The value is copied from ModelConfig verbatim, which stores
+                // these as camelCase strings
                 if (is_string($constantValue)) {
                     $constants[$enumConstantName] = $constantValue;
                 }
