@@ -8,9 +8,13 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\DTO\ModelMessage;
+use WordPress\AiClient\Messages\DTO\ProviderData;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -37,6 +41,7 @@ class MessagePartTest extends TestCase
         $this->assertNull($part->getFile());
         $this->assertNull($part->getFunctionCall());
         $this->assertNull($part->getFunctionResponse());
+        $this->assertNull($part->getProviderData());
     }
 
     /**
@@ -119,7 +124,7 @@ class MessagePartTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(sprintf(
-            'Unsupported content type %s. Expected string, File, FunctionCall, or FunctionResponse.',
+            'Unsupported content type %s. Expected string, File, FunctionCall, FunctionResponse, or ProviderData.',
             $expectedType
         ));
 
@@ -154,7 +159,7 @@ class MessagePartTest extends TestCase
 
         $this->assertIsArray($schema);
         $this->assertArrayHasKey('oneOf', $schema);
-        $this->assertCount(4, $schema['oneOf']); // text, file, function_call, function_response
+        $this->assertCount(5, $schema['oneOf']);
 
         // Check text variant
         $textSchema = $schema['oneOf'][0];
@@ -198,6 +203,22 @@ class MessagePartTest extends TestCase
             [MessagePart::KEY_TYPE, MessagePart::KEY_FUNCTION_RESPONSE],
             $functionResponseSchema['required']
         );
+
+        // Check provider_data variant.
+        $providerDataSchema = $schema['oneOf'][4];
+        $this->assertSame(
+            MessagePartTypeEnum::providerData()->value,
+            $providerDataSchema['properties'][MessagePart::KEY_TYPE]['const']
+        );
+        $this->assertSame(
+            ProviderData::getJsonSchema(),
+            $providerDataSchema['properties'][MessagePart::KEY_PROVIDER_DATA]
+        );
+        $this->assertSame(
+            [MessagePart::KEY_TYPE, MessagePart::KEY_PROVIDER_DATA],
+            $providerDataSchema['required']
+        );
+        $this->assertFalse($providerDataSchema['additionalProperties']);
     }
 
     /**
@@ -278,6 +299,7 @@ class MessagePartTest extends TestCase
         $this->assertArrayNotHasKey(MessagePart::KEY_FILE, $json);
         $this->assertArrayNotHasKey(MessagePart::KEY_FUNCTION_CALL, $json);
         $this->assertArrayNotHasKey(MessagePart::KEY_FUNCTION_RESPONSE, $json);
+        $this->assertArrayNotHasKey(MessagePart::KEY_PROVIDER_DATA, $json);
     }
 
     /**
@@ -485,6 +507,131 @@ class MessagePartTest extends TestCase
         $cloned = clone $original;
 
         $this->assertNotSame($original->getFunctionResponse(), $cloned->getFunctionResponse());
+    }
+
+    /**
+     * Tests creating a non-executable provider data part.
+     *
+     * @return void
+     */
+    public function testCreateWithProviderDataContent(): void
+    {
+        $providerData = new ProviderData('openai', ['type' => 'tool_search_call', 'id' => 'search_123']);
+        $part = new MessagePart($providerData);
+
+        $this->assertTrue($part->getType()->isProviderData());
+        $this->assertTrue($part->getChannel()->isContent());
+        $this->assertSame($providerData, $part->getProviderData());
+        $this->assertNull($part->getText());
+        $this->assertNull($part->getFile());
+        $this->assertNull($part->getFunctionCall());
+        $this->assertNull($part->getFunctionResponse());
+    }
+
+    /**
+     * Tests provider data round trips with channel and thought signature intact.
+     *
+     * @return void
+     */
+    public function testProviderDataRoundTrip(): void
+    {
+        $providerData = new ProviderData('google', ['toolCall' => ['toolType' => 'GOOGLE_SEARCH_WEB']]);
+        $part = new MessagePart($providerData, MessagePartChannelEnum::thought(), 'signature_fixture');
+        $array = $part->toArray();
+        $restored = MessagePart::fromArray($array);
+
+        $this->assertSame([
+            'channel' => 'thought',
+            'type' => 'provider_data',
+            'providerData' => $providerData->toArray(),
+            'thoughtSignature' => 'signature_fixture',
+        ], $array);
+        $this->assertSame($array, $restored->toArray());
+        $this->assertSame('google', $restored->getProviderData()->getProviderId());
+        $this->assertSame($providerData->getData(), $restored->getProviderData()->getData());
+        $this->assertSame($part->getChannel(), $restored->getChannel());
+        $this->assertSame($part->getThoughtSignature(), $restored->getThoughtSignature());
+
+        $decoded = json_decode(json_encode($part, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame($array, MessagePart::fromArray($decoded)->toArray());
+    }
+
+    /**
+     * Tests provider data remains ordered beside ordinary parts in serialized messages.
+     *
+     * @return void
+     */
+    public function testProviderDataInMessageHistory(): void
+    {
+        $parts = [
+            new MessagePart(new ProviderData('openai', ['type' => 'tool_search_call', 'id' => 'search_123'])),
+            new MessagePart(new ProviderData('openai', [
+                'type' => 'tool_search_output',
+                'tools' => [['type' => 'function', 'name' => 'calendar']],
+            ])),
+            new MessagePart(new FunctionCall('call_123', 'calendar', ['day' => 'Monday'])),
+            new MessagePart('I found the calendar tool.'),
+        ];
+        $message = new ModelMessage($parts);
+        $decoded = json_decode(json_encode($message, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        $restored = Message::fromArray($decoded);
+
+        $this->assertSame($message->toArray(), $restored->toArray());
+        $this->assertCount(4, $restored->getParts());
+        foreach ($parts as $index => $part) {
+            $this->assertSame($part->toArray(), $restored->getParts()[$index]->toArray());
+        }
+    }
+
+    /**
+     * Tests cloning a part creates an independent provider data DTO.
+     *
+     * @return void
+     */
+    public function testCloneClonesProviderData(): void
+    {
+        $part = new MessagePart(new ProviderData('openai', ['type' => 'tool_search_output']));
+        $cloned = clone $part;
+
+        $this->assertNotSame($part->getProviderData(), $cloned->getProviderData());
+        $this->assertSame($part->toArray(), $cloned->toArray());
+    }
+
+    /**
+     * Tests toArray rejects an internally invalid part without content.
+     *
+     * @return void
+     */
+    public function testToArrayWithoutContentThrowsException(): void
+    {
+        $part = new MessagePart('content');
+        $textProperty = new \ReflectionProperty(MessagePart::class, 'text');
+        $textProperty->setAccessible(true);
+        $textProperty->setValue($part, null);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'MessagePart requires one of: text, file, functionCall, functionResponse, or providerData.'
+        );
+
+        $part->toArray();
+    }
+
+    /**
+     * Tests fromArray rejects a provider data part without its payload.
+     *
+     * @return void
+     */
+    public function testFromArrayWithoutContentThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'MessagePart requires one of: text, file, functionCall, functionResponse, or providerData.'
+        );
+
+        MessagePart::fromArray([
+            MessagePart::KEY_TYPE => MessagePartTypeEnum::providerData()->value,
+        ]);
     }
 
     /**
