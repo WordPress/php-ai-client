@@ -10,7 +10,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * Represents a function declaration for AI models.
  *
  * This DTO describes a function that can be called by the AI model,
- * including its name, description, parameter schema, and optional metadata.
+ * including its name, description, parameter schema, and optional annotations.
  *
  * @since 0.1.0
  *
@@ -18,7 +18,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  *     name: string,
  *     description: string,
  *     parameters?: array<string, mixed>,
- *     metadata?: array<string, mixed>
+ *     annotations?: array<string, mixed>
  * }
  *
  * @extends AbstractDataTransferObject<FunctionDeclarationArrayShape>
@@ -28,7 +28,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     public const KEY_NAME = 'name';
     public const KEY_DESCRIPTION = 'description';
     public const KEY_PARAMETERS = 'parameters';
-    public const KEY_METADATA = 'metadata';
+    public const KEY_ANNOTATIONS = 'annotations';
     /**
      * @var string The name of the function.
      */
@@ -45,31 +45,31 @@ class FunctionDeclaration extends AbstractDataTransferObject
     private ?array $parameters;
 
     /**
-     * @var array<string, mixed> Optional annotations interpreted by consumers, not the core SDK.
+     * @var array<string, mixed> The function annotations.
      */
-    private array $metadata;
+    private array $annotations;
 
     /**
      * Constructor.
      *
      * @since 0.1.0
-     * @since n.e.x.t Adds the optional $metadata parameter.
+     * @since n.e.x.t Adds the optional $annotations parameter.
      *
      * @param string $name The name of the function.
      * @param string $description A description of what the function does.
      * @param array<string, mixed>|null $parameters The JSON schema for the function parameters.
-     * @param array<string, mixed> $metadata Optional metadata with JSON-serializable values.
+     * @param array<string, mixed> $annotations Optional annotations with JSON-serializable values.
      */
     public function __construct(
         string $name,
         string $description,
         ?array $parameters = null,
-        array $metadata = []
+        array $annotations = []
     ) {
         $this->name = $name;
         $this->description = $description;
         $this->parameters = $parameters;
-        $this->metadata = $metadata;
+        $this->annotations = $annotations;
     }
 
     /**
@@ -109,15 +109,15 @@ class FunctionDeclaration extends AbstractDataTransferObject
     }
 
     /**
-     * Gets the function metadata without interpreting its annotations.
+     * Gets the function annotations.
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed> The metadata, or an empty array if none was provided.
+     * @return array<string, mixed> The annotations, or an empty array if none were provided.
      */
-    public function getMetadata(): array
+    public function getAnnotations(): array
     {
-        return $this->metadata;
+        return $this->annotations;
     }
 
     /**
@@ -143,9 +143,9 @@ class FunctionDeclaration extends AbstractDataTransferObject
                     'description' => 'The JSON schema for the function parameters.',
                     'additionalProperties' => true,
                 ],
-                self::KEY_METADATA => [
+                self::KEY_ANNOTATIONS => [
                     'type' => 'object',
-                    'description' => 'Optional metadata whose annotations are interpreted by consumers.',
+                    'description' => 'Optional annotations interpreted by consumers.',
                     'additionalProperties' => true,
                 ],
             ],
@@ -171,8 +171,8 @@ class FunctionDeclaration extends AbstractDataTransferObject
             $data[self::KEY_PARAMETERS] = $this->parameters;
         }
 
-        if ($this->metadata !== []) {
-            $data[self::KEY_METADATA] = $this->metadata;
+        if ($this->annotations !== []) {
+            $data[self::KEY_ANNOTATIONS] = $this->annotations;
         }
 
         return $data;
@@ -191,7 +191,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
             $array[self::KEY_NAME],
             $array[self::KEY_DESCRIPTION],
             $array[self::KEY_PARAMETERS] ?? null,
-            $array[self::KEY_METADATA] ?? []
+            $array[self::KEY_ANNOTATIONS] ?? []
         );
     }
 }

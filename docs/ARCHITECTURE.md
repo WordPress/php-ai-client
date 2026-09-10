@@ -340,6 +340,25 @@ $embeddings = AiClient::generateEmbeddings(
 );
 ```
 
+### Function declaration annotations
+
+`FunctionDeclaration` accepts optional annotations for consumer-specific hints that do not belong to the function's parameter schema:
+
+```php
+$function = new FunctionDeclaration(
+    'get_weather',
+    'Gets the weather',
+    null,
+    ['deferredLoading' => true]
+);
+
+$annotations = $function->getAnnotations();
+```
+
+Annotations are an `array<string, mixed>` whose values should be JSON-serializable. The core SDK preserves annotations without interpreting their names or values. Providers and other consumers define the annotations they recognize and ignore unknown annotations. Provider-specific annotations should use namespaced keys or a nested provider-specific map to avoid collisions, and must not be blindly merged into provider requests.
+
+Empty annotations are omitted from serialized declarations, preserving the existing shape for callers that do not use them. Missing annotations are restored as an empty array. Annotations are not authorization; applications must still validate tool execution.
+
 ## Class diagrams
 
 This section shows comprehensive class diagrams for the proposed architecture. For explanation on specific terms, see the [glossary](./GLOSSARY.md).
@@ -806,6 +825,7 @@ direction LR
             +getName() string
             +getDescription() string
             +getParameters() mixed
+            +getAnnotations() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
         class FunctionResponse {
@@ -1229,6 +1249,7 @@ direction LR
             +getName() string
             +getDescription() string
             +getParameters() mixed
+            +getAnnotations() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
         class Tool {

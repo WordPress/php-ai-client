@@ -323,11 +323,11 @@ class FunctionDeclarationTest extends TestCase
     }
 
     /**
-     * Tests legacy declarations keep their serialized shape without empty metadata.
+     * Tests legacy declarations keep their serialized shape without empty annotations.
      *
      * @return void
      */
-    public function testMetadataDefaultsPreserveCompatibility(): void
+    public function testAnnotationsDefaultsPreserveCompatibility(): void
     {
         $legacy = ['name' => 'get_weather', 'description' => 'Gets the weather'];
         $declarations = [
@@ -336,7 +336,7 @@ class FunctionDeclarationTest extends TestCase
             FunctionDeclaration::fromArray($legacy),
         ];
         foreach ($declarations as $declaration) {
-            $this->assertSame([], $declaration->getMetadata());
+            $this->assertSame([], $declaration->getAnnotations());
             $this->assertSame($legacy, $declaration->toArray());
             $this->assertSame($legacy, json_decode((string) json_encode($declaration), true));
         }
@@ -347,56 +347,56 @@ class FunctionDeclarationTest extends TestCase
      *
      * @return void
      */
-    public function testMetadataRoundTrip(): void
+    public function testAnnotationsRoundTrip(): void
     {
-        $metadata = [
+        $annotations = [
             'deferredLoading' => true,
             'readOnlyHint' => false,
             'vendor' => ['labels' => ['weather', 'public'], 'priority' => 0, 'optional' => null],
         ];
-        $declaration = new FunctionDeclaration('get_weather', 'Gets the weather', null, $metadata);
-        $this->assertSame($metadata, $declaration->getMetadata());
+        $declaration = new FunctionDeclaration('get_weather', 'Gets the weather', null, $annotations);
+        $this->assertSame($annotations, $declaration->getAnnotations());
         $this->assertNull($declaration->getParameters());
-        $this->assertSame($metadata, $declaration->toArray()['metadata']);
-        $this->assertSame($metadata, FunctionDeclaration::fromArray($declaration->toArray())->getMetadata());
+        $this->assertSame($annotations, $declaration->toArray()['annotations']);
+        $this->assertSame($annotations, FunctionDeclaration::fromArray($declaration->toArray())->getAnnotations());
 
         $json = json_decode((string) json_encode($declaration), true);
-        $this->assertSame($metadata, FunctionDeclaration::fromArray($json)->getMetadata());
+        $this->assertSame($annotations, FunctionDeclaration::fromArray($json)->getAnnotations());
     }
 
     /**
-     * Tests metadata is optional and unconstrained in the declaration schema.
+     * Tests annotations are optional and unconstrained in the declaration schema.
      *
      * @return void
      */
-    public function testMetadataSchema(): void
+    public function testAnnotationsSchema(): void
     {
         $schema = FunctionDeclaration::getJsonSchema();
-        $this->assertSame('object', $schema['properties']['metadata']['type']);
-        $this->assertTrue($schema['properties']['metadata']['additionalProperties']);
-        $this->assertNotContains('metadata', $schema['required']);
+        $this->assertSame('object', $schema['properties']['annotations']['type']);
+        $this->assertTrue($schema['properties']['annotations']['additionalProperties']);
+        $this->assertNotContains('annotations', $schema['required']);
     }
 
     /**
-     * Tests model configuration preserves metadata and clones declarations independently.
+     * Tests model configuration preserves annotations and clones declarations independently.
      *
      * @return void
      */
-    public function testMetadataSurvivesModelConfigRoundTripAndClone(): void
+    public function testAnnotationsSurviveModelConfigRoundTripAndClone(): void
     {
-        $metadata = ['vendor' => ['enabled' => false]];
-        $declaration = new FunctionDeclaration('lookup', 'Looks up a record', ['type' => 'object'], $metadata);
+        $annotations = ['vendor' => ['enabled' => false]];
+        $declaration = new FunctionDeclaration('lookup', 'Looks up a record', ['type' => 'object'], $annotations);
         $config = new ModelConfig();
         $config->setFunctionDeclarations([$declaration]);
         $restored = ModelConfig::fromArray($config->toArray());
         $cloned = clone $config;
-        $this->assertSame($metadata, $restored->getFunctionDeclarations()[0]->getMetadata());
-        $this->assertSame($metadata, $cloned->getFunctionDeclarations()[0]->getMetadata());
+        $this->assertSame($annotations, $restored->getFunctionDeclarations()[0]->getAnnotations());
+        $this->assertSame($annotations, $cloned->getFunctionDeclarations()[0]->getAnnotations());
         $this->assertNotSame($declaration, $cloned->getFunctionDeclarations()[0]);
 
-        $copy = $cloned->getFunctionDeclarations()[0]->getMetadata();
+        $copy = $cloned->getFunctionDeclarations()[0]->getAnnotations();
         $copy['vendor']['enabled'] = true;
-        $this->assertSame($metadata, $declaration->getMetadata());
-        $this->assertSame($metadata, $cloned->getFunctionDeclarations()[0]->getMetadata());
+        $this->assertSame($annotations, $declaration->getAnnotations());
+        $this->assertSame($annotations, $cloned->getFunctionDeclarations()[0]->getAnnotations());
     }
 }
