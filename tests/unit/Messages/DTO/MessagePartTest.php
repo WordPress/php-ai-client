@@ -10,6 +10,7 @@ use stdClass;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Messages\DTO\Citation;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
@@ -37,6 +38,7 @@ class MessagePartTest extends TestCase
         $this->assertNull($part->getFile());
         $this->assertNull($part->getFunctionCall());
         $this->assertNull($part->getFunctionResponse());
+        $this->assertNull($part->getCitations());
     }
 
     /**
@@ -55,6 +57,7 @@ class MessagePartTest extends TestCase
         $this->assertSame($file, $part->getFile());
         $this->assertNull($part->getFunctionCall());
         $this->assertNull($part->getFunctionResponse());
+        $this->assertNull($part->getCitations());
     }
 
     /**
@@ -629,5 +632,144 @@ class MessagePartTest extends TestCase
                 $variant['required']
             );
         }
+    }
+
+    /**
+     * Tests creating MessagePart with citations.
+     *
+     * @return void
+     */
+    public function testCreateWithCitations(): void
+    {
+        $citations = [
+            new Citation('https://example.com/doc1', null, 'Doc 1', 0, 20),
+            new Citation(null, 2, null, 21, 40, 'quoted text'),
+        ];
+
+        $part = new MessagePart(
+            'Text with citations',
+            MessagePartChannelEnum::content(),
+            null,
+            $citations
+        );
+
+        $this->assertEquals($citations, $part->getCitations());
+        $this->assertCount(2, $part->getCitations());
+    }
+
+    /**
+     * Tests toArray includes citations when set.
+     *
+     * @return void
+     */
+    public function testToArrayIncludesCitations(): void
+    {
+        $citations = [new Citation('https://example.com/doc1', null, 'Doc 1', 0, 15)];
+        $part = new MessagePart(
+            'Text with citations',
+            MessagePartChannelEnum::content(),
+            null,
+            $citations
+        );
+
+        $array = $part->toArray();
+
+        $this->assertArrayHasKey(MessagePart::KEY_CITATIONS, $array);
+        $this->assertIsArray($array[MessagePart::KEY_CITATIONS]);
+        $this->assertCount(1, $array[MessagePart::KEY_CITATIONS]);
+        $this->assertEquals('https://example.com/doc1', $array[MessagePart::KEY_CITATIONS][0][Citation::KEY_URL]);
+        $this->assertEquals('Doc 1', $array[MessagePart::KEY_CITATIONS][0][Citation::KEY_TITLE]);
+        $this->assertEquals(0, $array[MessagePart::KEY_CITATIONS][0][Citation::KEY_START_INDEX]);
+        $this->assertEquals(15, $array[MessagePart::KEY_CITATIONS][0][Citation::KEY_END_INDEX]);
+    }
+
+    /**
+     * Tests fromArray with citations.
+     *
+     * @return void
+     */
+    public function testFromArrayWithCitations(): void
+    {
+        $array = [
+            MessagePart::KEY_CHANNEL => MessagePartChannelEnum::content()->value,
+            MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+            MessagePart::KEY_TEXT => 'Text with citations',
+            MessagePart::KEY_CITATIONS => [
+                [
+                    Citation::KEY_URL => 'https://example.com/doc1',
+                    Citation::KEY_TITLE => 'Doc 1',
+                    Citation::KEY_START_INDEX => 0,
+                    Citation::KEY_END_INDEX => 19,
+                ],
+                [
+                    Citation::KEY_DOCUMENT_INDEX => 3,
+                    Citation::KEY_QUOTED_TEXT => 'a passage',
+                ],
+            ],
+        ];
+
+        $part = MessagePart::fromArray($array);
+
+        $this->assertNotNull($part->getCitations());
+        $this->assertCount(2, $part->getCitations());
+        $this->assertEquals('https://example.com/doc1', $part->getCitations()[0]->getUrl());
+        $this->assertEquals('Doc 1', $part->getCitations()[0]->getTitle());
+        $this->assertEquals(0, $part->getCitations()[0]->getStartIndex());
+        $this->assertEquals(19, $part->getCitations()[0]->getEndIndex());
+        $this->assertNull($part->getCitations()[1]->getUrl());
+        $this->assertEquals(3, $part->getCitations()[1]->getDocumentIndex());
+        $this->assertEquals('a passage', $part->getCitations()[1]->getQuotedText());
+    }
+
+    /**
+     * Tests round-trip array transformation with citations.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripWithCitations(): void
+    {
+        $citations = [
+            new Citation('https://example.com/doc1', null, 'Doc 1', 0, 10, 'quoted'),
+        ];
+        $original = new MessagePart(
+            'Text with citations',
+            MessagePartChannelEnum::content(),
+            null,
+            $citations
+        );
+
+        $array = $original->toArray();
+        $restored = MessagePart::fromArray($array);
+
+        $this->assertEquals($original->getText(), $restored->getText());
+        $this->assertNotNull($restored->getCitations());
+        $this->assertCount(1, $restored->getCitations());
+        $this->assertEquals('https://example.com/doc1', $restored->getCitations()[0]->getUrl());
+        $this->assertEquals('Doc 1', $restored->getCitations()[0]->getTitle());
+        $this->assertEquals(0, $restored->getCitations()[0]->getStartIndex());
+        $this->assertEquals(10, $restored->getCitations()[0]->getEndIndex());
+        $this->assertEquals('quoted', $restored->getCitations()[0]->getQuotedText());
+    }
+
+    /**
+     * Tests that cloning MessagePart with citations creates independent copies.
+     *
+     * @return void
+     */
+    public function testCloneClonesCitations(): void
+    {
+        $citations = [new Citation('https://example.com/doc1', null, 'Title', 5, 15)];
+        $original = new MessagePart('text', null, null, $citations);
+        $cloned = clone $original;
+
+        $this->assertNotSame($original->getCitations()[0], $cloned->getCitations()[0]);
+        $this->assertEquals(
+            $original->getCitations()[0]->getUrl(),
+            $cloned->getCitations()[0]->getUrl()
+        );
+        $this->assertEquals(
+            $original->getCitations()[0]->getStartIndex(),
+            $cloned->getCitations()[0]->getStartIndex()
+        );
     }
 }
