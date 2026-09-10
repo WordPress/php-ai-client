@@ -100,8 +100,10 @@ class File extends AbstractDataTransferObject
             return;
         }
 
-        // Check if it's a local file path (before base64 check)
-        if (file_exists($file) && is_file($file)) {
+        // Check if it's a local file path (before base64 check).
+        // The length guard avoids calling file_exists() on over-length strings (e.g. base64 data),
+        // which would emit a warning containing the entire string.
+        if (strlen($file) <= PHP_MAXPATHLEN && file_exists($file) && is_file($file)) {
             $this->fileType = FileTypeEnum::inline();
             $this->base64Data = $this->convertFileToBase64($file);
             $this->mimeType = $this->determineMimeType($providedMimeType, null, $file);
