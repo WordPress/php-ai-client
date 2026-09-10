@@ -549,6 +549,50 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests prepareMessagesParam() with several function responses in one message.
+     *
+     * Regression test for https://github.com/WordPress/php-ai-client/issues/286.
+     *
+     * When a model answers with parallel tool calls, every result has to be sent back.
+     * A caller that executes several tool calls in one turn collects the results into a
+     * single user message holding one function-response part per call. That is the shape
+     * `PromptBuilder::withFunctionResponse()` produces when called more than once.
+     *
+     * The function-response special case in prepareMessagesParam() only matches a message
+     * with exactly one part, so such a message falls through to the generic branch and
+     * getMessagePartContentData() throws "The API only allows a single function response,
+     * as the only content of the message."
+     *
+     * The OpenAI-compatible chat completions API expects one `role: tool` entry per tool
+     * call, so the message should expand into one entry per function response.
+     *
+     * @return void
+     */
+    public function testPrepareMessagesParamMultipleFunctionResponsesInSingleMessage(): void
+    {
+        $message = new Message(
+            MessageRoleEnum::user(),
+            [
+                new MessagePart(new FunctionResponse('call_1', 'get_weather', ['temperature' => 22])),
+                new MessagePart(new FunctionResponse('call_2', 'get_time', ['time' => '14:30'])),
+            ]
+        );
+        $model = $this->createModel();
+
+        $prepared = $model->exposePrepareMessagesParam([$message]);
+
+        $this->assertCount(2, $prepared, 'Expected one API message per function response');
+
+        $this->assertEquals('tool', $prepared[0]['role']);
+        $this->assertEquals(json_encode(['temperature' => 22]), $prepared[0]['content']);
+        $this->assertEquals('call_1', $prepared[0]['tool_call_id']);
+
+        $this->assertEquals('tool', $prepared[1]['role']);
+        $this->assertEquals(json_encode(['time' => '14:30']), $prepared[1]['content']);
+        $this->assertEquals('call_2', $prepared[1]['tool_call_id']);
+    }
+
+    /**
      * Tests getMessageRoleString() method.
      *
      * @dataProvider messageRoleProvider
