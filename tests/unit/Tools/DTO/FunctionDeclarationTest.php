@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
@@ -319,5 +320,83 @@ class FunctionDeclarationTest extends TestCase
     {
         $declaration = new FunctionDeclaration('test', 'test function');
         $this->assertImplementsArrayTransformation($declaration);
+    }
+
+    /**
+     * Tests legacy declarations keep their serialized shape without empty annotations.
+     *
+     * @return void
+     */
+    public function testAnnotationsDefaultsPreserveCompatibility(): void
+    {
+        $legacy = ['name' => 'get_weather', 'description' => 'Gets the weather'];
+        $declarations = [
+            new FunctionDeclaration('get_weather', 'Gets the weather'),
+            new FunctionDeclaration('get_weather', 'Gets the weather', null, []),
+            FunctionDeclaration::fromArray($legacy),
+        ];
+        foreach ($declarations as $declaration) {
+            $this->assertSame([], $declaration->getAnnotations());
+            $this->assertSame($legacy, $declaration->toArray());
+            $this->assertSame($legacy, json_decode((string) json_encode($declaration), true));
+        }
+    }
+
+    /**
+     * Tests arbitrary annotations survive array and JSON serialization unchanged.
+     *
+     * @return void
+     */
+    public function testAnnotationsRoundTrip(): void
+    {
+        $annotations = [
+            'deferredLoading' => true,
+            'readOnlyHint' => false,
+            'vendor' => ['labels' => ['weather', 'public'], 'priority' => 0, 'optional' => null],
+        ];
+        $declaration = new FunctionDeclaration('get_weather', 'Gets the weather', null, $annotations);
+        $this->assertSame($annotations, $declaration->getAnnotations());
+        $this->assertNull($declaration->getParameters());
+        $this->assertSame($annotations, $declaration->toArray()['annotations']);
+        $this->assertSame($annotations, FunctionDeclaration::fromArray($declaration->toArray())->getAnnotations());
+
+        $json = json_decode((string) json_encode($declaration), true);
+        $this->assertSame($annotations, FunctionDeclaration::fromArray($json)->getAnnotations());
+    }
+
+    /**
+     * Tests annotations are optional and unconstrained in the declaration schema.
+     *
+     * @return void
+     */
+    public function testAnnotationsSchema(): void
+    {
+        $schema = FunctionDeclaration::getJsonSchema();
+        $this->assertSame('object', $schema['properties']['annotations']['type']);
+        $this->assertTrue($schema['properties']['annotations']['additionalProperties']);
+        $this->assertNotContains('annotations', $schema['required']);
+    }
+
+    /**
+     * Tests model configuration preserves annotations and clones declarations independently.
+     *
+     * @return void
+     */
+    public function testAnnotationsSurviveModelConfigRoundTripAndClone(): void
+    {
+        $annotations = ['vendor' => ['enabled' => false]];
+        $declaration = new FunctionDeclaration('lookup', 'Looks up a record', ['type' => 'object'], $annotations);
+        $config = new ModelConfig();
+        $config->setFunctionDeclarations([$declaration]);
+        $restored = ModelConfig::fromArray($config->toArray());
+        $cloned = clone $config;
+        $this->assertSame($annotations, $restored->getFunctionDeclarations()[0]->getAnnotations());
+        $this->assertSame($annotations, $cloned->getFunctionDeclarations()[0]->getAnnotations());
+        $this->assertNotSame($declaration, $cloned->getFunctionDeclarations()[0]);
+
+        $copy = $cloned->getFunctionDeclarations()[0]->getAnnotations();
+        $copy['vendor']['enabled'] = true;
+        $this->assertSame($annotations, $declaration->getAnnotations());
+        $this->assertSame($annotations, $cloned->getFunctionDeclarations()[0]->getAnnotations());
     }
 }
