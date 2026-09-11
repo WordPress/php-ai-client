@@ -47,6 +47,8 @@
         "wordpress/ai-provider-for-openai": "^1.0"
     },
     "suggest": {
+        "php-http/curl-client": "HTTPlug adapter for cURL HTTP requests",
+        "php-http/guzzle7-adapter": "HTTPlug adapter for Guzzle 7 HTTP requests",
         "wordpress/ai-provider-for-anthropic": "For Anthropic Claude model support",
         "wordpress/ai-provider-for-google": "For Google Gemini model support",
         "wordpress/ai-provider-for-openai": "For OpenAI GPT model support"
