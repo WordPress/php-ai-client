@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Builders\EmbeddingBuilder;
+use WordPress\AiClient\Builders\TextExtractionBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
@@ -306,6 +307,85 @@ class AiClientTest extends TestCase
         $this->assertCount(2, $result);
     }
 
+    /**
+     * Tests extractTextResult with document string and provided model.
+     */
+    public function testExtractTextResultWithDocumentAndModel(): void
+    {
+        $expectedResult = $this->createTestTextExtractionResult();
+        $mockModel = $this->createMockTextExtractionModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::extractTextResult('https://example.com/document.pdf', $mockModel, $registry);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
+     * Tests extractText returns the extracted content as a markdown string.
+     */
+    public function testExtractTextReturnsMarkdownString(): void
+    {
+        $expectedResult = $this->createTestTextExtractionResult(['# Page one', 'Page two.']);
+        $mockModel = $this->createMockTextExtractionModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $text = AiClient::extractText('https://example.com/document.pdf', $mockModel, $registry);
+
+        $this->assertSame($expectedResult->toMarkdown(), $text);
+    }
+
+    /**
+     * Tests extractTextResult throws exception for model without text extraction interface.
+     */
+    public function testExtractTextResultWithInvalidModel(): void
+    {
+        $invalidModel = $this->createMockUnsupportedModel('invalid-extraction-model');
+        $registry = $this->createRegistryWithMockProvider();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Model "invalid-extraction-model" does not support text extraction.');
+
+        AiClient::extractTextResult('https://example.com/document.pdf', $invalidModel, $registry);
+    }
+
+    /**
+     * Tests extractTextResult rejects an invalid model/config parameter.
+     */
+    public function testExtractTextResultRejectsInvalidModelParameter(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/Parameter must be a ModelInterface instance \(specific model\)/');
+
+        /** @phpstan-ignore-next-line Intentionally passing an invalid type. */
+        AiClient::extractTextResult('https://example.com/document.pdf', 'invalid_string_parameter');
+    }
+
+    /**
+     * Tests document() returns a TextExtractionBuilder configured with the given document.
+     */
+    public function testDocumentReturnsTextExtractionBuilder(): void
+    {
+        $expectedResult = $this->createTestTextExtractionResult();
+        $mockModel = $this->createMockTextExtractionModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $builder = AiClient::document('https://example.com/document.pdf', $registry);
+
+        $this->assertInstanceOf(TextExtractionBuilder::class, $builder);
+        $this->assertSame($expectedResult, $builder->usingModel($mockModel)->extractTextResult());
+    }
+
+    /**
+     * Tests document() without a document returns a builder that is not yet usable.
+     */
+    public function testDocumentWithoutDocumentReturnsBuilder(): void
+    {
+        $builder = AiClient::document(null, $this->createMockEmptyRegistry());
+
+        $this->assertInstanceOf(TextExtractionBuilder::class, $builder);
+        $this->assertFalse($builder->isSupported());
+    }
 
     /**
      * Tests generateTextResult with Message object.
