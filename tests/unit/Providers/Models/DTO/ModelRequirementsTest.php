@@ -63,6 +63,31 @@ class ModelRequirementsTest extends TestCase
     }
 
     /**
+     * Tests adding a required capability without mutating the original requirements.
+     *
+     * @return void
+     */
+    public function testWithRequiredCapability(): void
+    {
+        $options = [new RequiredOption(OptionEnum::temperature(), 0.7)];
+        $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], $options);
+
+        $updatedRequirements = $requirements->withRequiredCapability(CapabilityEnum::chatHistory());
+
+        $this->assertNotSame($requirements, $updatedRequirements);
+        $this->assertSame(
+            [CapabilityEnum::textGeneration(), CapabilityEnum::chatHistory()],
+            $updatedRequirements->getRequiredCapabilities()
+        );
+        $this->assertSame($options, $updatedRequirements->getRequiredOptions());
+        $this->assertSame([CapabilityEnum::textGeneration()], $requirements->getRequiredCapabilities());
+        $this->assertSame(
+            $updatedRequirements,
+            $updatedRequirements->withRequiredCapability(CapabilityEnum::chatHistory())
+        );
+    }
+
+    /**
      * Tests JSON schema generation.
      *
      * @return void
