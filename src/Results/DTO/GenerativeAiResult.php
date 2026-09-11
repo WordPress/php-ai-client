@@ -29,7 +29,7 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  * @phpstan-type GenerativeAiResultArrayShape array{
  *     id: string,
  *     candidates: array<CandidateArrayShape>,
- *     tokenUsage: TokenUsageArrayShape,
+ *     tokenUsage?: TokenUsageArrayShape|null,
  *     providerMetadata: ProviderMetadataArrayShape,
  *     modelMetadata: ModelMetadataArrayShape,
  *     additionalData?: array<string, mixed>
@@ -56,9 +56,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     private array $candidates;
 
     /**
-     * @var TokenUsage Token usage statistics.
+     * @var TokenUsage|null Token usage statistics, or null when not provided.
      */
-    private TokenUsage $tokenUsage;
+    private ?TokenUsage $tokenUsage;
 
     /**
      * @var ProviderMetadata Provider metadata.
@@ -82,7 +82,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @param string $id Unique identifier for this result.
      * @param Candidate[] $candidates The generated candidates.
-     * @param TokenUsage $tokenUsage Token usage statistics.
+     * @param TokenUsage|null $tokenUsage Token usage statistics, or null when not provided.
      * @param ProviderMetadata $providerMetadata Provider metadata.
      * @param ModelMetadata $modelMetadata Model metadata.
      * @param array<string, mixed> $additionalData Additional data.
@@ -91,7 +91,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     public function __construct(
         string $id,
         array $candidates,
-        TokenUsage $tokenUsage,
+        ?TokenUsage $tokenUsage,
         ProviderMetadata $providerMetadata,
         ModelMetadata $modelMetadata,
         array $additionalData = []
@@ -135,7 +135,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      *
      * @since 0.1.0
      */
-    public function getTokenUsage(): TokenUsage
+    public function getTokenUsage(): ?TokenUsage
     {
         return $this->tokenUsage;
     }
@@ -446,7 +446,13 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
                     'minItems' => 1,
                     'description' => 'The generated candidates.',
                 ],
-                self::KEY_TOKEN_USAGE => TokenUsage::getJsonSchema(),
+                self::KEY_TOKEN_USAGE => [
+                    'anyOf' => [
+                        TokenUsage::getJsonSchema(),
+                        ['type' => 'null'],
+                    ],
+                    'description' => 'Token usage statistics, when supplied by the provider.',
+                ],
                 self::KEY_PROVIDER_METADATA => ProviderMetadata::getJsonSchema(),
                 self::KEY_MODEL_METADATA => ModelMetadata::getJsonSchema(),
                 self::KEY_ADDITIONAL_DATA => [
@@ -458,7 +464,6 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
             'required' => [
                 self::KEY_ID,
                 self::KEY_CANDIDATES,
-                self::KEY_TOKEN_USAGE,
                 self::KEY_PROVIDER_METADATA,
                 self::KEY_MODEL_METADATA
             ],
@@ -477,7 +482,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
         return [
             self::KEY_ID => $this->id,
             self::KEY_CANDIDATES => array_map(fn(Candidate $candidate) => $candidate->toArray(), $this->candidates),
-            self::KEY_TOKEN_USAGE => $this->tokenUsage->toArray(),
+            self::KEY_TOKEN_USAGE => $this->tokenUsage === null ? null : $this->tokenUsage->toArray(),
             self::KEY_PROVIDER_METADATA => $this->providerMetadata->toArray(),
             self::KEY_MODEL_METADATA => $this->modelMetadata->toArray(),
             self::KEY_ADDITIONAL_DATA => $this->additionalData,
@@ -494,7 +499,6 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
         static::validateFromArrayData($array, [
             self::KEY_ID,
             self::KEY_CANDIDATES,
-            self::KEY_TOKEN_USAGE,
             self::KEY_PROVIDER_METADATA,
             self::KEY_MODEL_METADATA
         ]);
@@ -507,7 +511,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
         return new self(
             $array[self::KEY_ID],
             $candidates,
-            TokenUsage::fromArray($array[self::KEY_TOKEN_USAGE]),
+            array_key_exists(self::KEY_TOKEN_USAGE, $array) && $array[self::KEY_TOKEN_USAGE] !== null
+                ? TokenUsage::fromArray($array[self::KEY_TOKEN_USAGE])
+                : null,
             ProviderMetadata::fromArray($array[self::KEY_PROVIDER_METADATA]),
             ModelMetadata::fromArray($array[self::KEY_MODEL_METADATA]),
             $array[self::KEY_ADDITIONAL_DATA] ?? []
@@ -529,7 +535,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
             $clonedCandidates[] = clone $candidate;
         }
         $this->candidates = $clonedCandidates;
-        $this->tokenUsage = clone $this->tokenUsage;
+        if ($this->tokenUsage !== null) {
+            $this->tokenUsage = clone $this->tokenUsage;
+        }
         $this->providerMetadata = clone $this->providerMetadata;
         $this->modelMetadata = clone $this->modelMetadata;
     }
