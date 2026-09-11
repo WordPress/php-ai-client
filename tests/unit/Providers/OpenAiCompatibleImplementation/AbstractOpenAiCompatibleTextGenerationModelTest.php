@@ -549,6 +549,33 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests prepareMessagesParam() with multiple function responses in one message.
+     *
+     * @return void
+     */
+    public function testPrepareMessagesParamMultipleFunctionResponses(): void
+    {
+        $message = new Message(
+            MessageRoleEnum::user(),
+            [
+                new MessagePart(new FunctionResponse('call_1', 'first_function', ['result' => 'first'])),
+                new MessagePart(new FunctionResponse('call_2', 'second_function', ['result' => 'second'])),
+            ]
+        );
+        $model = $this->createModel();
+
+        $prepared = $model->exposePrepareMessagesParam([$message]);
+
+        $this->assertCount(2, $prepared);
+        $this->assertSame('tool', $prepared[0]['role']);
+        $this->assertSame(json_encode(['result' => 'first']), $prepared[0]['content']);
+        $this->assertSame('call_1', $prepared[0]['tool_call_id']);
+        $this->assertSame('tool', $prepared[1]['role']);
+        $this->assertSame(json_encode(['result' => 'second']), $prepared[1]['content']);
+        $this->assertSame('call_2', $prepared[1]['tool_call_id']);
+    }
+
+    /**
      * Tests getMessageRoleString() method.
      *
      * @dataProvider messageRoleProvider
