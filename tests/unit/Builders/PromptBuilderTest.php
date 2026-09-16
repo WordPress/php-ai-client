@@ -3513,8 +3513,10 @@ class PromptBuilderTest extends TestCase
      */
     public function testGenerateResultWithProviderNoModelsThrowsException(): void
     {
-        // Mock the registry to return empty array when provider is specified
-        $this->registry->expects($this->once())
+        // Mock the registry to return empty array when provider is specified. The resolver looks
+        // twice on failure: once with the required options applied, then once without them to work
+        // out whether an option rather than the capability is to blame.
+        $this->registry->expects($this->exactly(2))
             ->method('findProviderModelsMetadataForSupport')
             ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
             ->willReturn([]);
