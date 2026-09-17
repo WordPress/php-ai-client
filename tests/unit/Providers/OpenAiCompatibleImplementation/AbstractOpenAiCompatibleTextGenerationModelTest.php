@@ -927,6 +927,44 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests that providers can customize function declarations before serialization.
+     *
+     * @return void
+     */
+    public function testPrepareToolsParamAllowsProviderCustomization(): void
+    {
+        $functionDeclaration = new FunctionDeclaration(
+            'original_name',
+            'Description',
+            ['type' => 'object']
+        );
+        $model = new class (
+            $this->modelMetadata,
+            $this->providerMetadata,
+            $this->mockHttpTransporter,
+            $this->mockRequestAuthentication
+        ) extends MockOpenAiCompatibleTextGenerationModel {
+            /**
+             * {@inheritDoc}
+             */
+            protected function prepareFunctionDeclarationForRequest(
+                FunctionDeclaration $functionDeclaration
+            ): FunctionDeclaration {
+                return new FunctionDeclaration(
+                    $functionDeclaration->getName() . '_prepared',
+                    $functionDeclaration->getDescription(),
+                    $functionDeclaration->getParameters()
+                );
+            }
+        };
+
+        $prepared = $model->exposePrepareToolsParam([$functionDeclaration]);
+
+        $this->assertSame('original_name_prepared', $prepared[0]['function']['name']);
+        $this->assertSame(['type' => 'object'], $prepared[0]['function']['parameters']);
+    }
+
+    /**
      * Tests prepareResponseFormatParam() with null schema.
      *
      * @return void
