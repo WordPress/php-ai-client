@@ -43,6 +43,20 @@ class TokenUsageTest extends TestCase
     }
 
     /**
+     * Tests creating TokenUsage when a provider does not report usage.
+     *
+     * @return void
+     */
+    public function testCreateWithoutValues(): void
+    {
+        $tokenUsage = new TokenUsage();
+
+        $this->assertNull($tokenUsage->getPromptTokens());
+        $this->assertNull($tokenUsage->getCompletionTokens());
+        $this->assertNull($tokenUsage->getTotalTokens());
+    }
+
+    /**
      * Tests creating TokenUsage with large values.
      *
      * @return void
@@ -114,9 +128,9 @@ class TokenUsageTest extends TestCase
         $this->assertArrayHasKey(TokenUsage::KEY_TOTAL_TOKENS, $schema['properties']);
 
         // Check each property type
-        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_PROMPT_TOKENS]['type']);
-        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_COMPLETION_TOKENS]['type']);
-        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_TOTAL_TOKENS]['type']);
+        $this->assertEquals(['integer', 'null'], $schema['properties'][TokenUsage::KEY_PROMPT_TOKENS]['type']);
+        $this->assertEquals(['integer', 'null'], $schema['properties'][TokenUsage::KEY_COMPLETION_TOKENS]['type']);
+        $this->assertEquals(['integer', 'null'], $schema['properties'][TokenUsage::KEY_TOTAL_TOKENS]['type']);
 
         // Check descriptions
         $this->assertArrayHasKey('description', $schema['properties'][TokenUsage::KEY_PROMPT_TOKENS]);

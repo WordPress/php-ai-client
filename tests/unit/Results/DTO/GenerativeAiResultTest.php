@@ -87,6 +87,31 @@ class GenerativeAiResultTest extends TestCase
     }
 
     /**
+     * Tests creating a result when the provider does not report token usage.
+     *
+     * @return void
+     */
+    public function testCreateWithoutTokenUsage(): void
+    {
+        $candidate = new Candidate(
+            new ModelMessage([new MessagePart('Response without usage')]),
+            FinishReasonEnum::stop(),
+            1
+        );
+
+        $result = new GenerativeAiResult(
+            'result_without_usage',
+            [$candidate],
+            null,
+            $this->createTestProviderMetadata(),
+            $this->createTestModelMetadata()
+        );
+
+        $this->assertNull($result->getTokenUsage());
+        $this->assertNull($result->toArray()[GenerativeAiResult::KEY_TOKEN_USAGE]);
+    }
+
+    /**
      * Tests creating result with multiple candidates.
      *
      * @return void
@@ -709,7 +734,7 @@ class GenerativeAiResultTest extends TestCase
         $this->assertArrayHasKey('required', $schema);
         $this->assertContains(GenerativeAiResult::KEY_ID, $schema['required']);
         $this->assertContains(GenerativeAiResult::KEY_CANDIDATES, $schema['required']);
-        $this->assertContains(GenerativeAiResult::KEY_TOKEN_USAGE, $schema['required']);
+        $this->assertNotContains(GenerativeAiResult::KEY_TOKEN_USAGE, $schema['required']);
         $this->assertContains(GenerativeAiResult::KEY_PROVIDER_METADATA, $schema['required']);
         $this->assertContains(GenerativeAiResult::KEY_MODEL_METADATA, $schema['required']);
         $this->assertNotContains(GenerativeAiResult::KEY_ADDITIONAL_DATA, $schema['required']);

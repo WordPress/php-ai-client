@@ -18,10 +18,10 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * @since 0.1.0
  *
  * @phpstan-type TokenUsageArrayShape array{
- *     promptTokens: int,
- *     completionTokens: int,
- *     totalTokens: int,
- *     thoughtTokens?: int
+ *     promptTokens: int|null,
+ *     completionTokens: int|null,
+ *     totalTokens: int|null,
+ *     thoughtTokens?: int|null
  * }
  *
  * @extends AbstractDataTransferObject<TokenUsageArrayShape>
@@ -33,19 +33,19 @@ class TokenUsage extends AbstractDataTransferObject
     public const KEY_TOTAL_TOKENS = 'totalTokens';
     public const KEY_THOUGHT_TOKENS = 'thoughtTokens';
     /**
-     * @var int Number of tokens in the prompt.
+     * @var int|null Number of tokens in the prompt.
      */
-    private int $promptTokens;
+    private ?int $promptTokens;
 
     /**
-     * @var int Number of tokens in the completion, including any thought tokens.
+     * @var int|null Number of tokens in the completion, including any thought tokens.
      */
-    private int $completionTokens;
+    private ?int $completionTokens;
 
     /**
-     * @var int Total number of tokens used.
+     * @var int|null Total number of tokens used.
      */
-    private int $totalTokens;
+    private ?int $totalTokens;
 
     /**
      * @var int|null Number of tokens used for thinking, as a subset of completion tokens.
@@ -57,13 +57,17 @@ class TokenUsage extends AbstractDataTransferObject
      *
      * @since 0.1.0
      *
-     * @param int $promptTokens Number of tokens in the prompt.
-     * @param int $completionTokens Number of tokens in the completion, including any thought tokens.
-     * @param int $totalTokens Total number of tokens used.
+     * @param int|null $promptTokens Number of tokens in the prompt, or null when not provided.
+     * @param int|null $completionTokens Number of tokens in the completion, or null when not provided.
+     * @param int|null $totalTokens Total number of tokens used, or null when not provided.
      * @param int|null $thoughtTokens Number of tokens used for thinking, as a subset of completion tokens.
      */
-    public function __construct(int $promptTokens, int $completionTokens, int $totalTokens, ?int $thoughtTokens = null)
-    {
+    public function __construct(
+        ?int $promptTokens = null,
+        ?int $completionTokens = null,
+        ?int $totalTokens = null,
+        ?int $thoughtTokens = null
+    ) {
         $this->promptTokens = $promptTokens;
         $this->completionTokens = $completionTokens;
         $this->totalTokens = $totalTokens;
@@ -75,9 +79,9 @@ class TokenUsage extends AbstractDataTransferObject
      *
      * @since 0.1.0
      *
-     * @return int The prompt token count.
+     * @return int|null The prompt token count, or null when not provided.
      */
-    public function getPromptTokens(): int
+    public function getPromptTokens(): ?int
     {
         return $this->promptTokens;
     }
@@ -87,9 +91,9 @@ class TokenUsage extends AbstractDataTransferObject
      *
      * @since 0.1.0
      *
-     * @return int The completion token count.
+     * @return int|null The completion token count, or null when not provided.
      */
-    public function getCompletionTokens(): int
+    public function getCompletionTokens(): ?int
     {
         return $this->completionTokens;
     }
@@ -99,9 +103,9 @@ class TokenUsage extends AbstractDataTransferObject
      *
      * @since 0.1.0
      *
-     * @return int The total token count.
+     * @return int|null The total token count, or null when not provided.
      */
-    public function getTotalTokens(): int
+    public function getTotalTokens(): ?int
     {
         return $this->totalTokens;
     }
@@ -129,15 +133,15 @@ class TokenUsage extends AbstractDataTransferObject
             'type' => 'object',
             'properties' => [
                 self::KEY_PROMPT_TOKENS => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'null'],
                     'description' => 'Number of tokens in the prompt.',
                 ],
                 self::KEY_COMPLETION_TOKENS => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'null'],
                     'description' => 'Number of tokens in the completion, including any thought tokens.',
                 ],
                 self::KEY_TOTAL_TOKENS => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'null'],
                     'description' => 'Total number of tokens used.',
                 ],
                 self::KEY_THOUGHT_TOKENS => [
