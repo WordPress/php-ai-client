@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
+use Generator;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -13,15 +14,23 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModel;
 use WordPress\AiClient\Providers\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 use WordPress\AiClient\Providers\Http\Exception\ResponseException;
+use WordPress\AiClient\Providers\Http\Streaming\Contracts\EventStreamParserInterface;
+use WordPress\AiClient\Providers\Http\Streaming\SseEventStreamParser;
 use WordPress\AiClient\Providers\Http\Util\ResponseUtil;
+use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\StreamingTextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Results\StreamedGenerativeAiResult;
+use WordPress\AiClient\Results\ValueObjects\CandidateDelta;
+use WordPress\AiClient\Results\ValueObjects\GenerativeAiResultChunk;
+use WordPress\AiClient\Results\ValueObjects\ToolCallDelta;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
@@ -55,16 +64,46 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
  * @phpstan-type UsageData array{
  *     prompt_tokens?: int,
  *     completion_tokens?: int,
- *     total_tokens?: int
+ *     total_tokens?: int,
+ *     completion_tokens_details?: array{
+ *         reasoning_tokens?: int
+ *     }
  * }
  * @phpstan-type ResponseData array{
  *     id?: string,
  *     choices?: list<ChoiceData>,
  *     usage?: UsageData
  * }
+ * @phpstan-type StreamToolCallData array{
+ *     index?: int,
+ *     id?: string,
+ *     type?: string,
+ *     function?: array{
+ *         name?: string,
+ *         arguments?: string
+ *     }
+ * }
+ * @phpstan-type StreamDeltaData array{
+ *     role?: string,
+ *     reasoning_content?: string,
+ *     reasoning?: string,
+ *     content?: string,
+ *     tool_calls?: list<StreamToolCallData>
+ * }
+ * @phpstan-type StreamChoiceData array{
+ *     index?: int,
+ *     delta?: StreamDeltaData,
+ *     finish_reason?: string|null
+ * }
+ * @phpstan-type StreamEventData array{
+ *     id?: string,
+ *     choices?: list<StreamChoiceData>,
+ *     usage?: UsageData
+ * }
  */
 abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBasedModel implements
-    TextGenerationModelInterface
+    TextGenerationModelInterface,
+    StreamingTextGenerationModelInterface
 {
     /**
      * {@inheritDoc}
@@ -91,6 +130,288 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         $response = $httpTransporter->send($request);
         $this->throwIfNotSuccessful($response);
         return $this->parseResponseToGenerativeAiResult($response);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    final public function streamGenerateTextResult(array $prompt): StreamedGenerativeAiResult
+    {
+        return new StreamedGenerativeAiResult(
+            $this->streamTextChunks($prompt),
+            $this->providerMetadata(),
+            $this->metadata()
+        );
+    }
+
+    /**
+     * Sends the request and yields result chunks as the event stream arrives.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<Message> $prompt The prompt to generate text for.
+     * @return Generator<int, GenerativeAiResultChunk> The result chunks as they arrive.
+     */
+    private function streamTextChunks(array $prompt): Generator
+    {
+        $httpTransporter = $this->getHttpTransporter();
+
+        $params = $this->prepareGenerateTextParams($prompt);
+        $params['stream'] = true;
+        $params['stream_options'] = ['include_usage' => true];
+
+        $request = $this->createRequest(
+            HttpMethodEnum::POST(),
+            'chat/completions',
+            ['Content-Type' => 'application/json'],
+            $params
+        );
+
+        $request = $this->getRequestAuthentication()->authenticateRequest($request);
+
+        // Tell the transporter to stream the response body instead of buffering it.
+        $streamOptions = new RequestOptions();
+        $streamOptions->setStream(true);
+
+        $response = $httpTransporter->send($request, $streamOptions);
+        $this->throwIfNotSuccessful($response);
+
+        try {
+            foreach ($this->getEventStreamParser()->parse($response->getStream()) as $event) {
+                $data = $event->getData();
+                if ($data === '' || $data === '[DONE]') {
+                    continue;
+                }
+
+                $decoded = json_decode($data, true);
+                if (!is_array($decoded)) {
+                    continue;
+                }
+
+                $this->throwIfStreamError($decoded);
+
+                /** @var StreamEventData $decoded */
+                $chunk = $this->parseStreamEvent($decoded);
+                if ($chunk !== null) {
+                    yield $chunk;
+                }
+            }
+        } catch (ResponseException $e) {
+            throw $e;
+        } catch (\RuntimeException $e) {
+            throw ResponseException::fromStreamError($this->providerMetadata()->getName(), $e->getMessage(), $e);
+        }
+    }
+
+    /**
+     * Throws if a decoded stream event reports a provider error.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<array-key, mixed> $event The decoded stream event.
+     * @return void
+     *
+     * @throws ResponseException If the event carries an error payload.
+     */
+    protected function throwIfStreamError(array $event): void
+    {
+        if (!isset($event['error'])) {
+            return;
+        }
+
+        $error = $event['error'];
+        $message = is_array($error) && isset($error['message']) && is_string($error['message'])
+            ? $error['message']
+            : 'The provider reported an error.';
+
+        throw ResponseException::fromStreamError($this->providerMetadata()->getName(), $message);
+    }
+
+    /**
+     * Maps one decoded stream event into a result chunk.
+     *
+     * @since n.e.x.t
+     *
+     * @param StreamEventData $data The decoded event payload.
+     * @return GenerativeAiResultChunk|null The chunk, or null when the event carries nothing usable.
+     */
+    protected function parseStreamEvent(array $data): ?GenerativeAiResultChunk
+    {
+        $id = isset($data['id']) && is_string($data['id']) ? $data['id'] : null;
+        $tokenUsage = isset($data['usage']) && is_array($data['usage'])
+            ? $this->parseUsageData($data['usage'])
+            : null;
+        $additionalData = $this->extractAdditionalData($data);
+        $choices = isset($data['choices']) && is_array($data['choices']) ? $data['choices'] : [];
+
+        $candidateDeltas = [];
+        foreach ($choices as $choice) {
+            if (!is_array($choice)) {
+                continue;
+            }
+            $candidateDeltas[] = $this->parseStreamChoice($choice);
+        }
+
+        // Skip events that carry no metadata and no candidate deltas.
+        if ($id === null && $tokenUsage === null && $additionalData === [] && $candidateDeltas === []) {
+            return null;
+        }
+
+        return new GenerativeAiResultChunk($id, $tokenUsage, $additionalData, $candidateDeltas);
+    }
+
+    /**
+     * Maps one streamed choice into a candidate delta.
+     *
+     * @since n.e.x.t
+     *
+     * @param StreamChoiceData $choice The choice payload from the event.
+     * @return CandidateDelta The parsed candidate delta.
+     */
+    protected function parseStreamChoice(array $choice): CandidateDelta
+    {
+        $index = isset($choice['index']) && is_int($choice['index']) ? $choice['index'] : 0;
+        $delta = isset($choice['delta']) && is_array($choice['delta']) ? $choice['delta'] : [];
+        $finishReason = isset($choice['finish_reason']) && is_string($choice['finish_reason'])
+            ? FinishReasonEnum::tryFrom($choice['finish_reason'])
+            : null;
+
+        return new CandidateDelta(
+            $index,
+            $this->parseStreamDeltaParts($delta),
+            $finishReason,
+            $this->parseStreamToolCallDeltas($delta)
+        );
+    }
+
+    /**
+     * Maps a streamed delta into message parts.
+     *
+     * @since n.e.x.t
+     *
+     * @param StreamDeltaData $delta The delta payload from a choice.
+     * @return list<MessagePart> The parsed message parts.
+     */
+    protected function parseStreamDeltaParts(array $delta): array
+    {
+        $parts = [];
+
+        if (isset($delta['reasoning_content']) && is_string($delta['reasoning_content'])) {
+            $parts[] = new MessagePart($delta['reasoning_content'], MessagePartChannelEnum::thought());
+        }
+
+        if (isset($delta['reasoning']) && is_string($delta['reasoning'])) {
+            $parts[] = new MessagePart($delta['reasoning'], MessagePartChannelEnum::thought());
+        }
+
+        if (isset($delta['content']) && is_string($delta['content'])) {
+            $parts[] = new MessagePart($delta['content']);
+        }
+
+        return $parts;
+    }
+
+    /**
+     * Maps a streamed delta's tool calls into tool call fragments.
+     *
+     * @since n.e.x.t
+     *
+     * @param StreamDeltaData $delta The delta payload from a choice.
+     * @return list<ToolCallDelta> The parsed tool call fragments.
+     */
+    protected function parseStreamToolCallDeltas(array $delta): array
+    {
+        if (!isset($delta['tool_calls']) || !is_array($delta['tool_calls'])) {
+            return [];
+        }
+
+        $deltas = [];
+        foreach ($delta['tool_calls'] as $position => $toolCall) {
+            if (!is_array($toolCall)) {
+                continue;
+            }
+
+            // Providers key parallel tool calls by "index"; fall back to position.
+            $slot = isset($toolCall['index']) && is_int($toolCall['index'])
+                ? $toolCall['index']
+                : (int) $position;
+
+            $id = isset($toolCall['id']) && is_string($toolCall['id']) ? $toolCall['id'] : null;
+
+            $function = isset($toolCall['function']) && is_array($toolCall['function'])
+                ? $toolCall['function']
+                : [];
+            $name = isset($function['name']) && is_string($function['name']) ? $function['name'] : null;
+            $arguments = isset($function['arguments']) && is_string($function['arguments'])
+                ? $function['arguments']
+                : '';
+
+            $deltas[] = new ToolCallDelta($slot, $id, $name, $arguments);
+        }
+
+        return $deltas;
+    }
+
+    /**
+     * Parses usage data into a token usage object.
+     *
+     * @since n.e.x.t
+     *
+     * @param UsageData $usage The usage payload.
+     * @return TokenUsage The parsed token usage.
+     */
+    protected function parseUsageData(array $usage): TokenUsage
+    {
+        $reasoningTokens = $usage['completion_tokens_details']['reasoning_tokens'] ?? null;
+
+        return new TokenUsage(
+            $this->toIntOrZero($usage['prompt_tokens'] ?? 0),
+            $this->toIntOrZero($usage['completion_tokens'] ?? 0),
+            $this->toIntOrZero($usage['total_tokens'] ?? 0),
+            is_numeric($reasoningTokens) ? (int) $reasoningTokens : null
+        );
+    }
+
+    /**
+     * Coerces an untrusted usage value to an integer, defaulting to zero.
+     *
+     * @since n.e.x.t
+     *
+     * @param mixed $value The raw value from the decoded usage payload.
+     * @return int The coerced integer, or 0 when the value is not numeric.
+     */
+    private function toIntOrZero($value): int
+    {
+        return is_numeric($value) ? (int) $value : 0;
+    }
+
+    /**
+     * Extracts provider-specific metadata from a response or stream event.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, mixed> $data The decoded response or event payload.
+     * @return array<string, mixed> The remaining provider metadata.
+     */
+    protected function extractAdditionalData(array $data): array
+    {
+        unset($data['id'], $data['choices'], $data['usage']);
+
+        return $data;
+    }
+
+    /**
+     * Returns the parser used to decode the streamed event stream.
+     *
+     * @since n.e.x.t
+     *
+     * @return EventStreamParserInterface The event stream parser.
+     */
+    protected function getEventStreamParser(): EventStreamParserInterface
+    {
+        return new SseEventStreamParser();
     }
 
     /**
@@ -601,21 +922,12 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
 
         $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
 
-        if (isset($responseData['usage']) && is_array($responseData['usage'])) {
-            $usage = $responseData['usage'];
-
-            $tokenUsage = new TokenUsage(
-                $usage['prompt_tokens'] ?? 0,
-                $usage['completion_tokens'] ?? 0,
-                $usage['total_tokens'] ?? 0
-            );
-        } else {
-            $tokenUsage = new TokenUsage(0, 0, 0);
-        }
+        $tokenUsage = isset($responseData['usage']) && is_array($responseData['usage'])
+            ? $this->parseUsageData($responseData['usage'])
+            : new TokenUsage(0, 0, 0);
 
         // Use any other data from the response as provider-specific response metadata.
-        $additionalData = $responseData;
-        unset($additionalData['id'], $additionalData['choices'], $additionalData['usage']);
+        $additionalData = $this->extractAdditionalData($responseData);
 
         return new GenerativeAiResult(
             $id,
