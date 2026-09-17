@@ -73,4 +73,27 @@ class EmbeddingTest extends TestCase
 
         new Embedding([0.1, '0.2'], 2);
     }
+
+    /**
+     * @dataProvider nonFiniteValueProvider
+     */
+    public function testValuesMustBeFinite(float $value): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Embedding values must be finite numbers.');
+
+        new Embedding([0.1, $value], 2);
+    }
+
+    /**
+     * @return array<string, array{float}>
+     */
+    public static function nonFiniteValueProvider(): array
+    {
+        return [
+            'NAN'  => [NAN],
+            'INF'  => [INF],
+            '-INF' => [-INF],
+        ];
+    }
 }
