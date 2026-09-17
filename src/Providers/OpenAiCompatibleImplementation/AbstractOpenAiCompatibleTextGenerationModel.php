@@ -206,45 +206,60 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      */
     protected function prepareMessagesParam(array $messages, ?string $systemInstruction = null): array
     {
-        $messagesParam = array_map(
-            function (Message $message): array {
-                // Special case: Function response.
-                $messageParts = $message->getParts();
-                if (count($messageParts) === 1 && $messageParts[0]->getType()->isFunctionResponse()) {
-                    $functionResponse = $messageParts[0]->getFunctionResponse();
+        $messagesParam = [];
+        foreach ($messages as $message) {
+            $messageParts = $message->getParts();
+            $functionResponseParts = array_values(array_filter(
+                $messageParts,
+                static function (MessagePart $part): bool {
+                    return $part->getType()->isFunctionResponse();
+                }
+            ));
+
+            if (!empty($functionResponseParts)) {
+                if (count($functionResponseParts) !== count($messageParts)) {
+                    throw new InvalidArgumentException(
+                        'Function responses cannot be combined with other message parts.'
+                    );
+                }
+
+                foreach ($functionResponseParts as $part) {
+                    $functionResponse = $part->getFunctionResponse();
                     if (!$functionResponse) {
                         // This should be impossible due to class internals, but still needs to be checked.
                         throw new RuntimeException(
                             'The function response typed message part must contain a function response.'
                         );
                     }
-                    return [
+
+                    $messagesParam[] = [
                         'role' => 'tool',
                         'content' => json_encode($functionResponse->getResponse()),
                         'tool_call_id' => $functionResponse->getId(),
                     ];
                 }
-                $messageData = [
-                    'role' => $this->getMessageRoleString($message->getRole()),
-                    'content' => array_values(array_filter(array_map(
-                        [$this, 'getMessagePartContentData'],
-                        $messageParts
-                    ))),
-                ];
+                continue;
+            }
 
-                // Only include tool_calls if there are any (OpenAI rejects empty arrays).
-                $toolCalls = array_values(array_filter(array_map(
-                    [$this, 'getMessagePartToolCallData'],
+            $messageData = [
+                'role' => $this->getMessageRoleString($message->getRole()),
+                'content' => array_values(array_filter(array_map(
+                    [$this, 'getMessagePartContentData'],
                     $messageParts
-                )));
-                if (!empty($toolCalls)) {
-                    $messageData['tool_calls'] = $toolCalls;
-                }
+                ))),
+            ];
 
-                return $messageData;
-            },
-            $messages
-        );
+            // Only include tool_calls if there are any (OpenAI rejects empty arrays).
+            $toolCalls = array_values(array_filter(array_map(
+                [$this, 'getMessagePartToolCallData'],
+                $messageParts
+            )));
+            if (!empty($toolCalls)) {
+                $messageData['tool_calls'] = $toolCalls;
+            }
+
+            $messagesParam[] = $messageData;
+        }
 
         if ($systemInstruction) {
             array_unshift(
@@ -363,9 +378,9 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             return null;
         }
         if ($type->isFunctionResponse()) {
-            // Special case: Function response.
+            // Special case: Function responses are handled in `prepareMessagesParam()`.
             throw new InvalidArgumentException(
-                'The API only allows a single function response, as the only content of the message.'
+                'Function responses cannot be combined with other message parts.'
             );
         }
         throw new InvalidArgumentException(
