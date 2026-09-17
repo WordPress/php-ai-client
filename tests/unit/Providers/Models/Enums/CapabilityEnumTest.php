@@ -40,6 +40,7 @@ class CapabilityEnumTest extends TestCase
             'MUSIC_GENERATION' => 'music_generation',
             'VIDEO_GENERATION' => 'video_generation',
             'EMBEDDING_GENERATION' => 'embedding_generation',
+            'TEXT_EXTRACTION' => 'text_extraction',
             'CHAT_HISTORY' => 'chat_history',
         ];
     }
