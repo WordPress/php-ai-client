@@ -14,8 +14,11 @@ use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
+use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
@@ -187,7 +190,10 @@ class ModelResolverTest extends TestCase
      */
     public function testResolveThrowsWhenNoCandidates(): void
     {
-        $this->registry->expects($this->once())
+        // Called twice: once with the full requirements, and once more by the resolver's
+        // diagnostic re-lookup (capability-only), which also finds nothing here, confirming the
+        // capability itself is unsupported rather than some option.
+        $this->registry->expects($this->exactly(2))
             ->method('findModelsMetadataForSupport')
             ->willReturn([]);
 
@@ -197,6 +203,94 @@ class ModelResolverTest extends TestCase
         $this->expectExceptionMessage('No models found that support text_generation.');
 
         $resolver->resolve($this->textRequirements(), new ModelConfig());
+    }
+
+    /**
+     * Tests resolve names the option that eliminated all otherwise-suitable models.
+     *
+     * @return void
+     */
+    public function testResolveThrowsNamingUnmetOptionWhenCapabilityIsSupported(): void
+    {
+        $providerMetadata = new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud());
+        $modelWithoutWebSearch = new ModelMetadata(
+            'model-a',
+            'Model A',
+            [CapabilityEnum::textGeneration()],
+            []
+        );
+
+        $this->registry->expects($this->exactly(2))
+            ->method('findModelsMetadataForSupport')
+            ->willReturnCallback(function (ModelRequirements $requirements) use (
+                $providerMetadata,
+                $modelWithoutWebSearch
+            ) {
+                if ($requirements->getRequiredOptions() === []) {
+                    return [new ProviderModelsMetadata($providerMetadata, [$modelWithoutWebSearch])];
+                }
+
+                return [];
+            });
+
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration()],
+            [new RequiredOption(OptionEnum::webSearch(), true)]
+        );
+
+        $resolver = new ModelResolver($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'No models found that support text_generation. ' .
+            'The following requested option is not supported by any of those models: webSearch.'
+        );
+
+        $resolver->resolve($requirements, new ModelConfig());
+    }
+
+    /**
+     * Tests resolve names every option that eliminated all otherwise-suitable models.
+     *
+     * @return void
+     */
+    public function testResolveThrowsNamingMultipleUnmetOptions(): void
+    {
+        $providerMetadata = new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud());
+        $modelA = new ModelMetadata('model-a', 'Model A', [CapabilityEnum::textGeneration()], []);
+        $modelB = new ModelMetadata('model-b', 'Model B', [CapabilityEnum::textGeneration()], []);
+
+        $this->registry->expects($this->exactly(2))
+            ->method('findModelsMetadataForSupport')
+            ->willReturnCallback(function (ModelRequirements $requirements) use (
+                $providerMetadata,
+                $modelA,
+                $modelB
+            ) {
+                if ($requirements->getRequiredOptions() === []) {
+                    return [new ProviderModelsMetadata($providerMetadata, [$modelA, $modelB])];
+                }
+
+                return [];
+            });
+
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration()],
+            [
+                new RequiredOption(OptionEnum::webSearch(), true),
+                new RequiredOption(OptionEnum::functionDeclarations(), true),
+            ]
+        );
+
+        $resolver = new ModelResolver($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'No models found that support text_generation. ' .
+            'The following requested options are not supported by any of those models: webSearch, functionDeclarations.'
+        );
+
+        $resolver->resolve($requirements, new ModelConfig());
     }
 
     /**
@@ -225,7 +319,10 @@ class ModelResolverTest extends TestCase
      */
     public function testResolveThrowsWhenNoCandidatesWithProvider(): void
     {
-        $this->registry->expects($this->once())
+        // Called twice: once with the full requirements, and once more by the resolver's
+        // diagnostic re-lookup (capability-only), which also finds nothing here, confirming the
+        // capability itself is unsupported rather than some option.
+        $this->registry->expects($this->exactly(2))
             ->method('findProviderModelsMetadataForSupport')
             ->willReturn([]);
 
@@ -240,6 +337,54 @@ class ModelResolverTest extends TestCase
         );
 
         $resolver->resolve($this->textRequirements(), new ModelConfig());
+    }
+
+    /**
+     * Tests resolve names the unmet option in provider-scoped failure messages too.
+     *
+     * @return void
+     */
+    public function testResolveThrowsNamingUnmetOptionWithProvider(): void
+    {
+        $modelWithoutWebSearch = new ModelMetadata(
+            'scoped-model',
+            'Scoped Model',
+            [CapabilityEnum::textGeneration()],
+            []
+        );
+
+        $this->registry->expects($this->exactly(2))
+            ->method('findProviderModelsMetadataForSupport')
+            ->willReturnCallback(function (
+                string $providerIdOrClassName,
+                ModelRequirements $requirements
+            ) use (
+                $modelWithoutWebSearch
+            ) {
+                if ($requirements->getRequiredOptions() === []) {
+                    return [$modelWithoutWebSearch];
+                }
+
+                return [];
+            });
+
+        $this->registry->method('getProviderId')->willReturn('test-provider');
+
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration()],
+            [new RequiredOption(OptionEnum::webSearch(), true)]
+        );
+
+        $resolver = new ModelResolver($this->registry);
+        $resolver->setProvider('test-provider');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'No models found for provider "test-provider" that support text_generation. ' .
+            'The following requested option is not supported by any of those models: webSearch.'
+        );
+
+        $resolver->resolve($requirements, new ModelConfig());
     }
 
     /**
