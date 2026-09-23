@@ -32,20 +32,20 @@ use WordPress\AiClient\Common\Exception\RuntimeException;
  * $enum->is(PersonEnum::firstName()); // Returns true
  * PersonEnum::cases(); // Returns array of all enum instances
  *
- * @property-read string $value The value of the enum instance.
- * @property-read string $name The name of the enum constant.
+ * @property-read non-empty-string $value The value of the enum instance.
+ * @property-read non-empty-string $name The name of the enum constant.
  *
  * @since 0.1.0
  */
 abstract class AbstractEnum implements JsonSerializable
 {
     /**
-     * @var string The value of the enum instance.
+     * @var non-empty-string The value of the enum instance.
      */
     private string $value;
 
     /**
-     * @var string The name of the enum constant.
+     * @var non-empty-string The name of the enum constant.
      */
     private string $name;
 
@@ -64,8 +64,8 @@ abstract class AbstractEnum implements JsonSerializable
      *
      * @since 0.1.0
      *
-     * @param string $value The enum value.
-     * @param string $name The constant name.
+     * @param non-empty-string $value The enum value.
+     * @param non-empty-string $name The constant name.
      */
     final private function __construct(string $value, string $name)
     {
