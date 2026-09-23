@@ -927,6 +927,35 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests prepareToolsParam() preserves empty JSON Schema object maps.
+     *
+     * @return void
+     */
+    public function testPrepareToolsParamPreservesEmptySchemaObjectMaps(): void
+    {
+        $functionDeclaration = new FunctionDeclaration(
+            'inspect_object',
+            'Inspects an object with optional nested metadata',
+            [
+                'type' => 'object',
+                'properties' => [
+                    'metadata' => [
+                        'type' => 'object',
+                        'properties' => [],
+                    ],
+                ],
+            ]
+        );
+        $model = $this->createModel();
+
+        $prepared = $model->exposePrepareToolsParam([$functionDeclaration]);
+        $json = json_encode($prepared, JSON_THROW_ON_ERROR);
+
+        $this->assertStringContainsString('"properties":{', $json);
+        $this->assertStringNotContainsString('"properties":[]', $json);
+    }
+
+    /**
      * Tests prepareResponseFormatParam() with null schema.
      *
      * @return void
