@@ -162,6 +162,21 @@ class PromptBuilderTest extends TestCase
                 return $this->config;
             }
 
+            public function getCapabilities(): array
+            {
+                return ['input' => [], 'output' => []];
+            }
+
+            public function supportsInput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
+            public function supportsOutput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
             public function generateSpeechResult(array $prompt): GenerativeAiResult
             {
                 return $this->result;
@@ -225,6 +240,21 @@ class PromptBuilderTest extends TestCase
                 return $this->config;
             }
 
+            public function getCapabilities(): array
+            {
+                return ['input' => [], 'output' => []];
+            }
+
+            public function supportsInput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
+            public function supportsOutput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
             public function generateVideoResult(array $prompt): GenerativeAiResult
             {
                 return $this->result;
@@ -286,6 +316,21 @@ class PromptBuilderTest extends TestCase
             public function getConfig(): ModelConfig
             {
                 return $this->config;
+            }
+
+            public function getCapabilities(): array
+            {
+                return ['input' => [], 'output' => []];
+            }
+
+            public function supportsInput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
+            public function supportsOutput(ModalityEnum $modality): bool
+            {
+                return false;
             }
 
             public function convertTextToSpeechResult(array $prompt): GenerativeAiResult
@@ -2140,6 +2185,21 @@ class PromptBuilderTest extends TestCase
                 return $this->config;
             }
 
+            public function getCapabilities(): array
+            {
+                return ['input' => [], 'output' => []];
+            }
+
+            public function supportsInput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
+            public function supportsOutput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
             public function generateTextResult(array $prompt): GenerativeAiResult
             {
                 throw new RuntimeException('No candidates were generated');
@@ -2327,6 +2387,21 @@ class PromptBuilderTest extends TestCase
             public function getConfig(): ModelConfig
             {
                 return $this->config;
+            }
+
+            public function getCapabilities(): array
+            {
+                return ['input' => [], 'output' => []];
+            }
+
+            public function supportsInput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
+            public function supportsOutput(ModalityEnum $modality): bool
+            {
+                return false;
             }
 
             public function generateTextResult(array $prompt): GenerativeAiResult

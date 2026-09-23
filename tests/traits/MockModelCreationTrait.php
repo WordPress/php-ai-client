@@ -261,6 +261,21 @@ trait MockModelCreationTrait
                 return $this->config;
             }
 
+            public function getCapabilities(): array
+            {
+                return ['input' => [], 'output' => []];
+            }
+
+            public function supportsInput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
+            public function supportsOutput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
             public function generateTextResult(array $prompt): GenerativeAiResult
             {
                 return $this->result;
@@ -328,6 +343,21 @@ trait MockModelCreationTrait
                 return $this->config;
             }
 
+            public function getCapabilities(): array
+            {
+                return ['input' => [], 'output' => []];
+            }
+
+            public function supportsInput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
+            public function supportsOutput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
             public function generateImageResult(array $prompt): GenerativeAiResult
             {
                 return $this->result;
@@ -393,6 +423,21 @@ trait MockModelCreationTrait
             public function getConfig(): ModelConfig
             {
                 return $this->config;
+            }
+
+            public function getCapabilities(): array
+            {
+                return ['input' => [], 'output' => []];
+            }
+
+            public function supportsInput(ModalityEnum $modality): bool
+            {
+                return false;
+            }
+
+            public function supportsOutput(ModalityEnum $modality): bool
+            {
+                return false;
             }
 
             public function generateVideoResult(array $prompt): GenerativeAiResult

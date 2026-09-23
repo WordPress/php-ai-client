@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\ApiBasedImplementation;
 
+use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\ApiBasedImplementation\Contracts\ApiBasedModelInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
@@ -13,6 +14,7 @@ use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Http\Traits\WithRequestAuthenticationTrait;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
  * Base class for an API-based model for a provider.
@@ -123,5 +125,86 @@ abstract class AbstractApiBasedModel implements
     final public function getRequestOptions(): ?RequestOptions
     {
         return $this->requestOptions;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    final public function getCapabilities(): array
+    {
+        return [
+            'input'  => $this->extractModalities(OptionEnum::inputModalities()),
+            'output' => $this->extractModalities(OptionEnum::outputModalities()),
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    final public function supportsInput(ModalityEnum $modality): bool
+    {
+        foreach ($this->extractModalities(OptionEnum::inputModalities()) as $supported) {
+            if ($supported->value === $modality->value) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    final public function supportsOutput(ModalityEnum $modality): bool
+    {
+        foreach ($this->extractModalities(OptionEnum::outputModalities()) as $supported) {
+            if ($supported->value === $modality->value) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Extracts a list of ModalityEnum values from the model metadata for a given option key.
+     *
+     * Looks up the SupportedOption matching $optionKey in the model's metadata and converts
+     * each stored value to a ModalityEnum instance. Values that are not valid ModalityEnum
+     * values are silently skipped.
+     *
+     * @since n.e.x.t
+     *
+     * @param OptionEnum $optionKey The option key to look up (e.g. inputModalities, outputModalities).
+     * @return list<ModalityEnum> The list of modalities, or an empty list if none are defined.
+     */
+    private function extractModalities(OptionEnum $optionKey): array
+    {
+        foreach ($this->metadata->getSupportedOptions() as $supportedOption) {
+            if ($supportedOption->getName()->value !== $optionKey->value) {
+                continue;
+            }
+
+            $values = $supportedOption->getSupportedValues();
+            if ($values === null) {
+                return [];
+            }
+
+            $modalities = [];
+            foreach ($values as $value) {
+                if ($value instanceof ModalityEnum) {
+                    $modalities[] = $value;
+                } elseif (is_string($value)) {
+                    $modalities[] = ModalityEnum::from($value);
+                }
+            }
+            return $modalities;
+        }
+
+        return [];
     }
 }
