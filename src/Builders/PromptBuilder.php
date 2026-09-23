@@ -8,6 +8,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Builders\Traits\ModelResolutionTrait;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Common\Exception\TokenLimitReachedException;
 use WordPress\AiClient\Events\AfterGenerateResultEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Files\DTO\File;
@@ -27,6 +28,8 @@ use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGeneratio
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
+use WordPress\AiClient\Providers\Models\Tokenization\Contracts\TokenCounterInterface;
+use WordPress\AiClient\Providers\Models\Tokenization\HeuristicTokenCounter;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -61,6 +64,11 @@ class PromptBuilder
      * @var EventDispatcherInterface|null The event dispatcher for prompt lifecycle events.
      */
     private ?EventDispatcherInterface $eventDispatcher = null;
+
+    /**
+     * @var TokenCounterInterface|null Optional token counter used for the pre-flight context-window check.
+     */
+    private ?TokenCounterInterface $tokenCounter = null;
 
     // phpcs:disable Generic.Files.LineLength.TooLong
     /**
@@ -244,6 +252,27 @@ class PromptBuilder
     public function usingMaxTokens(int $maxTokens): self
     {
         $this->modelConfig->setMaxTokens($maxTokens);
+        return $this;
+    }
+
+    /**
+     * Sets the token counter used for the pre-flight context-window check.
+     *
+     * By default the builder uses a rough, provider-agnostic estimate
+     * ({@see HeuristicTokenCounter}). Provide a custom counter here to supply accurate,
+     * model-specific counts (for example one backed by a real tokenizer or a server-side
+     * tokenize endpoint). This only affects the proactive check performed before a request is
+     * sent, which runs when the resolved model exposes a context window via
+     * {@see \WordPress\AiClient\Providers\Models\DTO\ModelMetadata::getContextWindow()}.
+     *
+     * @since n.e.x.t
+     *
+     * @param TokenCounterInterface $tokenCounter The token counter to use.
+     * @return self The builder instance, for method chaining.
+     */
+    public function usingTokenCounter(TokenCounterInterface $tokenCounter): self
+    {
+        $this->tokenCounter = $tokenCounter;
         return $this;
     }
 
@@ -745,6 +774,9 @@ class PromptBuilder
 
         $model = $this->getConfiguredModel($capability);
 
+        // Fail fast if the assembled prompt is estimated to exceed the model's context window.
+        $this->assertPromptFitsContextWindow($model);
+
         // Dispatch BeforeGenerateResultEvent
         $this->dispatchEvent(
             new BeforeGenerateResultEvent($this->messages, $model, $capability)
@@ -759,6 +791,62 @@ class PromptBuilder
         );
 
         return $result;
+    }
+
+    /**
+     * Asserts that the assembled prompt is estimated to fit within the model's context window.
+     *
+     * The check runs only when the resolved model exposes a context window via
+     * {@see \WordPress\AiClient\Providers\Models\DTO\ModelMetadata::getContextWindow()}. When it
+     * does, the builder estimates the input token count (message text plus any system instruction)
+     * using the configured token counter, adds the configured output cap
+     * ({@see ModelConfig::getMaxTokens()}) when one is set, and throws when the total exceeds the
+     * context window. The estimate is advisory: a passing check does not guarantee the provider
+     * will accept the request, and models that do not publish a context window are never checked.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $model The resolved model to check the prompt against.
+     * @throws TokenLimitReachedException If the estimated prompt size exceeds the context window.
+     */
+    private function assertPromptFitsContextWindow(ModelInterface $model): void
+    {
+        $contextWindow = $model->metadata()->getContextWindow();
+        if ($contextWindow === null) {
+            return;
+        }
+
+        $messages = $this->messages;
+
+        $systemInstruction = $this->modelConfig->getSystemInstruction();
+        if ($systemInstruction !== null && $systemInstruction !== '') {
+            array_unshift($messages, new UserMessage([new MessagePart($systemInstruction)]));
+        }
+
+        $tokenCounter = $this->tokenCounter ?? new HeuristicTokenCounter();
+        $estimatedInputTokens = $tokenCounter->countTokens($messages, $model->metadata());
+
+        $reservedOutputTokens = $this->modelConfig->getMaxTokens() ?? 0;
+        $estimatedTotalTokens = $estimatedInputTokens + $reservedOutputTokens;
+
+        if ($estimatedTotalTokens <= $contextWindow) {
+            return;
+        }
+
+        throw new TokenLimitReachedException(
+            sprintf(
+                'The prompt is estimated at %d tokens%s, which exceeds the context window of %d '
+                . 'tokens for model "%s". Reduce the prompt size, or provide an accurate token '
+                . 'counter via usingTokenCounter() if this estimate is inaccurate.',
+                $estimatedInputTokens,
+                $reservedOutputTokens > 0
+                    ? sprintf(' plus %d reserved for output', $reservedOutputTokens)
+                    : '',
+                $contextWindow,
+                $model->metadata()->getId()
+            ),
+            $contextWindow
+        );
     }
 
     /**

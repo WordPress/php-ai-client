@@ -22,7 +22,8 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  *     id: string,
  *     name: string,
  *     supportedCapabilities: list<string>,
- *     supportedOptions: list<SupportedOptionArrayShape>
+ *     supportedOptions: list<SupportedOptionArrayShape>,
+ *     contextWindow?: int
  * }
  *
  * @extends AbstractDataTransferObject<ModelMetadataArrayShape>
@@ -33,6 +34,7 @@ class ModelMetadata extends AbstractDataTransferObject
     public const KEY_NAME = 'name';
     public const KEY_SUPPORTED_CAPABILITIES = 'supportedCapabilities';
     public const KEY_SUPPORTED_OPTIONS = 'supportedOptions';
+    public const KEY_CONTEXT_WINDOW = 'contextWindow';
 
     /**
      * @var string The model's unique identifier.
@@ -54,6 +56,11 @@ class ModelMetadata extends AbstractDataTransferObject
      */
     protected array $supportedOptions;
 
+    /**
+     * @var int|null The model's context window, in tokens, or null if unknown.
+     */
+    protected ?int $contextWindow;
+
 
     /**
      * Constructor.
@@ -64,11 +71,20 @@ class ModelMetadata extends AbstractDataTransferObject
      * @param string $name The model's display name.
      * @param list<CapabilityEnum> $supportedCapabilities The model's supported capabilities.
      * @param list<SupportedOption> $supportedOptions The model's supported configuration options.
+     * @param int|null $contextWindow The model's context window, in tokens, or null if unknown. This is the
+     *                                total number of tokens (input plus output) the model can process for a
+     *                                single request, distinct from the per-request output cap configured via
+     *                                {@see \WordPress\AiClient\Providers\Models\DTO\ModelConfig::setMaxTokens()}.
      *
-     * @throws InvalidArgumentException If arrays are not lists.
+     * @throws InvalidArgumentException If arrays are not lists, or if the context window is not positive.
      */
-    public function __construct(string $id, string $name, array $supportedCapabilities, array $supportedOptions)
-    {
+    public function __construct(
+        string $id,
+        string $name,
+        array $supportedCapabilities,
+        array $supportedOptions,
+        ?int $contextWindow = null
+    ) {
         if (!array_is_list($supportedCapabilities)) {
             throw new InvalidArgumentException('Supported capabilities must be a list array.');
         }
@@ -77,10 +93,15 @@ class ModelMetadata extends AbstractDataTransferObject
             throw new InvalidArgumentException('Supported options must be a list array.');
         }
 
+        if ($contextWindow !== null && $contextWindow < 1) {
+            throw new InvalidArgumentException('Context window must be a positive integer.');
+        }
+
         $this->id = $id;
         $this->name = $name;
         $this->supportedCapabilities = $supportedCapabilities;
         $this->supportedOptions = $supportedOptions;
+        $this->contextWindow = $contextWindow;
     }
 
     /**
@@ -132,6 +153,24 @@ class ModelMetadata extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the model's context window, in tokens.
+     *
+     * The context window is the total number of tokens (input plus output) the model can process
+     * for a single request. It is distinct from the per-request output cap configured via
+     * {@see \WordPress\AiClient\Providers\Models\DTO\ModelConfig::setMaxTokens()}, which limits only
+     * the number of tokens the model may generate. Providers that do not publish a fixed context
+     * window (for example self-hosted, user-configurable servers) return null.
+     *
+     * @since n.e.x.t
+     *
+     * @return int|null The context window in tokens, or null if unknown.
+     */
+    public function getContextWindow(): ?int
+    {
+        return $this->contextWindow;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -162,6 +201,11 @@ class ModelMetadata extends AbstractDataTransferObject
                     'items' => SupportedOption::getJsonSchema(),
                     'description' => 'The model\'s supported configuration options.',
                 ],
+                self::KEY_CONTEXT_WINDOW => [
+                    'type' => 'integer',
+                    'minimum' => 1,
+                    'description' => 'The model\'s context window, in tokens (total input plus output).',
+                ],
             ],
             'required' => [self::KEY_ID, self::KEY_NAME, self::KEY_SUPPORTED_CAPABILITIES, self::KEY_SUPPORTED_OPTIONS],
         ];
@@ -176,7 +220,7 @@ class ModelMetadata extends AbstractDataTransferObject
      */
     public function toArray(): array
     {
-        return [
+        $data = [
             self::KEY_ID => $this->id,
             self::KEY_NAME => $this->name,
             self::KEY_SUPPORTED_CAPABILITIES => array_map(
@@ -188,6 +232,12 @@ class ModelMetadata extends AbstractDataTransferObject
                 $this->supportedOptions
             ),
         ];
+
+        if ($this->contextWindow !== null) {
+            $data[self::KEY_CONTEXT_WINDOW] = $this->contextWindow;
+        }
+
+        return $data;
     }
 
     /**
@@ -214,7 +264,8 @@ class ModelMetadata extends AbstractDataTransferObject
             array_map(
                 static fn(array $optionData): SupportedOption => SupportedOption::fromArray($optionData),
                 $array[self::KEY_SUPPORTED_OPTIONS]
-            )
+            ),
+            $array[self::KEY_CONTEXT_WINDOW] ?? null
         );
     }
 

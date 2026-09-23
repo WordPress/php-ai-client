@@ -484,4 +484,131 @@ class ModelMetadataTest extends TestCase
             $this->assertSame($cap, $clonedCaps[$index]);
         }
     }
+
+    /**
+     * Tests that the context window is stored when provided.
+     *
+     * @return void
+     */
+    public function testConstructorWithContextWindow(): void
+    {
+        $metadata = new ModelMetadata('m', 'M', [], [], 128000);
+
+        $this->assertSame(128000, $metadata->getContextWindow());
+    }
+
+    /**
+     * Tests that the context window defaults to null.
+     *
+     * @return void
+     */
+    public function testConstructorWithoutContextWindow(): void
+    {
+        $metadata = new ModelMetadata('m', 'M', [], []);
+
+        $this->assertNull($metadata->getContextWindow());
+    }
+
+    /**
+     * Tests that a non-positive context window is rejected.
+     *
+     * @return void
+     */
+    public function testConstructorThrowsOnNonPositiveContextWindow(): void
+    {
+        $this->expectException(\WordPress\AiClient\Common\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Context window must be a positive integer.');
+
+        new ModelMetadata('m', 'M', [], [], 0);
+    }
+
+    /**
+     * Tests that toArray includes the context window when set.
+     *
+     * @return void
+     */
+    public function testToArrayIncludesContextWindow(): void
+    {
+        $metadata = new ModelMetadata('m', 'M', [], [], 32000);
+
+        $array = $metadata->toArray();
+
+        $this->assertArrayHasKey(ModelMetadata::KEY_CONTEXT_WINDOW, $array);
+        $this->assertSame(32000, $array[ModelMetadata::KEY_CONTEXT_WINDOW]);
+    }
+
+    /**
+     * Tests that toArray omits the context window when not set.
+     *
+     * @return void
+     */
+    public function testToArrayExcludesContextWindow(): void
+    {
+        $metadata = new ModelMetadata('m', 'M', [], []);
+
+        $this->assertArrayNotHasKey(ModelMetadata::KEY_CONTEXT_WINDOW, $metadata->toArray());
+    }
+
+    /**
+     * Tests that fromArray reads the context window when present.
+     *
+     * @return void
+     */
+    public function testFromArrayWithContextWindow(): void
+    {
+        $metadata = ModelMetadata::fromArray([
+            ModelMetadata::KEY_ID => 'm',
+            ModelMetadata::KEY_NAME => 'M',
+            ModelMetadata::KEY_SUPPORTED_CAPABILITIES => [],
+            ModelMetadata::KEY_SUPPORTED_OPTIONS => [],
+            ModelMetadata::KEY_CONTEXT_WINDOW => 8192,
+        ]);
+
+        $this->assertSame(8192, $metadata->getContextWindow());
+    }
+
+    /**
+     * Tests that fromArray defaults the context window to null when absent.
+     *
+     * @return void
+     */
+    public function testFromArrayWithoutContextWindow(): void
+    {
+        $metadata = ModelMetadata::fromArray([
+            ModelMetadata::KEY_ID => 'm',
+            ModelMetadata::KEY_NAME => 'M',
+            ModelMetadata::KEY_SUPPORTED_CAPABILITIES => [],
+            ModelMetadata::KEY_SUPPORTED_OPTIONS => [],
+        ]);
+
+        $this->assertNull($metadata->getContextWindow());
+    }
+
+    /**
+     * Tests round-trip array transformation preserves the context window.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripWithContextWindow(): void
+    {
+        $original = new ModelMetadata('m', 'M', [], [], 200000);
+
+        $restored = ModelMetadata::fromArray($original->toArray());
+
+        $this->assertSame(200000, $restored->getContextWindow());
+    }
+
+    /**
+     * Tests that the JSON schema exposes the context window as an optional property.
+     *
+     * @return void
+     */
+    public function testJsonSchemaIncludesContextWindow(): void
+    {
+        $schema = ModelMetadata::getJsonSchema();
+
+        $this->assertArrayHasKey(ModelMetadata::KEY_CONTEXT_WINDOW, $schema['properties']);
+        $this->assertSame('integer', $schema['properties'][ModelMetadata::KEY_CONTEXT_WINDOW]['type']);
+        $this->assertNotContains(ModelMetadata::KEY_CONTEXT_WINDOW, $schema['required']);
+    }
 }
