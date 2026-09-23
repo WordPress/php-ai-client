@@ -244,7 +244,9 @@ class HttpTransporter implements HttpTransporterInterface
      */
     private function buildGuzzleOptions(RequestOptions $options): array
     {
-        $guzzleOptions = [];
+        $guzzleOptions = [
+            'http_errors' => false,
+        ];
 
         $timeout = $options->getTimeout();
         if ($timeout !== null) {
