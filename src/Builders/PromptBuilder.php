@@ -24,6 +24,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\SoundGeneration\Contracts\SoundGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
@@ -582,6 +583,9 @@ class PromptBuilder
         if ($model instanceof SpeechGenerationModelInterface) {
             return CapabilityEnum::speechGeneration();
         }
+        if ($model instanceof SoundGenerationModelInterface) {
+            return CapabilityEnum::soundGeneration();
+        }
         if ($model instanceof VideoGenerationModelInterface) {
             return CapabilityEnum::videoGeneration();
         }
@@ -681,6 +685,18 @@ class PromptBuilder
     public function isSupportedForSpeechGeneration(): bool
     {
         return $this->isSupported(CapabilityEnum::speechGeneration());
+    }
+
+    /**
+     * Checks if the prompt is supported for sound generation.
+     *
+     * @since 1.4.0
+     *
+     * @return bool True if sound generation is supported.
+     */
+    public function isSupportedForSoundGeneration(): bool
+    {
+        return $this->isSupported(CapabilityEnum::soundGeneration());
     }
 
     /**
@@ -825,6 +841,18 @@ class PromptBuilder
             return $model->generateSpeechResult($messages);
         }
 
+        if ($capability->isSoundGeneration()) {
+            if (!$model instanceof SoundGenerationModelInterface) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Model "%s" does not support sound generation.',
+                        $model->metadata()->getId()
+                    )
+                );
+            }
+            return $model->generateSoundResult($messages);
+        }
+
         if ($capability->isVideoGeneration()) {
             if (!$model instanceof VideoGenerationModelInterface) {
                 throw new RuntimeException(
@@ -913,6 +941,24 @@ class PromptBuilder
 
         // Generate and return the result with text-to-speech conversion capability
         return $this->generateResult(CapabilityEnum::textToSpeechConversion());
+    }
+
+    /**
+     * Generates a sound result from the prompt.
+     *
+     * @since 1.4.0
+     *
+     * @return GenerativeAiResult The generated result containing sound audio candidates.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support sound generation.
+     */
+    public function generateSoundResult(): GenerativeAiResult
+    {
+        // Include audio in output modalities
+        $this->includeOutputModalities(ModalityEnum::audio());
+
+        // Generate and return the result with sound generation capability
+        return $this->generateResult(CapabilityEnum::soundGeneration());
     }
 
     /**
@@ -1062,6 +1108,39 @@ class PromptBuilder
         }
 
         return $this->generateSpeechResult()->toFiles();
+    }
+
+    /**
+     * Generates sound from the prompt.
+     *
+     * @since 1.4.0
+     *
+     * @return File The generated sound audio file.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no audio is generated.
+     */
+    public function generateSound(): File
+    {
+        return $this->generateSoundResult()->toFile();
+    }
+
+    /**
+     * Generates multiple sound outputs from the prompt.
+     *
+     * @since 1.4.0
+     *
+     * @param int|null $candidateCount The number of sound outputs to generate.
+     * @return list<File> The generated sound audio files.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no audio is generated.
+     */
+    public function generateSounds(?int $candidateCount = null): array
+    {
+        if ($candidateCount !== null) {
+            $this->usingCandidateCount($candidateCount);
+        }
+
+        return $this->generateSoundResult()->toFiles();
     }
 
     /**
