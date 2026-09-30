@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Providers;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Providers\Contracts\VerifiesCredentialsInterface;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Http\DTO\Request;
@@ -146,6 +147,54 @@ class ProviderRegistryTest extends TestCase
     public function testIsProviderConfiguredWithUnregisteredProvider(): void
     {
         $this->assertFalse($this->registry->isProviderConfigured('nonexistent'));
+    }
+
+    /**
+     * Tests verifyProviderCredentials with an availability check that can verify credentials.
+     *
+     * @return void
+     */
+    public function testVerifyProviderCredentialsUsesCredentialsVerification(): void
+    {
+        MockProvider::setAvailability(
+            new class extends MockProviderAvailability implements VerifiesCredentialsInterface {
+                public function verifyCredentials(): bool
+                {
+                    return false;
+                }
+            }
+        );
+        $this->registry->registerProvider(MockProvider::class);
+
+        // The availability check reports the provider as configured, but the credentials verification decides.
+        $this->assertTrue($this->registry->isProviderConfigured('mock'));
+        $this->assertFalse($this->registry->verifyProviderCredentials('mock'));
+    }
+
+    /**
+     * Tests verifyProviderCredentials with an availability check that cannot verify credentials.
+     *
+     * @return void
+     */
+    public function testVerifyProviderCredentialsFallsBackToAvailabilityCheck(): void
+    {
+        MockProvider::setAvailability(new MockProviderAvailability(false));
+        $this->registry->registerProvider(MockProvider::class);
+
+        $this->assertFalse($this->registry->verifyProviderCredentials('mock'));
+    }
+
+    /**
+     * Tests verifyProviderCredentials with unregistered provider.
+     *
+     * @return void
+     */
+    public function testVerifyProviderCredentialsWithUnregisteredProvider(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Provider not registered: nonexistent');
+
+        $this->registry->verifyProviderCredentials('nonexistent');
     }
 
     /**

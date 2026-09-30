@@ -533,6 +533,7 @@ direction LR
             +hasProvider(string $idOrClassName) bool
             +getProviderClassName(string $id) string
             +isProviderConfigured(string $idOrClassName) bool
+            +verifyProviderCredentials(string $idOrClassName) bool
             +getProviderModel(string $idOrClassName, string $modelId, ModelConfig|array< string, mixed > $modelConfig) Model
             +findProviderModelsMetadataForSupport(string $idOrClassName, ModelRequirements $modelRequirements) ModelMetadata[]
             +findModelsMetadataForSupport(ModelRequirements $modelRequirements) ProviderModelMetadata[]
@@ -982,6 +983,7 @@ direction LR
             +hasProvider(string $idOrClassName) bool
             +getProviderClassName(string $id) string
             +isProviderConfigured(string $idOrClassName) bool
+            +verifyProviderCredentials(string $idOrClassName) bool
             +getProviderModel(string $idOrClassName, string $modelId, ModelConfig|array< string, mixed > $modelConfig) ModelInterface
             +findProviderModelsMetadataForSupport(string $idOrClassName, ModelRequirements $modelRequirements) ModelMetadata[]
             +findModelsMetadataForSupport(ModelRequirements $modelRequirements) AiProviderModelMetadata[]
@@ -996,6 +998,9 @@ direction LR
         }
         class ProviderAvailabilityInterface {
             +isConfigured() bool
+        }
+        class VerifiesCredentialsInterface {
+            +verifyCredentials() bool
         }
         class ProviderInterface {
             +metadata() ProviderMetadata$
@@ -1268,6 +1273,7 @@ direction LR
     <<interface>> ProviderInterface
     <<interface>> ModelInterface
     <<interface>> ProviderAvailabilityInterface
+    <<interface>> VerifiesCredentialsInterface
     <<interface>> ModelMetadataDirectoryInterface
     <<interface>> ProviderOperationsHandlerInterface
     <<interface>> ProviderWithOperationsHandlerInterface
