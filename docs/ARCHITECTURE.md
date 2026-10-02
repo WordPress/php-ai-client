@@ -22,6 +22,8 @@ The two builders differ fundamentally in how they arrive at a model:
 
 Both builders accumulate model configuration through the shared `ModelConfigurationTrait`, which provides `usingModelConfig()`.
 
+Classification uses a third builder, `ClassificationBuilder`, because classification models take state and typed questions rather than a prompt, and answer each question with a probability, an option, or a position on a scale instead of generating content. Like `PromptBuilder`, it **resolves** a model through the `ModelResolutionTrait`, since answers are not tied to the model that produced them.
+
 ### Code examples
 
 The following examples indicate how this SDK could eventually be used.
