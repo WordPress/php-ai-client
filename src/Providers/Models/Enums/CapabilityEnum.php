@@ -18,6 +18,7 @@ use WordPress\AiClient\Common\AbstractEnum;
  * @method static self musicGeneration() Creates an instance for MUSIC_GENERATION capability.
  * @method static self videoGeneration() Creates an instance for VIDEO_GENERATION capability.
  * @method static self embeddingGeneration() Creates an instance for EMBEDDING_GENERATION capability.
+ * @method static self classification() Creates an instance for CLASSIFICATION capability.
  * @method static self chatHistory() Creates an instance for CHAT_HISTORY capability.
  * @method bool isTextGeneration() Checks if the capability is TEXT_GENERATION.
  * @method bool isImageGeneration() Checks if the capability is IMAGE_GENERATION.
@@ -26,6 +27,7 @@ use WordPress\AiClient\Common\AbstractEnum;
  * @method bool isMusicGeneration() Checks if the capability is MUSIC_GENERATION.
  * @method bool isVideoGeneration() Checks if the capability is VIDEO_GENERATION.
  * @method bool isEmbeddingGeneration() Checks if the capability is EMBEDDING_GENERATION.
+ * @method bool isClassification() Checks if the capability is CLASSIFICATION.
  * @method bool isChatHistory() Checks if the capability is CHAT_HISTORY.
  */
 class CapabilityEnum extends AbstractEnum
@@ -64,6 +66,11 @@ class CapabilityEnum extends AbstractEnum
      * Embedding generation capability.
      */
     public const EMBEDDING_GENERATION = 'embedding_generation';
+
+    /**
+     * Classification capability.
+     */
+    public const CLASSIFICATION = 'classification';
 
     /**
      * Chat history support capability.
