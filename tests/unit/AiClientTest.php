@@ -7,13 +7,19 @@ namespace WordPress\AiClient\Tests\unit;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Builders\ClassificationBuilder;
 use WordPress\AiClient\Builders\EmbeddingBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Events\AfterClassifyEvent;
+use WordPress\AiClient\Events\BeforeClassifyEvent;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
+use WordPress\AiClient\Providers\Models\Classification\DTO\ClassificationQuestion;
+use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Tests\mocks\MockEventDispatcher;
 use WordPress\AiClient\Tests\mocks\MockProvider;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
@@ -304,6 +310,57 @@ class AiClientTest extends TestCase
 
         $result = $builder->usingModel($mockModel)->generateEmbeddings();
         $this->assertCount(2, $result);
+    }
+
+    /**
+     * Tests classify() returns a ClassificationBuilder configured with the given state.
+     */
+    public function testClassifyReturnsClassificationBuilder(): void
+    {
+        $expectedResult = $this->createTestClassificationResult();
+        $mockModel = $this->createMockClassificationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $builder = AiClient::classify(['comment' => 'Buy cheap pills!'], $registry);
+
+        $this->assertInstanceOf(ClassificationBuilder::class, $builder);
+
+        $result = $builder
+            ->withQuestion(
+                'spam',
+                new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), 'Is this comment spam?')
+            )
+            ->usingModel($mockModel)
+            ->classifyResult();
+
+        $this->assertSame($expectedResult, $result);
+        $this->assertSame(['comment' => 'Buy cheap pills!'], $mockModel->lastCall[0]);
+    }
+
+    /**
+     * Tests classify() passes the configured event dispatcher to the builder.
+     */
+    public function testClassifyUsesEventDispatcher(): void
+    {
+        $dispatcher = new MockEventDispatcher();
+        $mockModel = $this->createMockClassificationModel($this->createTestClassificationResult());
+
+        AiClient::setEventDispatcher($dispatcher);
+
+        try {
+            AiClient::classify(['comment' => 'Buy cheap pills!'], $this->createRegistryWithMockProvider())
+                ->withQuestion(
+                    'spam',
+                    new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), 'Is this comment spam?')
+                )
+                ->usingModel($mockModel)
+                ->classifyResult();
+        } finally {
+            AiClient::setEventDispatcher(null);
+        }
+
+        $this->assertCount(1, $dispatcher->getDispatchedEventsOfType(BeforeClassifyEvent::class));
+        $this->assertCount(1, $dispatcher->getDispatchedEventsOfType(AfterClassifyEvent::class));
     }
 
 
