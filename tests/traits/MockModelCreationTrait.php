@@ -9,6 +9,9 @@ use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
+use WordPress\AiClient\Providers\Models\Classification\Contracts\ClassificationModelInterface;
+use WordPress\AiClient\Providers\Models\Classification\DTO\ClassificationQuestion;
+use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -21,6 +24,8 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
+use WordPress\AiClient\Results\DTO\ClassificationAnswer;
+use WordPress\AiClient\Results\DTO\ClassificationResult;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
@@ -114,6 +119,31 @@ trait MockModelCreationTrait
     }
 
     /**
+     * Creates a test ClassificationResult for testing purposes.
+     *
+     * @param array<string, ClassificationAnswer>|null $answers Optional answers for the response.
+     * @return ClassificationResult
+     */
+    protected function createTestClassificationResult(?array $answers = null): ClassificationResult
+    {
+        $answers = $answers ?? ['spam' => new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 0.03)];
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new ClassificationResult(
+            'test-classification-result-id',
+            $answers,
+            new TokenUsage(10, 1, 11),
+            $providerMetadata,
+            $this->createTestClassificationModelMetadata()
+        );
+    }
+
+    /**
      * Creates a test model metadata instance for text generation.
      *
      * @param string $id Optional model ID.
@@ -166,6 +196,25 @@ trait MockModelCreationTrait
             $id,
             $name,
             [CapabilityEnum::videoGeneration()],
+            []
+        );
+    }
+
+    /**
+     * Creates a test model metadata instance for classification.
+     *
+     * @param string $id   Optional model ID.
+     * @param string $name Optional model name.
+     * @return ModelMetadata
+     */
+    protected function createTestClassificationModelMetadata(
+        string $id = 'test-classification-model',
+        string $name = 'Test Classification Model'
+    ): ModelMetadata {
+        return new ModelMetadata(
+            $id,
+            $name,
+            [CapabilityEnum::classification()],
             []
         );
     }
@@ -467,6 +516,85 @@ trait MockModelCreationTrait
              */
             public function generateEmbeddingResult(array $inputs): EmbeddingResult
             {
+                return $this->result;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock classification model using anonymous class.
+     *
+     * @param ClassificationResult $result The result to return from classification.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @return ModelInterface&ClassificationModelInterface The mock model.
+     */
+    protected function createMockClassificationModel(
+        ClassificationResult $result,
+        ?ModelMetadata $metadata = null
+    ): ModelInterface {
+        $metadata = $metadata ?? $this->createTestClassificationModelMetadata();
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, ClassificationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private ClassificationResult $result;
+            private ModelConfig $config;
+
+            /**
+             * @var array{0: array<string, mixed>, 1: array<string, ClassificationQuestion>}|null The state and
+             *      questions received by the last call to classifyResult().
+             */
+            public ?array $lastCall = null;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                ClassificationResult $result
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->result = $result;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            /**
+             * @param array<string, mixed> $state The state to classify.
+             * @param array<string, ClassificationQuestion> $questions The questions to answer.
+             */
+            public function classifyResult(array $state, array $questions): ClassificationResult
+            {
+                $this->lastCall = [$state, $questions];
+
                 return $this->result;
             }
         };

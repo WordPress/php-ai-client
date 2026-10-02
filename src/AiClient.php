@@ -6,6 +6,7 @@ namespace WordPress\AiClient;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\SimpleCache\CacheInterface;
+use WordPress\AiClient\Builders\ClassificationBuilder;
 use WordPress\AiClient\Builders\EmbeddingBuilder;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
@@ -267,6 +268,28 @@ class AiClient
         return new EmbeddingBuilder(
             $registry ?? self::defaultRegistry(),
             $input,
+            self::$eventDispatcher
+        );
+    }
+
+    /**
+     * Creates a classification builder for fluent classification.
+     *
+     * Classification answers typed questions about the given state rather than generating content. Add
+     * questions via withQuestion() on the returned builder, then chain classifyResult() to get one answer
+     * per question.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, mixed>|null $state Optional initial state to classify.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
+     * @return ClassificationBuilder The classification builder instance.
+     */
+    public static function classify(?array $state = null, ?ProviderRegistry $registry = null): ClassificationBuilder
+    {
+        return new ClassificationBuilder(
+            $registry ?? self::defaultRegistry(),
+            $state,
             self::$eventDispatcher
         );
     }
