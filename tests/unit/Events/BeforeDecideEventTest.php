@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Events;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Events\BeforeClassifyEvent;
-use WordPress\AiClient\Providers\Models\Classification\DTO\ClassificationQuestion;
-use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
+use WordPress\AiClient\Events\BeforeDecideEvent;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
 /**
- * @covers \WordPress\AiClient\Events\BeforeClassifyEvent
+ * @covers \WordPress\AiClient\Events\BeforeDecideEvent
  */
-class BeforeClassifyEventTest extends TestCase
+class BeforeDecideEventTest extends TestCase
 {
     use MockModelCreationTrait;
 
@@ -26,11 +26,11 @@ class BeforeClassifyEventTest extends TestCase
     public function testConstruction(): void
     {
         $state = ['comment' => 'Buy cheap pills!'];
-        $questions = ['spam' => new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), 'Is it spam?')];
-        $model = $this->createMockClassificationModel($this->createTestClassificationResult());
-        $capability = CapabilityEnum::classification();
+        $questions = ['spam' => new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is it spam?')];
+        $model = $this->createMockDecisionModel($this->createTestDecisionResult());
+        $capability = CapabilityEnum::decision();
 
-        $event = new BeforeClassifyEvent($state, $questions, $model, $capability);
+        $event = new BeforeDecideEvent($state, $questions, $model, $capability);
 
         $this->assertSame($state, $event->getState());
         $this->assertSame($questions, $event->getQuestions());
@@ -45,14 +45,14 @@ class BeforeClassifyEventTest extends TestCase
      */
     public function testCloneClonesQuestions(): void
     {
-        $question = new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), 'Is it spam?');
-        $model = $this->createMockClassificationModel($this->createTestClassificationResult());
+        $question = new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is it spam?');
+        $model = $this->createMockDecisionModel($this->createTestDecisionResult());
 
-        $event = new BeforeClassifyEvent(
+        $event = new BeforeDecideEvent(
             ['comment' => 'Buy cheap pills!'],
             ['spam' => $question],
             $model,
-            CapabilityEnum::classification()
+            CapabilityEnum::decision()
         );
         $clone = clone $event;
 

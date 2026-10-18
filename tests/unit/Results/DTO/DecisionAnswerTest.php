@@ -7,13 +7,13 @@ namespace WordPress\AiClient\Tests\unit\Results\DTO;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
-use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
-use WordPress\AiClient\Results\DTO\ClassificationAnswer;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
+use WordPress\AiClient\Results\DTO\DecisionAnswer;
 
 /**
- * @covers \WordPress\AiClient\Results\DTO\ClassificationAnswer
+ * @covers \WordPress\AiClient\Results\DTO\DecisionAnswer
  */
-class ClassificationAnswerTest extends TestCase
+class DecisionAnswerTest extends TestCase
 {
     /**
      * Tests an answer to a binary question.
@@ -22,7 +22,7 @@ class ClassificationAnswerTest extends TestCase
      */
     public function testBinaryAnswer(): void
     {
-        $answer = new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 0.03);
+        $answer = new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.03);
 
         $this->assertTrue($answer->getType()->isBinary());
         $this->assertSame(0.03, $answer->getProbability());
@@ -30,8 +30,8 @@ class ClassificationAnswerTest extends TestCase
         $this->assertSame([], $answer->getProbabilities());
         $this->assertSame(
             [
-                ClassificationAnswer::KEY_TYPE => 'binary',
-                ClassificationAnswer::KEY_VALUE => 0.03,
+                DecisionAnswer::KEY_TYPE => 'binary',
+                DecisionAnswer::KEY_VALUE => 0.03,
             ],
             $answer->toArray()
         );
@@ -45,7 +45,7 @@ class ClassificationAnswerTest extends TestCase
     public function testChoiceAnswer(): void
     {
         $probabilities = ['approve' => 0.91, 'hold' => 0.07, 'trash' => 0.02];
-        $answer = new ClassificationAnswer(ClassificationQuestionTypeEnum::choice(), 'approve', 0.91, $probabilities);
+        $answer = new DecisionAnswer(DecisionQuestionTypeEnum::choice(), 'approve', 0.91, $probabilities);
 
         $this->assertTrue($answer->getType()->isChoice());
         $this->assertSame('approve', $answer->getChoice());
@@ -53,10 +53,10 @@ class ClassificationAnswerTest extends TestCase
         $this->assertSame($probabilities, $answer->getProbabilities());
         $this->assertSame(
             [
-                ClassificationAnswer::KEY_TYPE => 'choice',
-                ClassificationAnswer::KEY_VALUE => 'approve',
-                ClassificationAnswer::KEY_CONFIDENCE => 0.91,
-                ClassificationAnswer::KEY_PROBABILITIES => $probabilities,
+                DecisionAnswer::KEY_TYPE => 'choice',
+                DecisionAnswer::KEY_VALUE => 'approve',
+                DecisionAnswer::KEY_CONFIDENCE => 0.91,
+                DecisionAnswer::KEY_PROBABILITIES => $probabilities,
             ],
             $answer->toArray()
         );
@@ -69,7 +69,7 @@ class ClassificationAnswerTest extends TestCase
      */
     public function testScoreAnswer(): void
     {
-        $answer = new ClassificationAnswer(ClassificationQuestionTypeEnum::score(), 2.3, 0.26, [0.05, 0.1, 0.35, 0.5]);
+        $answer = new DecisionAnswer(DecisionQuestionTypeEnum::score(), 2.3, 0.26, [0.05, 0.1, 0.35, 0.5]);
 
         $this->assertTrue($answer->getType()->isScore());
         $this->assertSame(2.3, $answer->getScore());
@@ -84,8 +84,8 @@ class ClassificationAnswerTest extends TestCase
      */
     public function testNormalizesIntegers(): void
     {
-        $binary = new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 1, 1);
-        $score = new ClassificationAnswer(ClassificationQuestionTypeEnum::score(), 3, null, [0, 0, 0, 1]);
+        $binary = new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 1, 1);
+        $score = new DecisionAnswer(DecisionQuestionTypeEnum::score(), 3, null, [0, 0, 0, 1]);
 
         $this->assertSame(1.0, $binary->getProbability());
         $this->assertSame(1.0, $binary->getConfidence());
@@ -98,35 +98,35 @@ class ClassificationAnswerTest extends TestCase
      *
      * @dataProvider provideAnswers
      *
-     * @param ClassificationAnswer $answer The answer.
+     * @param DecisionAnswer $answer The answer.
      * @return void
      */
-    public function testArrayRoundTrip(ClassificationAnswer $answer): void
+    public function testArrayRoundTrip(DecisionAnswer $answer): void
     {
-        $this->assertEquals($answer, ClassificationAnswer::fromArray($answer->toArray()));
+        $this->assertEquals($answer, DecisionAnswer::fromArray($answer->toArray()));
 
         $decoded = json_decode((string) json_encode($answer->toArray()), true);
-        $this->assertEquals($answer, ClassificationAnswer::fromArray($decoded));
+        $this->assertEquals($answer, DecisionAnswer::fromArray($decoded));
     }
 
     /**
      * Provides an answer of each type.
      *
-     * @return array<string, array{ClassificationAnswer}>
+     * @return array<string, array{DecisionAnswer}>
      */
     public function provideAnswers(): array
     {
         return [
-            'binary' => [new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 0.03)],
+            'binary' => [new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.03)],
             'choice' => [
-                new ClassificationAnswer(
-                    ClassificationQuestionTypeEnum::choice(),
+                new DecisionAnswer(
+                    DecisionQuestionTypeEnum::choice(),
                     'hold',
                     0.6,
                     ['approve' => 0.4, 'hold' => 0.6]
                 ),
             ],
-            'score' => [new ClassificationAnswer(ClassificationQuestionTypeEnum::score(), 1.4, 0.5, [0.1, 0.4, 0.5])],
+            'score' => [new DecisionAnswer(DecisionQuestionTypeEnum::score(), 1.4, 0.5, [0.1, 0.4, 0.5])],
         ];
     }
 
@@ -135,33 +135,33 @@ class ClassificationAnswerTest extends TestCase
      *
      * @dataProvider provideInvalidValues
      *
-     * @param ClassificationQuestionTypeEnum $type The question type.
+     * @param DecisionQuestionTypeEnum $type The question type.
      * @param mixed $value The invalid value.
      * @param string $message The expected exception message.
      * @return void
      */
-    public function testRejectsInvalidValues(ClassificationQuestionTypeEnum $type, $value, string $message): void
+    public function testRejectsInvalidValues(DecisionQuestionTypeEnum $type, $value, string $message): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage($message);
 
-        new ClassificationAnswer($type, $value);
+        new DecisionAnswer($type, $value);
     }
 
     /**
      * Provides values that do not suit the question type.
      *
-     * @return array<string, array{ClassificationQuestionTypeEnum, mixed, string}>
+     * @return array<string, array{DecisionQuestionTypeEnum, mixed, string}>
      */
     public function provideInvalidValues(): array
     {
-        $binary = ClassificationQuestionTypeEnum::binary();
-        $choice = ClassificationQuestionTypeEnum::choice();
-        $score = ClassificationQuestionTypeEnum::score();
+        $binary = DecisionQuestionTypeEnum::binary();
+        $choice = DecisionQuestionTypeEnum::choice();
+        $score = DecisionQuestionTypeEnum::score();
 
-        $probabilityMessage = 'Classification answer probability must be a number between 0 and 1.';
-        $choiceMessage = 'Classification answer choice must be a non-empty option key.';
-        $scoreMessage = 'Classification answer score must be a non-negative number.';
+        $probabilityMessage = 'Decision answer probability must be a number between 0 and 1.';
+        $choiceMessage = 'Decision answer choice must be a non-empty option key.';
+        $scoreMessage = 'Decision answer score must be a non-negative number.';
 
         return [
             'binary below zero' => [$binary, -0.1, $probabilityMessage],
@@ -189,9 +189,9 @@ class ClassificationAnswerTest extends TestCase
     public function testRejectsInvalidConfidence(float $confidence): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Classification answer confidence must be a number between 0 and 1.');
+        $this->expectExceptionMessage('Decision answer confidence must be a number between 0 and 1.');
 
-        new ClassificationAnswer(ClassificationQuestionTypeEnum::choice(), 'approve', $confidence);
+        new DecisionAnswer(DecisionQuestionTypeEnum::choice(), 'approve', $confidence);
     }
 
     /**
@@ -205,10 +205,10 @@ class ClassificationAnswerTest extends TestCase
     public function testRejectsInvalidProbabilities(float $probability): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Classification answer probabilities must be a number between 0 and 1.');
+        $this->expectExceptionMessage('Decision answer probabilities must be a number between 0 and 1.');
 
-        new ClassificationAnswer(
-            ClassificationQuestionTypeEnum::choice(),
+        new DecisionAnswer(
+            DecisionQuestionTypeEnum::choice(),
             'approve',
             null,
             ['approve' => 0.9, 'trash' => $probability]
@@ -238,10 +238,10 @@ class ClassificationAnswerTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Classification answers to binary questions do not accept probabilities, as their value is the probability.'
+            'Decision answers to binary questions do not accept probabilities, as their value is the probability.'
         );
 
-        new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 0.9, null, ['true' => 0.9, 'false' => 0.1]);
+        new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.9, null, ['true' => 0.9, 'false' => 0.1]);
     }
 
     /**
@@ -253,10 +253,10 @@ class ClassificationAnswerTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Classification answer probabilities for a choice question must be keyed by option key.'
+            'Decision answer probabilities for a choice question must be keyed by option key.'
         );
 
-        new ClassificationAnswer(ClassificationQuestionTypeEnum::choice(), 'approve', null, [0.9, 0.1]);
+        new DecisionAnswer(DecisionQuestionTypeEnum::choice(), 'approve', null, [0.9, 0.1]);
     }
 
     /**
@@ -268,11 +268,11 @@ class ClassificationAnswerTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Classification answer probabilities for a score question must be a list, '
+            'Decision answer probabilities for a score question must be a list, '
             . 'from the lowest level to the highest.'
         );
 
-        new ClassificationAnswer(ClassificationQuestionTypeEnum::score(), 1.0, null, ['low' => 0.2, 'high' => 0.8]);
+        new DecisionAnswer(DecisionQuestionTypeEnum::score(), 1.0, null, ['low' => 0.2, 'high' => 0.8]);
     }
 
     /**
@@ -280,12 +280,12 @@ class ClassificationAnswerTest extends TestCase
      *
      * @dataProvider provideMismatchedGetters
      *
-     * @param ClassificationAnswer $answer The answer.
+     * @param DecisionAnswer $answer The answer.
      * @param string $getter The getter for another question type.
      * @param string $message The expected exception message.
      * @return void
      */
-    public function testGetterForAnotherTypeThrows(ClassificationAnswer $answer, string $getter, string $message): void
+    public function testGetterForAnotherTypeThrows(DecisionAnswer $answer, string $getter, string $message): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage($message);
@@ -296,13 +296,13 @@ class ClassificationAnswerTest extends TestCase
     /**
      * Provides answers with a getter for another question type.
      *
-     * @return array<string, array{ClassificationAnswer, string, string}>
+     * @return array<string, array{DecisionAnswer, string, string}>
      */
     public function provideMismatchedGetters(): array
     {
-        $binary = new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 0.5);
-        $choice = new ClassificationAnswer(ClassificationQuestionTypeEnum::choice(), 'approve');
-        $score = new ClassificationAnswer(ClassificationQuestionTypeEnum::score(), 1.0);
+        $binary = new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.5);
+        $choice = new DecisionAnswer(DecisionQuestionTypeEnum::choice(), 'approve');
+        $score = new DecisionAnswer(DecisionQuestionTypeEnum::score(), 1.0);
 
         return [
             'choice of binary' => [
@@ -333,16 +333,16 @@ class ClassificationAnswerTest extends TestCase
      */
     public function testJsonSchema(): void
     {
-        $schema = ClassificationAnswer::getJsonSchema();
+        $schema = DecisionAnswer::getJsonSchema();
 
         $this->assertSame(
             ['binary', 'choice', 'score'],
-            $schema['properties'][ClassificationAnswer::KEY_TYPE]['enum']
+            $schema['properties'][DecisionAnswer::KEY_TYPE]['enum']
         );
         $this->assertSame(
             ['object', 'array'],
-            array_column($schema['properties'][ClassificationAnswer::KEY_PROBABILITIES]['oneOf'], 'type')
+            array_column($schema['properties'][DecisionAnswer::KEY_PROBABILITIES]['oneOf'], 'type')
         );
-        $this->assertSame([ClassificationAnswer::KEY_TYPE, ClassificationAnswer::KEY_VALUE], $schema['required']);
+        $this->assertSame([DecisionAnswer::KEY_TYPE, DecisionAnswer::KEY_VALUE], $schema['required']);
     }
 }

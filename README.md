@@ -161,9 +161,9 @@ foreach (AiClient::defaultRegistry()->findModelsMetadataForSupport($requirements
 }
 ```
 
-### Classification using any compatible model
+### Decisions using any compatible model
 
-Classification models answer typed questions about the state you give them rather than generating content. There are three types of question:
+Decision models answer typed questions about the state you give them rather than generating content. There are three types of question:
 
 * A `binary` question asks whether a statement is true, and is answered with the probability that it is.
 * A `choice` question lists named options, each with a description of when it applies, and is answered with the key of the chosen option.
@@ -171,22 +171,22 @@ Classification models answer typed questions about the state you give them rathe
 
 Answers to `choice` and `score` questions may also carry the model's confidence and a probability for each option or level, depending on what the model reports. Every answer is checked against its question, so an answer of the wrong type, an option the question does not have, or a position outside the scale raises a `RuntimeException`.
 
-As with content generation, a suitable model is discovered if you do not name one. Classification requires a registered provider with at least one model that supports it. If there is none, `classifyResult()` throws an `InvalidArgumentException`, and `isSupported()` returns `false`.
+As with content generation, a suitable model is discovered if you do not name one. Decisions require a registered provider with at least one model that supports them. If there is none, `decideResult()` throws an `InvalidArgumentException`, and `isSupported()` returns `false`.
 
 ```php
 use WordPress\AiClient\AiClient;
-use WordPress\AiClient\Providers\Models\Classification\DTO\ClassificationQuestion;
-use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 
-$result = AiClient::classify(['comment' => $commentText])
+$result = AiClient::decide(['comment' => $commentText])
     ->withQuestion(
         'spam',
-        new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), 'Is this comment spam?')
+        new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?')
     )
     ->withQuestion(
         'route',
-        new ClassificationQuestion(
-            ClassificationQuestionTypeEnum::choice(),
+        new DecisionQuestion(
+            DecisionQuestionTypeEnum::choice(),
             'How should a moderator handle it?',
             [
                 'approve' => 'The comment is fine to publish.',
@@ -197,13 +197,13 @@ $result = AiClient::classify(['comment' => $commentText])
     )
     ->withQuestion(
         'tone',
-        new ClassificationQuestion(
-            ClassificationQuestionTypeEnum::score(),
+        new DecisionQuestion(
+            DecisionQuestionTypeEnum::score(),
             'How civil is the comment?',
             ['Hostile.', 'Neutral.', 'Friendly.']
         )
     )
-    ->classifyResult();
+    ->decideResult();
 
 $spamProbability = $result->getAnswer('spam')->getProbability(); // e.g. 0.03
 $route = $result->getAnswer('route')->getChoice(); // e.g. 'approve'
@@ -211,7 +211,7 @@ $confidence = $result->getAnswer('route')->getConfidence(); // e.g. 0.91, or nul
 $tone = $result->getAnswer('tone')->getScore(); // e.g. 1.7, between 'Neutral.' and 'Friendly.'
 ```
 
-See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php), the [`EmbeddingBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/EmbeddingBuilder.php), and the [`ClassificationBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/ClassificationBuilder.php) and their public methods for all the ways you can configure generation.
+See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php), the [`EmbeddingBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/EmbeddingBuilder.php), and the [`DecisionBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/DecisionBuilder.php) and their public methods for all the ways you can configure generation.
 
 **More documentation is coming soon.**
 
@@ -225,8 +225,8 @@ The AI Client supports PSR-14 event dispatching for prompt lifecycle events. Thi
 - `AfterGenerateResultEvent` - Dispatched after a result is received from the model
 - `BeforeGenerateEmbeddingEvent` - Dispatched before embedding inputs are sent to the model
 - `AfterGenerateEmbeddingEvent` - Dispatched after an embedding result is received from the model
-- `BeforeClassifyEvent` - Dispatched before classification state and questions are sent to the model
-- `AfterClassifyEvent` - Dispatched after the model's answers have been received and checked against the questions
+- `BeforeDecideEvent` - Dispatched before decision state and questions are sent to the model
+- `AfterDecideEvent` - Dispatched after the model's answers have been received and checked against the questions
 
 **Important:** Event listeners should not return a value, as they will be ignored. In order to modify data that is passed with the event object, you need to rely on setters on the event object. Any event data for which there are no setters on the event object is meant to be immutable or, in other words, read-only for the event listener.
 

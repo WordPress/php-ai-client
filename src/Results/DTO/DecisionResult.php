@@ -11,27 +11,27 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
 
 /**
- * Represents the result of a classification operation.
+ * Represents the result of a decision operation.
  *
  * @since n.e.x.t
  *
  * @phpstan-import-type TokenUsageArrayShape from TokenUsage
  * @phpstan-import-type ProviderMetadataArrayShape from ProviderMetadata
  * @phpstan-import-type ModelMetadataArrayShape from ModelMetadata
- * @phpstan-import-type ClassificationAnswerArrayShape from ClassificationAnswer
+ * @phpstan-import-type DecisionAnswerArrayShape from DecisionAnswer
  *
- * @phpstan-type ClassificationResultArrayShape array{
+ * @phpstan-type DecisionResultArrayShape array{
  *     id: string,
- *     answers: array<string, ClassificationAnswerArrayShape>,
+ *     answers: array<string, DecisionAnswerArrayShape>,
  *     tokenUsage: TokenUsageArrayShape,
  *     providerMetadata: ProviderMetadataArrayShape,
  *     modelMetadata: ModelMetadataArrayShape,
  *     additionalData?: array<string, mixed>
  * }
  *
- * @extends AbstractDataTransferObject<ClassificationResultArrayShape>
+ * @extends AbstractDataTransferObject<DecisionResultArrayShape>
  */
-class ClassificationResult extends AbstractDataTransferObject implements ResultInterface
+class DecisionResult extends AbstractDataTransferObject implements ResultInterface
 {
     public const KEY_ID = 'id';
     public const KEY_ANSWERS = 'answers';
@@ -46,7 +46,7 @@ class ClassificationResult extends AbstractDataTransferObject implements ResultI
     private string $id;
 
     /**
-     * @var array<string, ClassificationAnswer> The answers, keyed by question key.
+     * @var array<string, DecisionAnswer> The answers, keyed by question key.
      */
     private array $answers;
 
@@ -76,7 +76,7 @@ class ClassificationResult extends AbstractDataTransferObject implements ResultI
      * @since n.e.x.t
      *
      * @param string $id Unique identifier for this result.
-     * @param array<string, ClassificationAnswer> $answers The answers, keyed by question key.
+     * @param array<string, DecisionAnswer> $answers The answers, keyed by question key.
      * @param TokenUsage $tokenUsage Token usage statistics.
      * @param ProviderMetadata $providerMetadata Provider metadata.
      * @param ModelMetadata $modelMetadata Model metadata.
@@ -119,7 +119,7 @@ class ClassificationResult extends AbstractDataTransferObject implements ResultI
      *
      * @since n.e.x.t
      *
-     * @return array<string, ClassificationAnswer> The answers, keyed by question key.
+     * @return array<string, DecisionAnswer> The answers, keyed by question key.
      */
     public function getAnswers(): array
     {
@@ -132,10 +132,10 @@ class ClassificationResult extends AbstractDataTransferObject implements ResultI
      * @since n.e.x.t
      *
      * @param string $questionKey The key of the question.
-     * @return ClassificationAnswer The answer to the question.
+     * @return DecisionAnswer The answer to the question.
      * @throws InvalidArgumentException If there is no answer for the question.
      */
-    public function getAnswer(string $questionKey): ClassificationAnswer
+    public function getAnswer(string $questionKey): DecisionAnswer
     {
         if (!isset($this->answers[$questionKey])) {
             throw new InvalidArgumentException(
@@ -202,7 +202,7 @@ class ClassificationResult extends AbstractDataTransferObject implements ResultI
                 ],
                 self::KEY_ANSWERS => [
                     'type' => 'object',
-                    'additionalProperties' => ClassificationAnswer::getJsonSchema(),
+                    'additionalProperties' => DecisionAnswer::getJsonSchema(),
                     'description' => 'The answers, keyed by question key.',
                 ],
                 self::KEY_TOKEN_USAGE => TokenUsage::getJsonSchema(),
@@ -229,14 +229,14 @@ class ClassificationResult extends AbstractDataTransferObject implements ResultI
      *
      * @since n.e.x.t
      *
-     * @return ClassificationResultArrayShape
+     * @return DecisionResultArrayShape
      */
     public function toArray(): array
     {
         $data = [
             self::KEY_ID => $this->id,
             self::KEY_ANSWERS => array_map(
-                static fn (ClassificationAnswer $answer): array => $answer->toArray(),
+                static fn (DecisionAnswer $answer): array => $answer->toArray(),
                 $this->answers
             ),
             self::KEY_TOKEN_USAGE => $this->tokenUsage->toArray(),
@@ -269,7 +269,7 @@ class ClassificationResult extends AbstractDataTransferObject implements ResultI
         return new self(
             $array[self::KEY_ID],
             array_map(
-                static fn (array $answer): ClassificationAnswer => ClassificationAnswer::fromArray($answer),
+                static fn (array $answer): DecisionAnswer => DecisionAnswer::fromArray($answer),
                 $array[self::KEY_ANSWERS]
             ),
             TokenUsage::fromArray($array[self::KEY_TOKEN_USAGE]),

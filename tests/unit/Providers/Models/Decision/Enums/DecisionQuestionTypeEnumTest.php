@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers\Models\Classification\Enums;
+namespace WordPress\AiClient\Tests\unit\Providers\Models\Decision\Enums;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Tests\traits\EnumTestTrait;
 
 /**
- * @covers \WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum
+ * @covers \WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum
  */
-class ClassificationQuestionTypeEnumTest extends TestCase
+class DecisionQuestionTypeEnumTest extends TestCase
 {
     use EnumTestTrait;
 
@@ -22,7 +22,7 @@ class ClassificationQuestionTypeEnumTest extends TestCase
      */
     protected function getEnumClass(): string
     {
-        return ClassificationQuestionTypeEnum::class;
+        return DecisionQuestionTypeEnum::class;
     }
 
     /**
@@ -46,15 +46,15 @@ class ClassificationQuestionTypeEnumTest extends TestCase
      */
     public function testSpecificEnumMethods(): void
     {
-        $binary = ClassificationQuestionTypeEnum::binary();
+        $binary = DecisionQuestionTypeEnum::binary();
         $this->assertTrue($binary->isBinary());
         $this->assertFalse($binary->isChoice());
 
-        $choice = ClassificationQuestionTypeEnum::choice();
+        $choice = DecisionQuestionTypeEnum::choice();
         $this->assertTrue($choice->isChoice());
         $this->assertFalse($choice->isScore());
 
-        $score = ClassificationQuestionTypeEnum::score();
+        $score = DecisionQuestionTypeEnum::score();
         $this->assertTrue($score->isScore());
         $this->assertFalse($score->isBinary());
     }

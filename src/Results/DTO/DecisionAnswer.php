@@ -7,10 +7,10 @@ namespace WordPress\AiClient\Results\DTO;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
-use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 
 /**
- * Represents a classification model's answer to a single question.
+ * Represents a decision model's answer to a single question.
  *
  * An answer has the type of the question it answers, which determines its value:
  *
@@ -25,16 +25,16 @@ use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuest
  *
  * @since n.e.x.t
  *
- * @phpstan-type ClassificationAnswerArrayShape array{
+ * @phpstan-type DecisionAnswerArrayShape array{
  *     type: string,
  *     value: float|string,
  *     confidence?: float,
  *     probabilities?: array<string, float>|list<float>
  * }
  *
- * @extends AbstractDataTransferObject<ClassificationAnswerArrayShape>
+ * @extends AbstractDataTransferObject<DecisionAnswerArrayShape>
  */
-class ClassificationAnswer extends AbstractDataTransferObject
+class DecisionAnswer extends AbstractDataTransferObject
 {
     public const KEY_TYPE = 'type';
     public const KEY_VALUE = 'value';
@@ -42,9 +42,9 @@ class ClassificationAnswer extends AbstractDataTransferObject
     public const KEY_PROBABILITIES = 'probabilities';
 
     /**
-     * @var ClassificationQuestionTypeEnum The type of the question answered.
+     * @var DecisionQuestionTypeEnum The type of the question answered.
      */
-    private ClassificationQuestionTypeEnum $type;
+    private DecisionQuestionTypeEnum $type;
 
     /**
      * @var float|string The probability, the chosen option key, or the position on the scale.
@@ -66,7 +66,7 @@ class ClassificationAnswer extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @param ClassificationQuestionTypeEnum $type The type of the question answered.
+     * @param DecisionQuestionTypeEnum $type The type of the question answered.
      * @param float|string $value The probability for a binary question, the chosen option key for a choice
      *                            question, or the position on the scale for a score question.
      * @param float|null $confidence The model's confidence in the answer, if reported.
@@ -80,40 +80,40 @@ class ClassificationAnswer extends AbstractDataTransferObject
      *                                  confidence or probability is not between 0 and 1.
      */
     public function __construct(
-        ClassificationQuestionTypeEnum $type,
+        DecisionQuestionTypeEnum $type,
         $value,
         ?float $confidence = null,
         array $probabilities = []
     ) {
         if ($type->isBinary()) {
-            $value = self::validateProbability($value, 'Classification answer probability');
+            $value = self::validateProbability($value, 'Decision answer probability');
         } elseif ($type->isChoice()) {
             if (!is_string($value) || trim($value) === '') {
-                throw new InvalidArgumentException('Classification answer choice must be a non-empty option key.');
+                throw new InvalidArgumentException('Decision answer choice must be a non-empty option key.');
             }
         } else {
             if ((!is_int($value) && !is_float($value)) || !is_finite((float) $value) || $value < 0) {
-                throw new InvalidArgumentException('Classification answer score must be a non-negative number.');
+                throw new InvalidArgumentException('Decision answer score must be a non-negative number.');
             }
 
             $value = (float) $value;
         }
 
         if ($confidence !== null) {
-            $confidence = self::validateProbability($confidence, 'Classification answer confidence');
+            $confidence = self::validateProbability($confidence, 'Decision answer confidence');
         }
 
         if ($probabilities !== []) {
             if ($type->isBinary()) {
                 throw new InvalidArgumentException(
-                    'Classification answers to binary questions do not accept probabilities, '
+                    'Decision answers to binary questions do not accept probabilities, '
                     . 'as their value is the probability.'
                 );
             }
 
             if ($type->isScore() && !array_is_list($probabilities)) {
                 throw new InvalidArgumentException(
-                    'Classification answer probabilities for a score question must be a list, '
+                    'Decision answer probabilities for a score question must be a list, '
                     . 'from the lowest level to the highest.'
                 );
             }
@@ -121,13 +121,13 @@ class ClassificationAnswer extends AbstractDataTransferObject
             foreach ($probabilities as $key => $probability) {
                 if ($type->isChoice() && (!is_string($key) || trim($key) === '')) {
                     throw new InvalidArgumentException(
-                        'Classification answer probabilities for a choice question must be keyed by option key.'
+                        'Decision answer probabilities for a choice question must be keyed by option key.'
                     );
                 }
 
                 $probabilities[$key] = self::validateProbability(
                     $probability,
-                    'Classification answer probabilities'
+                    'Decision answer probabilities'
                 );
             }
         }
@@ -143,9 +143,9 @@ class ClassificationAnswer extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return ClassificationQuestionTypeEnum The question type.
+     * @return DecisionQuestionTypeEnum The question type.
      */
-    public function getType(): ClassificationQuestionTypeEnum
+    public function getType(): DecisionQuestionTypeEnum
     {
         return $this->type;
     }
@@ -160,7 +160,7 @@ class ClassificationAnswer extends AbstractDataTransferObject
      */
     public function getProbability(): float
     {
-        $this->assertType(ClassificationQuestionTypeEnum::binary());
+        $this->assertType(DecisionQuestionTypeEnum::binary());
 
         return (float) $this->value;
     }
@@ -175,7 +175,7 @@ class ClassificationAnswer extends AbstractDataTransferObject
      */
     public function getChoice(): string
     {
-        $this->assertType(ClassificationQuestionTypeEnum::choice());
+        $this->assertType(DecisionQuestionTypeEnum::choice());
 
         return (string) $this->value;
     }
@@ -190,7 +190,7 @@ class ClassificationAnswer extends AbstractDataTransferObject
      */
     public function getScore(): float
     {
-        $this->assertType(ClassificationQuestionTypeEnum::score());
+        $this->assertType(DecisionQuestionTypeEnum::score());
 
         return (float) $this->value;
     }
@@ -227,11 +227,11 @@ class ClassificationAnswer extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @param ClassificationQuestionTypeEnum $type The expected question type.
+     * @param DecisionQuestionTypeEnum $type The expected question type.
      * @return void
      * @throws RuntimeException If this is an answer to a question of another type.
      */
-    private function assertType(ClassificationQuestionTypeEnum $type): void
+    private function assertType(DecisionQuestionTypeEnum $type): void
     {
         if (!$this->type->is($type)) {
             throw new RuntimeException(
@@ -282,7 +282,7 @@ class ClassificationAnswer extends AbstractDataTransferObject
             'properties' => [
                 self::KEY_TYPE => [
                     'type' => 'string',
-                    'enum' => ClassificationQuestionTypeEnum::getValues(),
+                    'enum' => DecisionQuestionTypeEnum::getValues(),
                     'description' => 'The type of the question answered.',
                 ],
                 self::KEY_VALUE => [
@@ -325,7 +325,7 @@ class ClassificationAnswer extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return ClassificationAnswerArrayShape
+     * @return DecisionAnswerArrayShape
      */
     public function toArray(): array
     {
@@ -355,7 +355,7 @@ class ClassificationAnswer extends AbstractDataTransferObject
         static::validateFromArrayData($array, [self::KEY_TYPE, self::KEY_VALUE]);
 
         return new self(
-            ClassificationQuestionTypeEnum::from($array[self::KEY_TYPE]),
+            DecisionQuestionTypeEnum::from($array[self::KEY_TYPE]),
             $array[self::KEY_VALUE],
             $array[self::KEY_CONFIDENCE] ?? null,
             $array[self::KEY_PROBABILITIES] ?? []

@@ -7,16 +7,16 @@ namespace WordPress\AiClient\Tests\unit;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
-use WordPress\AiClient\Builders\ClassificationBuilder;
+use WordPress\AiClient\Builders\DecisionBuilder;
 use WordPress\AiClient\Builders\EmbeddingBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
-use WordPress\AiClient\Events\AfterClassifyEvent;
-use WordPress\AiClient\Events\BeforeClassifyEvent;
+use WordPress\AiClient\Events\AfterDecideEvent;
+use WordPress\AiClient\Events\BeforeDecideEvent;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
-use WordPress\AiClient\Providers\Models\Classification\DTO\ClassificationQuestion;
-use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Tests\mocks\MockEventDispatcher;
@@ -313,54 +313,54 @@ class AiClientTest extends TestCase
     }
 
     /**
-     * Tests classify() returns a ClassificationBuilder configured with the given state.
+     * Tests decide() returns a DecisionBuilder configured with the given state.
      */
-    public function testClassifyReturnsClassificationBuilder(): void
+    public function testDecideReturnsDecisionBuilder(): void
     {
-        $expectedResult = $this->createTestClassificationResult();
-        $mockModel = $this->createMockClassificationModel($expectedResult);
+        $expectedResult = $this->createTestDecisionResult();
+        $mockModel = $this->createMockDecisionModel($expectedResult);
         $registry = $this->createRegistryWithMockProvider();
 
-        $builder = AiClient::classify(['comment' => 'Buy cheap pills!'], $registry);
+        $builder = AiClient::decide(['comment' => 'Buy cheap pills!'], $registry);
 
-        $this->assertInstanceOf(ClassificationBuilder::class, $builder);
+        $this->assertInstanceOf(DecisionBuilder::class, $builder);
 
         $result = $builder
             ->withQuestion(
                 'spam',
-                new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), 'Is this comment spam?')
+                new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?')
             )
             ->usingModel($mockModel)
-            ->classifyResult();
+            ->decideResult();
 
         $this->assertSame($expectedResult, $result);
         $this->assertSame(['comment' => 'Buy cheap pills!'], $mockModel->lastCall[0]);
     }
 
     /**
-     * Tests classify() passes the configured event dispatcher to the builder.
+     * Tests decide() passes the configured event dispatcher to the builder.
      */
-    public function testClassifyUsesEventDispatcher(): void
+    public function testDecideUsesEventDispatcher(): void
     {
         $dispatcher = new MockEventDispatcher();
-        $mockModel = $this->createMockClassificationModel($this->createTestClassificationResult());
+        $mockModel = $this->createMockDecisionModel($this->createTestDecisionResult());
 
         AiClient::setEventDispatcher($dispatcher);
 
         try {
-            AiClient::classify(['comment' => 'Buy cheap pills!'], $this->createRegistryWithMockProvider())
+            AiClient::decide(['comment' => 'Buy cheap pills!'], $this->createRegistryWithMockProvider())
                 ->withQuestion(
                     'spam',
-                    new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), 'Is this comment spam?')
+                    new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?')
                 )
                 ->usingModel($mockModel)
-                ->classifyResult();
+                ->decideResult();
         } finally {
             AiClient::setEventDispatcher(null);
         }
 
-        $this->assertCount(1, $dispatcher->getDispatchedEventsOfType(BeforeClassifyEvent::class));
-        $this->assertCount(1, $dispatcher->getDispatchedEventsOfType(AfterClassifyEvent::class));
+        $this->assertCount(1, $dispatcher->getDispatchedEventsOfType(BeforeDecideEvent::class));
+        $this->assertCount(1, $dispatcher->getDispatchedEventsOfType(AfterDecideEvent::class));
     }
 
 

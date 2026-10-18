@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers\Models\Classification\DTO;
+namespace WordPress\AiClient\Providers\Models\Decision\DTO;
 
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
-use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 
 /**
- * Represents a typed question for a classification model to answer about the given state.
+ * Represents a typed question for a decision model to answer about the given state.
  *
  * A binary question asks whether a statement is true, and takes no criteria. A choice question asks the
  * model to pick one of several named options, given as criteria that map each option key to a description
@@ -18,24 +18,24 @@ use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuest
  *
  * @since n.e.x.t
  *
- * @phpstan-type ClassificationQuestionArrayShape array{
+ * @phpstan-type DecisionQuestionArrayShape array{
  *     type: string,
  *     instructions: string,
  *     criteria?: array<string, string>|list<string>
  * }
  *
- * @extends AbstractDataTransferObject<ClassificationQuestionArrayShape>
+ * @extends AbstractDataTransferObject<DecisionQuestionArrayShape>
  */
-class ClassificationQuestion extends AbstractDataTransferObject
+class DecisionQuestion extends AbstractDataTransferObject
 {
     public const KEY_TYPE = 'type';
     public const KEY_INSTRUCTIONS = 'instructions';
     public const KEY_CRITERIA = 'criteria';
 
     /**
-     * @var ClassificationQuestionTypeEnum The question type.
+     * @var DecisionQuestionTypeEnum The question type.
      */
-    private ClassificationQuestionTypeEnum $type;
+    private DecisionQuestionTypeEnum $type;
 
     /**
      * @var string The question to answer.
@@ -53,7 +53,7 @@ class ClassificationQuestion extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @param ClassificationQuestionTypeEnum $type The question type.
+     * @param DecisionQuestionTypeEnum $type The question type.
      * @param string $instructions The question to answer.
      * @param array<string, string>|list<string> $criteria For a choice question, the option descriptions keyed
      *                                                     by option key. For a score question, the level
@@ -62,19 +62,19 @@ class ClassificationQuestion extends AbstractDataTransferObject
      *
      * @throws InvalidArgumentException If the instructions are empty or the criteria do not suit the type.
      */
-    public function __construct(ClassificationQuestionTypeEnum $type, string $instructions, array $criteria = [])
+    public function __construct(DecisionQuestionTypeEnum $type, string $instructions, array $criteria = [])
     {
         if (trim($instructions) === '') {
-            throw new InvalidArgumentException('Classification question instructions cannot be empty.');
+            throw new InvalidArgumentException('Decision question instructions cannot be empty.');
         }
 
         if ($type->isBinary()) {
             if ($criteria !== []) {
-                throw new InvalidArgumentException('Binary classification questions do not accept criteria.');
+                throw new InvalidArgumentException('Binary decision questions do not accept criteria.');
             }
         } elseif (count($criteria) < 2) {
             throw new InvalidArgumentException(
-                sprintf('Classification questions of type "%s" require at least two criteria.', $type->value)
+                sprintf('Decision questions of type "%s" require at least two criteria.', $type->value)
             );
         }
 
@@ -83,7 +83,7 @@ class ClassificationQuestion extends AbstractDataTransferObject
                 // PHP converts integer-like string keys to integers, so those are rejected along with lists.
                 if (!is_string($optionKey) || trim($optionKey) === '') {
                     throw new InvalidArgumentException(
-                        'Choice classification question option keys must be non-empty, non-integer strings.'
+                        'Choice decision question option keys must be non-empty, non-integer strings.'
                     );
                 }
             }
@@ -91,7 +91,7 @@ class ClassificationQuestion extends AbstractDataTransferObject
 
         if ($type->isScore() && !array_is_list($criteria)) {
             throw new InvalidArgumentException(
-                'Score classification question criteria must be a list of level descriptions, '
+                'Score decision question criteria must be a list of level descriptions, '
                 . 'from lowest to highest.'
             );
         }
@@ -99,7 +99,7 @@ class ClassificationQuestion extends AbstractDataTransferObject
         foreach ($criteria as $description) {
             if (!is_string($description) || trim($description) === '') {
                 throw new InvalidArgumentException(
-                    'Classification question criteria descriptions must be non-empty strings.'
+                    'Decision question criteria descriptions must be non-empty strings.'
                 );
             }
         }
@@ -114,9 +114,9 @@ class ClassificationQuestion extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return ClassificationQuestionTypeEnum The question type.
+     * @return DecisionQuestionTypeEnum The question type.
      */
-    public function getType(): ClassificationQuestionTypeEnum
+    public function getType(): DecisionQuestionTypeEnum
     {
         return $this->type;
     }
@@ -159,7 +159,7 @@ class ClassificationQuestion extends AbstractDataTransferObject
             'properties' => [
                 self::KEY_TYPE => [
                     'type' => 'string',
-                    'enum' => ClassificationQuestionTypeEnum::getValues(),
+                    'enum' => DecisionQuestionTypeEnum::getValues(),
                     'description' => 'The question type.',
                 ],
                 self::KEY_INSTRUCTIONS => [
@@ -196,7 +196,7 @@ class ClassificationQuestion extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return ClassificationQuestionArrayShape
+     * @return DecisionQuestionArrayShape
      */
     public function toArray(): array
     {
@@ -222,7 +222,7 @@ class ClassificationQuestion extends AbstractDataTransferObject
         static::validateFromArrayData($array, [self::KEY_TYPE, self::KEY_INSTRUCTIONS]);
 
         return new self(
-            ClassificationQuestionTypeEnum::from($array[self::KEY_TYPE]),
+            DecisionQuestionTypeEnum::from($array[self::KEY_TYPE]),
             $array[self::KEY_INSTRUCTIONS],
             $array[self::KEY_CRITERIA] ?? []
         );

@@ -8,35 +8,35 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
-use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
-use WordPress\AiClient\Results\DTO\ClassificationAnswer;
-use WordPress\AiClient\Results\DTO\ClassificationResult;
+use WordPress\AiClient\Results\DTO\DecisionAnswer;
+use WordPress\AiClient\Results\DTO\DecisionResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 
 /**
- * @covers \WordPress\AiClient\Results\DTO\ClassificationResult
+ * @covers \WordPress\AiClient\Results\DTO\DecisionResult
  */
-class ClassificationResultTest extends TestCase
+class DecisionResultTest extends TestCase
 {
     /**
-     * Creates a classification result with the given answers.
+     * Creates a decision result with the given answers.
      *
-     * @param array<string, ClassificationAnswer> $answers The answers.
-     * @return ClassificationResult
+     * @param array<string, DecisionAnswer> $answers The answers.
+     * @return DecisionResult
      */
-    private function createClassificationResult(array $answers): ClassificationResult
+    private function createDecisionResult(array $answers): DecisionResult
     {
-        return new ClassificationResult(
-            'classification-result-id',
+        return new DecisionResult(
+            'decision-result-id',
             $answers,
             new TokenUsage(312, 9, 321),
             new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud()),
             new ModelMetadata(
-                'mock-classification-model',
-                'Mock Classification Model',
-                [CapabilityEnum::classification()],
+                'mock-decision-model',
+                'Mock Decision Model',
+                [CapabilityEnum::decision()],
                 []
             ),
             ['providerResultId' => 'provider-123']
@@ -50,23 +50,23 @@ class ClassificationResultTest extends TestCase
      */
     public function testGetters(): void
     {
-        $spam = new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 0.03);
-        $route = new ClassificationAnswer(
-            ClassificationQuestionTypeEnum::choice(),
+        $spam = new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.03);
+        $route = new DecisionAnswer(
+            DecisionQuestionTypeEnum::choice(),
             'approve',
             0.91,
             ['approve' => 0.91, 'hold' => 0.07, 'trash' => 0.02]
         );
 
-        $result = $this->createClassificationResult(['spam' => $spam, 'route' => $route]);
+        $result = $this->createDecisionResult(['spam' => $spam, 'route' => $route]);
 
-        $this->assertSame('classification-result-id', $result->getId());
+        $this->assertSame('decision-result-id', $result->getId());
         $this->assertSame(['spam' => $spam, 'route' => $route], $result->getAnswers());
         $this->assertSame($spam, $result->getAnswer('spam'));
         $this->assertSame($route, $result->getAnswer('route'));
         $this->assertSame(312, $result->getTokenUsage()->getPromptTokens());
         $this->assertSame('mock', $result->getProviderMetadata()->getId());
-        $this->assertSame('mock-classification-model', $result->getModelMetadata()->getId());
+        $this->assertSame('mock-decision-model', $result->getModelMetadata()->getId());
         $this->assertSame(['providerResultId' => 'provider-123'], $result->getAdditionalData());
     }
 
@@ -77,27 +77,27 @@ class ClassificationResultTest extends TestCase
      */
     public function testArrayRoundTrip(): void
     {
-        $result = $this->createClassificationResult([
-            'spam' => new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 0.03),
-            'route' => new ClassificationAnswer(
-                ClassificationQuestionTypeEnum::choice(),
+        $result = $this->createDecisionResult([
+            'spam' => new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.03),
+            'route' => new DecisionAnswer(
+                DecisionQuestionTypeEnum::choice(),
                 'approve',
                 0.91,
                 ['approve' => 0.91, 'trash' => 0.09]
             ),
-            'tone' => new ClassificationAnswer(ClassificationQuestionTypeEnum::score(), 1.7, 0.8, [0.05, 0.2, 0.75]),
+            'tone' => new DecisionAnswer(DecisionQuestionTypeEnum::score(), 1.7, 0.8, [0.05, 0.2, 0.75]),
         ]);
 
         $array = $result->toArray();
 
         $this->assertSame(
-            [ClassificationAnswer::KEY_TYPE => 'binary', ClassificationAnswer::KEY_VALUE => 0.03],
-            $array[ClassificationResult::KEY_ANSWERS]['spam']
+            [DecisionAnswer::KEY_TYPE => 'binary', DecisionAnswer::KEY_VALUE => 0.03],
+            $array[DecisionResult::KEY_ANSWERS]['spam']
         );
-        $this->assertEquals($result, ClassificationResult::fromArray($array));
+        $this->assertEquals($result, DecisionResult::fromArray($array));
 
         $decoded = json_decode((string) json_encode($array), true);
-        $this->assertEquals($result, ClassificationResult::fromArray($decoded));
+        $this->assertEquals($result, DecisionResult::fromArray($decoded));
     }
 
     /**
@@ -110,7 +110,7 @@ class ClassificationResultTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('At least one answer must be provided.');
 
-        $this->createClassificationResult([]);
+        $this->createDecisionResult([]);
     }
 
     /**
@@ -120,8 +120,8 @@ class ClassificationResultTest extends TestCase
      */
     public function testGetAnswerThrowsForUnknownQuestion(): void
     {
-        $result = $this->createClassificationResult([
-            'spam' => new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 0.03),
+        $result = $this->createDecisionResult([
+            'spam' => new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.03),
         ]);
 
         $this->expectException(InvalidArgumentException::class);
@@ -137,12 +137,12 @@ class ClassificationResultTest extends TestCase
      */
     public function testJsonSchema(): void
     {
-        $schema = ClassificationResult::getJsonSchema();
+        $schema = DecisionResult::getJsonSchema();
 
         $this->assertSame(
-            ClassificationAnswer::getJsonSchema(),
-            $schema['properties'][ClassificationResult::KEY_ANSWERS]['additionalProperties']
+            DecisionAnswer::getJsonSchema(),
+            $schema['properties'][DecisionResult::KEY_ANSWERS]['additionalProperties']
         );
-        $this->assertContains(ClassificationResult::KEY_ANSWERS, $schema['required']);
+        $this->assertContains(DecisionResult::KEY_ANSWERS, $schema['required']);
     }
 }

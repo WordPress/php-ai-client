@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers\Models\Classification\DTO;
+namespace WordPress\AiClient\Tests\unit\Providers\Models\Decision\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
-use WordPress\AiClient\Providers\Models\Classification\DTO\ClassificationQuestion;
-use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 
 /**
- * @covers \WordPress\AiClient\Providers\Models\Classification\DTO\ClassificationQuestion
+ * @covers \WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion
  */
-class ClassificationQuestionTest extends TestCase
+class DecisionQuestionTest extends TestCase
 {
     /**
      * Tests creating a binary question.
@@ -21,15 +21,15 @@ class ClassificationQuestionTest extends TestCase
      */
     public function testCreateBinaryQuestion(): void
     {
-        $question = new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), 'Is this comment spam?');
+        $question = new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?');
 
         $this->assertTrue($question->getType()->isBinary());
         $this->assertSame('Is this comment spam?', $question->getInstructions());
         $this->assertSame([], $question->getCriteria());
         $this->assertSame(
             [
-                ClassificationQuestion::KEY_TYPE => 'binary',
-                ClassificationQuestion::KEY_INSTRUCTIONS => 'Is this comment spam?',
+                DecisionQuestion::KEY_TYPE => 'binary',
+                DecisionQuestion::KEY_INSTRUCTIONS => 'Is this comment spam?',
             ],
             $question->toArray()
         );
@@ -48,15 +48,15 @@ class ClassificationQuestionTest extends TestCase
             'trash' => 'The comment should be removed.',
         ];
 
-        $question = new ClassificationQuestion(
-            ClassificationQuestionTypeEnum::choice(),
+        $question = new DecisionQuestion(
+            DecisionQuestionTypeEnum::choice(),
             'How should a moderator handle it?',
             $criteria
         );
 
         $this->assertTrue($question->getType()->isChoice());
         $this->assertSame($criteria, $question->getCriteria());
-        $this->assertSame($criteria, $question->toArray()[ClassificationQuestion::KEY_CRITERIA]);
+        $this->assertSame($criteria, $question->toArray()[DecisionQuestion::KEY_CRITERIA]);
     }
 
     /**
@@ -68,15 +68,15 @@ class ClassificationQuestionTest extends TestCase
     {
         $levels = ['Not toxic.', 'Somewhat toxic.', 'Very toxic.'];
 
-        $question = new ClassificationQuestion(
-            ClassificationQuestionTypeEnum::score(),
+        $question = new DecisionQuestion(
+            DecisionQuestionTypeEnum::score(),
             'How toxic is the comment?',
             $levels
         );
 
         $this->assertTrue($question->getType()->isScore());
         $this->assertSame($levels, $question->getCriteria());
-        $this->assertSame($levels, $question->toArray()[ClassificationQuestion::KEY_CRITERIA]);
+        $this->assertSame($levels, $question->toArray()[DecisionQuestion::KEY_CRITERIA]);
     }
 
     /**
@@ -84,36 +84,36 @@ class ClassificationQuestionTest extends TestCase
      *
      * @dataProvider provideQuestions
      *
-     * @param ClassificationQuestion $question The question.
+     * @param DecisionQuestion $question The question.
      * @return void
      */
-    public function testArrayRoundTrip(ClassificationQuestion $question): void
+    public function testArrayRoundTrip(DecisionQuestion $question): void
     {
-        $this->assertEquals($question, ClassificationQuestion::fromArray($question->toArray()));
+        $this->assertEquals($question, DecisionQuestion::fromArray($question->toArray()));
 
         $decoded = json_decode((string) json_encode($question->toArray()), true);
-        $this->assertEquals($question, ClassificationQuestion::fromArray($decoded));
+        $this->assertEquals($question, DecisionQuestion::fromArray($decoded));
     }
 
     /**
      * Provides a question of each type.
      *
-     * @return array<string, array{ClassificationQuestion}>
+     * @return array<string, array{DecisionQuestion}>
      */
     public function provideQuestions(): array
     {
         return [
-            'binary' => [new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), 'Is it spam?')],
+            'binary' => [new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is it spam?')],
             'choice' => [
-                new ClassificationQuestion(
-                    ClassificationQuestionTypeEnum::choice(),
+                new DecisionQuestion(
+                    DecisionQuestionTypeEnum::choice(),
                     'How should a moderator handle it?',
                     ['approve' => 'Publish it.', 'trash' => 'Remove it.']
                 ),
             ],
             'score' => [
-                new ClassificationQuestion(
-                    ClassificationQuestionTypeEnum::score(),
+                new DecisionQuestion(
+                    DecisionQuestionTypeEnum::score(),
                     'How toxic is it?',
                     ['Not toxic.', 'Very toxic.']
                 ),
@@ -128,8 +128,8 @@ class ClassificationQuestionTest extends TestCase
      */
     public function testChoiceCriteriaEncodeAsJsonObject(): void
     {
-        $question = new ClassificationQuestion(
-            ClassificationQuestionTypeEnum::choice(),
+        $question = new DecisionQuestion(
+            DecisionQuestionTypeEnum::choice(),
             'How should a moderator handle it?',
             ['approve' => 'Publish it.', 'trash' => 'Remove it.']
         );
@@ -148,9 +148,9 @@ class ClassificationQuestionTest extends TestCase
     public function testRejectsEmptyInstructions(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Classification question instructions cannot be empty.');
+        $this->expectExceptionMessage('Decision question instructions cannot be empty.');
 
-        new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), '  ');
+        new DecisionQuestion(DecisionQuestionTypeEnum::binary(), '  ');
     }
 
     /**
@@ -161,10 +161,10 @@ class ClassificationQuestionTest extends TestCase
     public function testBinaryQuestionRejectsCriteria(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Binary classification questions do not accept criteria.');
+        $this->expectExceptionMessage('Binary decision questions do not accept criteria.');
 
-        new ClassificationQuestion(
-            ClassificationQuestionTypeEnum::binary(),
+        new DecisionQuestion(
+            DecisionQuestionTypeEnum::binary(),
             'Is this comment spam?',
             ['yes' => 'It is spam.', 'no' => 'It is not spam.']
         );
@@ -175,30 +175,30 @@ class ClassificationQuestionTest extends TestCase
      *
      * @dataProvider provideSingleCriterion
      *
-     * @param ClassificationQuestionTypeEnum $type The question type.
+     * @param DecisionQuestionTypeEnum $type The question type.
      * @param array<string, string>|list<string> $criteria A single criterion of the shape the type takes.
      * @return void
      */
-    public function testRequiresAtLeastTwoCriteria(ClassificationQuestionTypeEnum $type, array $criteria): void
+    public function testRequiresAtLeastTwoCriteria(DecisionQuestionTypeEnum $type, array $criteria): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            sprintf('Classification questions of type "%s" require at least two criteria.', $type->value)
+            sprintf('Decision questions of type "%s" require at least two criteria.', $type->value)
         );
 
-        new ClassificationQuestion($type, 'Pick one.', $criteria);
+        new DecisionQuestion($type, 'Pick one.', $criteria);
     }
 
     /**
      * Provides a single criterion for each question type that requires criteria.
      *
-     * @return array<string, array{ClassificationQuestionTypeEnum, array<string, string>|list<string>}>
+     * @return array<string, array{DecisionQuestionTypeEnum, array<string, string>|list<string>}>
      */
     public function provideSingleCriterion(): array
     {
         return [
-            'choice' => [ClassificationQuestionTypeEnum::choice(), ['only' => 'The only option.']],
-            'score' => [ClassificationQuestionTypeEnum::score(), ['The only level.']],
+            'choice' => [DecisionQuestionTypeEnum::choice(), ['only' => 'The only option.']],
+            'score' => [DecisionQuestionTypeEnum::score(), ['The only level.']],
         ];
     }
 
@@ -214,10 +214,10 @@ class ClassificationQuestionTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Choice classification question option keys must be non-empty, non-integer strings.'
+            'Choice decision question option keys must be non-empty, non-integer strings.'
         );
 
-        new ClassificationQuestion(ClassificationQuestionTypeEnum::choice(), 'Pick one.', $criteria);
+        new DecisionQuestion(DecisionQuestionTypeEnum::choice(), 'Pick one.', $criteria);
     }
 
     /**
@@ -247,10 +247,10 @@ class ClassificationQuestionTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Score classification question criteria must be a list of level descriptions, from lowest to highest.'
+            'Score decision question criteria must be a list of level descriptions, from lowest to highest.'
         );
 
-        new ClassificationQuestion(ClassificationQuestionTypeEnum::score(), 'How toxic is it?', $criteria);
+        new DecisionQuestion(DecisionQuestionTypeEnum::score(), 'How toxic is it?', $criteria);
     }
 
     /**
@@ -271,27 +271,27 @@ class ClassificationQuestionTest extends TestCase
      *
      * @dataProvider provideInvalidDescriptions
      *
-     * @param ClassificationQuestionTypeEnum $type The question type.
+     * @param DecisionQuestionTypeEnum $type The question type.
      * @param array<mixed> $criteria The criteria with an invalid description.
      * @return void
      */
-    public function testRejectsInvalidCriteriaDescriptions(ClassificationQuestionTypeEnum $type, array $criteria): void
+    public function testRejectsInvalidCriteriaDescriptions(DecisionQuestionTypeEnum $type, array $criteria): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Classification question criteria descriptions must be non-empty strings.');
+        $this->expectExceptionMessage('Decision question criteria descriptions must be non-empty strings.');
 
-        new ClassificationQuestion($type, 'Pick one.', $criteria);
+        new DecisionQuestion($type, 'Pick one.', $criteria);
     }
 
     /**
      * Provides criteria with an invalid description.
      *
-     * @return array<string, array{ClassificationQuestionTypeEnum, array<mixed>}>
+     * @return array<string, array{DecisionQuestionTypeEnum, array<mixed>}>
      */
     public function provideInvalidDescriptions(): array
     {
-        $choice = ClassificationQuestionTypeEnum::choice();
-        $score = ClassificationQuestionTypeEnum::score();
+        $choice = DecisionQuestionTypeEnum::choice();
+        $score = DecisionQuestionTypeEnum::score();
 
         return [
             'non-string option' => [$choice, ['approve' => 'Publish it.', 'trash' => 1]],
@@ -308,9 +308,9 @@ class ClassificationQuestionTest extends TestCase
      */
     public function testFromArrayRequiresTypeAndInstructions(): void
     {
-        $this->assertFalse(ClassificationQuestion::isArrayShape(['type' => 'binary']));
-        $this->assertFalse(ClassificationQuestion::isArrayShape(['type' => 'unknown', 'instructions' => 'Why?']));
-        $this->assertTrue(ClassificationQuestion::isArrayShape(['type' => 'binary', 'instructions' => 'Why?']));
+        $this->assertFalse(DecisionQuestion::isArrayShape(['type' => 'binary']));
+        $this->assertFalse(DecisionQuestion::isArrayShape(['type' => 'unknown', 'instructions' => 'Why?']));
+        $this->assertTrue(DecisionQuestion::isArrayShape(['type' => 'binary', 'instructions' => 'Why?']));
     }
 
     /**
@@ -320,18 +320,18 @@ class ClassificationQuestionTest extends TestCase
      */
     public function testJsonSchema(): void
     {
-        $schema = ClassificationQuestion::getJsonSchema();
+        $schema = DecisionQuestion::getJsonSchema();
 
         $this->assertSame(
             ['binary', 'choice', 'score'],
-            $schema['properties'][ClassificationQuestion::KEY_TYPE]['enum']
+            $schema['properties'][DecisionQuestion::KEY_TYPE]['enum']
         );
         $this->assertSame(
             ['object', 'array'],
-            array_column($schema['properties'][ClassificationQuestion::KEY_CRITERIA]['oneOf'], 'type')
+            array_column($schema['properties'][DecisionQuestion::KEY_CRITERIA]['oneOf'], 'type')
         );
         $this->assertSame(
-            [ClassificationQuestion::KEY_TYPE, ClassificationQuestion::KEY_INSTRUCTIONS],
+            [DecisionQuestion::KEY_TYPE, DecisionQuestion::KEY_INSTRUCTIONS],
             $schema['required']
         );
     }

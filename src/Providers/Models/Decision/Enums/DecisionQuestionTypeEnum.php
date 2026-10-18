@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers\Models\Classification\Enums;
+namespace WordPress\AiClient\Providers\Models\Decision\Enums;
 
 use WordPress\AiClient\Common\AbstractEnum;
 
 /**
- * Enum for the types of question a classification model can answer.
+ * Enum for the types of question a decision model can answer.
  *
  * @since n.e.x.t
  *
@@ -18,7 +18,7 @@ use WordPress\AiClient\Common\AbstractEnum;
  * @method bool isChoice() Checks if the type is CHOICE.
  * @method bool isScore() Checks if the type is SCORE.
  */
-class ClassificationQuestionTypeEnum extends AbstractEnum
+class DecisionQuestionTypeEnum extends AbstractEnum
 {
     /**
      * Whether a statement is true, answered with the probability that it is.

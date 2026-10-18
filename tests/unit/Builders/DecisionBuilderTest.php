@@ -5,23 +5,23 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Builders;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Builders\ClassificationBuilder;
+use WordPress\AiClient\Builders\DecisionBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
-use WordPress\AiClient\Providers\Models\Classification\DTO\ClassificationQuestion;
-use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
-use WordPress\AiClient\Results\DTO\ClassificationAnswer;
+use WordPress\AiClient\Results\DTO\DecisionAnswer;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
 /**
- * @covers \WordPress\AiClient\Builders\ClassificationBuilder
+ * @covers \WordPress\AiClient\Builders\DecisionBuilder
  */
-class ClassificationBuilderTest extends TestCase
+class DecisionBuilderTest extends TestCase
 {
     use MockModelCreationTrait;
 
@@ -39,11 +39,11 @@ class ClassificationBuilderTest extends TestCase
     /**
      * Reads a property from a builder.
      *
-     * @param ClassificationBuilder $builder The builder to inspect.
+     * @param DecisionBuilder $builder The builder to inspect.
      * @param string $propertyName The property name.
      * @return mixed The property value.
      */
-    private function getBuilderProperty(ClassificationBuilder $builder, string $propertyName)
+    private function getBuilderProperty(DecisionBuilder $builder, string $propertyName)
     {
         $reflection = new \ReflectionClass($builder);
         $property = $reflection->getProperty($propertyName);
@@ -55,61 +55,61 @@ class ClassificationBuilderTest extends TestCase
     /**
      * Creates a binary question.
      *
-     * @return ClassificationQuestion
+     * @return DecisionQuestion
      */
-    private function createSpamQuestion(): ClassificationQuestion
+    private function createSpamQuestion(): DecisionQuestion
     {
-        return new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), 'Is this comment spam?');
+        return new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?');
     }
 
     /**
      * Creates a builder with one question of each type, answered by a model with the given answers.
      *
-     * @param array<string, ClassificationAnswer> $answers The answers the model returns.
-     * @return ClassificationBuilder
+     * @param array<string, DecisionAnswer> $answers The answers the model returns.
+     * @return DecisionBuilder
      */
-    private function createBuilderWithAnswers(array $answers): ClassificationBuilder
+    private function createBuilderWithAnswers(array $answers): DecisionBuilder
     {
-        $builder = new ClassificationBuilder($this->registry, ['comment' => 'Nice post!']);
+        $builder = new DecisionBuilder($this->registry, ['comment' => 'Nice post!']);
 
         return $builder
             ->withQuestion('spam', $this->createSpamQuestion())
             ->withQuestion(
                 'route',
-                new ClassificationQuestion(
-                    ClassificationQuestionTypeEnum::choice(),
+                new DecisionQuestion(
+                    DecisionQuestionTypeEnum::choice(),
                     'How should a moderator handle it?',
                     ['approve' => 'Publish it.', 'hold' => 'Look closer.', 'trash' => 'Remove it.']
                 )
             )
             ->withQuestion(
                 'tone',
-                new ClassificationQuestion(
-                    ClassificationQuestionTypeEnum::score(),
+                new DecisionQuestion(
+                    DecisionQuestionTypeEnum::score(),
                     'How civil is it?',
                     ['Hostile.', 'Neutral.', 'Friendly.']
                 )
             )
-            ->usingModel($this->createMockClassificationModel($this->createTestClassificationResult($answers)));
+            ->usingModel($this->createMockDecisionModel($this->createTestDecisionResult($answers)));
     }
 
     /**
      * Creates a valid answer to each question asked by createBuilderWithAnswers().
      *
-     * @return array<string, ClassificationAnswer>
+     * @return array<string, DecisionAnswer>
      */
     private static function createValidAnswers(): array
     {
         return [
-            'spam' => new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 0.03),
-            'route' => new ClassificationAnswer(
-                ClassificationQuestionTypeEnum::choice(),
+            'spam' => new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.03),
+            'route' => new DecisionAnswer(
+                DecisionQuestionTypeEnum::choice(),
                 'approve',
                 0.91,
                 ['approve' => 0.91, 'hold' => 0.07, 'trash' => 0.02]
             ),
             // The highest level is a valid position on the scale.
-            'tone' => new ClassificationAnswer(ClassificationQuestionTypeEnum::score(), 2, 0.6, [0.1, 0.2, 0.7]),
+            'tone' => new DecisionAnswer(DecisionQuestionTypeEnum::score(), 2, 0.6, [0.1, 0.2, 0.7]),
         ];
     }
 
@@ -120,7 +120,7 @@ class ClassificationBuilderTest extends TestCase
      */
     public function testConstructorWithState(): void
     {
-        $builder = new ClassificationBuilder($this->registry, ['comment' => 'Nice post!']);
+        $builder = new DecisionBuilder($this->registry, ['comment' => 'Nice post!']);
 
         $this->assertSame(['comment' => 'Nice post!'], $this->getBuilderProperty($builder, 'state'));
     }
@@ -132,7 +132,7 @@ class ClassificationBuilderTest extends TestCase
      */
     public function testWithStateMergesState(): void
     {
-        $builder = new ClassificationBuilder($this->registry, ['comment' => 'First', 'author' => 'Jane']);
+        $builder = new DecisionBuilder($this->registry, ['comment' => 'First', 'author' => 'Jane']);
 
         $builder->withState(['comment' => 'Second', 'post' => 'Hello world']);
 
@@ -150,9 +150,9 @@ class ClassificationBuilderTest extends TestCase
     public function testWithStateRejectsEmptyState(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Classification state cannot be empty.');
+        $this->expectExceptionMessage('Decision state cannot be empty.');
 
-        new ClassificationBuilder($this->registry, []);
+        new DecisionBuilder($this->registry, []);
     }
 
     /**
@@ -166,9 +166,9 @@ class ClassificationBuilderTest extends TestCase
     public function testWithStateRejectsInvalidKeys(array $state): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Classification state keys must be non-empty, non-integer strings.');
+        $this->expectExceptionMessage('Decision state keys must be non-empty, non-integer strings.');
 
-        (new ClassificationBuilder($this->registry))->withState($state);
+        (new DecisionBuilder($this->registry))->withState($state);
     }
 
     /**
@@ -192,9 +192,9 @@ class ClassificationBuilderTest extends TestCase
      */
     public function testWithQuestionReplacesExistingKey(): void
     {
-        $replacement = new ClassificationQuestion(ClassificationQuestionTypeEnum::binary(), 'Is this comment rude?');
+        $replacement = new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment rude?');
 
-        $builder = new ClassificationBuilder($this->registry);
+        $builder = new DecisionBuilder($this->registry);
         $builder->withQuestion('spam', $this->createSpamQuestion());
         $builder->withQuestion('spam', $replacement);
 
@@ -212,9 +212,9 @@ class ClassificationBuilderTest extends TestCase
     public function testWithQuestionRejectsInvalidKeys(string $key): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Classification question keys must be non-empty, non-integer strings.');
+        $this->expectExceptionMessage('Decision question keys must be non-empty, non-integer strings.');
 
-        (new ClassificationBuilder($this->registry))->withQuestion($key, $this->createSpamQuestion());
+        (new DecisionBuilder($this->registry))->withQuestion($key, $this->createSpamQuestion());
     }
 
     /**
@@ -240,7 +240,7 @@ class ClassificationBuilderTest extends TestCase
      */
     public function testWithQuestionAcceptsNonIntegerNumericKeys(): void
     {
-        $builder = new ClassificationBuilder($this->registry);
+        $builder = new DecisionBuilder($this->registry);
         $builder->withQuestion('01', $this->createSpamQuestion());
         $builder->withQuestion('1.5', $this->createSpamQuestion());
 
@@ -248,65 +248,65 @@ class ClassificationBuilderTest extends TestCase
     }
 
     /**
-     * Tests classifyResult() with an explicitly set model.
+     * Tests decideResult() with an explicitly set model.
      *
      * @return void
      */
-    public function testClassifyResultWithModel(): void
+    public function testDecideResultWithModel(): void
     {
-        $result = $this->createTestClassificationResult();
-        $model = $this->createMockClassificationModel($result);
+        $result = $this->createTestDecisionResult();
+        $model = $this->createMockDecisionModel($result);
         $question = $this->createSpamQuestion();
 
         $this->registry->expects($this->once())
             ->method('bindModelDependencies')
             ->with($model);
 
-        $builder = new ClassificationBuilder($this->registry, ['comment' => 'Buy cheap pills!']);
+        $builder = new DecisionBuilder($this->registry, ['comment' => 'Buy cheap pills!']);
         $builder->withQuestion('spam', $question)->usingModel($model);
 
-        $this->assertSame($result, $builder->classifyResult());
+        $this->assertSame($result, $builder->decideResult());
         $this->assertSame([['comment' => 'Buy cheap pills!'], ['spam' => $question]], $model->lastCall);
     }
 
     /**
-     * Tests that classifyResult() discovers a classification model when none is set.
+     * Tests that decideResult() discovers a decision model when none is set.
      *
      * @return void
      */
-    public function testClassifyResultDiscoversModel(): void
+    public function testDecideResultDiscoversModel(): void
     {
-        $result = $this->createTestClassificationResult();
-        $model = $this->createMockClassificationModel($result);
+        $result = $this->createTestDecisionResult();
+        $model = $this->createMockDecisionModel($result);
 
         $this->registry->expects($this->once())
             ->method('findModelsMetadataForSupport')
             ->with($this->callback(static function (ModelRequirements $requirements): bool {
-                return $requirements->getRequiredCapabilities() == [CapabilityEnum::classification()];
+                return $requirements->getRequiredCapabilities() == [CapabilityEnum::decision()];
             }))
             ->willReturn([new ProviderModelsMetadata($model->providerMetadata(), [$model->metadata()])]);
 
         $this->registry->expects($this->once())
             ->method('getProviderModel')
-            ->with('mock', 'test-classification-model', $this->isInstanceOf(ModelConfig::class))
+            ->with('mock', 'test-decision-model', $this->isInstanceOf(ModelConfig::class))
             ->willReturn($model);
 
-        $builder = new ClassificationBuilder($this->registry, ['comment' => 'Buy cheap pills!']);
+        $builder = new DecisionBuilder($this->registry, ['comment' => 'Buy cheap pills!']);
         $builder->withQuestion('spam', $this->createSpamQuestion());
 
-        $this->assertSame($result, $builder->classifyResult());
+        $this->assertSame($result, $builder->decideResult());
     }
 
     /**
-     * Tests that classifyResult() accepts a valid answer to a question of each type.
+     * Tests that decideResult() accepts a valid answer to a question of each type.
      *
      * @return void
      */
-    public function testClassifyResultAcceptsValidAnswers(): void
+    public function testDecideResultAcceptsValidAnswers(): void
     {
         $answers = self::createValidAnswers();
 
-        $result = $this->createBuilderWithAnswers($answers)->classifyResult();
+        $result = $this->createBuilderWithAnswers($answers)->decideResult();
 
         $this->assertSame($answers, $result->getAnswers());
         $this->assertSame(0.03, $result->getAnswer('spam')->getProbability());
@@ -315,59 +315,59 @@ class ClassificationBuilderTest extends TestCase
     }
 
     /**
-     * Tests that classifyResult() requires state.
+     * Tests that decideResult() requires state.
      *
      * @return void
      */
-    public function testClassifyResultRequiresState(): void
+    public function testDecideResultRequiresState(): void
     {
-        $builder = new ClassificationBuilder($this->registry);
+        $builder = new DecisionBuilder($this->registry);
         $builder->withQuestion('spam', $this->createSpamQuestion());
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot classify empty state. Add state using withState().');
+        $this->expectExceptionMessage('Cannot decide on empty state. Add state using withState().');
 
-        $builder->classifyResult();
+        $builder->decideResult();
     }
 
     /**
-     * Tests that classifyResult() requires questions.
+     * Tests that decideResult() requires questions.
      *
      * @return void
      */
-    public function testClassifyResultRequiresQuestions(): void
+    public function testDecideResultRequiresQuestions(): void
     {
-        $builder = new ClassificationBuilder($this->registry, ['comment' => 'Nice post!']);
+        $builder = new DecisionBuilder($this->registry, ['comment' => 'Nice post!']);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot classify without questions. Add questions using withQuestion().');
+        $this->expectExceptionMessage('Cannot decide without questions. Add questions using withQuestion().');
 
-        $builder->classifyResult();
+        $builder->decideResult();
     }
 
     /**
-     * Tests that classifyResult() rejects a model that does not support classification.
+     * Tests that decideResult() rejects a model that does not support decisions.
      *
      * @return void
      */
-    public function testClassifyResultRejectsUnsupportedModel(): void
+    public function testDecideResultRejectsUnsupportedModel(): void
     {
-        $builder = new ClassificationBuilder($this->registry, ['comment' => 'Nice post!']);
+        $builder = new DecisionBuilder($this->registry, ['comment' => 'Nice post!']);
         $builder->withQuestion('spam', $this->createSpamQuestion())
             ->usingModel($this->createMockUnsupportedModel('text-only-model'));
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Model "text-only-model" does not support classification.');
+        $this->expectExceptionMessage('Model "text-only-model" does not support decisions.');
 
-        $builder->classifyResult();
+        $builder->decideResult();
     }
 
     /**
-     * Tests that classifyResult() throws when the model leaves a question unanswered.
+     * Tests that decideResult() throws when the model leaves a question unanswered.
      *
      * @return void
      */
-    public function testClassifyResultRequiresAnswerForEveryQuestion(): void
+    public function testDecideResultRequiresAnswerForEveryQuestion(): void
     {
         $answers = self::createValidAnswers();
         unset($answers['route'], $answers['tone']);
@@ -377,22 +377,22 @@ class ClassificationBuilderTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The model did not answer the following questions: route, tone.');
 
-        $builder->classifyResult();
+        $builder->decideResult();
     }
 
     /**
-     * Tests that classifyResult() throws when an answer does not fit its question.
+     * Tests that decideResult() throws when an answer does not fit its question.
      *
      * @dataProvider provideInvalidAnswers
      *
      * @param string $key The key of the question answered invalidly.
-     * @param ClassificationAnswer $answer The invalid answer.
+     * @param DecisionAnswer $answer The invalid answer.
      * @param string $message The expected exception message.
      * @return void
      */
-    public function testClassifyResultRejectsInvalidAnswers(
+    public function testDecideResultRejectsInvalidAnswers(
         string $key,
-        ClassificationAnswer $answer,
+        DecisionAnswer $answer,
         string $message
     ): void {
         $answers = self::createValidAnswers();
@@ -405,56 +405,56 @@ class ClassificationBuilderTest extends TestCase
             sprintf('The model gave an invalid answer to the question "%s". %s', $key, $message)
         );
 
-        $builder->classifyResult();
+        $builder->decideResult();
     }
 
     /**
      * Provides answers that do not fit their question.
      *
-     * @return array<string, array{string, ClassificationAnswer, string}>
+     * @return array<string, array{string, DecisionAnswer, string}>
      */
     public function provideInvalidAnswers(): array
     {
-        $choice = ClassificationQuestionTypeEnum::choice();
-        $score = ClassificationQuestionTypeEnum::score();
+        $choice = DecisionQuestionTypeEnum::choice();
+        $score = DecisionQuestionTypeEnum::score();
 
         return [
             'wrong type' => [
                 'spam',
-                new ClassificationAnswer($choice, 'approve'),
+                new DecisionAnswer($choice, 'approve'),
                 'Expected an answer to a binary question, but received an answer to a choice question.',
             ],
             // A probability of 1 must not be mistaken for the first level of a scale, or vice versa.
             'score answered as binary' => [
                 'tone',
-                new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 1),
+                new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 1),
                 'Expected an answer to a score question, but received an answer to a binary question.',
             ],
             'unknown option' => [
                 'route',
-                new ClassificationAnswer($choice, 'publish'),
+                new DecisionAnswer($choice, 'publish'),
                 '"publish" is not one of its options.',
             ],
             'probabilities for unknown options' => [
                 'route',
-                new ClassificationAnswer($choice, 'approve', null, ['approve' => 0.8, 'delete' => 0.1, 'spam' => 0.1]),
+                new DecisionAnswer($choice, 'approve', null, ['approve' => 0.8, 'delete' => 0.1, 'spam' => 0.1]),
                 'It has probabilities for options the question does not have: delete, spam.',
             ],
             'score beyond the scale' => [
                 'tone',
-                new ClassificationAnswer($score, 2.5),
+                new DecisionAnswer($score, 2.5),
                 'The score 2.5 is outside the scale, which runs from 0 to 2.',
             ],
             'probabilities for too few levels' => [
                 'tone',
-                new ClassificationAnswer($score, 1, null, [0.5, 0.5]),
+                new DecisionAnswer($score, 1, null, [0.5, 0.5]),
                 'It has probabilities for 2 levels, but the question has 3.',
             ],
         ];
     }
 
     /**
-     * Tests isSupported() when no registered model supports classification.
+     * Tests isSupported() when no registered model supports decisions.
      *
      * @return void
      */
@@ -462,7 +462,7 @@ class ClassificationBuilderTest extends TestCase
     {
         $this->registry->method('findModelsMetadataForSupport')->willReturn([]);
 
-        $builder = new ClassificationBuilder($this->registry, ['comment' => 'Nice post!']);
+        $builder = new DecisionBuilder($this->registry, ['comment' => 'Nice post!']);
 
         $this->assertFalse($builder->isSupported());
     }
@@ -474,9 +474,9 @@ class ClassificationBuilderTest extends TestCase
      */
     public function testIsSupportedWithModel(): void
     {
-        $builder = new ClassificationBuilder($this->registry);
+        $builder = new DecisionBuilder($this->registry);
 
-        $builder->usingModel($this->createMockClassificationModel($this->createTestClassificationResult()));
+        $builder->usingModel($this->createMockDecisionModel($this->createTestDecisionResult()));
         $this->assertTrue($builder->isSupported());
 
         $builder->usingModel($this->createMockTextGenerationModel($this->createTestResult()));
@@ -492,10 +492,10 @@ class ClassificationBuilderTest extends TestCase
     {
         $this->registry->method('findModelsMetadataForSupport')->willReturn([]);
 
-        $builder = new ClassificationBuilder($this->registry);
+        $builder = new DecisionBuilder($this->registry);
         $clone = clone $builder;
 
-        $clone->usingModel($this->createMockClassificationModel($this->createTestClassificationResult()));
+        $clone->usingModel($this->createMockDecisionModel($this->createTestDecisionResult()));
 
         $this->assertTrue($clone->isSupported());
         $this->assertFalse($builder->isSupported());

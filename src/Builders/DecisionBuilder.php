@@ -8,22 +8,22 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Builders\Traits\ModelResolutionTrait;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
-use WordPress\AiClient\Events\AfterClassifyEvent;
-use WordPress\AiClient\Events\BeforeClassifyEvent;
+use WordPress\AiClient\Events\AfterDecideEvent;
+use WordPress\AiClient\Events\BeforeDecideEvent;
 use WordPress\AiClient\Providers\ModelResolver;
-use WordPress\AiClient\Providers\Models\Classification\Contracts\ClassificationModelInterface;
-use WordPress\AiClient\Providers\Models\Classification\DTO\ClassificationQuestion;
+use WordPress\AiClient\Providers\Models\Decision\Contracts\DecisionModelInterface;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
-use WordPress\AiClient\Results\DTO\ClassificationAnswer;
-use WordPress\AiClient\Results\DTO\ClassificationResult;
+use WordPress\AiClient\Results\DTO\DecisionAnswer;
+use WordPress\AiClient\Results\DTO\DecisionResult;
 
 /**
- * Fluent builder for classification.
+ * Fluent builder for decisions.
  *
- * Classification answers typed questions about the given state, rather than generating content. Each
+ * Decision models answer typed questions about the given state, rather than generating content. Each
  * answer is a probability, a chosen option, or a position on a scale, optionally with a confidence and a
  * probability for each option or level.
  *
@@ -32,22 +32,22 @@ use WordPress\AiClient\Results\DTO\ClassificationResult;
  *
  * @since n.e.x.t
  */
-class ClassificationBuilder
+class DecisionBuilder
 {
     use ModelResolutionTrait;
 
     /**
-     * @var array<string, mixed> The state to classify.
+     * @var array<string, mixed> The state to decide on.
      */
     protected array $state = [];
 
     /**
-     * @var array<string, ClassificationQuestion> The questions to answer, keyed by question key.
+     * @var array<string, DecisionQuestion> The questions to answer, keyed by question key.
      */
     protected array $questions = [];
 
     /**
-     * @var EventDispatcherInterface|null The event dispatcher for classification lifecycle events.
+     * @var EventDispatcherInterface|null The event dispatcher for decision lifecycle events.
      */
     private ?EventDispatcherInterface $eventDispatcher;
 
@@ -57,7 +57,7 @@ class ClassificationBuilder
      * @since n.e.x.t
      *
      * @param ProviderRegistry $registry The provider registry for finding suitable models.
-     * @param array<string, mixed>|null $state Optional initial state to classify.
+     * @param array<string, mixed>|null $state Optional initial state to decide on.
      * @param EventDispatcherInterface|null $eventDispatcher Optional event dispatcher for lifecycle events.
      */
     public function __construct(
@@ -89,7 +89,7 @@ class ClassificationBuilder
     }
 
     /**
-     * Adds state to classify.
+     * Adds state to decide on.
      *
      * Keys that are already present are overwritten.
      *
@@ -102,13 +102,13 @@ class ClassificationBuilder
     public function withState(array $state): self
     {
         if ($state === []) {
-            throw new InvalidArgumentException('Classification state cannot be empty.');
+            throw new InvalidArgumentException('Decision state cannot be empty.');
         }
 
         foreach (array_keys($state) as $key) {
             // PHP converts integer-like string keys to integers, so those are rejected along with lists.
             if (!is_string($key) || trim($key) === '') {
-                throw new InvalidArgumentException('Classification state keys must be non-empty, non-integer strings.');
+                throw new InvalidArgumentException('Decision state keys must be non-empty, non-integer strings.');
             }
         }
 
@@ -125,16 +125,16 @@ class ClassificationBuilder
      * @since n.e.x.t
      *
      * @param string $key The key identifying the question and its answer.
-     * @param ClassificationQuestion $question The question.
+     * @param DecisionQuestion $question The question.
      * @return self
      * @throws InvalidArgumentException If the key is empty or an integer.
      */
-    public function withQuestion(string $key, ClassificationQuestion $question): self
+    public function withQuestion(string $key, DecisionQuestion $question): self
     {
         // PHP converts integer-like array keys such as "1" to integers, so the questions could no longer be
         // keyed by name.
         if (trim($key) === '' || (string) (int) $key === $key) {
-            throw new InvalidArgumentException('Classification question keys must be non-empty, non-integer strings.');
+            throw new InvalidArgumentException('Decision question keys must be non-empty, non-integer strings.');
         }
 
         $this->questions[$key] = $question;
@@ -143,11 +143,11 @@ class ClassificationBuilder
     }
 
     /**
-     * Checks whether a model is available for classification with the current configuration.
+     * Checks whether a model is available for decisions with the current configuration.
      *
      * @since n.e.x.t
      *
-     * @return bool True if the set model or any registered model supports classification.
+     * @return bool True if the set model or any registered model supports decisions.
      */
     public function isSupported(): bool
     {
@@ -155,54 +155,54 @@ class ClassificationBuilder
     }
 
     /**
-     * Classifies the state by answering the configured questions.
+     * Answers the configured questions about the state.
      *
      * @since n.e.x.t
      *
-     * @return ClassificationResult The result containing one answer per question.
+     * @return DecisionResult The result containing one answer per question.
      * @throws InvalidArgumentException If no state or questions are configured, or no suitable model is found.
-     * @throws RuntimeException If the model does not support classification, or does not give a valid answer
+     * @throws RuntimeException If the model does not support decisions, or does not give a valid answer
      *                          to every question.
      */
-    public function classifyResult(): ClassificationResult
+    public function decideResult(): DecisionResult
     {
         if ($this->state === []) {
-            throw new InvalidArgumentException('Cannot classify empty state. Add state using withState().');
+            throw new InvalidArgumentException('Cannot decide on empty state. Add state using withState().');
         }
 
         if ($this->questions === []) {
             throw new InvalidArgumentException(
-                'Cannot classify without questions. Add questions using withQuestion().'
+                'Cannot decide without questions. Add questions using withQuestion().'
             );
         }
 
-        $capability = CapabilityEnum::classification();
+        $capability = CapabilityEnum::decision();
         $model = $this->modelResolver->resolve($this->getModelRequirements(), $this->modelConfig);
 
-        if (!$model instanceof ClassificationModelInterface) {
+        if (!$model instanceof DecisionModelInterface) {
             throw new RuntimeException(
                 sprintf(
-                    'Model "%s" does not support classification.',
+                    'Model "%s" does not support decisions.',
                     $model->metadata()->getId()
                 )
             );
         }
 
-        $this->dispatchEvent(new BeforeClassifyEvent($this->state, $this->questions, $model, $capability));
+        $this->dispatchEvent(new BeforeDecideEvent($this->state, $this->questions, $model, $capability));
 
-        $result = $model->classifyResult($this->state, $this->questions);
+        $result = $model->decideResult($this->state, $this->questions);
 
         $this->assertValidAnswers($result);
 
         $this->dispatchEvent(
-            new AfterClassifyEvent($this->state, $this->questions, $model, $capability, $result)
+            new AfterDecideEvent($this->state, $this->questions, $model, $capability, $result)
         );
 
         return $result;
     }
 
     /**
-     * Gets the requirements a model must meet to classify with the current configuration.
+     * Gets the requirements a model must meet to decide with the current configuration.
      *
      * @since n.e.x.t
      *
@@ -210,9 +210,9 @@ class ClassificationBuilder
      */
     private function getModelRequirements(): ModelRequirements
     {
-        // Classification takes state and questions rather than messages, so only the capability and the
+        // Decisions take state and questions rather than messages, so only the capability and the
         // model configuration contribute requirements.
-        return ModelRequirements::fromPromptData(CapabilityEnum::classification(), [], $this->modelConfig);
+        return ModelRequirements::fromPromptData(CapabilityEnum::decision(), [], $this->modelConfig);
     }
 
     /**
@@ -220,11 +220,11 @@ class ClassificationBuilder
      *
      * @since n.e.x.t
      *
-     * @param ClassificationResult $result The result from the model.
+     * @param DecisionResult $result The result from the model.
      * @return void
      * @throws RuntimeException If a question is unanswered, or an answer does not fit its question.
      */
-    private function assertValidAnswers(ClassificationResult $result): void
+    private function assertValidAnswers(DecisionResult $result): void
     {
         $answers = $result->getAnswers();
 
@@ -254,11 +254,11 @@ class ClassificationBuilder
      *
      * @since n.e.x.t
      *
-     * @param ClassificationQuestion $question The question.
-     * @param ClassificationAnswer $answer The answer to the question.
+     * @param DecisionQuestion $question The question.
+     * @param DecisionAnswer $answer The answer to the question.
      * @return string|null A description of the problem, or null if the answer fits the question.
      */
-    private function describeInvalidAnswer(ClassificationQuestion $question, ClassificationAnswer $answer): ?string
+    private function describeInvalidAnswer(DecisionQuestion $question, DecisionAnswer $answer): ?string
     {
         $type = $question->getType();
 

@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Events;
 
-use WordPress\AiClient\Providers\Models\Classification\DTO\ClassificationQuestion;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
- * Event dispatched before state and questions are sent to a classification model.
+ * Event dispatched before state and questions are sent to a decision model.
  *
  * @since n.e.x.t
  */
-class BeforeClassifyEvent
+class BeforeDecideEvent
 {
     /**
      * @var array<string, mixed> The state to be sent to the model.
@@ -21,17 +21,17 @@ class BeforeClassifyEvent
     private array $state;
 
     /**
-     * @var array<string, ClassificationQuestion> The questions to be sent to the model, keyed by question key.
+     * @var array<string, DecisionQuestion> The questions to be sent to the model, keyed by question key.
      */
     private array $questions;
 
     /**
-     * @var ModelInterface The model that will classify the state.
+     * @var ModelInterface The model that will decide on the state.
      */
     private ModelInterface $model;
 
     /**
-     * @var CapabilityEnum The capability being used for classification.
+     * @var CapabilityEnum The capability being used for decisions.
      */
     private CapabilityEnum $capability;
 
@@ -41,10 +41,10 @@ class BeforeClassifyEvent
      * @since n.e.x.t
      *
      * @param array<string, mixed>                  $state The state to be sent to the model.
-     * @param array<string, ClassificationQuestion> $questions The questions to be sent to the model, keyed by
+     * @param array<string, DecisionQuestion> $questions The questions to be sent to the model, keyed by
      *                                                         question key.
-     * @param ModelInterface                        $model The model that will classify the state.
-     * @param CapabilityEnum                        $capability The capability being used for classification.
+     * @param ModelInterface                        $model The model that will decide on the state.
+     * @param CapabilityEnum                        $capability The capability being used for decisions.
      */
     public function __construct(array $state, array $questions, ModelInterface $model, CapabilityEnum $capability)
     {
@@ -71,7 +71,7 @@ class BeforeClassifyEvent
      *
      * @since n.e.x.t
      *
-     * @return array<string, ClassificationQuestion> The questions, keyed by question key.
+     * @return array<string, DecisionQuestion> The questions, keyed by question key.
      */
     public function getQuestions(): array
     {
@@ -79,7 +79,7 @@ class BeforeClassifyEvent
     }
 
     /**
-     * Gets the model that will classify the state.
+     * Gets the model that will decide on the state.
      *
      * @since n.e.x.t
      *
@@ -91,7 +91,7 @@ class BeforeClassifyEvent
     }
 
     /**
-     * Gets the capability being used for classification.
+     * Gets the capability being used for decisions.
      *
      * @since n.e.x.t
      *

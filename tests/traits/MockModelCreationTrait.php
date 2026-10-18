@@ -9,10 +9,10 @@ use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
-use WordPress\AiClient\Providers\Models\Classification\Contracts\ClassificationModelInterface;
-use WordPress\AiClient\Providers\Models\Classification\DTO\ClassificationQuestion;
-use WordPress\AiClient\Providers\Models\Classification\Enums\ClassificationQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
+use WordPress\AiClient\Providers\Models\Decision\Contracts\DecisionModelInterface;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
@@ -24,8 +24,8 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
-use WordPress\AiClient\Results\DTO\ClassificationAnswer;
-use WordPress\AiClient\Results\DTO\ClassificationResult;
+use WordPress\AiClient\Results\DTO\DecisionAnswer;
+use WordPress\AiClient\Results\DTO\DecisionResult;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
@@ -119,14 +119,14 @@ trait MockModelCreationTrait
     }
 
     /**
-     * Creates a test ClassificationResult for testing purposes.
+     * Creates a test DecisionResult for testing purposes.
      *
-     * @param array<string, ClassificationAnswer>|null $answers Optional answers for the response.
-     * @return ClassificationResult
+     * @param array<string, DecisionAnswer>|null $answers Optional answers for the response.
+     * @return DecisionResult
      */
-    protected function createTestClassificationResult(?array $answers = null): ClassificationResult
+    protected function createTestDecisionResult(?array $answers = null): DecisionResult
     {
-        $answers = $answers ?? ['spam' => new ClassificationAnswer(ClassificationQuestionTypeEnum::binary(), 0.03)];
+        $answers = $answers ?? ['spam' => new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.03)];
 
         $providerMetadata = new ProviderMetadata(
             'mock',
@@ -134,12 +134,12 @@ trait MockModelCreationTrait
             ProviderTypeEnum::cloud()
         );
 
-        return new ClassificationResult(
-            'test-classification-result-id',
+        return new DecisionResult(
+            'test-decision-result-id',
             $answers,
             new TokenUsage(10, 1, 11),
             $providerMetadata,
-            $this->createTestClassificationModelMetadata()
+            $this->createTestDecisionModelMetadata()
         );
     }
 
@@ -201,20 +201,20 @@ trait MockModelCreationTrait
     }
 
     /**
-     * Creates a test model metadata instance for classification.
+     * Creates a test model metadata instance for decisions.
      *
      * @param string $id   Optional model ID.
      * @param string $name Optional model name.
      * @return ModelMetadata
      */
-    protected function createTestClassificationModelMetadata(
-        string $id = 'test-classification-model',
-        string $name = 'Test Classification Model'
+    protected function createTestDecisionModelMetadata(
+        string $id = 'test-decision-model',
+        string $name = 'Test Decision Model'
     ): ModelMetadata {
         return new ModelMetadata(
             $id,
             $name,
-            [CapabilityEnum::classification()],
+            [CapabilityEnum::decision()],
             []
         );
     }
@@ -522,17 +522,17 @@ trait MockModelCreationTrait
     }
 
     /**
-     * Creates a mock classification model using anonymous class.
+     * Creates a mock decision model using anonymous class.
      *
-     * @param ClassificationResult $result The result to return from classification.
+     * @param DecisionResult $result The result to return from the decision.
      * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
-     * @return ModelInterface&ClassificationModelInterface The mock model.
+     * @return ModelInterface&DecisionModelInterface The mock model.
      */
-    protected function createMockClassificationModel(
-        ClassificationResult $result,
+    protected function createMockDecisionModel(
+        DecisionResult $result,
         ?ModelMetadata $metadata = null
     ): ModelInterface {
-        $metadata = $metadata ?? $this->createTestClassificationModelMetadata();
+        $metadata = $metadata ?? $this->createTestDecisionModelMetadata();
 
         $providerMetadata = new ProviderMetadata(
             'mock',
@@ -544,22 +544,22 @@ trait MockModelCreationTrait
             $metadata,
             $providerMetadata,
             $result
-        ) implements ModelInterface, ClassificationModelInterface {
+        ) implements ModelInterface, DecisionModelInterface {
             private ModelMetadata $metadata;
             private ProviderMetadata $providerMetadata;
-            private ClassificationResult $result;
+            private DecisionResult $result;
             private ModelConfig $config;
 
             /**
-             * @var array{0: array<string, mixed>, 1: array<string, ClassificationQuestion>}|null The state and
-             *      questions received by the last call to classifyResult().
+             * @var array{0: array<string, mixed>, 1: array<string, DecisionQuestion>}|null The state and
+             *      questions received by the last call to decideResult().
              */
             public ?array $lastCall = null;
 
             public function __construct(
                 ModelMetadata $metadata,
                 ProviderMetadata $providerMetadata,
-                ClassificationResult $result
+                DecisionResult $result
             ) {
                 $this->metadata = $metadata;
                 $this->providerMetadata = $providerMetadata;
@@ -588,10 +588,10 @@ trait MockModelCreationTrait
             }
 
             /**
-             * @param array<string, mixed> $state The state to classify.
-             * @param array<string, ClassificationQuestion> $questions The questions to answer.
+             * @param array<string, mixed> $state The state to decide on.
+             * @param array<string, DecisionQuestion> $questions The questions to answer.
              */
-            public function classifyResult(array $state, array $questions): ClassificationResult
+            public function decideResult(array $state, array $questions): DecisionResult
             {
                 $this->lastCall = [$state, $questions];
 
