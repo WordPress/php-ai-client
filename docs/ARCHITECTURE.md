@@ -359,6 +359,14 @@ Annotations are an `array<string, mixed>` whose values should be JSON-serializab
 
 Empty annotations are omitted from serialized declarations, preserving the existing shape for callers that do not use them. Missing annotations are restored as an empty array. Annotations are not authorization; applications must still validate tool execution.
 
+### Preparing function declarations for provider requests
+
+`AbstractApiBasedModel::prepareFunctionDeclarationForRequest()` lets providers adjust function declarations before building a request. By default, it returns the original declaration. Providers must call this protected method for each declaration to use it. The shared OpenAI-compatible implementation already does this.
+
+An override can use `$functionDeclaration->withParameters($preparedParameters)` to replace the input schema. This returns a copy with the same name, description, and annotations. The original declaration stays unchanged. Providers may remove schema constraints that their API does not support. Applications must still validate tool arguments against the original schema.
+
+Providers still choose the API fields and encode the request as JSON. They can read annotations in the hook, but must only send fields their API accepts. If a provider changes a function name, it must also map that name in returned calls and conversation history. The hook does not handle this mapping. It also does not prepare structured output schemas.
+
 ## Class diagrams
 
 This section shows comprehensive class diagrams for the proposed architecture. For explanation on specific terms, see the [glossary](./GLOSSARY.md).

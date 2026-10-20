@@ -492,9 +492,18 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     {
         $tools = [];
         foreach ($functionDeclarations as $functionDeclaration) {
+            $functionDeclaration = $this->prepareFunctionDeclarationForRequest($functionDeclaration);
+            $function = [
+                'name' => $functionDeclaration->getName(),
+                'description' => $functionDeclaration->getDescription(),
+            ];
+            $parameters = $functionDeclaration->getParameters();
+            if ($parameters !== null) {
+                $function['parameters'] = $parameters;
+            }
             $tools[] = [
                 'type' => 'function',
-                'function' => $functionDeclaration->toArray(),
+                'function' => $function,
             ];
         }
 

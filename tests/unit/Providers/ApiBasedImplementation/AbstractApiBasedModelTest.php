@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
+use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
 /**
  * @covers \WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModel
@@ -30,6 +31,28 @@ class AbstractApiBasedModelTest extends TestCase
 
         $this->modelMetadata = $this->createStub(ModelMetadata::class);
         $this->providerMetadata = $this->createStub(ProviderMetadata::class);
+    }
+
+    /**
+     * Tests that the default hook returns the original declaration.
+     *
+     * @return void
+     */
+    public function testPrepareFunctionDeclarationDefaultsToOriginal(): void
+    {
+        $model = new class ($this->modelMetadata, $this->providerMetadata) extends MockApiBasedModel {
+            /**
+             * {@inheritDoc}
+             */
+            public function prepareFunctionDeclarationForRequest(
+                FunctionDeclaration $functionDeclaration
+            ): FunctionDeclaration {
+                return parent::prepareFunctionDeclarationForRequest($functionDeclaration);
+            }
+        };
+        $declaration = new FunctionDeclaration('lookup', 'Looks up an item.', null, ['readOnlyHint' => true]);
+
+        $this->assertSame($declaration, $model->prepareFunctionDeclarationForRequest($declaration));
     }
 
     /**
