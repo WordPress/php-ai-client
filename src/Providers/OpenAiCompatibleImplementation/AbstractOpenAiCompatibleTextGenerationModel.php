@@ -780,9 +780,17 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             return null;
         }
 
-        $functionArguments = is_string($toolCallData['function']['arguments'])
-            ? json_decode($toolCallData['function']['arguments'], true)
-            : $toolCallData['function']['arguments'];
+        $functionArguments = $toolCallData['function']['arguments'] ?? null;
+        if (is_string($functionArguments)) {
+            $functionArguments = json_decode($functionArguments, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw ResponseException::fromInvalidData(
+                    $this->providerMetadata()->getName(),
+                    'tool_calls.function.arguments',
+                    'Function arguments must contain valid JSON.'
+                );
+            }
+        }
 
         $functionCall = new FunctionCall(
             isset($toolCallData['id']) && is_string($toolCallData['id']) ?

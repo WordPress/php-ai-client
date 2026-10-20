@@ -17,8 +17,8 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * executes the requested calls, and the responses are appended to the
  * conversation for a follow-up request.
  *
- * Resolution is split into two steps so that a round is only executed when
- * every requested call can be handled:
+ * Resolution checks all calls before executing any. This prevents execution
+ * when a call is unsupported, but does not make the batch atomic:
  * - {@see self::canResolve()} checks whether a call can be handled. It must be
  *   free of side effects, as it is invoked for every call in a round before
  *   any call is executed.
@@ -50,7 +50,13 @@ interface FunctionCallResolverInterface
      *
      * Only called for function calls that {@see self::canResolve()} reported
      * as resolvable. Execution errors should be encoded in the returned
-     * function response, so the model can react to them.
+     * function response, so the model can react to them. The response must keep
+     * the call ID when present. For calls without an ID, it must keep the name.
+     * Any response name must match the call name.
+     *
+     * Exceptions stop the loop and pass to the caller. Earlier calls are not rolled
+     * back. A failed call may also have caused side effects. The caller must check
+     * tool outcomes before retrying.
      *
      * @since n.e.x.t
      *

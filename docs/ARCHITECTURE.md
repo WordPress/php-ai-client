@@ -359,6 +359,16 @@ Annotations are an `array<string, mixed>` whose values should be JSON-serializab
 
 Empty annotations are omitted from serialized declarations, preserving the existing shape for callers that do not use them. Missing annotations are restored as an empty array. Annotations are not authorization; applications must still validate tool execution.
 
+### Automatic function call resolution
+
+`PromptBuilder` delegates tool execution to an internal `FunctionCallRunner`. Each request uses the same model and dispatches the usual generation events. Automatic resolution requires one candidate. Providers must put all parts of one response, including parallel calls and reasoning, in that candidate.
+
+The final result contains total token usage across all requests. Its `functionCallResolution` additional data includes `rounds`, `stopReason`, `resolvedCalls`, and the full conversation in `messages`. Each request dispatches `BeforeGenerateResultEvent` and `AfterGenerateResultEvent`. There is no extra event for the final aggregate result. Explicitly selected models follow the existing model selection rules and are not checked for chat history support during generation.
+
+The runner checks every call with `canResolve()` before executing any. This stops unsupported batches, but does not make execution atomic. A later tool or model request can fail after earlier tools have run.
+
+Exceptions stop the loop and pass to the caller. Completed tools are not rolled back, and a failed tool may already have caused side effects. Retrying the original prompt can repeat those actions. Applications that need recovery must record tool outcomes and decide which actions are safe to retry. The SDK does not retry tools or return partial progress after an exception.
+
 ## Class diagrams
 
 This section shows comprehensive class diagrams for the proposed architecture. For explanation on specific terms, see the [glossary](./GLOSSARY.md).

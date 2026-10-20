@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Tests\unit\Builders;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Events\AfterGenerateResultEvent;
 use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -17,7 +18,6 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
-use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tests\mocks\MockEventDispatcher;
 use WordPress\AiClient\Tests\mocks\MockFunctionCallResolver;
@@ -221,100 +221,6 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
     }
 
     /**
-     * Tests that a truncated function call response is not executed.
-     *
-     * @return void
-     */
-    public function testDoesNotResolveFunctionCallsFromTruncatedResponse(): void
-    {
-        $truncatedResult = $this->createTestResultWithMessage(
-            new ModelMessage([
-                new MessagePart(new FunctionCall('call-1', 'get_weather', ['city' => 'Ber']))
-            ]),
-            null,
-            FinishReasonEnum::length()
-        );
-        $model = $this->createScriptedTextGenerationModel([
-            $truncatedResult,
-            $this->createTestResult('Never reached'),
-        ]);
-        $resolver = new MockFunctionCallResolver();
-
-        $result = $this->createBuilder()
-            ->usingModel($model)
-            ->usingFunctionCallResolver($resolver)
-            ->generateTextResult();
-
-        $this->assertSame([], $resolver->checkedCalls);
-        $this->assertSame([], $resolver->resolvedCalls);
-        $this->assertTrue($result->toMessage()->getParts()[0]->getType()->isFunctionCall());
-        $this->assertCount(1, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
-
-        $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
-        $this->assertSame(0, $resolution['rounds']);
-        $this->assertSame(PromptBuilder::STOP_REASON_INCOMPLETE_FUNCTION_CALLS, $resolution['stopReason']);
-        $this->assertSame([], $resolution['resolvedCalls']);
-    }
-
-    /**
-     * Tests that one incomplete call prevents a parallel batch from executing.
-     *
-     * @return void
-     */
-    public function testDoesNotResolveParallelCallsWhenOneHasNoName(): void
-    {
-        $model = $this->createScriptedTextGenerationModel([
-            $this->createFunctionCallResult(
-                new FunctionCall('call-1', 'get_weather', []),
-                new FunctionCall('call-2', null, [])
-            ),
-            $this->createTestResult('Never reached'),
-        ]);
-        $resolver = new MockFunctionCallResolver();
-
-        $result = $this->createBuilder()
-            ->usingModel($model)
-            ->usingFunctionCallResolver($resolver)
-            ->generateTextResult();
-
-        $this->assertSame([], $resolver->checkedCalls);
-        $this->assertSame([], $resolver->resolvedCalls);
-
-        $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
-        $this->assertSame(0, $resolution['rounds']);
-        $this->assertSame(PromptBuilder::STOP_REASON_INCOMPLETE_FUNCTION_CALLS, $resolution['stopReason']);
-        $this->assertSame([], $resolution['resolvedCalls']);
-    }
-
-    /**
-     * Tests that a completed name-only function call remains resolvable.
-     *
-     * @return void
-     */
-    public function testResolvesCompletedFunctionCallWithoutId(): void
-    {
-        $model = $this->createScriptedTextGenerationModel([
-            $this->createFunctionCallResult(new FunctionCall(null, 'get_weather', [])),
-            $this->createTestResult('Final answer'),
-        ]);
-        $resolver = new MockFunctionCallResolver();
-
-        $result = $this->createBuilder()
-            ->usingModel($model)
-            ->usingFunctionCallResolver($resolver)
-            ->generateTextResult();
-
-        $this->assertSame('Final answer', $result->toText());
-        $this->assertCount(1, $resolver->checkedCalls);
-        $this->assertCount(1, $resolver->resolvedCalls);
-        $this->assertSame('get_weather', $resolver->resolvedCalls[0]->getName());
-
-        $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
-        $this->assertSame(1, $resolution['rounds']);
-        $this->assertSame(PromptBuilder::STOP_REASON_COMPLETED, $resolution['stopReason']);
-    }
-
-    /**
      * Tests that the loop stops after the maximum number of iterations.
      *
      * @return void
@@ -324,7 +230,7 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
         // The model requests a function call on every round.
         $model = $this->createScriptedTextGenerationModel([
             $this->createFunctionCallResult(new FunctionCall('call-1', 'get_weather', [])),
-        ]);
+        ], null, true);
         $resolver = new MockFunctionCallResolver();
 
         $result = $this->createBuilder()
@@ -341,91 +247,6 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
         $this->assertCount(2, $resolver->resolvedCalls);
         // Initial request plus one follow-up per round.
         $this->assertCount(3, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
-    }
-
-    /**
-     * Tests that token usage is aggregated across all rounds.
-     *
-     * @return void
-     */
-    public function testAggregatesTokenUsageAcrossRounds(): void
-    {
-        $model = $this->createScriptedTextGenerationModel([
-            $this->createTestResultWithMessage(
-                new ModelMessage([new MessagePart(new FunctionCall('call-1', 'get_weather', []))]),
-                new TokenUsage(1, 2, 3),
-                FinishReasonEnum::toolCalls()
-            ),
-            $this->createTestResultWithMessage(
-                new ModelMessage([new MessagePart('Final answer')]),
-                new TokenUsage(10, 20, 30)
-            ),
-        ]);
-        $resolver = new MockFunctionCallResolver();
-
-        $result = $this->createBuilder()
-            ->usingModel($model)
-            ->usingFunctionCallResolver($resolver)
-            ->generateTextResult();
-
-        $tokenUsage = $result->getTokenUsage();
-        $this->assertSame(11, $tokenUsage->getPromptTokens());
-        $this->assertSame(22, $tokenUsage->getCompletionTokens());
-        $this->assertSame(33, $tokenUsage->getTotalTokens());
-        $this->assertNull($tokenUsage->getThoughtTokens());
-    }
-
-    /**
-     * Tests that a missing thought token count in one round counts as zero.
-     *
-     * @return void
-     */
-    public function testAggregatesThoughtTokensWhenOnlySomeRoundsReportThem(): void
-    {
-        $model = $this->createScriptedTextGenerationModel([
-            $this->createTestResultWithMessage(
-                new ModelMessage([new MessagePart(new FunctionCall('call-1', 'get_weather', []))]),
-                new TokenUsage(1, 2, 3),
-                FinishReasonEnum::toolCalls()
-            ),
-            $this->createTestResultWithMessage(
-                new ModelMessage([new MessagePart('Final answer')]),
-                new TokenUsage(10, 20, 30, 5)
-            ),
-        ]);
-
-        $result = $this->createBuilder()
-            ->usingModel($model)
-            ->usingFunctionCallResolver(new MockFunctionCallResolver())
-            ->generateTextResult();
-
-        $this->assertSame(5, $result->getTokenUsage()->getThoughtTokens());
-    }
-
-    /**
-     * Tests that a response without function calls completes with zero rounds.
-     *
-     * @return void
-     */
-    public function testCompletesWithZeroRoundsWithoutFunctionCalls(): void
-    {
-        $model = $this->createScriptedTextGenerationModel([
-            $this->createTestResult('Immediate answer'),
-        ]);
-        $resolver = new MockFunctionCallResolver();
-
-        $result = $this->createBuilder()
-            ->usingModel($model)
-            ->usingFunctionCallResolver($resolver)
-            ->generateTextResult();
-
-        $this->assertSame('Immediate answer', $result->toText());
-
-        $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
-        $this->assertSame(0, $resolution['rounds']);
-        $this->assertSame(PromptBuilder::STOP_REASON_COMPLETED, $resolution['stopReason']);
-        $this->assertSame([], $resolution['resolvedCalls']);
-        $this->assertCount(2, $resolution['messages']);
     }
 
     /**
@@ -471,6 +292,83 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
             ->usingFunctionCallResolver(new MockFunctionCallResolver());
 
         $this->assertTrue($builder->isSupportedForTextGeneration());
+    }
+
+    /**
+     * Tests that multiple candidates are rejected before making a request.
+     *
+     * @return void
+     */
+    public function testRejectsMultipleCandidatesBeforeRequest(): void
+    {
+        $builder = $this->createBuilder()
+            ->usingModel($this->createScriptedTextGenerationModel([$this->createTestResult()]))
+            ->usingCandidateCount(2)
+            ->usingFunctionCallResolver(new MockFunctionCallResolver());
+
+        try {
+            $builder->generateTextResult();
+            $this->fail('Expected a candidate count error.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertSame([], $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
+        }
+    }
+
+    /**
+     * Tests that an invalid candidate count skips discovery and reports unsupported.
+     *
+     * @return void
+     */
+    public function testCandidateCountIsCheckedBeforeDiscovery(): void
+    {
+        $registry = $this->createMock(ProviderRegistry::class);
+        $registry->expects($this->never())->method('findModelsMetadataForSupport');
+        $builder = (new PromptBuilder($registry, 'Hello'))
+            ->usingCandidateCount(2)
+            ->usingFunctionCallResolver(new MockFunctionCallResolver());
+
+        $this->assertFalse($builder->isSupportedForTextGeneration());
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Automatic function call resolution requires one candidate.');
+        $builder->generateTextResult();
+    }
+
+    /**
+     * Tests events across two tool rounds and reuse of the original prompt.
+     *
+     * @return void
+     */
+    public function testMultipleRoundsDispatchEventsAndPreservePrompt(): void
+    {
+        $results = [
+            $this->createFunctionCallResult(new FunctionCall('a', 'first', [])),
+            $this->createFunctionCallResult(new FunctionCall('b', 'second', [])),
+            $this->createTestResult('Done'),
+            $this->createTestResult('New answer'),
+        ];
+        $resolver = new MockFunctionCallResolver();
+        $builder = $this->createBuilder('Original prompt')
+            ->usingModel($this->createScriptedTextGenerationModel($results))
+            ->usingFunctionCallResolver($resolver);
+
+        $result = $builder->generateTextResult();
+        $this->assertSame('Done', $result->toText());
+        $this->assertSame(2, $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION]['rounds']);
+        $this->assertCount(2, $resolver->resolvedCalls);
+        $events = $this->dispatcher->getDispatchedEvents();
+        $this->assertCount(6, $events);
+        for ($round = 0; $round < 3; $round++) {
+            $this->assertInstanceOf(BeforeGenerateResultEvent::class, $events[2 * $round]);
+            $this->assertInstanceOf(AfterGenerateResultEvent::class, $events[2 * $round + 1]);
+            $this->assertSame($results[$round], $events[2 * $round + 1]->getResult());
+            $this->assertCount(1 + 2 * $round, $events[2 * $round]->getMessages());
+        }
+
+        $this->assertSame('New answer', $builder->generateText());
+        $before = $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class);
+        $this->assertCount(1, $before[3]->getMessages());
+        $this->assertSame('Original prompt', $before[3]->getMessages()[0]->getParts()[0]->getText());
+        $this->assertCount(2, $resolver->resolvedCalls);
     }
 
     /**

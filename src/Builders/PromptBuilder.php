@@ -30,12 +30,11 @@ use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToS
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
-use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Tools\Contracts\FunctionCallResolverInterface;
-use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 use WordPress\AiClient\Tools\DTO\WebSearch;
+use WordPress\AiClient\Tools\Execution\FunctionCallRunner;
 
 /**
  * Fluent builder for constructing AI prompts.
@@ -61,7 +60,7 @@ class PromptBuilder
      *
      * @since n.e.x.t
      */
-    public const KEY_FUNCTION_CALL_RESOLUTION = 'functionCallResolution';
+    public const KEY_FUNCTION_CALL_RESOLUTION = FunctionCallRunner::KEY_RESOLUTION;
 
     /**
      * Default maximum number of function call resolution rounds.
@@ -75,28 +74,28 @@ class PromptBuilder
      *
      * @since n.e.x.t
      */
-    public const STOP_REASON_COMPLETED = 'completed';
+    public const STOP_REASON_COMPLETED = FunctionCallRunner::COMPLETED;
 
     /**
      * Stop reason: the model requested a function call the resolver cannot resolve.
      *
      * @since n.e.x.t
      */
-    public const STOP_REASON_UNRESOLVED_FUNCTION_CALLS = 'unresolvedFunctionCalls';
+    public const STOP_REASON_UNRESOLVED_FUNCTION_CALLS = FunctionCallRunner::UNRESOLVED;
 
     /**
      * Stop reason: the model produced one or more incomplete function calls.
      *
      * @since n.e.x.t
      */
-    public const STOP_REASON_INCOMPLETE_FUNCTION_CALLS = 'incompleteFunctionCalls';
+    public const STOP_REASON_INCOMPLETE_FUNCTION_CALLS = FunctionCallRunner::INCOMPLETE;
 
     /**
      * Stop reason: the maximum number of resolution rounds was reached.
      *
      * @since n.e.x.t
      */
-    public const STOP_REASON_MAX_ITERATIONS = 'maxIterations';
+    public const STOP_REASON_MAX_ITERATIONS = FunctionCallRunner::MAX_ITERATIONS;
 
     /**
      * @var list<Message> The messages in the conversation.
@@ -416,40 +415,19 @@ class PromptBuilder
     /**
      * Enables automatic resolution of function calls during text generation.
      *
-     * When a resolver is set, the text generation methods run a resolution
-     * loop instead of a single request. Each round executes the function calls
-     * requested by the model through the resolver, appends the results to the
-     * conversation, and requests a follow-up response. The loop ends when the
-     * model produces a response without function calls, when the model response
-     * contains incomplete function calls, when the resolver cannot resolve a
-     * requested call (the caller gets that response back to handle it), or when
-     * the maximum number of rounds is reached.
+     * Executes complete tool calls and sends their results back to the model.
+     * Stops when the model has no calls, a call is incomplete or unsupported,
+     * or the limit set by usingMaxFunctionCallIterations() is reached.
      *
-     * Resolution follows the first response candidate and only applies to text
-     * generation. Other capabilities ignore the resolver. When more than one
-     * candidate is requested, the other candidates are not followed, and the
-     * final result only contains the candidates of the last round. Token usage
-     * is aggregated across all rounds. Details about the loop are exposed
-     * under the {@see self::KEY_FUNCTION_CALL_RESOLUTION} key of the
-     * additional data of the final result, including the number of rounds,
-     * the stop reason, the resolved calls, and the full conversation.
+     * Requires one candidate. Model discovery also requires chat history support.
+     * Other generation capabilities ignore the resolver. Use generateTextResult()
+     * to inspect responses when the loop stops without a text answer.
      *
-     * Follow-up rounds send the full conversation, so the model must support
-     * chat history. This capability is added to the requirements when a model
-     * is discovered. An explicitly set model is used as is, like for every
-     * other requirement.
+     * The result includes total token usage and loop details under
+     * KEY_FUNCTION_CALL_RESOLUTION. Each request dispatches its own lifecycle events.
      *
-     * Each round dispatches its own {@see BeforeGenerateResultEvent} and
-     * {@see AfterGenerateResultEvent} with the messages and result of that
-     * round. No event is dispatched for the final aggregated result.
-     *
-     * When the loop stops early, the final response usually contains function
-     * calls and no text. Use {@see self::generateTextResult()} to receive that
-     * response, since {@see self::generateText()} throws when the response has
-     * no text.
-     *
-     * The maximum number of rounds can be configured with
-     * {@see self::usingMaxFunctionCallIterations()}.
+     * Exceptions pass to the caller. Tools are not rolled back. Retrying the prompt
+     * can repeat completed actions, so callers must handle retries and tool outcomes.
      *
      * @since n.e.x.t
      *
@@ -773,6 +751,10 @@ class PromptBuilder
             }
         }
 
+        if (!$this->supportsFunctionCallResolution($capability)) {
+            return false;
+        }
+
         // Build requirements with the specified capability
         $requirements = $this->buildModelRequirements($capability);
 
@@ -899,16 +881,23 @@ class PromptBuilder
             }
         }
 
+        if (!$this->supportsFunctionCallResolution($capability)) {
+            throw new InvalidArgumentException('Automatic function call resolution requires one candidate.');
+        }
         $model = $this->getConfiguredModel($capability);
 
-        $result = $this->executeGenerationRound($model, $capability, $this->messages);
-
-        // Run the function call resolution loop if a resolver is configured.
         if ($this->functionCallResolver !== null && $capability->isTextGeneration()) {
-            $result = $this->resolveFunctionCalls($model, $capability, $result);
+            return (new FunctionCallRunner())->run(
+                $this->messages,
+                $this->functionCallResolver,
+                $this->maxFunctionCallIterations,
+                function (array $messages) use ($model, $capability): GenerativeAiResult {
+                    return $this->executeGenerationRound($model, $capability, $messages);
+                }
+            );
         }
 
-        return $result;
+        return $this->executeGenerationRound($model, $capability, $this->messages);
     }
 
     /**
@@ -941,190 +930,6 @@ class PromptBuilder
         );
 
         return $result;
-    }
-
-    /**
-     * Runs the function call resolution loop on a generated result.
-     *
-     * Each round executes the function calls requested by the model through
-     * the configured resolver, appends the model response and the function
-     * responses to a copy of the conversation, and requests a follow-up
-     * response. See {@see self::usingFunctionCallResolver()} for the
-     * termination conditions. The builder's own message list is not modified.
-     *
-     * The returned result carries the aggregated token usage of all rounds and
-     * exposes details about the loop under the
-     * {@see self::KEY_FUNCTION_CALL_RESOLUTION} key of its additional data.
-     *
-     * @since n.e.x.t
-     *
-     * @param ModelInterface $model The resolved model to use for follow-up rounds.
-     * @param CapabilityEnum $capability The capability in use.
-     * @param GenerativeAiResult $result The result of the initial request.
-     * @return GenerativeAiResult The final result.
-     */
-    private function resolveFunctionCalls(
-        ModelInterface $model,
-        CapabilityEnum $capability,
-        GenerativeAiResult $result
-    ): GenerativeAiResult {
-        /** @var FunctionCallResolverInterface $resolver */
-        $resolver = $this->functionCallResolver;
-
-        $messages = $this->messages;
-        $rounds = 0;
-        $tokenUsage = $result->getTokenUsage();
-        $resolvedCalls = [];
-        $stopReason = self::STOP_REASON_COMPLETED;
-
-        while (true) {
-            $candidate = $result->getCandidates()[0];
-            $message = $candidate->getMessage();
-            $functionCalls = $this->getFunctionCalls($message);
-
-            if (empty($functionCalls)) {
-                break;
-            }
-
-            if ($rounds >= $this->maxFunctionCallIterations) {
-                $stopReason = self::STOP_REASON_MAX_ITERATIONS;
-                break;
-            }
-
-            if (
-                !$candidate->getFinishReason()->isToolCalls() ||
-                !$this->areFunctionCallsComplete($functionCalls)
-            ) {
-                $stopReason = self::STOP_REASON_INCOMPLETE_FUNCTION_CALLS;
-                break;
-            }
-
-            /*
-             * Check all calls before executing any, so that a round is either
-             * fully executed or handed back to the caller untouched.
-             */
-            foreach ($functionCalls as $functionCall) {
-                if (!$resolver->canResolve($functionCall)) {
-                    $stopReason = self::STOP_REASON_UNRESOLVED_FUNCTION_CALLS;
-                    break 2;
-                }
-            }
-
-            $responseParts = [];
-            foreach ($functionCalls as $functionCall) {
-                $functionResponse = $resolver->resolve($functionCall);
-                $responseParts[] = new MessagePart($functionResponse);
-                $resolvedCalls[] = [
-                    'id' => $functionCall->getId(),
-                    'name' => $functionCall->getName(),
-                ];
-            }
-
-            $messages[] = $message;
-            $messages[] = new UserMessage($responseParts);
-            $rounds++;
-
-            $result = $this->executeGenerationRound($model, $capability, $messages);
-            $tokenUsage = $this->aggregateTokenUsage($tokenUsage, $result->getTokenUsage());
-        }
-
-        $messages[] = $result->toMessage();
-
-        $additionalData = $result->getAdditionalData();
-        $additionalData[self::KEY_FUNCTION_CALL_RESOLUTION] = [
-            'rounds' => $rounds,
-            'stopReason' => $stopReason,
-            'resolvedCalls' => $resolvedCalls,
-            'messages' => array_map(
-                static function (Message $message): array {
-                    return $message->toArray();
-                },
-                $messages
-            ),
-        ];
-
-        return new GenerativeAiResult(
-            $result->getId(),
-            $result->getCandidates(),
-            $tokenUsage,
-            $result->getProviderMetadata(),
-            $result->getModelMetadata(),
-            $additionalData
-        );
-    }
-
-    /**
-     * Retrieves the function calls contained in a message.
-     *
-     * @since n.e.x.t
-     *
-     * @param Message $message The message to inspect.
-     * @return list<FunctionCall> The function calls in the message.
-     */
-    private function getFunctionCalls(Message $message): array
-    {
-        $functionCalls = [];
-
-        foreach ($message->getParts() as $part) {
-            if ($part->getType()->isFunctionCall()) {
-                $functionCall = $part->getFunctionCall();
-                if ($functionCall instanceof FunctionCall) {
-                    $functionCalls[] = $functionCall;
-                }
-            }
-        }
-
-        return $functionCalls;
-    }
-
-    /**
-     * Checks whether all function calls contain the data required for execution.
-     *
-     * Function call IDs are provider-specific and therefore optional, but a
-     * non-empty function name is always required to safely resolve a call.
-     *
-     * @since n.e.x.t
-     *
-     * @param list<FunctionCall> $functionCalls The function calls to check.
-     * @return bool True if every function call is complete, false otherwise.
-     */
-    private function areFunctionCallsComplete(array $functionCalls): bool
-    {
-        foreach ($functionCalls as $functionCall) {
-            $name = $functionCall->getName();
-            if ($name === null || trim($name) === '') {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Adds up two token usage objects.
-     *
-     * A missing thought token count counts as zero, since providers omit it
-     * when no thinking happened.
-     *
-     * @since n.e.x.t
-     *
-     * @param TokenUsage $total The running total.
-     * @param TokenUsage $addition The usage to add.
-     * @return TokenUsage The combined token usage.
-     */
-    private function aggregateTokenUsage(TokenUsage $total, TokenUsage $addition): TokenUsage
-    {
-        $thoughtTokens = null;
-        if ($total->getThoughtTokens() !== null || $addition->getThoughtTokens() !== null) {
-            $thoughtTokens = (int) $total->getThoughtTokens() + (int) $addition->getThoughtTokens();
-        }
-
-        return new TokenUsage(
-            $total->getPromptTokens() + $addition->getPromptTokens(),
-            $total->getCompletionTokens() + $addition->getCompletionTokens(),
-            $total->getTotalTokens() + $addition->getTotalTokens(),
-            $thoughtTokens
-        );
     }
 
     /**
@@ -1519,6 +1324,20 @@ class PromptBuilder
     }
 
     /**
+     * Checks the candidate count for automatic text tool resolution.
+     *
+     * @since n.e.x.t
+     *
+     * @param CapabilityEnum $capability The generation capability.
+     * @return bool Whether the configuration is supported.
+     */
+    private function supportsFunctionCallResolution(CapabilityEnum $capability): bool
+    {
+        return $this->functionCallResolver === null || !$capability->isTextGeneration() ||
+            ($this->modelConfig->getCandidateCount() ?? 1) === 1;
+    }
+
+    /**
      * Builds the model requirements for the prompt's complete execution flow.
      *
      * @since n.e.x.t
@@ -1531,7 +1350,14 @@ class PromptBuilder
         $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
 
         if ($this->functionCallResolver !== null && $capability->isTextGeneration()) {
-            $requirements = $requirements->withRequiredCapability(CapabilityEnum::chatHistory());
+            $capabilities = $requirements->getRequiredCapabilities();
+            foreach ($capabilities as $requiredCapability) {
+                if ($requiredCapability->isChatHistory()) {
+                    return $requirements;
+                }
+            }
+            $capabilities[] = CapabilityEnum::chatHistory();
+            $requirements = new ModelRequirements($capabilities, $requirements->getRequiredOptions());
         }
 
         return $requirements;

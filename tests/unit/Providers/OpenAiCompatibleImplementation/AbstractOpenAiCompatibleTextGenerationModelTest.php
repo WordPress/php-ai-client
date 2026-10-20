@@ -1332,6 +1332,40 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests that malformed arguments are rejected before a call can be executed.
+     *
+     * @return void
+     */
+    public function testRejectsMalformedFunctionArguments(): void
+    {
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Function arguments must contain valid JSON.');
+        $this->createModel()->exposeParseResponseChoiceMessageToolCallPart([
+            'id' => 'call_1',
+            'function' => ['name' => 'create', 'arguments' => '{"title":'],
+        ]);
+    }
+
+    /**
+     * Tests that valid empty and decoded arguments are still accepted.
+     *
+     * @return void
+     */
+    public function testAcceptsEmptyFunctionArguments(): void
+    {
+        foreach (['{}', 'null', null, []] as $arguments) {
+            $part = $this->createModel()->exposeParseResponseChoiceMessageToolCallPart([
+                'id' => 'call_1',
+                'function' => ['name' => 'ping', 'arguments' => $arguments],
+            ]);
+            $this->assertNotNull($part);
+            $this->assertNotNull($part->getFunctionCall());
+            $expected = $arguments === '{}' || $arguments === [] ? [] : null;
+            $this->assertSame($expected, $part->getFunctionCall()->getArgs());
+        }
+    }
+
+    /**
      * Tests parseResponseChoiceMessageToolCallPart() with missing function data.
      *
      * @return void
