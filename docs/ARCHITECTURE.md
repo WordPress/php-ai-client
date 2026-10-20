@@ -365,6 +365,15 @@ Empty annotations are omitted from serialized declarations, preserving the exist
 
 The final result contains total token usage across all requests. Its `functionCallResolution` additional data includes `rounds`, `stopReason`, `resolvedCalls`, and the full conversation in `messages`. Each request dispatches `BeforeGenerateResultEvent` and `AfterGenerateResultEvent`. There is no extra event for the final aggregate result. Explicitly selected models follow the existing model selection rules and are not checked for chat history support during generation.
 
+The `stopReason` field uses these strings:
+
+- `completed`: The model returned a response without tool calls.
+- `unresolvedFunctionCalls`: The resolver could not handle every call in the round. No calls in that round were executed.
+- `incompleteFunctionCalls`: A call had no name, or the response finish reason was not `toolCalls`.
+- `maxIterations`: The tool round limit was reached. Calls in the last response were not executed.
+
+For example, callers can check `$result->getAdditionalData()['functionCallResolution']['stopReason'] === 'maxIterations'`. These strings are part of the result metadata contract. The constants used inside the SDK are private.
+
 The runner checks every call with `canResolve()` before executing any. This stops unsupported batches, but does not make execution atomic. A later tool or model request can fail after earlier tools have run.
 
 Exceptions stop the loop and pass to the caller. Completed tools are not rolled back, and a failed tool may already have caused side effects. Retrying the original prompt can repeat those actions. Applications that need recovery must record tool outcomes and decide which actions are safe to retry. The SDK does not retry tools or return partial progress after an exception.

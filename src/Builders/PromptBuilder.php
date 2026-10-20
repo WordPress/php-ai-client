@@ -55,47 +55,11 @@ class PromptBuilder
     use ModelResolutionTrait;
 
     /**
-     * Key in the result's additional data under which function call
-     * resolution details are exposed.
-     *
-     * @since n.e.x.t
-     */
-    public const KEY_FUNCTION_CALL_RESOLUTION = FunctionCallRunner::KEY_RESOLUTION;
-
-    /**
      * Default maximum number of function call resolution rounds.
      *
      * @since n.e.x.t
      */
-    public const DEFAULT_MAX_FUNCTION_CALL_ITERATIONS = 5;
-
-    /**
-     * Stop reason: the model produced a response without function calls.
-     *
-     * @since n.e.x.t
-     */
-    public const STOP_REASON_COMPLETED = FunctionCallRunner::COMPLETED;
-
-    /**
-     * Stop reason: the model requested a function call the resolver cannot resolve.
-     *
-     * @since n.e.x.t
-     */
-    public const STOP_REASON_UNRESOLVED_FUNCTION_CALLS = FunctionCallRunner::UNRESOLVED;
-
-    /**
-     * Stop reason: the model produced one or more incomplete function calls.
-     *
-     * @since n.e.x.t
-     */
-    public const STOP_REASON_INCOMPLETE_FUNCTION_CALLS = FunctionCallRunner::INCOMPLETE;
-
-    /**
-     * Stop reason: the maximum number of resolution rounds was reached.
-     *
-     * @since n.e.x.t
-     */
-    public const STOP_REASON_MAX_ITERATIONS = FunctionCallRunner::MAX_ITERATIONS;
+    private const DEFAULT_MAX_FUNCTION_CALL_ITERATIONS = 5;
 
     /**
      * @var list<Message> The messages in the conversation.
@@ -424,7 +388,7 @@ class PromptBuilder
      * to inspect responses when the loop stops without a text answer.
      *
      * The result includes total token usage and loop details under
-     * KEY_FUNCTION_CALL_RESOLUTION. Each request dispatches its own lifecycle events.
+     * `functionCallResolution`. Each request dispatches its own lifecycle events.
      *
      * Exceptions pass to the caller. Tools are not rolled back. Retrying the prompt
      * can repeat completed actions, so callers must handle retries and tool outcomes.

@@ -107,9 +107,9 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
         $this->assertCount(1, $resolver->resolvedCalls);
         $this->assertSame('get_weather', $resolver->resolvedCalls[0]->getName());
 
-        $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
+        $resolution = $result->getAdditionalData()['functionCallResolution'];
         $this->assertSame(1, $resolution['rounds']);
-        $this->assertSame(PromptBuilder::STOP_REASON_COMPLETED, $resolution['stopReason']);
+        $this->assertSame('completed', $resolution['stopReason']);
         $this->assertSame([['id' => 'call-1', 'name' => 'get_weather']], $resolution['resolvedCalls']);
     }
 
@@ -150,7 +150,7 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
         $this->assertSame(['status' => 'ok'], $functionResponse->getResponse());
 
         // The exposed transcript also contains the final model response.
-        $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
+        $resolution = $result->getAdditionalData()['functionCallResolution'];
         $this->assertCount(4, $resolution['messages']);
     }
 
@@ -214,9 +214,9 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
         $this->assertTrue($result->toMessage()->getParts()[0]->getType()->isFunctionCall());
         $this->assertCount(1, $this->dispatcher->getDispatchedEventsOfType(BeforeGenerateResultEvent::class));
 
-        $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
+        $resolution = $result->getAdditionalData()['functionCallResolution'];
         $this->assertSame(0, $resolution['rounds']);
-        $this->assertSame(PromptBuilder::STOP_REASON_UNRESOLVED_FUNCTION_CALLS, $resolution['stopReason']);
+        $this->assertSame('unresolvedFunctionCalls', $resolution['stopReason']);
         $this->assertSame([], $resolution['resolvedCalls']);
     }
 
@@ -239,9 +239,9 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
             ->usingMaxFunctionCallIterations(2)
             ->generateTextResult();
 
-        $resolution = $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION];
+        $resolution = $result->getAdditionalData()['functionCallResolution'];
         $this->assertSame(2, $resolution['rounds']);
-        $this->assertSame(PromptBuilder::STOP_REASON_MAX_ITERATIONS, $resolution['stopReason']);
+        $this->assertSame('maxIterations', $resolution['stopReason']);
         // Calls from a response beyond the iteration limit must not be inspected or resolved.
         $this->assertCount(2, $resolver->checkedCalls);
         $this->assertCount(2, $resolver->resolvedCalls);
@@ -353,7 +353,7 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
 
         $result = $builder->generateTextResult();
         $this->assertSame('Done', $result->toText());
-        $this->assertSame(2, $result->getAdditionalData()[PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION]['rounds']);
+        $this->assertSame(2, $result->getAdditionalData()['functionCallResolution']['rounds']);
         $this->assertCount(2, $resolver->resolvedCalls);
         $events = $this->dispatcher->getDispatchedEvents();
         $this->assertCount(6, $events);
@@ -399,7 +399,7 @@ class PromptBuilderFunctionCallResolutionTest extends TestCase
             ->generateImageResult();
 
         $this->assertArrayNotHasKey(
-            PromptBuilder::KEY_FUNCTION_CALL_RESOLUTION,
+            'functionCallResolution',
             $result->getAdditionalData()
         );
         $this->assertSame([], $resolver->checkedCalls);

@@ -22,11 +22,11 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  */
 final class FunctionCallRunner
 {
-    public const KEY_RESOLUTION = 'functionCallResolution';
-    public const COMPLETED = 'completed';
-    public const UNRESOLVED = 'unresolvedFunctionCalls';
-    public const INCOMPLETE = 'incompleteFunctionCalls';
-    public const MAX_ITERATIONS = 'maxIterations';
+    private const KEY_RESOLUTION = 'functionCallResolution';
+    private const COMPLETED = 'completed';
+    private const UNRESOLVED = 'unresolvedFunctionCalls';
+    private const INCOMPLETE = 'incompleteFunctionCalls';
+    private const MAX_ITERATIONS = 'maxIterations';
 
     /**
      * Runs generation and resolves complete tool calls from a single candidate.

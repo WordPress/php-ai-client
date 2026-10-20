@@ -78,9 +78,9 @@ class FunctionCallRunnerTest extends TestCase
         $this->assertTrue($result->toMessage()->getParts()[0]->getType()->isFunctionCall());
         $this->assertSame(1, $this->requestCount);
 
-        $resolution = $result->getAdditionalData()[FunctionCallRunner::KEY_RESOLUTION];
+        $resolution = $result->getAdditionalData()['functionCallResolution'];
         $this->assertSame(0, $resolution['rounds']);
-        $this->assertSame(FunctionCallRunner::INCOMPLETE, $resolution['stopReason']);
+        $this->assertSame('incompleteFunctionCalls', $resolution['stopReason']);
         $this->assertSame([], $resolution['resolvedCalls']);
     }
 
@@ -105,9 +105,9 @@ class FunctionCallRunnerTest extends TestCase
         $this->assertSame([], $resolver->checkedCalls);
         $this->assertSame([], $resolver->resolvedCalls);
 
-        $resolution = $result->getAdditionalData()[FunctionCallRunner::KEY_RESOLUTION];
+        $resolution = $result->getAdditionalData()['functionCallResolution'];
         $this->assertSame(0, $resolution['rounds']);
-        $this->assertSame(FunctionCallRunner::INCOMPLETE, $resolution['stopReason']);
+        $this->assertSame('incompleteFunctionCalls', $resolution['stopReason']);
         $this->assertSame([], $resolution['resolvedCalls']);
     }
 
@@ -131,9 +131,9 @@ class FunctionCallRunnerTest extends TestCase
         $this->assertCount(1, $resolver->resolvedCalls);
         $this->assertSame('get_weather', $resolver->resolvedCalls[0]->getName());
 
-        $resolution = $result->getAdditionalData()[FunctionCallRunner::KEY_RESOLUTION];
+        $resolution = $result->getAdditionalData()['functionCallResolution'];
         $this->assertSame(1, $resolution['rounds']);
-        $this->assertSame(FunctionCallRunner::COMPLETED, $resolution['stopReason']);
+        $this->assertSame('completed', $resolution['stopReason']);
     }
 
     /**
@@ -205,9 +205,9 @@ class FunctionCallRunnerTest extends TestCase
 
         $this->assertSame('Immediate answer', $result->toText());
 
-        $resolution = $result->getAdditionalData()[FunctionCallRunner::KEY_RESOLUTION];
+        $resolution = $result->getAdditionalData()['functionCallResolution'];
         $this->assertSame(0, $resolution['rounds']);
-        $this->assertSame(FunctionCallRunner::COMPLETED, $resolution['stopReason']);
+        $this->assertSame('completed', $resolution['stopReason']);
         $this->assertSame([], $resolution['resolvedCalls']);
         $this->assertCount(2, $resolution['messages']);
     }
