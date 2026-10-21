@@ -13,6 +13,15 @@ For the implementer facing API surface, two alternative APIs are available:
 - A fluent API is used as the primary means of using the AI client SDK, for easy-to-read code by chaining declarative methods.
 - A traditional method based API inspired by the Vercel AI SDK, which is more aligned with traditional WordPress patterns such as passing an array of arguments.
 
+The fluent API is exposed through builders. Content generation (text, image, speech, video, ...) uses the `PromptBuilder`, while embedding generation uses a dedicated `EmbeddingBuilder`. Embeddings are kept on a separate builder because they transform inputs into vectors rather than generating a conversational response, so most of `PromptBuilder`'s prompt-oriented parameters (system instruction, temperature, output modalities, chat history, ...) do not apply.
+
+The two builders differ fundamentally in how they arrive at a model:
+
+- `PromptBuilder` **resolves** a model. If none is named, it discovers a suitable one across the configured providers, honoring model preferences and any provider constraint. This state and logic live on a `ModelResolver` owned by the builder, exposed through the shared `ModelResolutionTrait` (`usingModel()`, `usingModelPreference()`, `usingProvider()`, `usingRequestOptions()`).
+- `EmbeddingBuilder` **verifies** a model, and never selects one. Embedding vectors are only comparable to other vectors produced by the same model, so a stored corpus is permanently bound to the model that created it; automatically choosing a model could silently invalidate existing vectors when the registered providers change. The model must be named via `usingModel()` or `usingProviderModel()`, and omitting it is an error. The builder then checks, before any request is made, that the model supports embedding generation, accepts the inputs' modalities, supports every configured option, and belongs to a configured provider.
+
+Both builders accumulate model configuration through the shared `ModelConfigurationTrait`, which provides `usingModelConfig()`.
+
 ### Code examples
 
 The following examples indicate how this SDK could eventually be used.
@@ -291,6 +300,65 @@ $jsonString = AiClient::generateTextResult(
 )->toText();
 ```
 
+#### Generate an embedding using a specific model
+
+_Note: Embeddings use the dedicated `EmbeddingBuilder` (via `AiClient::input()`) rather than the `PromptBuilder`. Each input is embedded independently, producing one embedding vector per input._
+
+_Note: Unlike every other capability, embedding generation requires the model to be named. No model is selected automatically, because embeddings from different models are not comparable. The model may be given as a `[provider ID, model ID]` pair or as a model instance._
+
+##### Fluent API
+
+```php
+// Single input.
+$embedding = AiClient::input('PHP powers a large part of the web.')
+    ->usingProviderModel('google', 'gemini-embedding-001')
+    ->generateEmbedding();
+
+// Multiple inputs, embedded as a batch.
+$embeddings = AiClient::input([
+        'PHP powers a large part of the web.',
+        'WordPress makes publishing accessible.',
+    ])
+    ->usingModel(GoogleProvider::model('gemini-embedding-001'))
+    ->generateEmbeddings();
+```
+
+##### Traditional API
+
+```php
+$embedding = AiClient::generateEmbedding(
+    'PHP powers a large part of the web.',
+    ['google', 'gemini-embedding-001']
+);
+
+$embeddings = AiClient::generateEmbeddings(
+    [
+        'PHP powers a large part of the web.',
+        'WordPress makes publishing accessible.',
+    ],
+    ['google', 'gemini-embedding-001']
+);
+```
+
+### Function declaration annotations
+
+`FunctionDeclaration` accepts optional annotations for consumer-specific hints that do not belong to the function's parameter schema:
+
+```php
+$function = new FunctionDeclaration(
+    'get_weather',
+    'Gets the weather',
+    null,
+    ['deferredLoading' => true]
+);
+
+$annotations = $function->getAnnotations();
+```
+
+Annotations are an `array<string, mixed>` whose values should be JSON-serializable. The core SDK preserves annotations without interpreting their names or values. Providers and other consumers define the annotations they recognize and ignore unknown annotations. Provider-specific annotations should use namespaced keys or a nested provider-specific map to avoid collisions, and must not be blindly merged into provider requests.
+
+Empty annotations are omitted from serialized declarations, preserving the existing shape for callers that do not use them. Missing annotations are restored as an empty array. Annotations are not authorization; applications must still validate tool execution.
+
 ## Class diagrams
 
 This section shows comprehensive class diagrams for the proposed architecture. For explanation on specific terms, see the [glossary](./GLOSSARY.md).
@@ -314,6 +382,7 @@ direction LR
     namespace AiClientNamespace {
         class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
+            +input($input = null) EmbeddingBuilder$
             +message($input = null) MessageBuilder$
         }
     }
@@ -326,8 +395,10 @@ direction LR
             +withMessageParts(...MessagePart $parts) self
             +withHistory(...Message $messages) self
             +usingModel(ModelInterface $model) self
+            +usingModelPreference(...$preferredModels) self
             +usingModelConfig(ModelConfig $config) self
             +usingProvider(string $providerIdOrClassName) self
+            +usingRequestOptions(RequestOptions $requestOptions) self
             +usingSystemInstruction(string $systemInstruction) self
             +usingMaxTokens(int $maxTokens) self
             +usingTemperature(float $temperature) self
@@ -371,6 +442,19 @@ direction LR
             +isSupportedForEmbeddingGeneration() bool
         }
 
+        class EmbeddingBuilder {
+            +withInput(...$input) self
+            +usingModel(ModelInterface $model) self
+            +usingProviderModel(string $providerIdOrClassName, string $modelId) self
+            +usingModelConfig(ModelConfig $config) self
+            +usingRequestOptions(RequestOptions $requestOptions) self
+            +usingDimensions(int $dimensions) self
+            +isSupported() bool
+            +generateEmbeddingResult() EmbeddingResult
+            +generateEmbedding() Embedding
+            +generateEmbeddings() Embedding[]
+        }
+
         class MessageBuilder {
             +usingRole(MessageRoleEnum $role) self
             +usingUserRole() self
@@ -385,6 +469,7 @@ direction LR
     }
 
     AiClient .. PromptBuilder : creates
+    AiClient .. EmbeddingBuilder : creates
     AiClient .. MessageBuilder : creates
 ```
 
@@ -410,13 +495,15 @@ direction LR
             +convertTextToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateVideoResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
-            +generateEmbeddingsResult(string[]|Message[] $input, ModelInterface $model) EmbeddingResult$
+            +generateEmbeddingResult(string|MessagePart|File $input, ModelInterface|array $model, ModelConfig $modelConfig) EmbeddingResult$
+            +generateEmbedding(string|MessagePart|File $input, ModelInterface|array $model, ModelConfig $modelConfig) Embedding$
+            +generateEmbeddings(string[]|MessagePart[] $inputs, ModelInterface|array $model, ModelConfig $modelConfig) Embedding[]$
             +generateTextOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateImageOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +convertTextToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateVideoOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
-            +generateEmbeddingsOperation(string[]|Message[] $input, ModelInterface $model) EmbeddingOperation$
+            +generateEmbeddingOperation(string[]|MessagePart[] $inputs, ModelInterface $model) EmbeddingOperation$
         }
     }
 ```
@@ -468,6 +555,7 @@ direction LR
     namespace AiClientNamespace {
         class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
+            +input($input = null) EmbeddingBuilder$
             +message($input = null) MessageBuilder$
             +defaultRegistry() ProviderRegistry$
             +isConfigured(ProviderAvailabilityInterface $availability) bool$
@@ -479,13 +567,15 @@ direction LR
             +convertTextToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateVideoResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
-            +generateEmbeddingsResult(string[]|Message[] $input, ModelInterface $model) EmbeddingResult$
+            +generateEmbeddingResult(string|MessagePart|File $input, ModelInterface|array $model, ModelConfig $modelConfig) EmbeddingResult$
+            +generateEmbedding(string|MessagePart|File $input, ModelInterface|array $model, ModelConfig $modelConfig) Embedding$
+            +generateEmbeddings(string[]|MessagePart[] $inputs, ModelInterface|array $model, ModelConfig $modelConfig) Embedding[]$
             +generateTextOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateImageOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +convertTextToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateVideoOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
-            +generateEmbeddingsOperation(string[]|Message[] $input, ModelInterface $model) EmbeddingOperation$
+            +generateEmbeddingOperation(string[]|MessagePart[] $inputs, ModelInterface $model) EmbeddingOperation$
         }
     }
 
@@ -541,6 +631,19 @@ direction LR
             +isSupportedForEmbeddingGeneration() bool
         }
 
+        class EmbeddingBuilder {
+            +withInput(...$input) self
+            +usingModel(ModelInterface $model) self
+            +usingProviderModel(string $providerIdOrClassName, string $modelId) self
+            +usingModelConfig(ModelConfig $config) self
+            +usingRequestOptions(RequestOptions $requestOptions) self
+            +usingDimensions(int $dimensions) self
+            +isSupported() bool
+            +generateEmbeddingResult() EmbeddingResult
+            +generateEmbedding() Embedding
+            +generateEmbeddings() Embedding[]
+        }
+
         class MessageBuilder {
             +usingRole(MessageRoleEnum $role) self
             +usingUserRole() self
@@ -551,13 +654,6 @@ direction LR
             +withFunctionResponse(FunctionResponse $functionResponse) self
             +withMessageParts(...MessagePart $parts) self
             +get() Message
-        }
-    }
-
-    namespace AiClientNamespace.Embeddings.DTO {
-        class Embedding {
-            +getVector() float[]
-            +getDimension() int
         }
     }
 
@@ -667,9 +763,17 @@ direction LR
             +getTokenCount() int
             +getJsonSchema() array< string, mixed >$
         }
+        class Embedding {
+            +getValues() float[]
+            +getDimensions() int
+            +count() int
+            +getJsonSchema() array< string, mixed >$
+        }
         class EmbeddingResult {
             +getId() string
             +getEmbeddings() Embedding[]
+            +getEmbedding() Embedding
+            +getDimensions() int
             +getTokenUsage() TokenUsage
             +getProviderMetadata() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
@@ -721,6 +825,7 @@ direction LR
             +getName() string
             +getDescription() string
             +getParameters() mixed
+            +getAnnotations() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
         class FunctionResponse {
@@ -775,15 +880,16 @@ direction LR
     AiClient .. Message : receives
     AiClient .. MessagePart : receives
     AiClient .. PromptBuilder : creates
+    AiClient .. EmbeddingBuilder : creates
     AiClient .. MessageBuilder : creates
     AiClient .. GenerativeAiResult : creates
     AiClient .. EmbeddingResult : creates
     AiClient .. GenerativeAiOperation : creates
     AiClient .. EmbeddingOperation : creates
     PromptBuilder .. GenerativeAiResult : creates
-    PromptBuilder .. EmbeddingResult : creates
     PromptBuilder .. GenerativeAiOperation : creates
-    PromptBuilder .. EmbeddingOperation : creates
+    EmbeddingBuilder .. EmbeddingResult : creates
+    EmbeddingBuilder .. EmbeddingOperation : creates
     MessageBuilder .. Message : creates
     Message "1" *-- "1..*" MessagePart
     MessagePart "1" o-- "0..1" File
@@ -1078,10 +1184,10 @@ direction LR
 
     namespace AiClientNamespace.Providers.Models.EmbeddingGeneration.Contracts {
         class EmbeddingGenerationModelInterface {
-            +generateEmbeddingsResult(Message[] $input) EmbeddingResult
+            +generateEmbeddingResult(MessagePart[] $inputs) EmbeddingResult
         }
         class EmbeddingGenerationOperationModelInterface {
-            +generateEmbeddingsOperation(Message[] $input) EmbeddingOperation
+            +generateEmbeddingOperation(MessagePart[] $inputs) EmbeddingOperation
         }
     }
 
@@ -1143,6 +1249,7 @@ direction LR
             +getName() string
             +getDescription() string
             +getParameters() mixed
+            +getAnnotations() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
         class Tool {
