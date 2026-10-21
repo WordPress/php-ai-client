@@ -42,14 +42,14 @@
         "slevomat/coding-standard": "^8.20",
         "squizlabs/php_codesniffer": "^3.7 || ^4.0",
         "symfony/dotenv": "^5.4",
-        "wordpress/anthropic-ai-provider": "^1.0",
-        "wordpress/google-ai-provider": "^1.0",
-        "wordpress/openai-ai-provider": "^1.0"
+        "wordpress/ai-provider-for-anthropic": "^1.0",
+        "wordpress/ai-provider-for-google": "^1.0",
+        "wordpress/ai-provider-for-openai": "^1.0"
     },
     "suggest": {
-        "wordpress/anthropic-ai-provider": "For Anthropic Claude model support",
-        "wordpress/google-ai-provider": "For Google Gemini model support",
-        "wordpress/openai-ai-provider": "For OpenAI GPT model support"
+        "wordpress/ai-provider-for-anthropic": "For Anthropic Claude model support",
+        "wordpress/ai-provider-for-google": "For Google Gemini model support",
+        "wordpress/ai-provider-for-openai": "For OpenAI GPT model support"
     },
     "autoload": {
         "psr-4": {

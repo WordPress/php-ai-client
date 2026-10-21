@@ -7,6 +7,8 @@ namespace WordPress\AiClient\Tests\unit;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Builders\EmbeddingBuilder;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
@@ -164,6 +166,144 @@ class AiClientTest extends TestCase
         $this->expectExceptionMessage('Model "invalid-video-model" does not support video generation.');
 
         AiClient::generateVideoResult($prompt, $invalidModel, $registry);
+    }
+
+    /**
+     * Tests generateEmbeddingResult with string prompt and provided model.
+     */
+    public function testGenerateEmbeddingResultWithStringAndModel(): void
+    {
+        $prompt = 'Generate embedding';
+        $expectedResult = $this->createTestEmbeddingResult();
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::generateEmbeddingResult($prompt, $mockModel, null, $registry);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
+     * Tests generateEmbeddingResult accepts a [provider ID, model ID] tuple.
+     */
+    public function testGenerateEmbeddingResultWithProviderModelTuple(): void
+    {
+        $expectedResult = $this->createTestEmbeddingResult();
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+
+        $registry = $this->createMock(ProviderRegistry::class);
+        $registry->method('isProviderConfigured')->willReturn(true);
+        $registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('mock', 'test-embedding-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($mockModel);
+
+        $result = AiClient::generateEmbeddingResult(
+            'Generate embedding',
+            ['mock', 'test-embedding-model'],
+            null,
+            $registry
+        );
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
+     * Tests generateEmbeddingResult applies the optional model configuration.
+     */
+    public function testGenerateEmbeddingResultAppliesModelConfig(): void
+    {
+        $expectedResult = $this->createTestEmbeddingResult();
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $modelConfig = new ModelConfig();
+        $modelConfig->setDimensions(3);
+
+        AiClient::generateEmbeddingResult('Generate embedding', $mockModel, $modelConfig, $registry);
+
+        $this->assertSame(3, $mockModel->getConfig()->getDimensions());
+    }
+
+    /**
+     * Tests generateEmbeddingResult rejects a model parameter of an unsupported type.
+     */
+    public function testGenerateEmbeddingResultWithInvalidModelParameter(): void
+    {
+        $registry = $this->createRegistryWithMockProvider();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model must be a ModelInterface instance or a [provider ID, model ID] tuple.');
+
+        // A ModelConfig cannot identify a model, so it is no longer accepted in the model position.
+        AiClient::generateEmbeddingResult('Generate embedding', new ModelConfig(), null, $registry);
+    }
+
+    /**
+     * Tests generateEmbedding returns the first vector.
+     */
+    public function testGenerateEmbeddingReturnsFirstVector(): void
+    {
+        $expectedResult = $this->createTestEmbeddingResult([[0.1, 0.2]]);
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $embedding = AiClient::generateEmbedding('Generate embedding', $mockModel, null, $registry);
+
+        $this->assertSame([0.1, 0.2], $embedding->getValues());
+    }
+
+    /**
+     * Tests generateEmbeddings returns batch vectors.
+     */
+    public function testGenerateEmbeddingsReturnsBatchVectors(): void
+    {
+        $expectedEmbeddings = [[0.1, 0.2], [0.3, 0.4]];
+        $expectedResult = $this->createTestEmbeddingResult($expectedEmbeddings);
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $embeddings = AiClient::generateEmbeddings(['First prompt', 'Second prompt'], $mockModel, null, $registry);
+
+        $this->assertSame($expectedEmbeddings, array_map(
+            static fn ($embedding): array => $embedding->getValues(),
+            $embeddings
+        ));
+    }
+
+    /**
+     * Tests generateEmbeddingResult throws exception for model without embedding generation interface.
+     */
+    public function testGenerateEmbeddingResultWithInvalidModel(): void
+    {
+        $prompt = 'Generate embedding';
+        $invalidModel = $this->createMockUnsupportedModel('invalid-embedding-model');
+        $registry = $this->createRegistryWithMockProvider();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Model "invalid-embedding-model" from provider "mock" does not support embedding generation.'
+        );
+
+        AiClient::generateEmbeddingResult($prompt, $invalidModel, null, $registry);
+    }
+
+    /**
+     * Tests input() returns an EmbeddingBuilder configured with the given input.
+     */
+    public function testInputReturnsEmbeddingBuilder(): void
+    {
+        $embeddings = [[0.1, 0.2], [0.3, 0.4]];
+        $expectedResult = $this->createTestEmbeddingResult($embeddings);
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $builder = AiClient::input(['First input', 'Second input'], $registry);
+
+        $this->assertInstanceOf(EmbeddingBuilder::class, $builder);
+
+        $result = $builder->usingModel($mockModel)->generateEmbeddings();
+        $this->assertCount(2, $result);
     }
 
 
