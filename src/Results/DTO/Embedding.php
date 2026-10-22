@@ -54,6 +54,12 @@ final class Embedding implements Countable, IteratorAggregate, JsonSerializable
             throw new InvalidArgumentException('Embedding values must be integers or floats.');
         }
 
+        foreach ($values as $value) {
+            if (is_float($value) && !is_finite($value)) {
+                throw new InvalidArgumentException('Embedding values must be finite numbers.');
+            }
+        }
+
         if (count($values) !== $dimensions) {
             throw new InvalidArgumentException('Embedding vector length must match dimensions.');
         }
