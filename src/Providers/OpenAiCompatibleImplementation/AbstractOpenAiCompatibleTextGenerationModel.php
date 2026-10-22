@@ -492,6 +492,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     {
         $tools = [];
         foreach ($functionDeclarations as $functionDeclaration) {
+            $functionDeclaration = $this->prepareFunctionDeclarationForRequest($functionDeclaration);
             $tools[] = [
                 'type' => 'function',
                 'function' => $functionDeclaration->toArray(),
@@ -499,6 +500,23 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
 
         return $tools;
+    }
+
+    /**
+     * Prepares a function declaration for the provider request.
+     *
+     * Providers can override this method to adapt a function declaration's
+     * input schema to the compatibility requirements of their API.
+     *
+     * @since n.e.x.t
+     *
+     * @param FunctionDeclaration $functionDeclaration The function declaration.
+     * @return FunctionDeclaration The prepared function declaration.
+     */
+    protected function prepareFunctionDeclarationForRequest(
+        FunctionDeclaration $functionDeclaration
+    ): FunctionDeclaration {
+        return $functionDeclaration;
     }
 
     /**
