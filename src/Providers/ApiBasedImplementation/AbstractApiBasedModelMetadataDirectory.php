@@ -42,7 +42,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     /**
      * Request-local cache for explicit model metadata lookups.
      *
-     * @since n.e.x.t
+     * @since 1.5.0
      *
      * @var array<string, ModelMetadata|null>
      */
@@ -100,7 +100,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     /**
      * Gets explicit model metadata using request-local memoization.
      *
-     * @since n.e.x.t
+     * @since 1.5.0
      *
      * @param list<string> $modelIds Model IDs for which to get explicit metadata.
      * @return array<string, ModelMetadata> Map of model ID to explicit model metadata.
@@ -169,7 +169,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
      * Providers whose APIs accept arbitrary/current model IDs can override this to avoid a live list-models request
      * when callers already know the model ID they want to instantiate.
      *
-     * @since n.e.x.t
+     * @since 1.5.0
      *
      * @param list<string> $modelIds The explicit model IDs.
      * @return array<string, ModelMetadata> Map of model ID to model metadata. Omit IDs that should fall back to the
