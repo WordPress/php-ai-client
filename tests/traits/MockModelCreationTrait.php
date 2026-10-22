@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\traits;
 
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -54,11 +57,24 @@ trait MockModelCreationTrait
      */
     protected function createTestResult(string $content = 'Test response'): GenerativeAiResult
     {
-        $candidate = new Candidate(
-            new ModelMessage([new MessagePart($content)]),
-            FinishReasonEnum::stop()
-        );
-        $tokenUsage = new TokenUsage(10, 20, 30);
+        return $this->createTestResultWithMessage(new ModelMessage([new MessagePart($content)]));
+    }
+
+    /**
+     * Creates a test GenerativeAiResult with the given model message.
+     *
+     * @param Message $message The model message.
+     * @param TokenUsage|null $tokenUsage Optional token usage. Defaults to 10/20/30.
+     * @param FinishReasonEnum|null $finishReason Optional finish reason. Defaults to stop.
+     * @return GenerativeAiResult
+     */
+    protected function createTestResultWithMessage(
+        Message $message,
+        ?TokenUsage $tokenUsage = null,
+        ?FinishReasonEnum $finishReason = null
+    ): GenerativeAiResult {
+        $candidate = new Candidate($message, $finishReason ?? FinishReasonEnum::stop());
+        $tokenUsage = $tokenUsage ?? new TokenUsage(10, 20, 30);
 
         $providerMetadata = new ProviderMetadata(
             'mock',
@@ -212,6 +228,28 @@ trait MockModelCreationTrait
         GenerativeAiResult $result,
         ?ModelMetadata $metadata = null
     ): ModelInterface {
+        return $this->createScriptedTextGenerationModel([$result], $metadata, true);
+    }
+
+    /**
+     * Creates a mock text generation model that returns scripted results in order.
+     *
+     * Throws when the script runs out, unless repeating the last result is enabled.
+     *
+     * @param list<GenerativeAiResult> $results The results to return, in order. Must not be empty.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @param bool $repeatLast Whether to repeat the last result after the script ends.
+     * @return ModelInterface&TextGenerationModelInterface The mock model.
+     */
+    protected function createScriptedTextGenerationModel(
+        array $results,
+        ?ModelMetadata $metadata = null,
+        bool $repeatLast = false
+    ): ModelInterface {
+        if (empty($results)) {
+            throw new InvalidArgumentException('At least one scripted result must be provided.');
+        }
+
         $metadata = $metadata ?? $this->createTestTextModelMetadata();
 
         $providerMetadata = new ProviderMetadata(
@@ -223,21 +261,30 @@ trait MockModelCreationTrait
         return new class (
             $metadata,
             $providerMetadata,
-            $result
+            $results,
+            $repeatLast
         ) implements ModelInterface, TextGenerationModelInterface {
             private ModelMetadata $metadata;
             private ProviderMetadata $providerMetadata;
-            private GenerativeAiResult $result;
+            /** @var list<GenerativeAiResult> */
+            private array $results;
+            private int $callCount = 0;
+            private bool $repeatLast;
             private ModelConfig $config;
 
+            /**
+             * @param list<GenerativeAiResult> $results
+             */
             public function __construct(
                 ModelMetadata $metadata,
                 ProviderMetadata $providerMetadata,
-                GenerativeAiResult $result
+                array $results,
+                bool $repeatLast
             ) {
                 $this->metadata = $metadata;
                 $this->providerMetadata = $providerMetadata;
-                $this->result = $result;
+                $this->results = $results;
+                $this->repeatLast = $repeatLast;
                 $this->config = new ModelConfig();
             }
 
@@ -263,7 +310,12 @@ trait MockModelCreationTrait
 
             public function generateTextResult(array $prompt): GenerativeAiResult
             {
-                return $this->result;
+                if (!$this->repeatLast && $this->callCount >= count($this->results)) {
+                    throw new RuntimeException('The scripted model received an unexpected request.');
+                }
+                $index = min($this->callCount, count($this->results) - 1);
+                $this->callCount++;
+                return $this->results[$index];
             }
         };
     }

@@ -549,6 +549,63 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests prepareMessagesParam() with multiple function responses from one model turn.
+     *
+     * @return void
+     */
+    public function testPrepareMessagesParamMultipleFunctionResponses(): void
+    {
+        $message = new Message(
+            MessageRoleEnum::user(),
+            [
+                new MessagePart(new FunctionResponse('call_1', 'get_weather', ['temperature' => 18])),
+                new MessagePart(new FunctionResponse('call_2', 'get_time', ['time' => '10:30'])),
+            ]
+        );
+        $model = $this->createModel();
+
+        $prepared = $model->exposePrepareMessagesParam([$message]);
+
+        $this->assertSame(
+            [
+                [
+                    'role' => 'tool',
+                    'content' => json_encode(['temperature' => 18]),
+                    'tool_call_id' => 'call_1',
+                ],
+                [
+                    'role' => 'tool',
+                    'content' => json_encode(['time' => '10:30']),
+                    'tool_call_id' => 'call_2',
+                ],
+            ],
+            $prepared
+        );
+    }
+
+    /**
+     * Tests prepareMessagesParam() with a function response mixed with other parts (should throw exception).
+     *
+     * @return void
+     */
+    public function testPrepareMessagesParamFunctionResponseMixedWithOtherParts(): void
+    {
+        $message = new Message(
+            MessageRoleEnum::user(),
+            [
+                new MessagePart(new FunctionResponse('call_1', 'get_weather', ['temperature' => 18])),
+                new MessagePart('Some extra text'),
+            ]
+        );
+        $model = $this->createModel();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Function responses cannot be combined with other message parts.');
+
+        $model->exposePrepareMessagesParam([$message]);
+    }
+
+    /**
      * Tests getMessageRoleString() method.
      *
      * @dataProvider messageRoleProvider
@@ -713,9 +770,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'The API only allows a single function response, as the only content of the message.'
-        );
+        $this->expectExceptionMessage('Function responses cannot be combined with other message parts.');
 
         $model->exposeGetMessagePartContentData($part);
     }
@@ -1274,6 +1329,40 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $this->assertEquals('call_123', $part->getFunctionCall()->getId());
         $this->assertEquals('test_function', $part->getFunctionCall()->getName());
         $this->assertEquals(['key' => 'value'], $part->getFunctionCall()->getArgs());
+    }
+
+    /**
+     * Tests that malformed arguments are rejected before a call can be executed.
+     *
+     * @return void
+     */
+    public function testRejectsMalformedFunctionArguments(): void
+    {
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Function arguments must contain valid JSON.');
+        $this->createModel()->exposeParseResponseChoiceMessageToolCallPart([
+            'id' => 'call_1',
+            'function' => ['name' => 'create', 'arguments' => '{"title":'],
+        ]);
+    }
+
+    /**
+     * Tests that valid empty and decoded arguments are still accepted.
+     *
+     * @return void
+     */
+    public function testAcceptsEmptyFunctionArguments(): void
+    {
+        foreach (['{}', 'null', null, []] as $arguments) {
+            $part = $this->createModel()->exposeParseResponseChoiceMessageToolCallPart([
+                'id' => 'call_1',
+                'function' => ['name' => 'ping', 'arguments' => $arguments],
+            ]);
+            $this->assertNotNull($part);
+            $this->assertNotNull($part->getFunctionCall());
+            $expected = $arguments === '{}' || $arguments === [] ? [] : null;
+            $this->assertSame($expected, $part->getFunctionCall()->getArgs());
+        }
     }
 
     /**

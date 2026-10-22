@@ -30,9 +30,11 @@ use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToS
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Tools\Contracts\FunctionCallResolverInterface;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 use WordPress\AiClient\Tools\DTO\WebSearch;
+use WordPress\AiClient\Tools\Execution\FunctionCallRunner;
 
 /**
  * Fluent builder for constructing AI prompts.
@@ -53,9 +55,26 @@ class PromptBuilder
     use ModelResolutionTrait;
 
     /**
+     * Default maximum number of function call resolution rounds.
+     *
+     * @since n.e.x.t
+     */
+    private const DEFAULT_MAX_FUNCTION_CALL_ITERATIONS = 5;
+
+    /**
      * @var list<Message> The messages in the conversation.
      */
     protected array $messages = [];
+
+    /**
+     * @var FunctionCallResolverInterface|null The resolver for automatic function call resolution, if enabled.
+     */
+    private ?FunctionCallResolverInterface $functionCallResolver = null;
+
+    /**
+     * @var int The maximum number of function call resolution rounds.
+     */
+    private int $maxFunctionCallIterations = self::DEFAULT_MAX_FUNCTION_CALL_ITERATIONS;
 
     /**
      * @var EventDispatcherInterface|null The event dispatcher for prompt lifecycle events.
@@ -217,6 +236,32 @@ class PromptBuilder
     }
 
     /**
+     * Appends complete messages to the end of the conversation.
+     *
+     * Unlike {@see self::withHistory()}, which prepends messages before the
+     * current message, this method appends the given messages after all
+     * existing messages. This allows continuing a conversation, for example by
+     * appending a model response message and a follow-up user message when
+     * building a manual function call resolution loop.
+     *
+     * The last message must be a user message before generating, so a model
+     * message should always be followed by a user message. The last appended
+     * user message becomes the current message. Any parts added afterwards,
+     * for example with {@see self::withText()}, are added to that message.
+     *
+     * @since n.e.x.t
+     *
+     * @param Message ...$messages The messages to append.
+     * @return self
+     */
+    public function withMessages(Message ...$messages): self
+    {
+        $this->messages = array_merge($this->messages, $messages);
+
+        return $this;
+    }
+
+    /**
      * Sets the system instruction.
      *
      * System instructions are stored in the model configuration and guide
@@ -328,6 +373,59 @@ class PromptBuilder
     public function usingFunctionDeclarations(FunctionDeclaration ...$functionDeclarations): self
     {
         $this->modelConfig->setFunctionDeclarations($functionDeclarations);
+        return $this;
+    }
+
+    /**
+     * Enables automatic resolution of function calls during text generation.
+     *
+     * Executes complete tool calls and sends their results back to the model.
+     * Stops when the model has no calls, a call is incomplete or unsupported,
+     * or the limit set by usingMaxFunctionCallIterations() is reached.
+     *
+     * Requires one candidate. Model discovery also requires chat history support.
+     * Other generation capabilities ignore the resolver. Use generateTextResult()
+     * to inspect responses when the loop stops without a text answer.
+     *
+     * The result includes total token usage and loop details under
+     * `functionCallResolution`. Each request dispatches its own lifecycle events.
+     *
+     * Exceptions pass to the caller. Tools are not rolled back. Retrying the prompt
+     * can repeat completed actions, so callers must handle retries and tool outcomes.
+     *
+     * @since n.e.x.t
+     *
+     * @param FunctionCallResolverInterface $functionCallResolver The resolver executing function calls.
+     * @return self
+     */
+    public function usingFunctionCallResolver(FunctionCallResolverInterface $functionCallResolver): self
+    {
+        $this->functionCallResolver = $functionCallResolver;
+        return $this;
+    }
+
+    /**
+     * Sets the maximum number of function call resolution rounds.
+     *
+     * Each round executes the function calls from one model response and
+     * requests a follow-up response. Only relevant when a resolver is set with
+     * {@see self::usingFunctionCallResolver()}. Default 5.
+     *
+     * @since n.e.x.t
+     *
+     * @param int $maxIterations The maximum number of resolution rounds.
+     * @return self
+     * @throws InvalidArgumentException If the maximum number of iterations is less than 1.
+     */
+    public function usingMaxFunctionCallIterations(int $maxIterations): self
+    {
+        if ($maxIterations < 1) {
+            throw new InvalidArgumentException(
+                'The maximum number of function call resolution iterations must be at least 1.'
+            );
+        }
+
+        $this->maxFunctionCallIterations = $maxIterations;
         return $this;
     }
 
@@ -617,8 +715,12 @@ class PromptBuilder
             }
         }
 
+        if (!$this->supportsFunctionCallResolution($capability)) {
+            return false;
+        }
+
         // Build requirements with the specified capability
-        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
+        $requirements = $this->buildModelRequirements($capability);
 
         return $this->modelResolver->isSupported($requirements);
     }
@@ -743,19 +845,52 @@ class PromptBuilder
             }
         }
 
+        if (!$this->supportsFunctionCallResolution($capability)) {
+            throw new InvalidArgumentException('Automatic function call resolution requires one candidate.');
+        }
         $model = $this->getConfiguredModel($capability);
 
+        if ($this->functionCallResolver !== null && $capability->isTextGeneration()) {
+            return (new FunctionCallRunner())->run(
+                $this->messages,
+                $this->functionCallResolver,
+                $this->maxFunctionCallIterations,
+                function (array $messages) use ($model, $capability): GenerativeAiResult {
+                    return $this->executeGenerationRound($model, $capability, $messages);
+                }
+            );
+        }
+
+        return $this->executeGenerationRound($model, $capability, $this->messages);
+    }
+
+    /**
+     * Executes a single generation round, dispatching lifecycle events.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $model The model to use for generation.
+     * @param CapabilityEnum $capability The capability to use.
+     * @param list<Message> $messages The messages to send.
+     * @return GenerativeAiResult The generated result.
+     * @throws RuntimeException If the model doesn't support the required capability.
+     */
+    private function executeGenerationRound(
+        ModelInterface $model,
+        CapabilityEnum $capability,
+        array $messages
+    ): GenerativeAiResult {
         // Dispatch BeforeGenerateResultEvent
         $this->dispatchEvent(
-            new BeforeGenerateResultEvent($this->messages, $model, $capability)
+            new BeforeGenerateResultEvent($messages, $model, $capability)
         );
 
         // Route to the appropriate generation method based on capability
-        $result = $this->executeModelGeneration($model, $capability, $this->messages);
+        $result = $this->executeModelGeneration($model, $capability, $messages);
 
         // Dispatch AfterGenerateResultEvent
         $this->dispatchEvent(
-            new AfterGenerateResultEvent($this->messages, $model, $capability, $result)
+            new AfterGenerateResultEvent($messages, $model, $capability, $result)
         );
 
         return $result;
@@ -936,10 +1071,15 @@ class PromptBuilder
     /**
      * Generates text from the prompt.
      *
+     * When a function call resolver is set and the resolution loop stops
+     * early, the final response may contain no text. Use
+     * {@see self::generateTextResult()} to handle that case.
+     *
      * @since 0.1.0
      *
      * @return string The generated text.
      * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the final response contains no text.
      */
     public function generateText(): string
     {
@@ -948,6 +1088,11 @@ class PromptBuilder
 
     /**
      * Generates multiple text candidates from the prompt.
+     *
+     * When a function call resolver is set and the resolution loop stops
+     * early, the final response may contain no text, and candidates without
+     * text are skipped. Use {@see self::generateTextResult()} to handle that
+     * case.
      *
      * @since 0.1.0
      *
@@ -1137,9 +1282,49 @@ class PromptBuilder
      */
     private function getConfiguredModel(CapabilityEnum $capability): ModelInterface
     {
-        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
+        $requirements = $this->buildModelRequirements($capability);
 
         return $this->modelResolver->resolve($requirements, $this->modelConfig, 'prompt');
+    }
+
+    /**
+     * Checks the candidate count for automatic text tool resolution.
+     *
+     * @since n.e.x.t
+     *
+     * @param CapabilityEnum $capability The generation capability.
+     * @return bool Whether the configuration is supported.
+     */
+    private function supportsFunctionCallResolution(CapabilityEnum $capability): bool
+    {
+        return $this->functionCallResolver === null || !$capability->isTextGeneration() ||
+            ($this->modelConfig->getCandidateCount() ?? 1) === 1;
+    }
+
+    /**
+     * Builds the model requirements for the prompt's complete execution flow.
+     *
+     * @since n.e.x.t
+     *
+     * @param CapabilityEnum $capability The capability the model will be using.
+     * @return ModelRequirements The requirements for model selection.
+     */
+    private function buildModelRequirements(CapabilityEnum $capability): ModelRequirements
+    {
+        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
+
+        if ($this->functionCallResolver !== null && $capability->isTextGeneration()) {
+            $capabilities = $requirements->getRequiredCapabilities();
+            foreach ($capabilities as $requiredCapability) {
+                if ($requiredCapability->isChatHistory()) {
+                    return $requirements;
+                }
+            }
+            $capabilities[] = CapabilityEnum::chatHistory();
+            $requirements = new ModelRequirements($capabilities, $requirements->getRequiredOptions());
+        }
+
+        return $requirements;
     }
 
     /**
