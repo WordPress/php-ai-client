@@ -494,7 +494,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         foreach ($functionDeclarations as $functionDeclaration) {
             $tools[] = [
                 'type' => 'function',
-                'function' => $functionDeclaration->toArray(),
+                'function' => $functionDeclaration->jsonSerialize(),
             ];
         }
 
