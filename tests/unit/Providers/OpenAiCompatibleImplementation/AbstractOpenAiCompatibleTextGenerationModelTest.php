@@ -418,7 +418,16 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $params = $model->exposePrepareGenerateTextParams($prompt);
 
         $this->assertArrayHasKey('response_format', $params);
-        $this->assertEquals(['type' => 'json_schema', 'json_schema' => $schema], $params['response_format']);
+        $this->assertEquals(
+            [
+                'type' => 'json_schema',
+                'json_schema' => [
+                    'name' => 'response_schema',
+                    'schema' => $schema,
+                ],
+            ],
+            $params['response_format']
+        );
     }
 
     /**
@@ -950,7 +959,71 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $model = $this->createModel();
         $format = $model->exposePrepareResponseFormatParam($schema);
 
-        $this->assertEquals(['type' => 'json_schema', 'json_schema' => $schema], $format);
+        $this->assertEquals(
+            [
+                'type' => 'json_schema',
+                'json_schema' => [
+                    'name' => 'response_schema',
+                    'schema' => $schema,
+                ],
+            ],
+            $format
+        );
+    }
+
+    /**
+     * Tests prepareResponseFormatParam() ignores the schema title when naming the envelope.
+     *
+     * The OpenAI API requires the json_schema name to match ^[a-zA-Z0-9_-]{1,64}$, so a
+     * user-supplied title (which may contain spaces or other invalid characters) must not be
+     * used as the name. A fixed, valid identifier is used instead.
+     *
+     * @return void
+     */
+    public function testPrepareResponseFormatParamIgnoresSchemaTitle(): void
+    {
+        $schema = [
+            'title' => 'Review Notes!',
+            'type' => 'object',
+            'properties' => ['key' => ['type' => 'string']],
+        ];
+        $model = $this->createModel();
+        $format = $model->exposePrepareResponseFormatParam($schema);
+
+        $this->assertEquals(
+            [
+                'type' => 'json_schema',
+                'json_schema' => [
+                    'name' => 'response_schema',
+                    'schema' => $schema,
+                ],
+            ],
+            $format
+        );
+    }
+
+    /**
+     * Tests prepareResponseFormatParam() passes through an already-wrapped envelope.
+     *
+     * @return void
+     */
+    public function testPrepareResponseFormatParamPassesThroughWrappedEnvelope(): void
+    {
+        $envelope = [
+            'name' => 'classification',
+            'strict' => true,
+            'schema' => ['type' => 'object', 'properties' => ['key' => ['type' => 'string']]],
+        ];
+        $model = $this->createModel();
+        $format = $model->exposePrepareResponseFormatParam($envelope);
+
+        $this->assertEquals(
+            [
+                'type' => 'json_schema',
+                'json_schema' => $envelope,
+            ],
+            $format
+        );
     }
 
     /**
