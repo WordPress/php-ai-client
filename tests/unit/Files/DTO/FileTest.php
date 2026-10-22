@@ -127,18 +127,18 @@ class FileTest extends TestCase
     }
 
     /**
-     * Tests creating a File from a local file path.
+     * Tests creating a File from a local file path via the explicit factory.
      *
      * @return void
      */
-    public function testCreateFromLocalFile(): void
+    public function testFromLocalPathHappyPath(): void
     {
         // Create a temporary file
         $tempFile = tempnam(sys_get_temp_dir(), 'test');
         file_put_contents($tempFile, 'Hello World');
 
         try {
-            $file = new File($tempFile, 'text/plain');
+            $file = File::fromLocalPath($tempFile, 'text/plain');
 
             $this->assertEquals(FileTypeEnum::inline(), $file->getFileType());
             $this->assertNull($file->getUrl());
@@ -157,26 +157,26 @@ class FileTest extends TestCase
     public function testInvalidFileFormatThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid file provided. Expected URL, base64 data, or valid local file path.');
+        $this->expectExceptionMessage('Invalid file provided. Expected an http(s) URL, a data URI, or base64 data');
 
         new File('not-a-valid-file-or-url', 'text/plain');
     }
 
     /**
-     * Tests that non-existent local file throws exception.
+     * Tests that a non-existent local file path is not accepted by the constructor.
      *
      * @return void
      */
     public function testNonExistentLocalFileThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid file provided. Expected URL, base64 data, or valid local file path.');
+        $this->expectExceptionMessage('To load a local file, use File::fromLocalPath().');
 
         new File('/path/to/non/existent/file.txt', 'text/plain');
     }
 
     /**
-     * Tests that passing a directory throws exception.
+     * Tests that passing a directory to the constructor throws exception.
      *
      * @return void
      */
@@ -188,12 +188,550 @@ class FileTest extends TestCase
 
         try {
             $this->expectException(InvalidArgumentException::class);
-            $this->expectExceptionMessage(
-                'Invalid file provided. Expected URL, base64 data, or valid local file path.'
-            );
+            $this->expectExceptionMessage('To load a local file, use File::fromLocalPath().');
 
-            new File($tempDir, 'text/plain');
+            new File($tempDir . '/x.txt', 'text/plain');
         } finally {
+            rmdir($tempDir);
+        }
+    }
+
+    /**
+     * Tests that the constructor never reads an existing local file.
+     *
+     * @return void
+     */
+    public function testConstructorDoesNotReadExistingLocalFile(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/testdir' . uniqid();
+        mkdir($tempDir);
+        $secretFile = $tempDir . '/secret.txt';
+        file_put_contents($secretFile, 'Hello World');
+
+        try {
+            // A path containing a dot cannot be mistaken for base64 and is rejected outright.
+            try {
+                new File($secretFile, 'text/plain');
+                $this->fail('Expected InvalidArgumentException');
+            } catch (InvalidArgumentException $e) {
+                $this->assertStringContainsString('File::fromLocalPath()', $e->getMessage());
+            }
+
+            // An extension-less path is accepted as literal base64 data, but the file is still not read.
+            $plainPath = $tempDir . '/secretfile';
+            file_put_contents($plainPath, 'Hello World');
+            $file = new File($plainPath, 'text/plain');
+            $this->assertSame($plainPath, $file->getBase64Data());
+            $this->assertNotSame(base64_encode('Hello World'), $file->getBase64Data());
+        } finally {
+            @unlink($tempDir . '/secretfile');
+            unlink($secretFile);
+            rmdir($tempDir);
+        }
+    }
+
+    /**
+     * Tests that the constructor rejects URL schemes other than http(s) before anything else.
+     *
+     * @dataProvider nonHttpSchemeProvider
+     *
+     * @param string $input The input string.
+     * @return void
+     */
+    public function testConstructorRejectsNonHttpSchemes(string $input): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Only http:// and https:// URLs are supported.');
+
+        new File($input, 'text/plain');
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public function nonHttpSchemeProvider(): array
+    {
+        return [
+            'file' => ['file:///etc/passwd'],
+            'ftp' => ['ftp://127.0.0.1:1/x'],
+            'phar' => ['phar://archive.phar/x.txt'],
+            'php filter' => ['php://filter/resource=/etc/passwd'],
+            'glob' => ['glob://*'],
+        ];
+    }
+
+    /**
+     * Tests that the constructor rejects an empty string.
+     *
+     * @return void
+     */
+    public function testConstructorRejectsEmptyString(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('File string must not be empty.');
+
+        new File('');
+    }
+
+    /**
+     * Tests File::fromUrl() happy path and MIME inference.
+     *
+     * @return void
+     */
+    public function testFromUrl(): void
+    {
+        $file = File::fromUrl('https://example.com/image.jpg', 'image/png');
+        $this->assertTrue($file->isRemote());
+        $this->assertEquals('https://example.com/image.jpg', $file->getUrl());
+        $this->assertEquals('image/png', $file->getMimeType());
+
+        $inferred = File::fromUrl('http://example.com/doc.pdf?x=1#frag');
+        $this->assertEquals('application/pdf', $inferred->getMimeType());
+    }
+
+    /**
+     * Tests File::fromUrl() rejects anything that is not an http(s) URL.
+     *
+     * @dataProvider invalidUrlProvider
+     *
+     * @param string $input The input string.
+     * @return void
+     */
+    public function testFromUrlRejectsInvalidInput(string $input): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid URL. Only http:// and https:// URLs are supported.');
+
+        File::fromUrl($input, 'text/plain');
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public function invalidUrlProvider(): array
+    {
+        return [
+            'file scheme' => ['file:///etc/passwd'],
+            'ftp scheme' => ['ftp://example.com/x'],
+            'plain path' => ['/etc/passwd'],
+            'relative path' => ['composer.json'],
+            'javascript' => ['javascript:alert(1)'],
+            'empty' => [''],
+        ];
+    }
+
+    /**
+     * Tests File::fromDataUri() happy path and override.
+     *
+     * @return void
+     */
+    public function testFromDataUri(): void
+    {
+        $base64Data = 'SGVsbG8gV29ybGQ=';
+        $file = File::fromDataUri('data:text/plain;base64,' . $base64Data);
+        $this->assertTrue($file->isInline());
+        $this->assertEquals($base64Data, $file->getBase64Data());
+        $this->assertEquals('text/plain', $file->getMimeType());
+
+        $override = File::fromDataUri('data:text/plain;base64,' . $base64Data, 'text/html');
+        $this->assertEquals('text/html', $override->getMimeType());
+    }
+
+    /**
+     * Tests File::fromDataUri() rejects invalid input.
+     *
+     * @dataProvider invalidDataUriProvider
+     *
+     * @param string $input The input string.
+     * @return void
+     */
+    public function testFromDataUriRejectsInvalidInput(string $input): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid data URI.');
+
+        File::fromDataUri($input);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public function invalidDataUriProvider(): array
+    {
+        return [
+            'raw base64' => ['SGVsbG8gV29ybGQ='],
+            'trailing newline' => ["data:text/plain;base64,SGVsbG8gV29ybGQ=\n"],
+            'local path' => ['/etc/passwd'],
+            'url' => ['https://example.com/x.png'],
+        ];
+    }
+
+    /**
+     * Tests File::fromDataUri() without MIME type throws.
+     *
+     * @return void
+     */
+    public function testFromDataUriWithoutMimeTypeThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unable to determine MIME type.');
+
+        File::fromDataUri('data:;base64,SGVsbG8gV29ybGQ=');
+    }
+
+    /**
+     * Tests File::fromBase64() happy path, including JPEG data starting with a slash.
+     *
+     * @return void
+     */
+    public function testFromBase64(): void
+    {
+        $file = File::fromBase64('SGVsbG8gV29ybGQ=', 'text/plain');
+        $this->assertTrue($file->isInline());
+        $this->assertEquals('SGVsbG8gV29ybGQ=', $file->getBase64Data());
+        $this->assertEquals('text/plain', $file->getMimeType());
+
+        $jpeg = File::fromBase64('/9j/4AAQSkZJRg==', 'image/jpeg');
+        $this->assertEquals('/9j/4AAQSkZJRg==', $jpeg->getBase64Data());
+    }
+
+    /**
+     * Tests File::fromBase64() rejects invalid input.
+     *
+     * @dataProvider invalidBase64Provider
+     *
+     * @param string $input The input string.
+     * @param string $expectedMessage The expected exception message fragment.
+     * @return void
+     */
+    public function testFromBase64RejectsInvalidInput(string $input, string $expectedMessage): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage($expectedMessage);
+
+        File::fromBase64($input, 'text/plain');
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public function invalidBase64Provider(): array
+    {
+        return [
+            'empty' => ['', 'Invalid base64 data provided.'],
+            'data uri' => ['data:text/plain;base64,SGVsbG8=', 'use File::fromDataUri()'],
+            'invalid chars' => ['not base64!', 'Invalid base64 data provided.'],
+            'path with dot' => ['/etc/hosts.txt', 'Invalid base64 data provided.'],
+            'trailing newline' => ["SGVsbG8=\n", 'Invalid base64 data provided.'],
+        ];
+    }
+
+    /**
+     * Tests File::fromBase64() rejects an invalid MIME type.
+     *
+     * @return void
+     */
+    public function testFromBase64RejectsInvalidMimeType(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid MIME type: not a mime');
+
+        File::fromBase64('SGVsbG8=', 'not a mime');
+    }
+
+    /**
+     * Tests File::fromLocalPath() infers the MIME type from the extension.
+     *
+     * @return void
+     */
+    public function testFromLocalPathInfersMimeTypeFromExtension(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/test_dir_' . uniqid();
+        mkdir($tempDir);
+        $path = $tempDir . '/note.txt';
+        file_put_contents($path, 'note');
+
+        try {
+            $file = File::fromLocalPath($path);
+            $this->assertEquals('text/plain', $file->getMimeType());
+            $this->assertEquals(base64_encode('note'), $file->getBase64Data());
+        } finally {
+            unlink($path);
+            rmdir($tempDir);
+        }
+    }
+
+    /**
+     * Tests File::fromLocalPath() error cases that are checked before any filesystem access.
+     *
+     * @dataProvider localPathRejectedProvider
+     *
+     * @param string $input The input string.
+     * @param string $expectedMessage The expected exception message fragment.
+     * @return void
+     */
+    public function testFromLocalPathRejectsInput(string $input, string $expectedMessage): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage($expectedMessage);
+
+        File::fromLocalPath($input, 'text/plain');
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public function localPathRejectedProvider(): array
+    {
+        return [
+            'empty' => ['', 'Local file path must not be empty.'],
+            'file wrapper' => ['file:///etc/passwd', 'Stream wrappers are not supported'],
+            'ftp wrapper' => ['ftp://127.0.0.1:1/x', 'Stream wrappers are not supported'],
+            'phar wrapper' => ['phar://archive.phar/x', 'Stream wrappers are not supported'],
+            'missing file' => ['/path/to/non/existent/file.txt', 'Local file not found or not a regular file'],
+        ];
+    }
+
+    /**
+     * Tests File::fromLocalPath() rejects directories and unknown extensions without MIME type.
+     *
+     * @return void
+     */
+    public function testFromLocalPathRejectsDirectoryAndUnknownExtension(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/test_dir_' . uniqid();
+        mkdir($tempDir);
+        $unknown = $tempDir . '/data.unknownext';
+        file_put_contents($unknown, 'x');
+
+        try {
+            try {
+                File::fromLocalPath($tempDir, 'text/plain');
+                $this->fail('Expected InvalidArgumentException for directory');
+            } catch (InvalidArgumentException $e) {
+                $this->assertStringContainsString('not a regular file', $e->getMessage());
+            }
+
+            try {
+                File::fromLocalPath($unknown);
+                $this->fail('Expected InvalidArgumentException for unknown extension');
+            } catch (InvalidArgumentException $e) {
+                $this->assertStringContainsString('Unable to determine MIME type', $e->getMessage());
+            }
+        } finally {
+            unlink($unknown);
+            rmdir($tempDir);
+        }
+    }
+
+    /**
+     * Tests fromArray() rejects local paths and stream wrappers in url and base64Data.
+     *
+     * @return void
+     */
+    public function testFromArrayRejectsLocalPaths(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/testdir' . uniqid();
+        mkdir($tempDir);
+        $secretFile = $tempDir . '/secret.txt';
+        file_put_contents($secretFile, 'Hello World');
+        $plainPath = $tempDir . '/secretfile';
+        file_put_contents($plainPath, 'Hello World');
+
+        $cases = [
+            'path in url' => [
+                File::KEY_FILE_TYPE => FileTypeEnum::remote()->value,
+                File::KEY_MIME_TYPE => 'text/plain',
+                File::KEY_URL => $secretFile,
+            ],
+            'file wrapper in url' => [
+                File::KEY_FILE_TYPE => FileTypeEnum::remote()->value,
+                File::KEY_MIME_TYPE => 'text/plain',
+                File::KEY_URL => 'file://' . $secretFile,
+            ],
+            'ftp wrapper in url' => [
+                File::KEY_FILE_TYPE => FileTypeEnum::remote()->value,
+                File::KEY_MIME_TYPE => 'text/plain',
+                File::KEY_URL => 'ftp://127.0.0.1:1/x',
+            ],
+            'path in base64Data' => [
+                File::KEY_FILE_TYPE => FileTypeEnum::inline()->value,
+                File::KEY_MIME_TYPE => 'text/plain',
+                File::KEY_BASE64_DATA => $secretFile,
+            ],
+            'path in base64Data with inline type but url key' => [
+                File::KEY_FILE_TYPE => FileTypeEnum::inline()->value,
+                File::KEY_MIME_TYPE => 'text/plain',
+                File::KEY_URL => $secretFile,
+            ],
+        ];
+
+        try {
+            foreach ($cases as $label => $array) {
+                try {
+                    File::fromArray($array);
+                    $this->fail("Expected InvalidArgumentException for case: {$label}");
+                } catch (InvalidArgumentException $e) {
+                    $this->assertFalse(File::isArrayShape($array), "isArrayShape should be false for: {$label}");
+                }
+            }
+
+            // An extension-less path passes the base64 pattern but is never read.
+            $file = File::fromArray([
+                File::KEY_FILE_TYPE => FileTypeEnum::inline()->value,
+                File::KEY_MIME_TYPE => 'text/plain',
+                File::KEY_BASE64_DATA => $plainPath,
+            ]);
+            $this->assertSame($plainPath, $file->getBase64Data());
+        } finally {
+            unlink($plainPath);
+            unlink($secretFile);
+            rmdir($tempDir);
+        }
+    }
+
+    /**
+     * Tests fromArray() structural validation.
+     *
+     * @dataProvider invalidArrayShapeProvider
+     *
+     * @param array<string, mixed> $array The array.
+     * @param string $expectedMessage The expected exception message fragment.
+     * @return void
+     */
+    public function testFromArrayRejectsInvalidShape(array $array, string $expectedMessage): void
+    {
+        $this->assertFalse(File::isArrayShape($array));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage($expectedMessage);
+
+        File::fromArray($array);
+    }
+
+    /**
+     * @return array<string, array{array<string, mixed>, string}>
+     */
+    public function invalidArrayShapeProvider(): array
+    {
+        return [
+            'missing fileType' => [
+                [File::KEY_MIME_TYPE => 'text/plain', File::KEY_URL => 'https://example.com/x.txt'],
+                'missing required keys: fileType',
+            ],
+            'unknown fileType' => [
+                [File::KEY_FILE_TYPE => 'local', File::KEY_MIME_TYPE => 'text/plain', File::KEY_URL => '/x'],
+                'Invalid file type.',
+            ],
+            'remote with base64Data' => [
+                [
+                    File::KEY_FILE_TYPE => 'remote',
+                    File::KEY_MIME_TYPE => 'text/plain',
+                    File::KEY_URL => 'https://example.com/x.txt',
+                    File::KEY_BASE64_DATA => 'SGVsbG8=',
+                ],
+                'Remote files must not contain base64Data.',
+            ],
+            'remote without url' => [
+                [File::KEY_FILE_TYPE => 'remote', File::KEY_MIME_TYPE => 'text/plain'],
+                'Remote files require a url',
+            ],
+            'remote with non-string url' => [
+                [File::KEY_FILE_TYPE => 'remote', File::KEY_MIME_TYPE => 'text/plain', File::KEY_URL => 123],
+                'Remote files require a url',
+            ],
+            'inline with url' => [
+                [
+                    File::KEY_FILE_TYPE => 'inline',
+                    File::KEY_MIME_TYPE => 'text/plain',
+                    File::KEY_BASE64_DATA => 'SGVsbG8=',
+                    File::KEY_URL => 'https://example.com/x.txt',
+                ],
+                'Inline files must not contain url.',
+            ],
+            'inline without base64Data' => [
+                [File::KEY_FILE_TYPE => 'inline', File::KEY_MIME_TYPE => 'text/plain'],
+                'Inline files require base64Data.',
+            ],
+            'inline with non-string base64Data' => [
+                [File::KEY_FILE_TYPE => 'inline', File::KEY_MIME_TYPE => 'text/plain', File::KEY_BASE64_DATA => []],
+                'Inline files require base64Data.',
+            ],
+            'inline with data uri' => [
+                [
+                    File::KEY_FILE_TYPE => 'inline',
+                    File::KEY_MIME_TYPE => 'text/plain',
+                    File::KEY_BASE64_DATA => 'data:text/plain;base64,SGVsbG8=',
+                ],
+                'not a data URI',
+            ],
+            'inline without mimeType' => [
+                [File::KEY_FILE_TYPE => 'inline', File::KEY_BASE64_DATA => 'SGVsbG8='],
+                'Inline files require a mimeType.',
+            ],
+            'invalid mimeType' => [
+                [File::KEY_FILE_TYPE => 'inline', File::KEY_MIME_TYPE => 'nope', File::KEY_BASE64_DATA => 'SGVsbG8='],
+                'Invalid MIME type provided in file array.',
+            ],
+            'non-string mimeType' => [
+                [File::KEY_FILE_TYPE => 'inline', File::KEY_MIME_TYPE => 5, File::KEY_BASE64_DATA => 'SGVsbG8='],
+                'Invalid MIME type provided in file array.',
+            ],
+        ];
+    }
+
+    /**
+     * Tests fromArray() for a remote file without mimeType infers it from the URL.
+     *
+     * @return void
+     */
+    public function testFromArrayRemoteInfersMimeType(): void
+    {
+        $array = [File::KEY_FILE_TYPE => 'remote', File::KEY_URL => 'https://example.com/x.png'];
+        $this->assertTrue(File::isArrayShape($array));
+        $file = File::fromArray($array);
+        $this->assertEquals('image/png', $file->getMimeType());
+    }
+
+    /**
+     * Tests isArrayShape() for valid shapes.
+     *
+     * @return void
+     */
+    public function testIsArrayShapeForValidShapes(): void
+    {
+        $this->assertTrue(File::isArrayShape([
+            File::KEY_FILE_TYPE => 'remote',
+            File::KEY_MIME_TYPE => 'image/png',
+            File::KEY_URL => 'https://example.com/x.png',
+        ]));
+        $this->assertTrue(File::isArrayShape([
+            File::KEY_FILE_TYPE => 'inline',
+            File::KEY_MIME_TYPE => 'image/png',
+            File::KEY_BASE64_DATA => 'iVBORw0KGgo=',
+        ]));
+    }
+
+    /**
+     * Tests round trip from a local path through toArray()/fromArray().
+     *
+     * @return void
+     */
+    public function testArrayRoundTripFromLocalPath(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/test_dir_' . uniqid();
+        mkdir($tempDir);
+        $path = $tempDir . '/note.txt';
+        file_put_contents($path, 'round trip');
+
+        try {
+            $file = File::fromLocalPath($path);
+            $restored = File::fromArray($file->toArray());
+            $this->assertEquals($file->getBase64Data(), $restored->getBase64Data());
+            $this->assertEquals($file->getMimeType(), $restored->getMimeType());
+            $this->assertTrue($restored->isInline());
+        } finally {
+            unlink($path);
             rmdir($tempDir);
         }
     }
@@ -546,7 +1084,7 @@ class FileTest extends TestCase
         $tempFile = tempnam(sys_get_temp_dir(), 'test');
         file_put_contents($tempFile, 'test content');
         try {
-            $localFile = new File($tempFile, 'text/plain');
+            $localFile = File::fromLocalPath($tempFile, 'text/plain');
             $this->assertTrue($localFile->isInline());
             $this->assertFalse($localFile->isRemote());
         } finally {

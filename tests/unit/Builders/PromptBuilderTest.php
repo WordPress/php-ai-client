@@ -4159,4 +4159,110 @@ class PromptBuilderTest extends TestCase
 
         $this->assertEquals(['STOP', 'END'], $config->getStopSequences());
     }
+
+
+    /**
+     * Tests withFile() still accepts a local file path.
+     *
+     * @return void
+     */
+    public function testWithFileLocalPath(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/test_dir_' . uniqid();
+        mkdir($tempDir);
+        $path = $tempDir . '/note.txt';
+        file_put_contents($path, 'note');
+        $plainPath = $tempDir . '/plainfile';
+        file_put_contents($plainPath, 'plain');
+
+        try {
+            $builder = new PromptBuilder($this->registry);
+            $builder->withFile($path);
+            // An extension-less existing path must still be read (local path wins over base64 lookalike).
+            $builder->withFile($plainPath, 'text/plain');
+
+            $reflection = new \ReflectionClass($builder);
+            $messagesProperty = $reflection->getProperty('messages');
+            $messagesProperty->setAccessible(true);
+            /** @var list<Message> $messages */
+            $messages = $messagesProperty->getValue($builder);
+
+            $file = $messages[0]->getParts()[0]->getFile();
+            $this->assertInstanceOf(File::class, $file);
+            $this->assertTrue($file->isInline());
+            $this->assertEquals(base64_encode('note'), $file->getBase64Data());
+            $this->assertEquals('text/plain', $file->getMimeType());
+
+            $plainFile = $messages[0]->getParts()[1]->getFile();
+            $this->assertInstanceOf(File::class, $plainFile);
+            $this->assertEquals(base64_encode('plain'), $plainFile->getBase64Data());
+        } finally {
+            unlink($plainPath);
+            unlink($path);
+            rmdir($tempDir);
+        }
+    }
+
+    /**
+     * Tests withFile() rejects stream wrappers and invalid strings.
+     *
+     * @return void
+     */
+    public function testWithFileRejectsStreamWrappersAndInvalidStrings(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        foreach (['ftp://127.0.0.1:1/x', 'file:///etc/passwd', 'not a file!', ''] as $input) {
+            try {
+                $builder->withFile($input, 'text/plain');
+                $this->fail('Expected InvalidArgumentException for: ' . $input);
+            } catch (InvalidArgumentException $e) {
+                $this->assertNotEmpty($e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Tests that array-shaped prompt input cannot reference local files.
+     *
+     * @return void
+     */
+    public function testPromptArrayShapeWithLocalPathIsRejected(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tempFile, 'secret');
+
+        $shapes = [
+            'message shape, url' => [
+                'role' => 'user',
+                'parts' => [
+                    [
+                        'type' => 'file',
+                        'file' => ['fileType' => 'remote', 'mimeType' => 'text/plain', 'url' => $tempFile],
+                    ],
+                ],
+            ],
+            'part shape, base64Data' => [
+                'type' => 'file',
+                'file' => ['fileType' => 'inline', 'mimeType' => 'text/plain', 'base64Data' => $tempFile . '.txt'],
+            ],
+            'part shape, file wrapper' => [
+                'type' => 'file',
+                'file' => ['fileType' => 'remote', 'mimeType' => 'text/plain', 'url' => 'file://' . $tempFile],
+            ],
+        ];
+
+        try {
+            foreach ($shapes as $label => $shape) {
+                try {
+                    new PromptBuilder($this->registry, $shape);
+                    $this->fail('Expected InvalidArgumentException for: ' . $label);
+                } catch (InvalidArgumentException $e) {
+                    $this->assertStringNotContainsString(base64_encode('secret'), $e->getMessage());
+                }
+            }
+        } finally {
+            unlink($tempFile);
+        }
+    }
 }

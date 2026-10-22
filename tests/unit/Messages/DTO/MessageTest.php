@@ -525,4 +525,46 @@ class MessageTest extends TestCase
         // Role enum should be the same instance (enums are singletons)
         $this->assertSame($original->getRole(), $cloned->getRole());
     }
+
+
+    /**
+     * Tests isArrayShape() is structural and rejects parts pointing at local files.
+     *
+     * @return void
+     */
+    public function testIsArrayShapeRejectsLocalFilePathsAndNonLists(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tempFile, 'secret');
+
+        try {
+            $this->assertFalse(Message::isArrayShape([
+                Message::KEY_ROLE => MessageRoleEnum::user()->value,
+                Message::KEY_PARTS => [
+                    [
+                        MessagePart::KEY_TYPE => MessagePartTypeEnum::file()->value,
+                        MessagePart::KEY_FILE => [
+                            'fileType' => 'remote',
+                            'mimeType' => 'text/plain',
+                            'url' => $tempFile,
+                        ],
+                    ],
+                ],
+            ]));
+            $this->assertFalse(Message::isArrayShape([
+                Message::KEY_ROLE => MessageRoleEnum::user()->value,
+                Message::KEY_PARTS => ['a' => [MessagePart::KEY_TEXT => 'x']],
+            ]));
+            $this->assertFalse(Message::isArrayShape([
+                Message::KEY_ROLE => MessageRoleEnum::user()->value,
+                Message::KEY_PARTS => 'not an array',
+            ]));
+            $this->assertTrue(Message::isArrayShape([
+                Message::KEY_ROLE => MessageRoleEnum::user()->value,
+                Message::KEY_PARTS => [[MessagePart::KEY_TEXT => 'x']],
+            ]));
+        } finally {
+            unlink($tempFile);
+        }
+    }
 }

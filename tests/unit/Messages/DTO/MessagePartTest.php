@@ -630,4 +630,100 @@ class MessagePartTest extends TestCase
             );
         }
     }
+
+
+    /**
+     * Tests isArrayShape() is structural and rejects file parts pointing at local files.
+     *
+     * @return void
+     */
+    public function testIsArrayShapeValidation(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tempFile, 'secret');
+
+        try {
+            $this->assertTrue(MessagePart::isArrayShape([MessagePart::KEY_TEXT => 'hi']));
+            $this->assertTrue(MessagePart::isArrayShape([
+                MessagePart::KEY_TYPE => MessagePartTypeEnum::file()->value,
+                MessagePart::KEY_FILE => [
+                    File::KEY_FILE_TYPE => FileTypeEnum::remote()->value,
+                    File::KEY_MIME_TYPE => 'image/png',
+                    File::KEY_URL => 'https://example.com/x.png',
+                ],
+            ]));
+            $this->assertTrue(MessagePart::isArrayShape([
+                MessagePart::KEY_FUNCTION_CALL => ['id' => 'c1', 'name' => 'fn', 'args' => []],
+            ]));
+            $this->assertTrue(MessagePart::isArrayShape([
+                MessagePart::KEY_FUNCTION_RESPONSE => ['id' => 'c1', 'name' => 'fn', 'response' => 'ok'],
+            ]));
+
+            $invalid = [
+                'empty' => [],
+                'two content keys' => [MessagePart::KEY_TEXT => 'a', MessagePart::KEY_FILE => []],
+                'non-string text' => [MessagePart::KEY_TEXT => 123],
+                'invalid channel' => [MessagePart::KEY_TEXT => 'a', MessagePart::KEY_CHANNEL => 'nope'],
+                'invalid type' => [MessagePart::KEY_TEXT => 'a', MessagePart::KEY_TYPE => 'nope'],
+                'file with local path' => [
+                    MessagePart::KEY_FILE => [
+                        File::KEY_FILE_TYPE => FileTypeEnum::remote()->value,
+                        File::KEY_MIME_TYPE => 'text/plain',
+                        File::KEY_URL => $tempFile,
+                    ],
+                ],
+                'file with ftp url' => [
+                    MessagePart::KEY_FILE => [
+                        File::KEY_FILE_TYPE => FileTypeEnum::remote()->value,
+                        File::KEY_MIME_TYPE => 'text/plain',
+                        File::KEY_URL => 'ftp://127.0.0.1:1/x',
+                    ],
+                ],
+                'file not array' => [MessagePart::KEY_FILE => 'x'],
+            ];
+            foreach ($invalid as $label => $array) {
+                $this->assertFalse(MessagePart::isArrayShape($array), "Should be invalid: {$label}");
+            }
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+    /**
+     * Tests fromArray() rejects a file part whose url is a local path.
+     *
+     * @return void
+     */
+    public function testFromArrayWithFileRejectsLocalPath(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tempFile, 'secret');
+
+        try {
+            $this->expectException(InvalidArgumentException::class);
+            MessagePart::fromArray([
+                MessagePart::KEY_TYPE => MessagePartTypeEnum::file()->value,
+                MessagePart::KEY_FILE => [
+                    File::KEY_FILE_TYPE => FileTypeEnum::inline()->value,
+                    File::KEY_MIME_TYPE => 'text/plain',
+                    File::KEY_BASE64_DATA => $tempFile . '.txt',
+                ],
+            ]);
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+    /**
+     * Tests fromArray() rejects values of the wrong type with the SDK exception.
+     *
+     * @return void
+     */
+    public function testFromArrayRejectsWrongTypes(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('MessagePart text must be a string.');
+
+        MessagePart::fromArray([MessagePart::KEY_TEXT => ['not', 'a', 'string']]);
+    }
 }
