@@ -230,3 +230,7 @@ For more information on the requirements and guiding principles, please review:
 * [Prepublish Checklist](./docs/PREPUBLISH-CHECKLIST.md)
 
 See the [contributing documentation](./CONTRIBUTING.md) for more information on how to get involved.
+
+### Maintainers
+
+Maintainers for this repo are [Felix Arntz (@felixarntz)](https://github.com/felixarntz), [Jason Adams (@JasonTheAdams)](https://github.com/JasonTheAdams), and [Jeffrey Paul (@jeffpaul)](https://github.com/jeffpaul); all can be reached using the [@WordPress/php-ai-client-maintainers](https://github.com/orgs/WordPress/teams/php-ai-client-maintainers) team.
