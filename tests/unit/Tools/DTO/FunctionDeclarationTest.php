@@ -17,6 +17,30 @@ class FunctionDeclarationTest extends TestCase
     use ArrayTransformationTestTrait;
 
     /**
+     * Tests that replacing parameters keeps other fields and leaves the original unchanged.
+     *
+     * @return void
+     */
+    public function testWithParametersPreservesDeclaration(): void
+    {
+        $originalParameters = ['type' => 'object', 'additionalProperties' => false];
+        $annotations = ['readOnlyHint' => true, 'provider' => ['mode' => 'deferred']];
+        $declaration = new FunctionDeclaration('lookup', 'Looks up an item.', $originalParameters, $annotations);
+        $original = $declaration->toArray();
+
+        foreach ([['type' => 'object'], [], null] as $parameters) {
+            $prepared = $declaration->withParameters($parameters);
+
+            $this->assertNotSame($declaration, $prepared);
+            $this->assertSame($parameters, $prepared->getParameters());
+            $this->assertSame($declaration->getName(), $prepared->getName());
+            $this->assertSame($declaration->getDescription(), $prepared->getDescription());
+            $this->assertSame($annotations, $prepared->getAnnotations());
+            $this->assertSame($original, $declaration->toArray());
+        }
+    }
+
+    /**
      * Tests creating FunctionDeclaration with all properties.
      *
      * @return void

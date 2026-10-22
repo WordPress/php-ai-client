@@ -940,6 +940,91 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests that requests omit annotations and keep null and empty parameters distinct.
+     *
+     * @return void
+     */
+    public function testPrepareToolsParamSelectsApiFields(): void
+    {
+        $model = $this->createModel();
+        foreach ([null, [], ['type' => 'object']] as $parameters) {
+            $declaration = new FunctionDeclaration('lookup', '', $parameters, ['readOnlyHint' => true]);
+            $expected = ['name' => 'lookup', 'description' => ''];
+            if ($parameters !== null) {
+                $expected['parameters'] = $parameters;
+            }
+
+            $this->assertSame(
+                [['type' => 'function', 'function' => $expected]],
+                $model->exposePrepareToolsParam([$declaration])
+            );
+            $this->assertSame(['readOnlyHint' => true], $declaration->getAnnotations());
+        }
+    }
+
+    /**
+     * Tests that an override can prepare schemas or return declarations unchanged.
+     *
+     * @return void
+     */
+    public function testPrepareToolsParamAllowsSchemaPreparation(): void
+    {
+        $model = new class (
+            $this->modelMetadata,
+            $this->providerMetadata,
+            $this->mockHttpTransporter,
+            $this->mockRequestAuthentication
+        ) extends MockOpenAiCompatibleTextGenerationModel {
+            /**
+             * @var list<FunctionDeclaration> The declarations prepared by the hook.
+             */
+            public array $preparedDeclarations = [];
+
+            /**
+             * {@inheritDoc}
+             */
+            protected function prepareFunctionDeclarationForRequest(
+                FunctionDeclaration $functionDeclaration
+            ): FunctionDeclaration {
+                $parameters = $functionDeclaration->getParameters();
+                if ($parameters !== null && isset($parameters['additionalProperties'])) {
+                    unset($parameters['additionalProperties']);
+                    $functionDeclaration = $functionDeclaration->withParameters($parameters);
+                }
+                $this->preparedDeclarations[] = $functionDeclaration;
+                return $functionDeclaration;
+            }
+        };
+        $parameters = ['type' => 'object', 'additionalProperties' => false];
+        $annotations = ['readOnlyHint' => true];
+        $declaration = new FunctionDeclaration('lookup', 'Looks up an item.', $parameters, $annotations);
+        $unchanged = new FunctionDeclaration('ping', 'Checks availability.', null, $annotations);
+
+        $this->assertSame(
+            [
+                [
+                    'type' => 'function',
+                    'function' => [
+                        'name' => 'lookup',
+                        'description' => 'Looks up an item.',
+                        'parameters' => ['type' => 'object'],
+                    ],
+                ],
+                [
+                    'type' => 'function',
+                    'function' => ['name' => 'ping', 'description' => 'Checks availability.'],
+                ],
+            ],
+            $model->exposePrepareToolsParam([$declaration, $unchanged])
+        );
+        $this->assertNotSame($declaration, $model->preparedDeclarations[0]);
+        $this->assertSame($annotations, $model->preparedDeclarations[0]->getAnnotations());
+        $this->assertSame($unchanged, $model->preparedDeclarations[1]);
+        $this->assertSame($parameters, $declaration->getParameters());
+        $this->assertSame($annotations, $declaration->getAnnotations());
+    }
+
+    /**
      * Tests prepareResponseFormatParam() with schema.
      *
      * @return void

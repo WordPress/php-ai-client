@@ -13,6 +13,7 @@ use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Http\Traits\WithRequestAuthenticationTrait;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
+use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
 /**
  * Base class for an API-based model for a provider.
@@ -123,5 +124,24 @@ abstract class AbstractApiBasedModel implements
     final public function getRequestOptions(): ?RequestOptions
     {
         return $this->requestOptions;
+    }
+
+    /**
+     * Prepares a function declaration for a provider request.
+     *
+     * Returns the original declaration by default. Providers must call this hook
+     * when building their tool payload. Overrides can use withParameters() to change
+     * the input schema in a copy that keeps the annotations. Providers still choose
+     * the API fields and encode the request.
+     *
+     * @since n.e.x.t
+     *
+     * @param FunctionDeclaration $functionDeclaration The original function declaration.
+     * @return FunctionDeclaration The declaration to use in this request.
+     */
+    protected function prepareFunctionDeclarationForRequest(
+        FunctionDeclaration $functionDeclaration
+    ): FunctionDeclaration {
+        return $functionDeclaration;
     }
 }
