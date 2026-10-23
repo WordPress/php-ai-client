@@ -7,13 +7,19 @@ namespace WordPress\AiClient\Tests\unit;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Builders\DecisionBuilder;
 use WordPress\AiClient\Builders\EmbeddingBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Events\AfterDecideEvent;
+use WordPress\AiClient\Events\BeforeDecideEvent;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Tests\mocks\MockEventDispatcher;
 use WordPress\AiClient\Tests\mocks\MockProvider;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
@@ -304,6 +310,57 @@ class AiClientTest extends TestCase
 
         $result = $builder->usingModel($mockModel)->generateEmbeddings();
         $this->assertCount(2, $result);
+    }
+
+    /**
+     * Tests decide() returns a DecisionBuilder configured with the given state.
+     */
+    public function testDecideReturnsDecisionBuilder(): void
+    {
+        $expectedResult = $this->createTestDecisionResult();
+        $mockModel = $this->createMockDecisionModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $builder = AiClient::decide(['comment' => 'Buy cheap pills!'], $registry);
+
+        $this->assertInstanceOf(DecisionBuilder::class, $builder);
+
+        $result = $builder
+            ->withQuestion(
+                'spam',
+                new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?')
+            )
+            ->usingModel($mockModel)
+            ->decideResult();
+
+        $this->assertSame($expectedResult, $result);
+        $this->assertSame(['comment' => 'Buy cheap pills!'], $mockModel->lastCall[0]);
+    }
+
+    /**
+     * Tests decide() passes the configured event dispatcher to the builder.
+     */
+    public function testDecideUsesEventDispatcher(): void
+    {
+        $dispatcher = new MockEventDispatcher();
+        $mockModel = $this->createMockDecisionModel($this->createTestDecisionResult());
+
+        AiClient::setEventDispatcher($dispatcher);
+
+        try {
+            AiClient::decide(['comment' => 'Buy cheap pills!'], $this->createRegistryWithMockProvider())
+                ->withQuestion(
+                    'spam',
+                    new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?')
+                )
+                ->usingModel($mockModel)
+                ->decideResult();
+        } finally {
+            AiClient::setEventDispatcher(null);
+        }
+
+        $this->assertCount(1, $dispatcher->getDispatchedEventsOfType(BeforeDecideEvent::class));
+        $this->assertCount(1, $dispatcher->getDispatchedEventsOfType(AfterDecideEvent::class));
     }
 
 

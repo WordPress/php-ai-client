@@ -10,6 +10,9 @@ use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
+use WordPress\AiClient\Providers\Models\Decision\Contracts\DecisionModelInterface;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
@@ -21,6 +24,8 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
+use WordPress\AiClient\Results\DTO\DecisionAnswer;
+use WordPress\AiClient\Results\DTO\DecisionResult;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
@@ -114,6 +119,31 @@ trait MockModelCreationTrait
     }
 
     /**
+     * Creates a test DecisionResult for testing purposes.
+     *
+     * @param array<string, DecisionAnswer>|null $answers Optional answers for the response.
+     * @return DecisionResult
+     */
+    protected function createTestDecisionResult(?array $answers = null): DecisionResult
+    {
+        $answers = $answers ?? ['spam' => new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.03)];
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new DecisionResult(
+            'test-decision-result-id',
+            $answers,
+            new TokenUsage(10, 1, 11),
+            $providerMetadata,
+            $this->createTestDecisionModelMetadata()
+        );
+    }
+
+    /**
      * Creates a test model metadata instance for text generation.
      *
      * @param string $id Optional model ID.
@@ -166,6 +196,25 @@ trait MockModelCreationTrait
             $id,
             $name,
             [CapabilityEnum::videoGeneration()],
+            []
+        );
+    }
+
+    /**
+     * Creates a test model metadata instance for decisions.
+     *
+     * @param string $id   Optional model ID.
+     * @param string $name Optional model name.
+     * @return ModelMetadata
+     */
+    protected function createTestDecisionModelMetadata(
+        string $id = 'test-decision-model',
+        string $name = 'Test Decision Model'
+    ): ModelMetadata {
+        return new ModelMetadata(
+            $id,
+            $name,
+            [CapabilityEnum::decision()],
             []
         );
     }
@@ -467,6 +516,85 @@ trait MockModelCreationTrait
              */
             public function generateEmbeddingResult(array $inputs): EmbeddingResult
             {
+                return $this->result;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock decision model using anonymous class.
+     *
+     * @param DecisionResult $result The result to return from the decision.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @return ModelInterface&DecisionModelInterface The mock model.
+     */
+    protected function createMockDecisionModel(
+        DecisionResult $result,
+        ?ModelMetadata $metadata = null
+    ): ModelInterface {
+        $metadata = $metadata ?? $this->createTestDecisionModelMetadata();
+
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, DecisionModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private DecisionResult $result;
+            private ModelConfig $config;
+
+            /**
+             * @var array{0: array<string, mixed>, 1: array<string, DecisionQuestion>}|null The state and
+             *      questions received by the last call to decideResult().
+             */
+            public ?array $lastCall = null;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                DecisionResult $result
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->result = $result;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            /**
+             * @param array<string, mixed> $state The state to decide on.
+             * @param array<string, DecisionQuestion> $questions The questions to answer.
+             */
+            public function decideResult(array $state, array $questions): DecisionResult
+            {
+                $this->lastCall = [$state, $questions];
+
                 return $this->result;
             }
         };
