@@ -169,6 +169,41 @@ class Message extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
+     * This check is purely structural: it does not construct the message or its parts, so it has no
+     * side effects (in particular, no filesystem access for file parts).
+     *
+     * @since n.e.x.t
+     */
+    public static function isArrayShape(array $array): bool
+    {
+        if (
+            !isset($array[self::KEY_ROLE])
+            || !is_string($array[self::KEY_ROLE])
+            || !MessageRoleEnum::isValidValue($array[self::KEY_ROLE])
+        ) {
+            return false;
+        }
+
+        if (!isset($array[self::KEY_PARTS]) || !is_array($array[self::KEY_PARTS])) {
+            return false;
+        }
+
+        if (!array_is_list($array[self::KEY_PARTS])) {
+            return false;
+        }
+
+        foreach ($array[self::KEY_PARTS] as $partData) {
+            if (!is_array($partData) || !MessagePart::isArrayShape($partData)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @since 0.1.0
      *
      * @return self The specific message class based on the role.
