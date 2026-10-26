@@ -15,15 +15,17 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  *
  * A file is either remote (an http(s) URL that the provider fetches) or inline (base64-encoded data).
  *
- * The constructor accepts an http(s) URL, a data URI, or plain base64 data with a MIME type. It never
- * reads from the filesystem. Local files must be loaded explicitly via {@see File::fromLocalPath()},
- * which is the only method of this class that accesses the filesystem. The named constructors
- * {@see File::fromUrl()}, {@see File::fromDataUri()} and {@see File::fromBase64()} should be preferred
- * whenever the kind of input is known, especially for data that comes from an untrusted source such as
- * an API response or user input.
+ * The constructor accepts an http(s) URL, a data URI, or plain base64 data with a MIME type. For backward
+ * compatibility it still detects an existing local file path and reads it, but this is deprecated and will be
+ * removed in the next major version: load local files explicitly via {@see File::fromLocalPath()} instead.
+ * The named constructors {@see File::fromUrl()}, {@see File::fromDataUri()} and {@see File::fromBase64()}
+ * never access the filesystem and should be preferred whenever the kind of input is known, especially for
+ * data that comes from an untrusted source such as an API response or user input. {@see File::fromArray()}
+ * never accesses the filesystem.
  *
  * @since 0.1.0
- * @since n.e.x.t The constructor no longer detects local file paths; use File::fromLocalPath() instead.
+ * @since n.e.x.t Implicit local file path detection in the constructor is deprecated; non-http(s) URL schemes
+ *                are rejected before any filesystem access.
  *
  * @phpstan-type FileArrayShape array{
  *     fileType: string,
@@ -52,11 +54,11 @@ class File extends AbstractDataTransferObject
         . '(?:;[a-zA-Z0-9\-]+=[a-zA-Z0-9\-]+)*)?;)?base64,([A-Za-z0-9+\/]*={0,2})\z/';
 
     /**
-     * Pattern matching plain (non-empty) base64 data.
+     * Pattern matching plain base64 data (an empty payload is allowed, e.g. for an empty file).
      *
      * @since n.e.x.t
      */
-    private const BASE64_PATTERN = '/^[A-Za-z0-9+\/]+={0,2}\z/';
+    private const BASE64_PATTERN = '/^[A-Za-z0-9+\/]*={0,2}\z/';
 
     /**
      * @var MimeType The MIME type of the file.
@@ -81,12 +83,13 @@ class File extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * This constructor does not access the filesystem. To load a local file, use {@see File::fromLocalPath()}.
+     * Passing a local file path is deprecated; use {@see File::fromLocalPath()} instead. When a local path is
+     * detected, an E_USER_DEPRECATED notice is emitted and the file is read.
      *
      * @since 0.1.0
-     * @since n.e.x.t Local file paths are no longer detected. Empty strings and non-http(s) URL schemes are rejected.
+     * @since n.e.x.t Local file path detection is deprecated. Non-http(s) URL schemes are rejected.
      *
-     * @param string $file The file string (http(s) URL, data URI, or plain base64 data).
+     * @param string $file The file string (http(s) URL, data URI, plain base64 data, or deprecated local path).
      * @param string|null $mimeType The MIME type of the file (optional, required for plain base64 data).
      * @throws InvalidArgumentException If the file format is invalid or MIME type cannot be determined.
      */
@@ -176,8 +179,7 @@ class File extends AbstractDataTransferObject
     /**
      * Creates an inline file by reading a file from the local filesystem.
      *
-     * This is the only method of this class that accesses the filesystem. Never pass untrusted input
-     * (such as user input or API response data) to this method.
+     * Never pass untrusted input (such as user input or API response data) to this method.
      *
      * @since n.e.x.t
      *
@@ -225,7 +227,7 @@ class File extends AbstractDataTransferObject
      * Detects the file type and processes it accordingly.
      *
      * @since 0.1.0
-     * @since n.e.x.t No longer detects local file paths.
+     * @since n.e.x.t Rejects non-http(s) URL schemes before any filesystem access; local path detection deprecated.
      *
      * @param string $file The file string to process.
      * @param string|null $providedMimeType The explicitly provided MIME type.
@@ -233,10 +235,6 @@ class File extends AbstractDataTransferObject
      */
     private function detectAndProcessFile(string $file, ?string $providedMimeType): void
     {
-        if ($file === '') {
-            throw new InvalidArgumentException('File string must not be empty.');
-        }
-
         // Check if it's an http(s) URL.
         if (self::isHttpUrl($file)) {
             $this->fileType = FileTypeEnum::remote();
@@ -261,12 +259,26 @@ class File extends AbstractDataTransferObject
             return;
         }
 
+        // Deprecated: local file path detection (kept for backward compatibility, before the base64 check).
+        // Stream wrappers were rejected above, so this cannot open a network connection.
+        if (strpos($file, "\0") === false && is_file($file)) {
+            @trigger_error(
+                'Passing a local file path to ' . self::class . '::__construct() is deprecated since n.e.x.t; '
+                . 'use File::fromLocalPath() instead.',
+                E_USER_DEPRECATED
+            );
+            $local = self::fromLocalPath($file, $providedMimeType);
+            $this->fileType = $local->fileType;
+            $this->base64Data = $local->base64Data;
+            $this->mimeType = $local->mimeType;
+            return;
+        }
+
         // Check if it's plain base64.
         if (self::isBase64($file)) {
             if ($providedMimeType === null) {
                 throw new InvalidArgumentException(
-                    'MIME type is required when providing plain base64 data without data URI format. '
-                    . 'If you intended to pass a local file path, use File::fromLocalPath() instead.'
+                    'MIME type is required when providing plain base64 data without data URI format.'
                 );
             }
             $this->fileType = FileTypeEnum::inline();
@@ -276,8 +288,8 @@ class File extends AbstractDataTransferObject
         }
 
         throw new InvalidArgumentException(
-            'Invalid file provided. Expected an http(s) URL, a data URI, or base64 data with a MIME type. '
-            . 'To load a local file, use File::fromLocalPath().'
+            'Invalid file provided. Expected an http(s) URL, a data URI, base64 data with a MIME type, '
+            . 'or a valid local file path.'
         );
     }
 
@@ -297,7 +309,7 @@ class File extends AbstractDataTransferObject
     }
 
     /**
-     * Checks if a string is non-empty plain base64 data.
+     * Checks if a string is plain base64 data (possibly empty).
      *
      * @since n.e.x.t
      *

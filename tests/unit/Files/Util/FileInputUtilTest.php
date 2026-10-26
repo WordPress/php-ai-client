@@ -115,7 +115,6 @@ class FileInputUtilTest extends TestCase
     public function rejectedInputProvider(): array
     {
         return [
-            'empty' => ['', 'File string must not be empty.'],
             'ftp' => ['ftp://127.0.0.1:1/x', 'Only http:// and https:// URLs are supported.'],
             'file wrapper' => ['file:///etc/passwd', 'Only http:// and https:// URLs are supported.'],
             'phar' => ['phar://x.phar/y', 'Only http:// and https:// URLs are supported.'],
@@ -123,5 +122,23 @@ class FileInputUtilTest extends TestCase
             'garbage' => ['not a file!', 'Invalid file provided.'],
             'invalid data uri' => ['data:nope', 'Invalid data URI.'],
         ];
+    }
+
+
+    /**
+     * Tests that an empty string with a MIME type resolves to an empty inline file, and an empty local file is read.
+     *
+     * @return void
+     */
+    public function testEmptyPayloads(): void
+    {
+        $this->assertSame('', FileInputUtil::fromString('', 'text/plain')->getBase64Data());
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+        try {
+            $this->assertSame('', FileInputUtil::fromString($tempFile, 'text/plain')->getBase64Data());
+        } finally {
+            unlink($tempFile);
+        }
     }
 }

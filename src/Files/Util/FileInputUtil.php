@@ -37,10 +37,6 @@ final class FileInputUtil
      */
     public static function fromString(string $input, ?string $mimeType = null): File
     {
-        if ($input === '') {
-            throw new InvalidArgumentException('File string must not be empty.');
-        }
-
         if (preg_match('/^https?:\/\//i', $input) === 1) {
             return File::fromUrl($input, $mimeType);
         }
@@ -60,7 +56,8 @@ final class FileInputUtil
             return File::fromLocalPath($input, $mimeType);
         }
 
-        if (preg_match('/^[A-Za-z0-9+\/]+={0,2}\z/', $input) === 1) {
+        // Plain base64 (an empty payload is allowed, matching an empty local file).
+        if (preg_match('/^[A-Za-z0-9+\/]*={0,2}\z/', $input) === 1) {
             if ($mimeType === null) {
                 throw new InvalidArgumentException(
                     'MIME type is required when providing plain base64 data without data URI format.'

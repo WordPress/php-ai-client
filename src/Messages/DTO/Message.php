@@ -188,10 +188,7 @@ class Message extends AbstractDataTransferObject
             return false;
         }
 
-        if (!array_is_list($array[self::KEY_PARTS])) {
-            return false;
-        }
-
+        // Keys are intentionally not required to be consecutive, matching fromArray() (e.g. after array_filter()).
         foreach ($array[self::KEY_PARTS] as $partData) {
             if (!is_array($partData) || !MessagePart::isArrayShape($partData)) {
                 return false;

@@ -157,20 +157,20 @@ class FileTest extends TestCase
     public function testInvalidFileFormatThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid file provided. Expected an http(s) URL, a data URI, or base64 data');
+        $this->expectExceptionMessage('Invalid file provided.');
 
         new File('not-a-valid-file-or-url', 'text/plain');
     }
 
     /**
-     * Tests that a non-existent local file path is not accepted by the constructor.
+     * Tests that a non-existent local file path is rejected by the constructor.
      *
      * @return void
      */
     public function testNonExistentLocalFileThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('To load a local file, use File::fromLocalPath().');
+        $this->expectExceptionMessage('Invalid file provided.');
 
         new File('/path/to/non/existent/file.txt', 'text/plain');
     }
@@ -188,44 +188,53 @@ class FileTest extends TestCase
 
         try {
             $this->expectException(InvalidArgumentException::class);
-            $this->expectExceptionMessage('To load a local file, use File::fromLocalPath().');
+            $this->expectExceptionMessage('Invalid file provided.');
 
-            new File($tempDir . '/x.txt', 'text/plain');
+            new File($tempDir, 'text/plain');
         } finally {
             rmdir($tempDir);
         }
     }
 
     /**
-     * Tests that the constructor never reads an existing local file.
+     * Tests that the constructor still reads an existing local file (deprecated) and emits a deprecation.
      *
      * @return void
      */
-    public function testConstructorDoesNotReadExistingLocalFile(): void
+    public function testConstructorLocalPathIsDeprecatedButStillSupported(): void
     {
         $tempDir = sys_get_temp_dir() . '/testdir' . uniqid();
         mkdir($tempDir);
-        $secretFile = $tempDir . '/secret.txt';
-        file_put_contents($secretFile, 'Hello World');
+        $path = $tempDir . '/note.txt';
+        file_put_contents($path, 'Hello World');
+
+        $deprecations = [];
+        set_error_handler(static function (int $errno, string $errstr) use (&$deprecations): bool {
+            if ($errno === E_USER_DEPRECATED) {
+                $deprecations[] = $errstr;
+                return true;
+            }
+            return false;
+        });
 
         try {
-            // A path containing a dot cannot be mistaken for base64 and is rejected outright.
-            try {
-                new File($secretFile, 'text/plain');
-                $this->fail('Expected InvalidArgumentException');
-            } catch (InvalidArgumentException $e) {
-                $this->assertStringContainsString('File::fromLocalPath()', $e->getMessage());
-            }
+            $file = new File($path);
+            $this->assertTrue($file->isInline());
+            $this->assertEquals(base64_encode('Hello World'), $file->getBase64Data());
+            $this->assertEquals('text/plain', $file->getMimeType());
+            $this->assertCount(1, $deprecations);
+            $this->assertStringContainsString('File::fromLocalPath()', $deprecations[0]);
 
-            // An extension-less path is accepted as literal base64 data, but the file is still not read.
-            $plainPath = $tempDir . '/secretfile';
+            // An extension-less path (e.g. from tempnam()) must still be read, not treated as base64.
+            $plainPath = $tempDir . '/phpAbc1';
             file_put_contents($plainPath, 'Hello World');
-            $file = new File($plainPath, 'text/plain');
-            $this->assertSame($plainPath, $file->getBase64Data());
-            $this->assertNotSame(base64_encode('Hello World'), $file->getBase64Data());
+            $plainFile = new File($plainPath, 'image/png');
+            $this->assertEquals(base64_encode('Hello World'), $plainFile->getBase64Data());
+            $this->assertCount(2, $deprecations);
+            unlink($plainPath);
         } finally {
-            @unlink($tempDir . '/secretfile');
-            unlink($secretFile);
+            restore_error_handler();
+            unlink($path);
             rmdir($tempDir);
         }
     }
@@ -261,14 +270,41 @@ class FileTest extends TestCase
     }
 
     /**
-     * Tests that the constructor rejects an empty string.
+     * Tests that empty payloads are supported consistently (constructor, data URI, local file, round trip).
      *
      * @return void
      */
-    public function testConstructorRejectsEmptyString(): void
+    public function testEmptyPayloadIsSupportedConsistently(): void
+    {
+        $empty = new File('', 'text/plain');
+        $this->assertTrue($empty->isInline());
+        $this->assertSame('', $empty->getBase64Data());
+
+        $emptyDataUri = new File('data:text/plain;base64,');
+        $this->assertSame('', $emptyDataUri->getBase64Data());
+        $restored = File::fromArray($emptyDataUri->toArray());
+        $this->assertSame('', $restored->getBase64Data());
+        $this->assertSame('text/plain', $restored->getMimeType());
+
+        $this->assertSame('', File::fromBase64('', 'text/plain')->getBase64Data());
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+        try {
+            $this->assertSame('', File::fromLocalPath($tempFile, 'text/plain')->getBase64Data());
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+    /**
+     * Tests that an empty string without a MIME type still requires one.
+     *
+     * @return void
+     */
+    public function testEmptyStringWithoutMimeTypeThrows(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('File string must not be empty.');
+        $this->expectExceptionMessage('MIME type is required');
 
         new File('');
     }
@@ -418,7 +454,6 @@ class FileTest extends TestCase
     public function invalidBase64Provider(): array
     {
         return [
-            'empty' => ['', 'Invalid base64 data provided.'],
             'data uri' => ['data:text/plain;base64,SGVsbG8=', 'use File::fromDataUri()'],
             'invalid chars' => ['not base64!', 'Invalid base64 data provided.'],
             'path with dot' => ['/etc/hosts.txt', 'Invalid base64 data provided.'],

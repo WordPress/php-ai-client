@@ -532,7 +532,7 @@ class MessageTest extends TestCase
      *
      * @return void
      */
-    public function testIsArrayShapeRejectsLocalFilePathsAndNonLists(): void
+    public function testIsArrayShapeRejectsLocalFilePathsAndNonArrays(): void
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'test');
         file_put_contents($tempFile, 'secret');
@@ -553,10 +553,6 @@ class MessageTest extends TestCase
             ]));
             $this->assertFalse(Message::isArrayShape([
                 Message::KEY_ROLE => MessageRoleEnum::user()->value,
-                Message::KEY_PARTS => ['a' => [MessagePart::KEY_TEXT => 'x']],
-            ]));
-            $this->assertFalse(Message::isArrayShape([
-                Message::KEY_ROLE => MessageRoleEnum::user()->value,
                 Message::KEY_PARTS => 'not an array',
             ]));
             $this->assertTrue(Message::isArrayShape([
@@ -566,5 +562,22 @@ class MessageTest extends TestCase
         } finally {
             unlink($tempFile);
         }
+    }
+
+
+    /**
+     * Tests isArrayShape() accepts parts with non-consecutive keys, matching fromArray().
+     *
+     * @return void
+     */
+    public function testIsArrayShapeAcceptsNonConsecutivePartKeys(): void
+    {
+        $array = [
+            Message::KEY_ROLE => MessageRoleEnum::user()->value,
+            Message::KEY_PARTS => [1 => [MessagePart::KEY_TEXT => 'Hello']],
+        ];
+
+        $this->assertTrue(Message::isArrayShape($array));
+        $this->assertEquals('Hello', array_values(Message::fromArray($array)->getParts())[0]->getText());
     }
 }

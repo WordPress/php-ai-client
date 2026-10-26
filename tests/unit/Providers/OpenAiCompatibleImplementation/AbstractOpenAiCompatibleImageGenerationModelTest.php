@@ -785,7 +785,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
 
         $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected TestProvider API response: Invalid "choices[0]" key: The value must contain either a ' .
+            'Unexpected TestProvider API response: Invalid "data[0]" key: The value must contain either a ' .
             'url or b64_json key with a string value.'
         );
 

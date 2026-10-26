@@ -4212,7 +4212,7 @@ class PromptBuilderTest extends TestCase
     {
         $builder = new PromptBuilder($this->registry);
 
-        foreach (['ftp://127.0.0.1:1/x', 'file:///etc/passwd', 'not a file!', ''] as $input) {
+        foreach (['ftp://127.0.0.1:1/x', 'file:///etc/passwd', 'not a file!'] as $input) {
             try {
                 $builder->withFile($input, 'text/plain');
                 $this->fail('Expected InvalidArgumentException for: ' . $input);
@@ -4264,5 +4264,56 @@ class PromptBuilderTest extends TestCase
         } finally {
             unlink($tempFile);
         }
+    }
+
+
+    /**
+     * Tests withFile() with an empty local file.
+     *
+     * @return void
+     */
+    public function testWithFileEmptyLocalFile(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+
+        try {
+            $builder = new PromptBuilder($this->registry);
+            $builder->withFile($tempFile, 'text/plain');
+
+            $reflection = new \ReflectionClass($builder);
+            $messagesProperty = $reflection->getProperty('messages');
+            $messagesProperty->setAccessible(true);
+            /** @var list<Message> $messages */
+            $messages = $messagesProperty->getValue($builder);
+
+            $file = $messages[0]->getParts()[0]->getFile();
+            $this->assertInstanceOf(File::class, $file);
+            $this->assertSame('', $file->getBase64Data());
+            $this->assertEquals('text/plain', $file->getMimeType());
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+    /**
+     * Tests that message arrays whose parts have non-consecutive keys (e.g. after array_filter()) are accepted.
+     *
+     * @return void
+     */
+    public function testConstructorWithMessageArrayShapeWithNonConsecutivePartKeys(): void
+    {
+        $builder = new PromptBuilder($this->registry, [
+            'role' => 'user',
+            'parts' => [1 => ['type' => 'text', 'text' => 'Hello']],
+        ]);
+
+        $reflection = new \ReflectionClass($builder);
+        $messagesProperty = $reflection->getProperty('messages');
+        $messagesProperty->setAccessible(true);
+        /** @var list<Message> $messages */
+        $messages = $messagesProperty->getValue($builder);
+
+        $this->assertCount(1, $messages);
+        $this->assertEquals('Hello', array_values($messages[0]->getParts())[0]->getText());
     }
 }

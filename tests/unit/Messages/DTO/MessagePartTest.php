@@ -726,4 +726,55 @@ class MessagePartTest extends TestCase
 
         MessagePart::fromArray([MessagePart::KEY_TEXT => ['not', 'a', 'string']]);
     }
+
+
+    /**
+     * Tests isArrayShape() rejects wrongly typed optional keys and nested parts.
+     *
+     * @return void
+     */
+    public function testIsArrayShapeRejectsWrongTypes(): void
+    {
+        $this->assertFalse(MessagePart::isArrayShape([MessagePart::KEY_TEXT => 'a', MessagePart::KEY_CHANNEL => 1]));
+        $this->assertFalse(MessagePart::isArrayShape([MessagePart::KEY_TEXT => 'a', MessagePart::KEY_TYPE => 1]));
+        $this->assertFalse(MessagePart::isArrayShape(
+            [MessagePart::KEY_TEXT => 'a', MessagePart::KEY_THOUGHT_SIGNATURE => []]
+        ));
+        $this->assertFalse(MessagePart::isArrayShape([MessagePart::KEY_FUNCTION_CALL => 'x']));
+        $this->assertFalse(MessagePart::isArrayShape([MessagePart::KEY_FUNCTION_RESPONSE => 'x']));
+    }
+
+    /**
+     * Tests fromArray() rejects wrongly typed keys with the SDK exception.
+     *
+     * @dataProvider wrongTypeProvider
+     *
+     * @param array<string, mixed> $array The array.
+     * @param string $expectedMessage The expected message.
+     * @return void
+     */
+    public function testFromArrayRejectsWrongTypesForAllKeys(array $array, string $expectedMessage): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage($expectedMessage);
+
+        MessagePart::fromArray($array);
+    }
+
+    /**
+     * @return array<string, array{array<string, mixed>, string}>
+     */
+    public function wrongTypeProvider(): array
+    {
+        return [
+            'channel' => [[MessagePart::KEY_TEXT => 'a', MessagePart::KEY_CHANNEL => 1], 'channel must be a string'],
+            'thoughtSignature' => [
+                [MessagePart::KEY_TEXT => 'a', MessagePart::KEY_THOUGHT_SIGNATURE => []],
+                'thoughtSignature must be a string',
+            ],
+            'file' => [[MessagePart::KEY_FILE => 'x'], 'file must be an array'],
+            'functionCall' => [[MessagePart::KEY_FUNCTION_CALL => 'x'], 'functionCall must be an array'],
+            'functionResponse' => [[MessagePart::KEY_FUNCTION_RESPONSE => 'x'], 'functionResponse must be an array'],
+        ];
+    }
 }

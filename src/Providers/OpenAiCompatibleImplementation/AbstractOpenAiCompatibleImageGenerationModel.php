@@ -367,7 +367,7 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
             } else {
                 throw ResponseException::fromInvalidData(
                     $this->providerMetadata()->getName(),
-                    "choices[{$index}]",
+                    "data[{$index}]",
                     'The value must contain either a url or b64_json key with a string value.'
                 );
             }
