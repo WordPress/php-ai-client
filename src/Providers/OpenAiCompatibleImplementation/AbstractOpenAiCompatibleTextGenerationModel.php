@@ -206,45 +206,63 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      */
     protected function prepareMessagesParam(array $messages, ?string $systemInstruction = null): array
     {
-        $messagesParam = array_map(
-            function (Message $message): array {
-                // Special case: Function response.
-                $messageParts = $message->getParts();
-                if (count($messageParts) === 1 && $messageParts[0]->getType()->isFunctionResponse()) {
-                    $functionResponse = $messageParts[0]->getFunctionResponse();
+        $messagesParam = [];
+        foreach ($messages as $message) {
+            $messageParts = $message->getParts();
+
+            /*
+             * Special case: Function responses. The API expects one message of role 'tool'
+             * per function response, so a message carrying several of them (as produced by
+             * a parallel tool call) expands into several messages.
+             */
+            $functionResponseParts = array_values(array_filter(
+                $messageParts,
+                static function (MessagePart $part): bool {
+                    return $part->getType()->isFunctionResponse();
+                }
+            ));
+            if (count($functionResponseParts) > 0) {
+                if (count($functionResponseParts) !== count($messageParts)) {
+                    throw new InvalidArgumentException(
+                        'The API only allows function responses as the only content of the message.'
+                    );
+                }
+                foreach ($functionResponseParts as $functionResponsePart) {
+                    $functionResponse = $functionResponsePart->getFunctionResponse();
                     if (!$functionResponse) {
                         // This should be impossible due to class internals, but still needs to be checked.
                         throw new RuntimeException(
                             'The function response typed message part must contain a function response.'
                         );
                     }
-                    return [
+                    $messagesParam[] = [
                         'role' => 'tool',
                         'content' => json_encode($functionResponse->getResponse()),
                         'tool_call_id' => $functionResponse->getId(),
                     ];
                 }
-                $messageData = [
-                    'role' => $this->getMessageRoleString($message->getRole()),
-                    'content' => array_values(array_filter(array_map(
-                        [$this, 'getMessagePartContentData'],
-                        $messageParts
-                    ))),
-                ];
+                continue;
+            }
 
-                // Only include tool_calls if there are any (OpenAI rejects empty arrays).
-                $toolCalls = array_values(array_filter(array_map(
-                    [$this, 'getMessagePartToolCallData'],
+            $messageData = [
+                'role' => $this->getMessageRoleString($message->getRole()),
+                'content' => array_values(array_filter(array_map(
+                    [$this, 'getMessagePartContentData'],
                     $messageParts
-                )));
-                if (!empty($toolCalls)) {
-                    $messageData['tool_calls'] = $toolCalls;
-                }
+                ))),
+            ];
 
-                return $messageData;
-            },
-            $messages
-        );
+            // Only include tool_calls if there are any (OpenAI rejects empty arrays).
+            $toolCalls = array_values(array_filter(array_map(
+                [$this, 'getMessagePartToolCallData'],
+                $messageParts
+            )));
+            if (!empty($toolCalls)) {
+                $messageData['tool_calls'] = $toolCalls;
+            }
+
+            $messagesParam[] = $messageData;
+        }
 
         if ($systemInstruction) {
             array_unshift(

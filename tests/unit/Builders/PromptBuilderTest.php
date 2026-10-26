@@ -610,6 +610,39 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests that repeated withFunctionResponse calls collapse into one message.
+     *
+     * Relevant to https://github.com/WordPress/php-ai-client/issues/286. Parallel tool calls
+     * produce several function responses for a single turn, and appending them yields one
+     * user message holding one part per response. This is the canonical shape: providers
+     * represent the results of a parallel tool call as parts of one message.
+     *
+     * @return void
+     */
+    public function testWithFunctionResponseCollapsesMultipleResponsesIntoOneMessage(): void
+    {
+        $first = new FunctionResponse('call_1', 'get_weather', ['temperature' => 22]);
+        $second = new FunctionResponse('call_2', 'get_time', ['time' => '14:30']);
+
+        $builder = new PromptBuilder($this->registry);
+        $builder->withFunctionResponse($first)->withFunctionResponse($second);
+
+        $reflection = new \ReflectionClass($builder);
+        $messagesProperty = $reflection->getProperty('messages');
+        $messagesProperty->setAccessible(true);
+        /** @var list<Message> $messages */
+        $messages = $messagesProperty->getValue($builder);
+
+        $this->assertCount(1, $messages, 'Both responses belong to the same message');
+        $this->assertTrue($messages[0]->getRole()->isUser());
+
+        $parts = $messages[0]->getParts();
+        $this->assertCount(2, $parts);
+        $this->assertSame($first, $parts[0]->getFunctionResponse());
+        $this->assertSame($second, $parts[1]->getFunctionResponse());
+    }
+
+    /**
      * Tests withMessageParts method.
      *
      * @return void
