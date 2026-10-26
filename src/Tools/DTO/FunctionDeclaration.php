@@ -109,21 +109,6 @@ class FunctionDeclaration extends AbstractDataTransferObject
     }
 
     /**
-     * Returns a copy with new parameters and all other fields unchanged.
-     *
-     * @since n.e.x.t
-     *
-     * @param array<string, mixed>|null $parameters The replacement parameter schema.
-     * @return self The declaration with the replacement parameters.
-     */
-    public function withParameters(?array $parameters): self
-    {
-        $declaration = clone $this;
-        $declaration->parameters = $parameters;
-        return $declaration;
-    }
-
-    /**
      * Gets the function annotations.
      *
      * @since 1.5.0

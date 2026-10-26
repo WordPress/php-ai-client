@@ -34,25 +34,32 @@ class AbstractApiBasedModelTest extends TestCase
     }
 
     /**
-     * Tests that the default hook returns the original declaration.
+     * Tests that the default hook returns the original parameters.
      *
      * @return void
      */
-    public function testPrepareFunctionDeclarationDefaultsToOriginal(): void
+    public function testPrepareFunctionParametersDefaultsToOriginal(): void
     {
         $model = new class ($this->modelMetadata, $this->providerMetadata) extends MockApiBasedModel {
             /**
              * {@inheritDoc}
              */
-            public function prepareFunctionDeclarationForRequest(
+            public function prepareFunctionParametersForRequest(
                 FunctionDeclaration $functionDeclaration
-            ): FunctionDeclaration {
-                return parent::prepareFunctionDeclarationForRequest($functionDeclaration);
+            ): ?array {
+                return parent::prepareFunctionParametersForRequest($functionDeclaration);
             }
         };
-        $declaration = new FunctionDeclaration('lookup', 'Looks up an item.', null, ['readOnlyHint' => true]);
+        foreach ([null, [], ['type' => 'object']] as $parameters) {
+            $declaration = new FunctionDeclaration(
+                'lookup',
+                'Looks up an item.',
+                $parameters,
+                ['readOnlyHint' => true]
+            );
 
-        $this->assertSame($declaration, $model->prepareFunctionDeclarationForRequest($declaration));
+            $this->assertSame($parameters, $model->prepareFunctionParametersForRequest($declaration));
+        }
     }
 
     /**

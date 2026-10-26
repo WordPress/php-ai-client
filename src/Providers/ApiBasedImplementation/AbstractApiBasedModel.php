@@ -127,21 +127,21 @@ abstract class AbstractApiBasedModel implements
     }
 
     /**
-     * Prepares a function declaration for a provider request.
+     * Prepares a function parameter schema for a provider request.
      *
-     * Returns the original declaration by default. Providers must call this hook
-     * when building their tool payload. Overrides can use withParameters() to change
-     * the input schema in a copy that keeps the annotations. Providers still choose
-     * the API fields and encode the request.
+     * Returns the original parameters by default. Providers must call this hook
+     * when building their tool payload. Overrides can read the declaration annotations
+     * and return an adjusted schema without changing the original declaration.
+     * Providers still choose the API fields and encode the request.
      *
      * @since n.e.x.t
      *
      * @param FunctionDeclaration $functionDeclaration The original function declaration.
-     * @return FunctionDeclaration The declaration to use in this request.
+     * @return array<string, mixed>|null The parameter schema to use in this request.
      */
-    protected function prepareFunctionDeclarationForRequest(
+    protected function prepareFunctionParametersForRequest(
         FunctionDeclaration $functionDeclaration
-    ): FunctionDeclaration {
-        return $functionDeclaration;
+    ): ?array {
+        return $functionDeclaration->getParameters();
     }
 }
