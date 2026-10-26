@@ -188,9 +188,21 @@ class Message extends AbstractDataTransferObject
             return false;
         }
 
+        $role = MessageRoleEnum::from($array[self::KEY_ROLE]);
+        if (!$role->isUser() && !$role->isModel()) {
+            return false;
+        }
+
         // Keys are intentionally not required to be consecutive, matching fromArray() (e.g. after array_filter()).
         foreach ($array[self::KEY_PARTS] as $partData) {
             if (!is_array($partData) || !MessagePart::isArrayShape($partData)) {
+                return false;
+            }
+            // Mirror the role/part rules enforced by the constructor (validateParts()).
+            if ($role->isUser() && isset($partData[MessagePart::KEY_FUNCTION_CALL])) {
+                return false;
+            }
+            if ($role->isModel() && isset($partData[MessagePart::KEY_FUNCTION_RESPONSE])) {
                 return false;
             }
         }

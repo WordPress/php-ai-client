@@ -853,6 +853,7 @@ class EmbeddingBuilderTest extends TestCase
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'test');
         file_put_contents($tempFile, 'secret');
+        file_put_contents($tempFile . '.txt', 'secret');
 
         try {
             $builder = new EmbeddingBuilder($this->registry);
@@ -862,6 +863,7 @@ class EmbeddingBuilderTest extends TestCase
                 'file' => ['fileType' => 'inline', 'mimeType' => 'text/plain', 'base64Data' => $tempFile . '.txt'],
             ]);
         } finally {
+            unlink($tempFile . '.txt');
             unlink($tempFile);
         }
     }

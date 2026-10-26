@@ -4231,6 +4231,7 @@ class PromptBuilderTest extends TestCase
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'test');
         file_put_contents($tempFile, 'secret');
+        file_put_contents($tempFile . '.txt', 'secret');
 
         $shapes = [
             'message shape, url' => [
@@ -4262,6 +4263,7 @@ class PromptBuilderTest extends TestCase
                 }
             }
         } finally {
+            unlink($tempFile . '.txt');
             unlink($tempFile);
         }
     }

@@ -202,7 +202,7 @@ $text = AiClient::generateTextResult(
 )->toText();
 ```
 
-_Note: `File` objects never read from the filesystem, except through the explicit `File::fromLocalPath()` factory. Array-shaped input (as above) accepts only `http(s)` URLs for remote files and base64 data for inline files, so untrusted input such as a chat transcript from a client cannot reference files on the server. The string form of `withFile()` resolves local paths for convenience and must only be used with strings the developer controls._
+_Note: `File::fromUrl()`, `File::fromDataUri()` and `File::fromBase64()` never touch the filesystem; use them for any string you did not write yourself. `File::fromLocalPath()` reads a file, and `new File($string)` still detects a local path for backward compatibility (deprecated), so neither should receive untrusted input. Array-shaped input accepts only `http(s)` URLs and base64 data, so a chat transcript from a client cannot reference files on the server._
 
 #### Generate text with chat history using any suitable model from any provider
 

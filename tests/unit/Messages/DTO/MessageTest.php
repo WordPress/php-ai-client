@@ -580,4 +580,41 @@ class MessageTest extends TestCase
         $this->assertTrue(Message::isArrayShape($array));
         $this->assertEquals('Hello', array_values(Message::fromArray($array)->getParts())[0]->getText());
     }
+
+
+    /**
+     * Tests isArrayShape() mirrors the role/part rules that fromArray() enforces.
+     *
+     * @return void
+     */
+    public function testIsArrayShapeMirrorsRolePartRules(): void
+    {
+        $functionCallPart = [MessagePart::KEY_FUNCTION_CALL => ['id' => 'c1', 'name' => 'fn', 'args' => []]];
+        $functionResponsePart = [
+            MessagePart::KEY_FUNCTION_RESPONSE => ['id' => 'c1', 'name' => 'fn', 'response' => 'ok'],
+        ];
+
+        $userWithCall = [
+            Message::KEY_ROLE => MessageRoleEnum::user()->value,
+            Message::KEY_PARTS => [$functionCallPart],
+        ];
+        $modelWithResponse = [
+            Message::KEY_ROLE => MessageRoleEnum::model()->value,
+            Message::KEY_PARTS => [$functionResponsePart],
+        ];
+        $this->assertFalse(Message::isArrayShape($userWithCall));
+        $this->assertFalse(Message::isArrayShape($modelWithResponse));
+
+        $this->assertTrue(Message::isArrayShape([
+            Message::KEY_ROLE => MessageRoleEnum::model()->value,
+            Message::KEY_PARTS => [$functionCallPart],
+        ]));
+        $this->assertTrue(Message::isArrayShape([
+            Message::KEY_ROLE => MessageRoleEnum::user()->value,
+            Message::KEY_PARTS => [$functionResponsePart],
+        ]));
+
+        $this->expectException(\WordPress\AiClient\Common\Exception\InvalidArgumentException::class);
+        Message::fromArray($userWithCall);
+    }
 }

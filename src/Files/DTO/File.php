@@ -691,11 +691,10 @@ class File extends AbstractDataTransferObject
             );
         }
 
-        if (array_key_exists(self::KEY_MIME_TYPE, $array)) {
-            $mimeType = $array[self::KEY_MIME_TYPE];
-            if (!is_string($mimeType) || !MimeType::isValid($mimeType)) {
-                throw new InvalidArgumentException('Invalid MIME type provided in file array.');
-            }
+        // A null mimeType is treated like an absent one (for remote files it is then inferred from the URL).
+        $mimeType = $array[self::KEY_MIME_TYPE] ?? null;
+        if ($mimeType !== null && (!is_string($mimeType) || !MimeType::isValid($mimeType))) {
+            throw new InvalidArgumentException('Invalid MIME type provided in file array.');
         }
 
         if ($fileType === FileTypeEnum::REMOTE) {
@@ -707,6 +706,10 @@ class File extends AbstractDataTransferObject
                 throw new InvalidArgumentException(
                     'Remote files require a url with an http:// or https:// scheme.'
                 );
+            }
+            if ($mimeType === null) {
+                // Without an explicit MIME type it must be inferable from the URL (no I/O involved).
+                self::determineMimeType(null, null, $url);
             }
             return;
         }
@@ -728,7 +731,7 @@ class File extends AbstractDataTransferObject
                 'Inline files require valid base64 data in base64Data. Local file paths are not supported.'
             );
         }
-        if (!array_key_exists(self::KEY_MIME_TYPE, $array)) {
+        if ($mimeType === null) {
             throw new InvalidArgumentException('Inline files require a mimeType.');
         }
     }

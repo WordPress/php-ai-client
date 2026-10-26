@@ -698,6 +698,7 @@ class MessagePartTest extends TestCase
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'test');
         file_put_contents($tempFile, 'secret');
+        file_put_contents($tempFile . '.txt', 'secret');
 
         try {
             $this->expectException(InvalidArgumentException::class);
@@ -710,6 +711,7 @@ class MessagePartTest extends TestCase
                 ],
             ]);
         } finally {
+            unlink($tempFile . '.txt');
             unlink($tempFile);
         }
     }

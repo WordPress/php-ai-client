@@ -1164,4 +1164,50 @@ class FileTest extends TestCase
         // FileType enum should be the same instance (enums are singletons)
         $this->assertSame($original->getFileType(), $cloned->getFileType());
     }
+
+
+    /**
+     * Tests that a null mimeType is treated like an absent one (inferred from the URL for remote files).
+     *
+     * @return void
+     */
+    public function testFromArrayWithNullMimeType(): void
+    {
+        $remote = [
+            File::KEY_FILE_TYPE => 'remote',
+            File::KEY_MIME_TYPE => null,
+            File::KEY_URL => 'https://example.com/photo.jpg',
+        ];
+        $this->assertTrue(File::isArrayShape($remote));
+        $file = File::fromArray($remote);
+        $this->assertEquals('image/jpeg', $file->getMimeType());
+        $this->assertEquals('https://example.com/photo.jpg', $file->getUrl());
+
+        $inline = [
+            File::KEY_FILE_TYPE => 'inline',
+            File::KEY_MIME_TYPE => null,
+            File::KEY_BASE64_DATA => 'SGVsbG8=',
+        ];
+        $this->assertFalse(File::isArrayShape($inline));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Inline files require a mimeType.');
+        File::fromArray($inline);
+    }
+
+
+    /**
+     * Tests that a remote file array without an inferable MIME type is rejected by both isArrayShape and fromArray.
+     *
+     * @return void
+     */
+    public function testFromArrayRemoteWithoutInferableMimeTypeIsRejected(): void
+    {
+        $array = [File::KEY_FILE_TYPE => 'remote', File::KEY_URL => 'https://example.com/file.unknown'];
+        $this->assertFalse(File::isArrayShape($array));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unable to determine MIME type.');
+        File::fromArray($array);
+    }
 }
