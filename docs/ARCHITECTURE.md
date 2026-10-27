@@ -359,6 +359,31 @@ Annotations are an `array<string, mixed>` whose values should be JSON-serializab
 
 Empty annotations are omitted from serialized declarations, preserving the existing shape for callers that do not use them. Missing annotations are restored as an empty array. Annotations are not authorization; applications must still validate tool execution.
 
+### Preparing function parameter schemas for provider requests
+
+`AbstractApiBasedModel::prepareFunctionParametersForRequest()` lets providers adjust tool input schemas before building a request. By default, it returns `$functionDeclaration->getParameters()`. Providers must call this protected method for each declaration to use it. The shared OpenAI-compatible implementation already does this.
+
+An override receives the full `FunctionDeclaration`, so it can read annotations when preparing the schema, and returns an `array<string, mixed>|null`. It should leave the original declaration unchanged. For example, a provider whose API rejects a schema keyword can remove it from the returned array:
+
+```php
+/**
+ * {@inheritDoc}
+ */
+protected function prepareFunctionParametersForRequest(
+    FunctionDeclaration $functionDeclaration
+): ?array {
+    $parameters = $functionDeclaration->getParameters();
+    if ($parameters !== null) {
+        unset($parameters['additionalProperties']);
+    }
+    return $parameters;
+}
+```
+
+The OpenAI-compatible serializer omits `parameters` when the hook returns `null` and includes it for any array, including `[]`. Providers still choose API fields and handle JSON encoding, including any required empty-object representation. Annotations remain available to providers but must not be sent as a generic field to APIs that do not accept them.
+
+Applications must still validate tool arguments against the original schema, since preparation may remove constraints. The hook only prepares tool input schemas; it does not change function names or descriptions, or prepare structured output schemas.
+
 ## Class diagrams
 
 This section shows comprehensive class diagrams for the proposed architecture. For explanation on specific terms, see the [glossary](./GLOSSARY.md).
