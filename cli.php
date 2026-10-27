@@ -10,6 +10,9 @@
  *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai
  *   GOOGLE_API_KEY=123456 OPENAI_API_KEY=123456 php cli.php 'Your prompt here'
  *
+ * To stream the response as it arrives, use --outputFormat=stream-text:
+ *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai --outputFormat=stream-text
+ *
  * Embedding output formats require both --providerId and --modelId, because embeddings are only
  * comparable to other embeddings from the same model:
  *   OPENAI_API_KEY=123456 php cli.php 'Your text here' --providerId=openai \
@@ -229,6 +232,14 @@ try {
 try {
     if ($isEmbedding) {
         $result = $builder->generateEmbeddingResult();
+    } elseif ($outputFormat === 'stream-text') {
+        $stream = $builder->streamGenerateTextResult();
+        foreach ($stream as $chunk) {
+            echo $chunk->getDeltaText();
+            flush();
+        }
+        echo PHP_EOL;
+        $result = $stream->getFinalResult();
     } elseif ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
         $result = $builder->generateImageResult();
     } else {
@@ -243,7 +254,11 @@ try {
 logInfo("Using provider ID: \"{$result->getProviderMetadata()->getId()}\"");
 logInfo("Using model ID: \"{$result->getModelMetadata()->getId()}\"");
 
+$output = null;
 switch ($outputFormat) {
+    case 'stream-text':
+        // The text was already streamed to stdout above.
+        break;
     case 'result-json':
         $output = json_encode($result, JSON_PRETTY_PRINT);
         break;
@@ -267,4 +282,6 @@ switch ($outputFormat) {
         $output = $result->toText();
 }
 
-printOutput($output);
+if (is_string($output)) {
+    printOutput($output);
+}
