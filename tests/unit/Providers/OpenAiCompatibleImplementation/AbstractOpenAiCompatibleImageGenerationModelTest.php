@@ -785,10 +785,99 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
 
         $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected TestProvider API response: Invalid "choices[0]" key: The value must contain either a ' .
+            'Unexpected TestProvider API response: Invalid "data[0]" key: The value must contain either a ' .
             'url or b64_json key with a string value.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData, 0);
+    }
+
+
+    /**
+     * Tests parseResponseChoiceToCandidate() rejects url values that are not http(s) URLs.
+     *
+     * @dataProvider nonRemoteUrlProvider
+     *
+     * @param string $url The provider-supplied url value.
+     * @return void
+     */
+    public function testParseResponseChoiceToCandidateRejectsNonRemoteUrl(string $url): void
+    {
+        $model = $this->createModel();
+
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Unexpected TestProvider API response: Invalid "data[0]" key:');
+
+        $model->exposeParseResponseChoiceToCandidate(['url' => $url], 0, 'image/png');
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public function nonRemoteUrlProvider(): array
+    {
+        return [
+            'local path' => [__FILE__],
+            'file wrapper' => ['file://' . __FILE__],
+            'ftp wrapper' => ['ftp://127.0.0.1:1/x'],
+            'not a url' => ['not a url'],
+        ];
+    }
+
+    /**
+     * Tests parseResponseChoiceToCandidate() rejects b64_json values that are not base64.
+     *
+     * @return void
+     */
+    public function testParseResponseChoiceToCandidateRejectsInvalidB64Json(): void
+    {
+        $model = $this->createModel();
+
+        foreach ([__FILE__, 'data:image/png;base64,AAAA', 'not base64!'] as $value) {
+            try {
+                $model->exposeParseResponseChoiceToCandidate(['b64_json' => $value], 0, 'image/png');
+                $this->fail('Expected ResponseException for value: ' . $value);
+            } catch (ResponseException $e) {
+                $this->assertStringContainsString('Invalid "data[0]" key:', $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Tests that a provider response naming a local file never yields its contents.
+     *
+     * @return void
+     */
+    public function testParseResponseToGenerativeAiResultWithLocalPathDoesNotReadFile(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/testdir' . uniqid();
+        mkdir($tempDir);
+        $plainPath = $tempDir . '/secretfile';
+        file_put_contents($plainPath, 'Hello World');
+
+        try {
+            $model = $this->createModel();
+
+            // A path with an extension is rejected outright.
+            try {
+                $model->exposeParseResponseToGenerativeAiResult(
+                    new Response(200, [], json_encode(['data' => [['b64_json' => __FILE__]]]))
+                );
+                $this->fail('Expected ResponseException');
+            } catch (ResponseException $e) {
+                $this->assertStringContainsString('Invalid "data[0]" key:', $e->getMessage());
+            }
+
+            // An extension-less path passes the base64 pattern but the file is not read.
+            $result = $model->exposeParseResponseToGenerativeAiResult(
+                new Response(200, [], json_encode(['data' => [['b64_json' => $plainPath]]]))
+            );
+            $base64 = $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getBase64Data();
+            $this->assertSame($plainPath, $base64);
+            $this->assertNotSame(base64_encode('Hello World'), $base64);
+        } finally {
+            unlink($plainPath);
+            rmdir($tempDir);
+        }
     }
 }
