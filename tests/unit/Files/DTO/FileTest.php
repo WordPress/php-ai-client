@@ -1210,4 +1210,43 @@ class FileTest extends TestCase
         $this->expectExceptionMessage('Unable to determine MIME type.');
         File::fromArray($array);
     }
+
+    /**
+     * Tests that creating inline files from large payloads does not copy the payload several times.
+     *
+     * Regression test: routing the full base64 payload through a data URI and parsing it again
+     * multiplied peak memory usage for large files.
+     *
+     * @since n.e.x.t
+     */
+    public function testLargePayloadsDoNotMultiplyPeakMemory(): void
+    {
+        $size = 8 * 1024 * 1024;
+        $tempFile = tempnam(sys_get_temp_dir(), 'file-test-');
+        $this->assertIsString($tempFile);
+        file_put_contents($tempFile, random_bytes($size));
+
+        try {
+            $base64 = base64_encode((string) file_get_contents($tempFile));
+            $base64Length = strlen($base64);
+
+            $peakBefore = memory_get_peak_usage();
+            $fromBase64 = File::fromBase64($base64, 'application/octet-stream');
+            $fromBase64Increase = memory_get_peak_usage() - $peakBefore;
+
+            $peakBefore = memory_get_peak_usage();
+            $fromLocalPath = File::fromLocalPath($tempFile, 'application/octet-stream');
+            $fromLocalPathIncrease = memory_get_peak_usage() - $peakBefore;
+        } finally {
+            unlink($tempFile);
+        }
+
+        $this->assertSame($base64, $fromBase64->getBase64Data());
+        $this->assertSame($base64, $fromLocalPath->getBase64Data());
+
+        // fromBase64() receives the payload and must not need another full copy of it.
+        $this->assertLessThan($base64Length / 2, $fromBase64Increase);
+        // fromLocalPath() needs the raw contents plus their base64 form, but no further copies.
+        $this->assertLessThan(2 * $base64Length, $fromLocalPathIncrease);
+    }
 }

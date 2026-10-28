@@ -172,8 +172,14 @@ class File extends AbstractDataTransferObject
             );
         }
 
-        // Routing through the data URI form makes the constructor take a deterministic, filesystem-free path.
-        return new self(sprintf('data:%s;base64,%s', $mimeType, $base64));
+        /*
+         * Build an empty inline file through the data URI path (deterministic, filesystem-free), then attach the
+         * payload directly. Embedding the payload in a data URI and parsing it again would create several
+         * additional copies of a potentially large string.
+         */
+        $instance = new self(sprintf('data:%s;base64,', $mimeType));
+        $instance->base64Data = $base64;
+        return $instance;
     }
 
     /**
