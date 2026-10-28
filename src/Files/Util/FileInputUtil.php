@@ -16,7 +16,7 @@ use WordPress\AiClient\Files\DTO\File;
  * strings the developer controls. Never pass untrusted input (user input, API response data); construct
  * a File explicitly via File::fromUrl(), File::fromDataUri() or File::fromBase64() instead.
  *
- * @since n.e.x.t
+ * @since 1.5.1
  */
 final class FileInputUtil
 {
@@ -27,7 +27,7 @@ final class FileInputUtil
      * base64 data (which requires a MIME type). Any other URL scheme is rejected before the filesystem is
      * consulted.
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      *
      * @param string $input The file string.
      * @param string|null $mimeType The MIME type (optional, required for plain base64 data).

@@ -330,7 +330,7 @@ class MessagePart extends AbstractDataTransferObject
      * This check is purely structural: it does not construct the part or any nested object, so it has no
      * side effects (in particular, no filesystem access for file parts).
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      */
     public static function isArrayShape(array $array): bool
     {
@@ -379,7 +379,7 @@ class MessagePart extends AbstractDataTransferObject
      * {@inheritDoc}
      *
      * @since 0.1.0
-     * @since n.e.x.t Values of the wrong type are rejected with an InvalidArgumentException.
+     * @since 1.5.1 Values of the wrong type are rejected with an InvalidArgumentException.
      */
     public static function fromArray(array $array): self
     {

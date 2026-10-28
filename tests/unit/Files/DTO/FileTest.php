@@ -1217,7 +1217,7 @@ class FileTest extends TestCase
      * Regression test: routing the full base64 payload through a data URI and parsing it again
      * multiplied peak memory usage for large files.
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      */
     public function testLargePayloadsDoNotMultiplyPeakMemory(): void
     {
