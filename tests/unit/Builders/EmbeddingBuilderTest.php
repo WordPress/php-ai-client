@@ -842,4 +842,29 @@ class EmbeddingBuilderTest extends TestCase
         $this->assertNotSame($this->getModelConfig($original), $this->getModelConfig($cloned));
         $this->assertSame(256, $this->getModelConfig($cloned)->getDimensions());
     }
+
+
+    /**
+     * Tests that array-shaped input cannot reference local files.
+     *
+     * @return void
+     */
+    public function testWithInputArrayShapeWithLocalPathIsRejected(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tempFile, 'secret');
+        file_put_contents($tempFile . '.txt', 'secret');
+
+        try {
+            $builder = new EmbeddingBuilder($this->registry);
+            $this->expectException(InvalidArgumentException::class);
+            $builder->withInput([
+                'type' => 'file',
+                'file' => ['fileType' => 'inline', 'mimeType' => 'text/plain', 'base64Data' => $tempFile . '.txt'],
+            ]);
+        } finally {
+            unlink($tempFile . '.txt');
+            unlink($tempFile);
+        }
+    }
 }

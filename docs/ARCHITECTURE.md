@@ -191,12 +191,18 @@ $text = AiClient::generateTextResult(
             'text' => 'Generate alternative text for this image.',
         ],
         [
-            'mimeType'   => 'image/png',
-            'base64Data' => '...', // Base64-encoded data blob.
+            'type' => 'file',
+            'file' => [
+                'fileType'   => 'inline',
+                'mimeType'   => 'image/png',
+                'base64Data' => '...', // Base64-encoded data blob.
+            ],
         ],
     ]
 )->toText();
 ```
+
+_Note: `File::fromUrl()`, `File::fromDataUri()` and `File::fromBase64()` never touch the filesystem; use them for any string you did not write yourself. `File::fromLocalPath()` reads a file, and `new File($string)` still detects a local path for backward compatibility (deprecated), so neither should receive untrusted input. Array-shaped input accepts only `http(s)` URLs and base64 data, so a chat transcript from a client cannot reference files on the server._
 
 #### Generate text with chat history using any suitable model from any provider
 
@@ -684,6 +690,10 @@ direction LR
 
     namespace AiClientNamespace.Files.DTO {
         class File {
+            +fromUrl(string $url, ?string $mimeType) File$
+            +fromDataUri(string $dataUri, ?string $mimeType) File$
+            +fromBase64(string $base64, string $mimeType) File$
+            +fromLocalPath(string $path, ?string $mimeType) File$
             +getFileType() FileTypeEnum
             +getMimeType() string
             +getUrl() ?string
