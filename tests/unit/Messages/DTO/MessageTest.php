@@ -525,4 +525,96 @@ class MessageTest extends TestCase
         // Role enum should be the same instance (enums are singletons)
         $this->assertSame($original->getRole(), $cloned->getRole());
     }
+
+
+    /**
+     * Tests isArrayShape() is structural and rejects parts pointing at local files.
+     *
+     * @return void
+     */
+    public function testIsArrayShapeRejectsLocalFilePathsAndNonArrays(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tempFile, 'secret');
+
+        try {
+            $this->assertFalse(Message::isArrayShape([
+                Message::KEY_ROLE => MessageRoleEnum::user()->value,
+                Message::KEY_PARTS => [
+                    [
+                        MessagePart::KEY_TYPE => MessagePartTypeEnum::file()->value,
+                        MessagePart::KEY_FILE => [
+                            'fileType' => 'remote',
+                            'mimeType' => 'text/plain',
+                            'url' => $tempFile,
+                        ],
+                    ],
+                ],
+            ]));
+            $this->assertFalse(Message::isArrayShape([
+                Message::KEY_ROLE => MessageRoleEnum::user()->value,
+                Message::KEY_PARTS => 'not an array',
+            ]));
+            $this->assertTrue(Message::isArrayShape([
+                Message::KEY_ROLE => MessageRoleEnum::user()->value,
+                Message::KEY_PARTS => [[MessagePart::KEY_TEXT => 'x']],
+            ]));
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+
+    /**
+     * Tests isArrayShape() accepts parts with non-consecutive keys, matching fromArray().
+     *
+     * @return void
+     */
+    public function testIsArrayShapeAcceptsNonConsecutivePartKeys(): void
+    {
+        $array = [
+            Message::KEY_ROLE => MessageRoleEnum::user()->value,
+            Message::KEY_PARTS => [1 => [MessagePart::KEY_TEXT => 'Hello']],
+        ];
+
+        $this->assertTrue(Message::isArrayShape($array));
+        $this->assertEquals('Hello', array_values(Message::fromArray($array)->getParts())[0]->getText());
+    }
+
+
+    /**
+     * Tests isArrayShape() mirrors the role/part rules that fromArray() enforces.
+     *
+     * @return void
+     */
+    public function testIsArrayShapeMirrorsRolePartRules(): void
+    {
+        $functionCallPart = [MessagePart::KEY_FUNCTION_CALL => ['id' => 'c1', 'name' => 'fn', 'args' => []]];
+        $functionResponsePart = [
+            MessagePart::KEY_FUNCTION_RESPONSE => ['id' => 'c1', 'name' => 'fn', 'response' => 'ok'],
+        ];
+
+        $userWithCall = [
+            Message::KEY_ROLE => MessageRoleEnum::user()->value,
+            Message::KEY_PARTS => [$functionCallPart],
+        ];
+        $modelWithResponse = [
+            Message::KEY_ROLE => MessageRoleEnum::model()->value,
+            Message::KEY_PARTS => [$functionResponsePart],
+        ];
+        $this->assertFalse(Message::isArrayShape($userWithCall));
+        $this->assertFalse(Message::isArrayShape($modelWithResponse));
+
+        $this->assertTrue(Message::isArrayShape([
+            Message::KEY_ROLE => MessageRoleEnum::model()->value,
+            Message::KEY_PARTS => [$functionCallPart],
+        ]));
+        $this->assertTrue(Message::isArrayShape([
+            Message::KEY_ROLE => MessageRoleEnum::user()->value,
+            Message::KEY_PARTS => [$functionResponsePart],
+        ]));
+
+        $this->expectException(\WordPress\AiClient\Common\Exception\InvalidArgumentException::class);
+        Message::fromArray($userWithCall);
+    }
 }
