@@ -24,7 +24,7 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  * never accesses the filesystem.
  *
  * @since 0.1.0
- * @since n.e.x.t Implicit local file path detection in the constructor is deprecated; non-http(s) URL schemes
+ * @since 1.5.1 Implicit local file path detection in the constructor is deprecated; non-http(s) URL schemes
  *                are rejected before any filesystem access.
  *
  * @phpstan-type FileArrayShape array{
@@ -48,7 +48,7 @@ class File extends AbstractDataTransferObject
      *
      * Group 1 is the optional MIME type (with parameters), group 2 is the base64 payload.
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      */
     private const DATA_URI_PATTERN = '/^data:(?:([a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*'
         . '(?:;[a-zA-Z0-9\-]+=[a-zA-Z0-9\-]+)*)?;)?base64,([A-Za-z0-9+\/]*={0,2})\z/';
@@ -56,7 +56,7 @@ class File extends AbstractDataTransferObject
     /**
      * Pattern matching plain base64 data (an empty payload is allowed, e.g. for an empty file).
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      */
     private const BASE64_PATTERN = '/^[A-Za-z0-9+\/]*={0,2}\z/';
 
@@ -87,7 +87,7 @@ class File extends AbstractDataTransferObject
      * detected, an E_USER_DEPRECATED notice is emitted and the file is read.
      *
      * @since 0.1.0
-     * @since n.e.x.t Local file path detection is deprecated. Non-http(s) URL schemes are rejected.
+     * @since 1.5.1 Local file path detection is deprecated. Non-http(s) URL schemes are rejected.
      *
      * @param string $file The file string (http(s) URL, data URI, plain base64 data, or deprecated local path).
      * @param string|null $mimeType The MIME type of the file (optional, required for plain base64 data).
@@ -103,7 +103,7 @@ class File extends AbstractDataTransferObject
      *
      * The URL is not fetched by the client; it is passed on to the provider.
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      *
      * @param string $url The http(s) URL.
      * @param string|null $mimeType The MIME type (optional, otherwise inferred from the URL path extension).
@@ -124,7 +124,7 @@ class File extends AbstractDataTransferObject
     /**
      * Creates an inline file from a data URI (data:[mime/type];base64,[data]).
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      *
      * @param string $dataUri The data URI.
      * @param string|null $mimeType The MIME type (optional, overrides the MIME type embedded in the data URI).
@@ -145,7 +145,7 @@ class File extends AbstractDataTransferObject
     /**
      * Creates an inline file from plain base64-encoded data.
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      *
      * @param string $base64 The base64-encoded data (without data URI prefix).
      * @param string $mimeType The MIME type of the data.
@@ -187,7 +187,7 @@ class File extends AbstractDataTransferObject
      *
      * Never pass untrusted input (such as user input or API response data) to this method.
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      *
      * @param string $path The path to the local file. Stream wrappers (e.g. ftp://, phar://) are not supported.
      * @param string|null $mimeType The MIME type (optional, otherwise inferred from the file extension).
@@ -233,7 +233,7 @@ class File extends AbstractDataTransferObject
      * Detects the file type and processes it accordingly.
      *
      * @since 0.1.0
-     * @since n.e.x.t Rejects non-http(s) URL schemes before any filesystem access; local path detection deprecated.
+     * @since 1.5.1 Rejects non-http(s) URL schemes before any filesystem access; local path detection deprecated.
      *
      * @param string $file The file string to process.
      * @param string|null $providedMimeType The explicitly provided MIME type.
@@ -269,7 +269,7 @@ class File extends AbstractDataTransferObject
         // Stream wrappers were rejected above, so this cannot open a network connection.
         if (strpos($file, "\0") === false && is_file($file)) {
             @trigger_error(
-                'Passing a local file path to ' . self::class . '::__construct() is deprecated since n.e.x.t; '
+                'Passing a local file path to ' . self::class . '::__construct() is deprecated since 1.5.1; '
                 . 'use File::fromLocalPath() instead.',
                 E_USER_DEPRECATED
             );
@@ -303,7 +303,7 @@ class File extends AbstractDataTransferObject
      * Checks if a string is an http(s) URL.
      *
      * @since 0.1.0
-     * @since n.e.x.t Made static.
+     * @since 1.5.1 Made static.
      *
      * @param string $string The string to check.
      * @return bool True if the string is an http(s) URL.
@@ -317,7 +317,7 @@ class File extends AbstractDataTransferObject
     /**
      * Checks if a string is plain base64 data (possibly empty).
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      *
      * @param string $string The string to check.
      * @return bool True if the string is plain base64 data.
@@ -505,7 +505,7 @@ class File extends AbstractDataTransferObject
      * Determines the MIME type from various sources.
      *
      * @since 0.1.0
-     * @since n.e.x.t Made static.
+     * @since 1.5.1 Made static.
      *
      * @param string|null $providedMimeType The explicitly provided MIME type.
      * @param string|null $extractedMimeType The MIME type extracted from data URI.
@@ -642,7 +642,7 @@ class File extends AbstractDataTransferObject
      *
      * This check is purely structural and never accesses the filesystem.
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      */
     public static function isArrayShape(array $array): bool
     {
@@ -658,7 +658,7 @@ class File extends AbstractDataTransferObject
      * {@inheritDoc}
      *
      * @since 0.1.0
-     * @since n.e.x.t The fileType key is authoritative: remote files require an http(s) url, inline files
+     * @since 1.5.1 The fileType key is authoritative: remote files require an http(s) url, inline files
      *                require base64Data and mimeType. Local file paths are rejected.
      */
     public static function fromArray(array $array): self
@@ -677,7 +677,7 @@ class File extends AbstractDataTransferObject
     /**
      * Asserts that an array has a valid file array shape, without constructing the file.
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      *
      * @param array<mixed> $array The array to check.
      * @throws InvalidArgumentException If the array is not a valid file array shape.

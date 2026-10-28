@@ -134,7 +134,7 @@ abstract class AbstractApiBasedModel implements
      * and return an adjusted schema without changing the original declaration.
      * Providers still choose the API fields and encode the request.
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      *
      * @param FunctionDeclaration $functionDeclaration The original function declaration.
      * @return array<string, mixed>|null The parameter schema to use in this request.

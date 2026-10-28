@@ -172,7 +172,7 @@ class Message extends AbstractDataTransferObject
      * This check is purely structural: it does not construct the message or its parts, so it has no
      * side effects (in particular, no filesystem access for file parts).
      *
-     * @since n.e.x.t
+     * @since 1.5.1
      */
     public static function isArrayShape(array $array): bool
     {
