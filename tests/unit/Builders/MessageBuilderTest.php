@@ -593,4 +593,63 @@ class MessageBuilderTest extends TestCase
         $this->assertCount(1, $originalMessage->getParts());
         $this->assertEquals('Original text', $originalMessage->getParts()[0]->getText());
     }
+
+
+    /**
+     * Tests withFile() still accepts a local file path.
+     *
+     * @return void
+     */
+    public function testWithFileLocalPath(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/test_dir_' . uniqid();
+        mkdir($tempDir);
+        $path = $tempDir . '/note.txt';
+        file_put_contents($path, 'note');
+
+        try {
+            $message = (new MessageBuilder())->withFile($path)->usingUserRole()->get();
+            $file = $message->getParts()[0]->getFile();
+            $this->assertInstanceOf(File::class, $file);
+            $this->assertEquals(base64_encode('note'), $file->getBase64Data());
+            $this->assertEquals('text/plain', $file->getMimeType());
+        } finally {
+            unlink($path);
+            rmdir($tempDir);
+        }
+    }
+
+    /**
+     * Tests withFile() rejects stream wrappers.
+     *
+     * @return void
+     */
+    public function testWithFileRejectsStreamWrapper(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Only http:// and https:// URLs are supported.');
+
+        (new MessageBuilder())->withFile('ftp://127.0.0.1:1/x', 'text/plain');
+    }
+
+    /**
+     * Tests that array-shaped input cannot reference local files.
+     *
+     * @return void
+     */
+    public function testConstructorArrayShapeWithLocalPathIsRejected(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tempFile, 'secret');
+
+        try {
+            $this->expectException(InvalidArgumentException::class);
+            new MessageBuilder([
+                'type' => 'file',
+                'file' => ['fileType' => 'remote', 'mimeType' => 'text/plain', 'url' => $tempFile],
+            ]);
+        } finally {
+            unlink($tempFile);
+        }
+    }
 }
