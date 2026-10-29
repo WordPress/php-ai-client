@@ -432,4 +432,142 @@ class TokenUsageTest extends TestCase
         $this->assertArrayHasKey('description', $schema['properties'][TokenUsage::KEY_THOUGHT_TOKENS]);
         $this->assertNotContains(TokenUsage::KEY_THOUGHT_TOKENS, $schema['required']);
     }
+
+    /**
+     * Tests creating TokenUsage with cache tokens.
+     *
+     * @return void
+     */
+    public function testCreateWithCacheTokens(): void
+    {
+        $tokenUsage = new TokenUsage(100, 50, 150, null, 80, 15);
+
+        $this->assertEquals(100, $tokenUsage->getPromptTokens());
+        $this->assertEquals(50, $tokenUsage->getCompletionTokens());
+        $this->assertEquals(150, $tokenUsage->getTotalTokens());
+        $this->assertEquals(80, $tokenUsage->getCachedTokens());
+        $this->assertEquals(15, $tokenUsage->getCacheCreationTokens());
+    }
+
+    /**
+     * Tests that cache tokens are null by default.
+     *
+     * @return void
+     */
+    public function testCreateWithoutCacheTokens(): void
+    {
+        $tokenUsage = new TokenUsage(100, 50, 150);
+
+        $this->assertNull($tokenUsage->getCachedTokens());
+        $this->assertNull($tokenUsage->getCacheCreationTokens());
+    }
+
+    /**
+     * Tests toArray includes cache tokens when set.
+     *
+     * @return void
+     */
+    public function testToArrayIncludesCacheTokens(): void
+    {
+        $tokenUsage = new TokenUsage(100, 50, 150, null, 80, 15);
+        $array = $tokenUsage->toArray();
+
+        $this->assertArrayHasKey(TokenUsage::KEY_CACHED_TOKENS, $array);
+        $this->assertEquals(80, $array[TokenUsage::KEY_CACHED_TOKENS]);
+        $this->assertArrayHasKey(TokenUsage::KEY_CACHE_CREATION_TOKENS, $array);
+        $this->assertEquals(15, $array[TokenUsage::KEY_CACHE_CREATION_TOKENS]);
+    }
+
+    /**
+     * Tests toArray excludes cache tokens when not set.
+     *
+     * @return void
+     */
+    public function testToArrayExcludesCacheTokens(): void
+    {
+        $tokenUsage = new TokenUsage(100, 50, 150);
+        $array = $tokenUsage->toArray();
+
+        $this->assertArrayNotHasKey(TokenUsage::KEY_CACHED_TOKENS, $array);
+        $this->assertArrayNotHasKey(TokenUsage::KEY_CACHE_CREATION_TOKENS, $array);
+    }
+
+    /**
+     * Tests fromArray with cache tokens.
+     *
+     * @return void
+     */
+    public function testFromArrayWithCacheTokens(): void
+    {
+        $array = [
+            TokenUsage::KEY_PROMPT_TOKENS => 100,
+            TokenUsage::KEY_COMPLETION_TOKENS => 50,
+            TokenUsage::KEY_TOTAL_TOKENS => 150,
+            TokenUsage::KEY_CACHED_TOKENS => 80,
+            TokenUsage::KEY_CACHE_CREATION_TOKENS => 15,
+        ];
+
+        $tokenUsage = TokenUsage::fromArray($array);
+
+        $this->assertEquals(80, $tokenUsage->getCachedTokens());
+        $this->assertEquals(15, $tokenUsage->getCacheCreationTokens());
+    }
+
+    /**
+     * Tests fromArray without cache tokens still works.
+     *
+     * @return void
+     */
+    public function testFromArrayWithoutCacheTokens(): void
+    {
+        $array = [
+            TokenUsage::KEY_PROMPT_TOKENS => 100,
+            TokenUsage::KEY_COMPLETION_TOKENS => 50,
+            TokenUsage::KEY_TOTAL_TOKENS => 150,
+        ];
+
+        $tokenUsage = TokenUsage::fromArray($array);
+
+        $this->assertNull($tokenUsage->getCachedTokens());
+        $this->assertNull($tokenUsage->getCacheCreationTokens());
+    }
+
+    /**
+     * Tests round-trip array transformation with cache tokens.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripWithCacheTokens(): void
+    {
+        $original = new TokenUsage(200, 100, 300, 40, 160, 25);
+        $array = $original->toArray();
+        $restored = TokenUsage::fromArray($array);
+
+        $this->assertEquals($original->getPromptTokens(), $restored->getPromptTokens());
+        $this->assertEquals($original->getCompletionTokens(), $restored->getCompletionTokens());
+        $this->assertEquals($original->getTotalTokens(), $restored->getTotalTokens());
+        $this->assertEquals($original->getThoughtTokens(), $restored->getThoughtTokens());
+        $this->assertEquals($original->getCachedTokens(), $restored->getCachedTokens());
+        $this->assertEquals($original->getCacheCreationTokens(), $restored->getCacheCreationTokens());
+    }
+
+    /**
+     * Tests JSON schema includes cache token properties but not in required.
+     *
+     * @return void
+     */
+    public function testJsonSchemaIncludesCacheTokens(): void
+    {
+        $schema = TokenUsage::getJsonSchema();
+
+        $this->assertArrayHasKey(TokenUsage::KEY_CACHED_TOKENS, $schema['properties']);
+        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_CACHED_TOKENS]['type']);
+        $this->assertArrayHasKey('description', $schema['properties'][TokenUsage::KEY_CACHED_TOKENS]);
+        $this->assertNotContains(TokenUsage::KEY_CACHED_TOKENS, $schema['required']);
+
+        $this->assertArrayHasKey(TokenUsage::KEY_CACHE_CREATION_TOKENS, $schema['properties']);
+        $this->assertEquals('integer', $schema['properties'][TokenUsage::KEY_CACHE_CREATION_TOKENS]['type']);
+        $this->assertArrayHasKey('description', $schema['properties'][TokenUsage::KEY_CACHE_CREATION_TOKENS]);
+        $this->assertNotContains(TokenUsage::KEY_CACHE_CREATION_TOKENS, $schema['required']);
+    }
 }
