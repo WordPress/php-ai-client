@@ -940,6 +940,137 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests that requests omit annotations and keep null and empty parameters distinct.
+     *
+     * @return void
+     */
+    public function testPrepareToolsParamSelectsApiFields(): void
+    {
+        $model = $this->createModel();
+        foreach ([null, [], ['type' => 'object']] as $parameters) {
+            $declaration = new FunctionDeclaration('lookup', '', $parameters, ['readOnlyHint' => true]);
+            $expected = ['name' => 'lookup', 'description' => ''];
+            if ($parameters !== null) {
+                $expected['parameters'] = $parameters;
+            }
+
+            $this->assertSame(
+                [['type' => 'function', 'function' => $expected]],
+                $model->exposePrepareToolsParam([$declaration])
+            );
+            $this->assertSame(['readOnlyHint' => true], $declaration->getAnnotations());
+        }
+    }
+
+    /**
+     * Tests that an override can prepare schemas using annotations without changing declarations.
+     *
+     * @return void
+     */
+    public function testPrepareToolsParamAllowsSchemaPreparation(): void
+    {
+        $model = new class (
+            $this->modelMetadata,
+            $this->providerMetadata,
+            $this->mockHttpTransporter,
+            $this->mockRequestAuthentication
+        ) extends MockOpenAiCompatibleTextGenerationModel {
+            /**
+             * @var list<FunctionDeclaration> The declarations prepared by the hook.
+             */
+            public array $preparedDeclarations = [];
+
+            /**
+             * {@inheritDoc}
+             */
+            protected function prepareFunctionParametersForRequest(
+                FunctionDeclaration $functionDeclaration
+            ): ?array {
+                $parameters = $functionDeclaration->getParameters();
+                $annotations = $functionDeclaration->getAnnotations();
+                if ($parameters !== null && !empty($annotations['test:dropAdditionalProperties'])) {
+                    unset($parameters['additionalProperties']);
+                }
+                $this->preparedDeclarations[] = $functionDeclaration;
+                return $parameters;
+            }
+        };
+        $parameters = ['type' => 'object', 'additionalProperties' => false];
+        $annotations = ['readOnlyHint' => true, 'test:dropAdditionalProperties' => true];
+        $declaration = new FunctionDeclaration('lookup', 'Looks up an item.', $parameters, $annotations);
+        $unchanged = new FunctionDeclaration('ping', 'Checks availability.', null, $annotations);
+
+        $this->assertSame(
+            [
+                [
+                    'type' => 'function',
+                    'function' => [
+                        'name' => 'lookup',
+                        'description' => 'Looks up an item.',
+                        'parameters' => ['type' => 'object'],
+                    ],
+                ],
+                [
+                    'type' => 'function',
+                    'function' => ['name' => 'ping', 'description' => 'Checks availability.'],
+                ],
+            ],
+            $model->exposePrepareToolsParam([$declaration, $unchanged])
+        );
+        $this->assertSame($declaration, $model->preparedDeclarations[0]);
+        $this->assertSame($annotations, $model->preparedDeclarations[0]->getAnnotations());
+        $this->assertSame($unchanged, $model->preparedDeclarations[1]);
+        $this->assertSame($parameters, $declaration->getParameters());
+        $this->assertSame($annotations, $declaration->getAnnotations());
+    }
+
+    /**
+     * Tests that prepared null and empty schemas control parameter serialization.
+     *
+     * @return void
+     */
+    public function testPrepareToolsParamUsesPreparedParameters(): void
+    {
+        $model = new class (
+            $this->modelMetadata,
+            $this->providerMetadata,
+            $this->mockHttpTransporter,
+            $this->mockRequestAuthentication
+        ) extends MockOpenAiCompatibleTextGenerationModel {
+            /**
+             * @var array<string, mixed>|null The schema returned by the hook.
+             */
+            public ?array $preparedParameters = null;
+
+            /**
+             * {@inheritDoc}
+             */
+            protected function prepareFunctionParametersForRequest(
+                FunctionDeclaration $functionDeclaration
+            ): ?array {
+                return $this->preparedParameters;
+            }
+        };
+
+        foreach ([null, [], ['type' => 'object']] as $originalParameters) {
+            $declaration = new FunctionDeclaration('lookup', 'Looks up an item.', $originalParameters);
+            foreach ([null, [], ['type' => 'object']] as $preparedParameters) {
+                $model->preparedParameters = $preparedParameters;
+                $expected = ['name' => 'lookup', 'description' => 'Looks up an item.'];
+                if ($preparedParameters !== null) {
+                    $expected['parameters'] = $preparedParameters;
+                }
+
+                $this->assertSame(
+                    [['type' => 'function', 'function' => $expected]],
+                    $model->exposePrepareToolsParam([$declaration])
+                );
+                $this->assertSame($originalParameters, $declaration->getParameters());
+            }
+        }
+    }
+
+    /**
      * Tests prepareResponseFormatParam() with schema.
      *
      * @return void
