@@ -12,7 +12,10 @@ use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
+use WordPress\AiClient\Providers\Http\Exception\ClientException;
+use WordPress\AiClient\Providers\Http\Exception\ServerException;
 use WordPress\AiClient\Providers\Http\HttpTransporter;
+use WordPress\AiClient\Providers\Http\Util\ResponseUtil;
 use WordPress\AiClient\Tests\mocks\GuzzleLikeClient;
 
 /**
@@ -251,9 +254,70 @@ class HttpTransporterTest extends TestCase
 
         $lastOptions = $guzzleClient->getLastOptions();
         $this->assertIsArray($lastOptions);
+        $this->assertFalse($lastOptions['http_errors']);
         $this->assertSame(5.0, $lastOptions['timeout']);
         $this->assertSame(1.0, $lastOptions['connect_timeout']);
         $this->assertSame(['max' => 3], $lastOptions['allow_redirects']);
+    }
+
+    /**
+     * Tests that Guzzle server error responses remain available for typed handling.
+     *
+     * @return void
+     */
+    public function testSendReturnsGuzzleServerErrorResponseForTypedHandling(): void
+    {
+        $guzzleClient = new GuzzleLikeClient(new Psr7Response(529));
+        $transporter = new HttpTransporter(
+            $guzzleClient,
+            $this->httpFactory,
+            $this->httpFactory
+        );
+
+        $response = $transporter->send(
+            new Request(HttpMethodEnum::GET(), 'https://api.example.com/overloaded'),
+            new RequestOptions()
+        );
+
+        $this->assertSame(529, $response->getStatusCode());
+
+        $lastOptions = $guzzleClient->getLastOptions();
+        $this->assertIsArray($lastOptions);
+        $this->assertFalse($lastOptions['http_errors']);
+
+        $this->expectException(ServerException::class);
+        $this->expectExceptionCode(529);
+        $this->expectExceptionMessage('Overloaded (529)');
+
+        ResponseUtil::throwIfNotSuccessful($response);
+    }
+
+    /**
+     * Tests that Guzzle client error responses avoid the generic transport exception path.
+     *
+     * @return void
+     */
+    public function testSendReturnsGuzzleClientErrorResponseForTypedHandling(): void
+    {
+        $guzzleClient = new GuzzleLikeClient(new Psr7Response(400));
+        $transporter = new HttpTransporter(
+            $guzzleClient,
+            $this->httpFactory,
+            $this->httpFactory
+        );
+
+        $response = $transporter->send(
+            new Request(HttpMethodEnum::GET(), 'https://api.example.com/bad-request'),
+            new RequestOptions()
+        );
+
+        $this->assertSame(400, $response->getStatusCode());
+
+        $this->expectException(ClientException::class);
+        $this->expectExceptionCode(400);
+        $this->expectExceptionMessage('Bad Request (400)');
+
+        ResponseUtil::throwIfNotSuccessful($response);
     }
 
     /**
