@@ -277,6 +277,8 @@ class ModelResolver
                 }
             }
 
+            $message .= $this->describeUnmetOptions($requirements);
+
             throw new InvalidArgumentException($message);
         }
 
@@ -347,6 +349,94 @@ class ModelResolver
         if ($this->requestOptions !== null && $model instanceof ApiBasedModelInterface) {
             $model->setRequestOptions($this->requestOptions);
         }
+    }
+
+    /**
+     * Describes the required options that no capability-satisfying model supports.
+     *
+     * Re-runs the model lookup using only the required capabilities (dropping the required
+     * options) to find models that are otherwise suitable. If any exist, this reports the
+     * options that every one of them fails to support, so the resolution failure message can
+     * name the option that actually eliminated all candidates rather than the capability, which
+     * those models do support.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelRequirements $requirements The full requirements that could not be met.
+     * @return string A message suffix naming the unmet option(s), or an empty string if no
+     *                 capability-satisfying model was found (i.e. the capability itself is unmet).
+     */
+    private function describeUnmetOptions(ModelRequirements $requirements): string
+    {
+        $capabilityOnlyRequirements = new ModelRequirements($requirements->getRequiredCapabilities(), []);
+
+        $candidates = $this->findModelsMetadata($capabilityOnlyRequirements);
+
+        $commonUnmetOptionNames = null;
+
+        foreach ($candidates as $candidateMetadata) {
+            $unmetOptions = $requirements->getUnmetRequirements($candidateMetadata)['options'];
+
+            $unmetOptionNames = [];
+            foreach ($unmetOptions as $unmetOption) {
+                $unmetOptionNames[$unmetOption->getName()->value] = $unmetOption->getName()->value;
+            }
+
+            $commonUnmetOptionNames = $commonUnmetOptionNames === null
+                ? $unmetOptionNames
+                : array_intersect_key($commonUnmetOptionNames, $unmetOptionNames);
+
+            if (empty($commonUnmetOptionNames)) {
+                return '';
+            }
+        }
+
+        if (empty($commonUnmetOptionNames)) {
+            return '';
+        }
+
+        $optionNames = array_values($commonUnmetOptionNames);
+
+        if (count($optionNames) === 1) {
+            return sprintf(
+                ' The following requested option is not supported by any of those models: %s.',
+                $optionNames[0]
+            );
+        }
+
+        return sprintf(
+            ' The following requested options are not supported by any of those models: %s.',
+            implode(', ', $optionNames)
+        );
+    }
+
+    /**
+     * Finds model metadata matching the given requirements as a flat list.
+     *
+     * Unlike {@see self::getCandidateModelsMap()}, this returns model metadata directly rather
+     * than a preference-keyed map, which is what's needed to inspect unmet requirements per model.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelRequirements $requirements The requirements to match models against.
+     * @return list<ModelMetadata> The matching model metadata.
+     */
+    private function findModelsMetadata(ModelRequirements $requirements): array
+    {
+        if ($this->providerIdOrClassName === null) {
+            $providerModelsMetadata = $this->registry->findModelsMetadataForSupport($requirements);
+
+            $metadata = [];
+            foreach ($providerModelsMetadata as $providerModels) {
+                foreach ($providerModels->getModels() as $modelMetadata) {
+                    $metadata[] = $modelMetadata;
+                }
+            }
+
+            return $metadata;
+        }
+
+        return $this->registry->findProviderModelsMetadataForSupport($this->providerIdOrClassName, $requirements);
     }
 
     /**
