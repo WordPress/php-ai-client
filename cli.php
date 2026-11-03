@@ -8,8 +8,12 @@
  * Usage:
  *   GOOGLE_API_KEY=123456 php cli.php 'Your prompt here' --providerId=google --modelId=gemini-2.5-flash
  *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai
- *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai --outputFormat=embedding-json
  *   GOOGLE_API_KEY=123456 OPENAI_API_KEY=123456 php cli.php 'Your prompt here'
+ *
+ * Embedding output formats require both --providerId and --modelId, because embeddings are only
+ * comparable to other embeddings from the same model:
+ *   OPENAI_API_KEY=123456 php cli.php 'Your text here' --providerId=openai \
+ *     --modelId=text-embedding-3-small --outputFormat=embedding-json
  *
  * For large prompts (e.g., with images), use stdin or file input:
  *   cat prompt.json | php cli.php - --providerId=openai --modelId=gpt-4o
@@ -23,6 +27,19 @@ use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 
 require_once __DIR__ . '/vendor/autoload.php';
+
+// Register the provider packages that are installed as development dependencies.
+foreach (
+    [
+        'WordPress\AnthropicAiProvider\Provider\AnthropicProvider',
+        'WordPress\GoogleAiProvider\Provider\GoogleProvider',
+        'WordPress\OpenAiAiProvider\Provider\OpenAiProvider',
+    ] as $providerClassName
+) {
+    if (class_exists($providerClassName)) {
+        AiClient::defaultRegistry()->registerProvider($providerClassName);
+    }
+}
 
 /**
  * Prints the output to stdout.
@@ -162,44 +179,60 @@ foreach ($named_args as $key => $value) {
 
 $isEmbedding = $outputFormat === 'embedding-json' || $outputFormat === 'embedding-result-json';
 
+if ($isEmbedding && (!$providerId || !$modelId)) {
+    logError(
+        'Embedding output formats require both --providerId and --modelId. Embeddings are only comparable '
+        . 'to other embeddings from the same model, so no model is selected automatically.'
+    );
+}
+
+if ($isEmbedding && $modelPreference) {
+    logWarning('The --modelPreference argument is ignored for embedding output formats.');
+}
+
 try {
     $modelConfig = ModelConfig::fromArray($model_config_data);
 
-    // Embeddings use a dedicated builder; other output formats use the prompt builder.
-    $promptBuilder = $isEmbedding ? AiClient::input($promptInput) : AiClient::prompt($promptInput);
-    $promptBuilder = $promptBuilder->usingModelConfig($modelConfig);
-    if ($providerId && $modelId) {
-        $providerClassName = AiClient::defaultRegistry()->getProviderClassName($providerId);
-        $promptBuilder = $promptBuilder->usingModel($providerClassName::model($modelId));
-    } elseif ($providerId) {
-        $promptBuilder = $promptBuilder->usingProvider($providerId);
-    }
-    if ($modelPreference) {
-        $modelPreference = array_map(
-            static function ($item) {
-                $item = trim($item);
-                if (str_contains($item, '::')) {
-                    return explode('::', $item, 2);
-                }
-                return $item;
-            },
-            explode(',', $modelPreference)
-        );
-        $promptBuilder = $promptBuilder->usingModelPreference(...$modelPreference);
+    if ($isEmbedding) {
+        // Embeddings use a dedicated builder, which requires an explicit model.
+        $builder = AiClient::input($promptInput)
+            ->usingModelConfig($modelConfig)
+            ->usingProviderModel($providerId, $modelId);
+    } else {
+        $builder = AiClient::prompt($promptInput)->usingModelConfig($modelConfig);
+        if ($providerId && $modelId) {
+            $providerClassName = AiClient::defaultRegistry()->getProviderClassName($providerId);
+            $builder = $builder->usingModel($providerClassName::model($modelId));
+        } elseif ($providerId) {
+            $builder = $builder->usingProvider($providerId);
+        }
+        if ($modelPreference) {
+            $modelPreference = array_map(
+                static function ($item) {
+                    $item = trim($item);
+                    if (str_contains($item, '::')) {
+                        return explode('::', $item, 2);
+                    }
+                    return $item;
+                },
+                explode(',', $modelPreference)
+            );
+            $builder = $builder->usingModelPreference(...$modelPreference);
+        }
     }
 } catch (InvalidArgumentException $e) {
-    logError('Invalid arguments while trying to set up prompt builder: ' . $e->getMessage());
+    logError('Invalid arguments while trying to set up the builder: ' . $e->getMessage());
 } catch (ResponseException $e) {
-    logError('Request failed while trying to set up prompt builder: ' . $e->getMessage());
+    logError('Request failed while trying to set up the builder: ' . $e->getMessage());
 }
 
 try {
     if ($isEmbedding) {
-        $result = $promptBuilder->generateEmbeddingResult();
+        $result = $builder->generateEmbeddingResult();
     } elseif ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
-        $result = $promptBuilder->generateImageResult();
+        $result = $builder->generateImageResult();
     } else {
-        $result = $promptBuilder->generateTextResult();
+        $result = $builder->generateTextResult();
     }
 } catch (InvalidArgumentException $e) {
     logError('Invalid arguments while trying to generate result: ' . $e->getMessage());
