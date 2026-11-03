@@ -13,7 +13,14 @@ For the implementer facing API surface, two alternative APIs are available:
 - A fluent API is used as the primary means of using the AI client SDK, for easy-to-read code by chaining declarative methods.
 - A traditional method based API inspired by the Vercel AI SDK, which is more aligned with traditional WordPress patterns such as passing an array of arguments.
 
-The fluent API is exposed through builders. Content generation (text, image, speech, video, ...) uses the `PromptBuilder`, while embedding generation uses a dedicated `EmbeddingBuilder`. Embeddings are kept on a separate builder because they transform inputs into vectors rather than generating a conversational response, so most of `PromptBuilder`'s prompt-oriented parameters (system instruction, temperature, output modalities, chat history, ...) do not apply. Both builders share the logic for selecting a provider/model — including model preferences and request options — through a common `ModelResolver` (owned by each builder) and a shared `ModelResolutionTrait` that exposes the `usingModel()`, `usingModelPreference()`, `usingModelConfig()`, `usingProvider()`, and `usingRequestOptions()` methods.
+The fluent API is exposed through builders. Content generation (text, image, speech, video, ...) uses the `PromptBuilder`, while embedding generation uses a dedicated `EmbeddingBuilder`. Embeddings are kept on a separate builder because they transform inputs into vectors rather than generating a conversational response, so most of `PromptBuilder`'s prompt-oriented parameters (system instruction, temperature, output modalities, chat history, ...) do not apply.
+
+The two builders differ fundamentally in how they arrive at a model:
+
+- `PromptBuilder` **resolves** a model. If none is named, it discovers a suitable one across the configured providers, honoring model preferences and any provider constraint. This state and logic live on a `ModelResolver` owned by the builder, exposed through the shared `ModelResolutionTrait` (`usingModel()`, `usingModelPreference()`, `usingProvider()`, `usingRequestOptions()`).
+- `EmbeddingBuilder` **verifies** a model, and never selects one. Embedding vectors are only comparable to other vectors produced by the same model, so a stored corpus is permanently bound to the model that created it; automatically choosing a model could silently invalidate existing vectors when the registered providers change. The model must be named via `usingModel()` or `usingProviderModel()`, and omitting it is an error. The builder then checks, before any request is made, that the model supports embedding generation, accepts the inputs' modalities, supports every configured option, and belongs to a configured provider.
+
+Both builders accumulate model configuration through the shared `ModelConfigurationTrait`, which provides `usingModelConfig()`.
 
 ### Code examples
 
@@ -184,12 +191,18 @@ $text = AiClient::generateTextResult(
             'text' => 'Generate alternative text for this image.',
         ],
         [
-            'mimeType'   => 'image/png',
-            'base64Data' => '...', // Base64-encoded data blob.
+            'type' => 'file',
+            'file' => [
+                'fileType'   => 'inline',
+                'mimeType'   => 'image/png',
+                'base64Data' => '...', // Base64-encoded data blob.
+            ],
         ],
     ]
 )->toText();
 ```
+
+_Note: `File::fromUrl()`, `File::fromDataUri()` and `File::fromBase64()` never touch the filesystem; use them for any string you did not write yourself. `File::fromLocalPath()` reads a file, and `new File($string)` still detects a local path for backward compatibility (deprecated), so neither should receive untrusted input. Array-shaped input accepts only `http(s)` URLs and base64 data, so a chat transcript from a client cannot reference files on the server._
 
 #### Generate text with chat history using any suitable model from any provider
 
@@ -293,15 +306,18 @@ $jsonString = AiClient::generateTextResult(
 )->toText();
 ```
 
-#### Generate an embedding using any suitable model from any provider
+#### Generate an embedding using a specific model
 
 _Note: Embeddings use the dedicated `EmbeddingBuilder` (via `AiClient::input()`) rather than the `PromptBuilder`. Each input is embedded independently, producing one embedding vector per input._
+
+_Note: Unlike every other capability, embedding generation requires the model to be named. No model is selected automatically, because embeddings from different models are not comparable. The model may be given as a `[provider ID, model ID]` pair or as a model instance._
 
 ##### Fluent API
 
 ```php
 // Single input.
 $embedding = AiClient::input('PHP powers a large part of the web.')
+    ->usingProviderModel('google', 'gemini-embedding-001')
     ->generateEmbedding();
 
 // Multiple inputs, embedded as a batch.
@@ -309,19 +325,70 @@ $embeddings = AiClient::input([
         'PHP powers a large part of the web.',
         'WordPress makes publishing accessible.',
     ])
+    ->usingModel(GoogleProvider::model('gemini-embedding-001'))
     ->generateEmbeddings();
 ```
 
 ##### Traditional API
 
 ```php
-$embedding = AiClient::generateEmbedding('PHP powers a large part of the web.');
-
-$embeddings = AiClient::generateEmbeddings([
+$embedding = AiClient::generateEmbedding(
     'PHP powers a large part of the web.',
-    'WordPress makes publishing accessible.',
-]);
+    ['google', 'gemini-embedding-001']
+);
+
+$embeddings = AiClient::generateEmbeddings(
+    [
+        'PHP powers a large part of the web.',
+        'WordPress makes publishing accessible.',
+    ],
+    ['google', 'gemini-embedding-001']
+);
 ```
+
+### Function declaration annotations
+
+`FunctionDeclaration` accepts optional annotations for consumer-specific hints that do not belong to the function's parameter schema:
+
+```php
+$function = new FunctionDeclaration(
+    'get_weather',
+    'Gets the weather',
+    null,
+    ['deferredLoading' => true]
+);
+
+$annotations = $function->getAnnotations();
+```
+
+Annotations are an `array<string, mixed>` whose values should be JSON-serializable. The core SDK preserves annotations without interpreting their names or values. Providers and other consumers define the annotations they recognize and ignore unknown annotations. Provider-specific annotations should use namespaced keys or a nested provider-specific map to avoid collisions, and must not be blindly merged into provider requests.
+
+Empty annotations are omitted from serialized declarations, preserving the existing shape for callers that do not use them. Missing annotations are restored as an empty array. Annotations are not authorization; applications must still validate tool execution.
+
+### Preparing function parameter schemas for provider requests
+
+`AbstractApiBasedModel::prepareFunctionParametersForRequest()` lets providers adjust tool input schemas before building a request. By default, it returns `$functionDeclaration->getParameters()`. Providers must call this protected method for each declaration to use it. The shared OpenAI-compatible implementation already does this.
+
+An override receives the full `FunctionDeclaration`, so it can read annotations when preparing the schema, and returns an `array<string, mixed>|null`. It should leave the original declaration unchanged. For example, a provider whose API rejects a schema keyword can remove it from the returned array:
+
+```php
+/**
+ * {@inheritDoc}
+ */
+protected function prepareFunctionParametersForRequest(
+    FunctionDeclaration $functionDeclaration
+): ?array {
+    $parameters = $functionDeclaration->getParameters();
+    if ($parameters !== null) {
+        unset($parameters['additionalProperties']);
+    }
+    return $parameters;
+}
+```
+
+The OpenAI-compatible serializer omits `parameters` when the hook returns `null` and includes it for any array, including `[]`. Providers still choose API fields and handle JSON encoding, including any required empty-object representation. Annotations remain available to providers but must not be sent as a generic field to APIs that do not accept them.
+
+Applications must still validate tool arguments against the original schema, since preparation may remove constraints. The hook only prepares tool input schemas; it does not change function names or descriptions, or prepare structured output schemas.
 
 ## Class diagrams
 
@@ -409,9 +476,8 @@ direction LR
         class EmbeddingBuilder {
             +withInput(...$input) self
             +usingModel(ModelInterface $model) self
-            +usingModelPreference(...$preferredModels) self
+            +usingProviderModel(string $providerIdOrClassName, string $modelId) self
             +usingModelConfig(ModelConfig $config) self
-            +usingProvider(string $providerIdOrClassName) self
             +usingRequestOptions(RequestOptions $requestOptions) self
             +usingDimensions(int $dimensions) self
             +isSupported() bool
@@ -460,9 +526,9 @@ direction LR
             +convertTextToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateVideoResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
-            +generateEmbeddingResult(string|MessagePart|File $input, ModelInterface $model) EmbeddingResult$
-            +generateEmbedding(string|MessagePart|File $input, ModelInterface $model) Embedding$
-            +generateEmbeddings(string[]|MessagePart[] $inputs, ModelInterface $model) Embedding[]$
+            +generateEmbeddingResult(string|MessagePart|File $input, ModelInterface|array $model, ModelConfig $modelConfig) EmbeddingResult$
+            +generateEmbedding(string|MessagePart|File $input, ModelInterface|array $model, ModelConfig $modelConfig) Embedding$
+            +generateEmbeddings(string[]|MessagePart[] $inputs, ModelInterface|array $model, ModelConfig $modelConfig) Embedding[]$
             +generateTextOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateImageOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +convertTextToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
@@ -532,9 +598,9 @@ direction LR
             +convertTextToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
             +generateVideoResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$
-            +generateEmbeddingResult(string|MessagePart|File $input, ModelInterface $model) EmbeddingResult$
-            +generateEmbedding(string|MessagePart|File $input, ModelInterface $model) Embedding$
-            +generateEmbeddings(string[]|MessagePart[] $inputs, ModelInterface $model) Embedding[]$
+            +generateEmbeddingResult(string|MessagePart|File $input, ModelInterface|array $model, ModelConfig $modelConfig) EmbeddingResult$
+            +generateEmbedding(string|MessagePart|File $input, ModelInterface|array $model, ModelConfig $modelConfig) Embedding$
+            +generateEmbeddings(string[]|MessagePart[] $inputs, ModelInterface|array $model, ModelConfig $modelConfig) Embedding[]$
             +generateTextOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +generateImageOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
             +convertTextToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiOperation$
@@ -599,9 +665,8 @@ direction LR
         class EmbeddingBuilder {
             +withInput(...$input) self
             +usingModel(ModelInterface $model) self
-            +usingModelPreference(...$preferredModels) self
+            +usingProviderModel(string $providerIdOrClassName, string $modelId) self
             +usingModelConfig(ModelConfig $config) self
-            +usingProvider(string $providerIdOrClassName) self
             +usingRequestOptions(RequestOptions $requestOptions) self
             +usingDimensions(int $dimensions) self
             +isSupported() bool
@@ -625,6 +690,10 @@ direction LR
 
     namespace AiClientNamespace.Files.DTO {
         class File {
+            +fromUrl(string $url, ?string $mimeType) File$
+            +fromDataUri(string $dataUri, ?string $mimeType) File$
+            +fromBase64(string $base64, string $mimeType) File$
+            +fromLocalPath(string $path, ?string $mimeType) File$
             +getFileType() FileTypeEnum
             +getMimeType() string
             +getUrl() ?string
@@ -791,6 +860,7 @@ direction LR
             +getName() string
             +getDescription() string
             +getParameters() mixed
+            +getAnnotations() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
         class FunctionResponse {
@@ -1214,6 +1284,7 @@ direction LR
             +getName() string
             +getDescription() string
             +getParameters() mixed
+            +getAnnotations() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
         class Tool {

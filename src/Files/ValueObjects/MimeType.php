@@ -186,7 +186,7 @@ final class MimeType
     {
         // Basic MIME type validation: type/subtype
         return (bool) preg_match(
-            '/^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*$/',
+            '/^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*$/D',
             $mimeType
         );
     }
