@@ -334,7 +334,8 @@ class AiClientTest extends TestCase
             ->decideResult();
 
         $this->assertSame($expectedResult, $result);
-        $this->assertSame(['comment' => 'Buy cheap pills!'], $mockModel->lastCall[0]);
+        $this->assertNotNull($mockModel->lastRequest);
+        $this->assertSame(['comment' => 'Buy cheap pills!'], $mockModel->lastRequest->getState());
     }
 
     /**

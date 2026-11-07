@@ -25,6 +25,7 @@ class DecisionAnswerTest extends TestCase
         $answer = new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.03);
 
         $this->assertTrue($answer->getType()->isBinary());
+        $this->assertFalse($answer->isRefusal());
         $this->assertSame(0.03, $answer->getProbability());
         $this->assertNull($answer->getConfidence());
         $this->assertSame([], $answer->getProbabilities());
@@ -56,10 +57,100 @@ class DecisionAnswerTest extends TestCase
                 DecisionAnswer::KEY_TYPE => 'choice',
                 DecisionAnswer::KEY_VALUE => 'approve',
                 DecisionAnswer::KEY_CONFIDENCE => 0.91,
-                DecisionAnswer::KEY_PROBABILITIES => $probabilities,
+                DecisionAnswer::KEY_PROBABILITIES => [
+                    ['value' => 'approve', 'probability' => 0.91],
+                    ['value' => 'hold', 'probability' => 0.07],
+                    ['value' => 'trash', 'probability' => 0.02],
+                ],
             ],
             $answer->toArray()
         );
+    }
+
+    /**
+     * Tests that probabilities for integer-like option values serialize with the values as strings.
+     *
+     * @return void
+     */
+    public function testChoiceAnswerWithIntegerLikeOptionValues(): void
+    {
+        $answer = new DecisionAnswer(DecisionQuestionTypeEnum::choice(), '2', 0.8, ['1' => 0.2, '2' => 0.8]);
+
+        $this->assertSame('2', $answer->getChoice());
+        $this->assertSame(0.8, $answer->getProbabilities()['2']);
+        $this->assertSame(
+            '[{"value":"1","probability":0.2},{"value":"2","probability":0.8}]',
+            json_encode($answer->toArray()[DecisionAnswer::KEY_PROBABILITIES])
+        );
+    }
+
+    /**
+     * Tests a refusal to answer.
+     *
+     * @return void
+     */
+    public function testRefusal(): void
+    {
+        $answer = new DecisionAnswer(DecisionQuestionTypeEnum::choice(), null);
+
+        $this->assertTrue($answer->getType()->isChoice());
+        $this->assertTrue($answer->isRefusal());
+        $this->assertNull($answer->getConfidence());
+        $this->assertSame([], $answer->getProbabilities());
+        $this->assertSame(
+            [
+                DecisionAnswer::KEY_TYPE => 'choice',
+                DecisionAnswer::KEY_VALUE => null,
+            ],
+            $answer->toArray()
+        );
+    }
+
+    /**
+     * Tests that reading the value of a refusal throws.
+     *
+     * @return void
+     */
+    public function testRefusalGetterThrows(): void
+    {
+        $answer = new DecisionAnswer(DecisionQuestionTypeEnum::choice(), null);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The model refused to answer this question, so the answer has no value.');
+
+        $answer->getChoice();
+    }
+
+    /**
+     * Tests that a refusal rejects a confidence or probabilities.
+     *
+     * @dataProvider provideRefusalExtras
+     *
+     * @param float|null $confidence The confidence.
+     * @param array<float> $probabilities The probabilities.
+     * @return void
+     */
+    public function testRefusalRejectsConfidenceAndProbabilities(?float $confidence, array $probabilities): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Decision answers that refuse to answer do not accept a confidence or probabilities.'
+        );
+
+        new DecisionAnswer(DecisionQuestionTypeEnum::score(), null, $confidence, $probabilities);
+    }
+
+    /**
+     * Provides a confidence or probabilities for a refusal.
+     *
+     * @return array<string, array{float|null, array<float>}>
+     */
+    public function provideRefusalExtras(): array
+    {
+        return [
+            'confidence' => [0.5, []],
+            'probabilities' => [null, [0.5, 0.5]],
+        ];
     }
 
     /**
@@ -126,7 +217,11 @@ class DecisionAnswerTest extends TestCase
                     ['approve' => 0.4, 'hold' => 0.6]
                 ),
             ],
+            'choice with integer-like values' => [
+                new DecisionAnswer(DecisionQuestionTypeEnum::choice(), '5', 0.7, ['4' => 0.3, '5' => 0.7]),
+            ],
             'score' => [new DecisionAnswer(DecisionQuestionTypeEnum::score(), 1.4, 0.5, [0.1, 0.4, 0.5])],
+            'refusal' => [new DecisionAnswer(DecisionQuestionTypeEnum::binary(), null)],
         ];
     }
 
@@ -160,7 +255,7 @@ class DecisionAnswerTest extends TestCase
         $score = DecisionQuestionTypeEnum::score();
 
         $probabilityMessage = 'Decision answer probability must be a number between 0 and 1.';
-        $choiceMessage = 'Decision answer choice must be a non-empty option key.';
+        $choiceMessage = 'Decision answer choice must be a non-empty option value.';
         $scoreMessage = 'Decision answer score must be a non-negative number.';
 
         return [
@@ -245,7 +340,7 @@ class DecisionAnswerTest extends TestCase
     }
 
     /**
-     * Tests that answers to choice questions require probabilities keyed by option key.
+     * Tests that answers to choice questions require probabilities keyed by option value.
      *
      * @return void
      */
@@ -253,10 +348,10 @@ class DecisionAnswerTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Decision answer probabilities for a choice question must be keyed by option key.'
+            'Decision answer probabilities for a choice question must be keyed by option value.'
         );
 
-        new DecisionAnswer(DecisionQuestionTypeEnum::choice(), 'approve', null, [0.9, 0.1]);
+        new DecisionAnswer(DecisionQuestionTypeEnum::choice(), 'approve', null, ['approve' => 0.9, ' ' => 0.1]);
     }
 
     /**
@@ -340,8 +435,15 @@ class DecisionAnswerTest extends TestCase
             $schema['properties'][DecisionAnswer::KEY_TYPE]['enum']
         );
         $this->assertSame(
-            ['object', 'array'],
-            array_column($schema['properties'][DecisionAnswer::KEY_PROBABILITIES]['oneOf'], 'type')
+            ['number', 'string', 'null'],
+            array_column($schema['properties'][DecisionAnswer::KEY_VALUE]['oneOf'], 'type')
+        );
+        $this->assertSame(
+            ['object', 'number'],
+            array_column(
+                array_column($schema['properties'][DecisionAnswer::KEY_PROBABILITIES]['oneOf'], 'items'),
+                'type'
+            )
         );
         $this->assertSame([DecisionAnswer::KEY_TYPE, DecisionAnswer::KEY_VALUE], $schema['required']);
     }

@@ -11,7 +11,7 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\Decision\Contracts\DecisionModelInterface;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest;
 use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -203,19 +203,31 @@ trait MockModelCreationTrait
     /**
      * Creates a test model metadata instance for decisions.
      *
-     * @param string $id   Optional model ID.
+     * The default supported options accept text input, with or without images. Pass an explicit list to
+     * simulate a model with narrower support.
+     *
+     * @param string $id Optional model ID.
      * @param string $name Optional model name.
+     * @param list<SupportedOption>|null $supportedOptions Optional supported options.
      * @return ModelMetadata
      */
     protected function createTestDecisionModelMetadata(
         string $id = 'test-decision-model',
-        string $name = 'Test Decision Model'
+        string $name = 'Test Decision Model',
+        ?array $supportedOptions = null
     ): ModelMetadata {
+        $supportedOptions = $supportedOptions ?? [
+            new SupportedOption(
+                OptionEnum::inputModalities(),
+                [[ModalityEnum::text()], [ModalityEnum::text(), ModalityEnum::image()]]
+            ),
+        ];
+
         return new ModelMetadata(
             $id,
             $name,
             [CapabilityEnum::decision()],
-            []
+            $supportedOptions
         );
     }
 
@@ -551,10 +563,9 @@ trait MockModelCreationTrait
             private ModelConfig $config;
 
             /**
-             * @var array{0: array<string, mixed>, 1: array<string, DecisionQuestion>}|null The state and
-             *      questions received by the last call to decideResult().
+             * @var DecisionRequest|null The request received by the last call to decideResult().
              */
-            public ?array $lastCall = null;
+            public ?DecisionRequest $lastRequest = null;
 
             public function __construct(
                 ModelMetadata $metadata,
@@ -587,13 +598,9 @@ trait MockModelCreationTrait
                 return $this->config;
             }
 
-            /**
-             * @param array<string, mixed> $state The state to decide on.
-             * @param array<string, DecisionQuestion> $questions The questions to answer.
-             */
-            public function decideResult(array $state, array $questions): DecisionResult
+            public function decideResult(DecisionRequest $request): DecisionResult
             {
-                $this->lastCall = [$state, $questions];
+                $this->lastRequest = $request;
 
                 return $this->result;
             }

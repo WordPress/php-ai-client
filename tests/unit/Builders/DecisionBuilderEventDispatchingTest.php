@@ -70,12 +70,12 @@ class DecisionBuilderEventDispatchingTest extends TestCase
 
         $this->assertCount(1, $beforeEvents);
         $this->assertCount(1, $afterEvents);
-        $this->assertSame(['comment' => 'Buy cheap pills!'], $beforeEvents[0]->getState());
-        $this->assertSame(['spam' => $question], $beforeEvents[0]->getQuestions());
+        $this->assertSame($model->lastRequest, $beforeEvents[0]->getRequest());
+        $this->assertSame(['comment' => 'Buy cheap pills!'], $beforeEvents[0]->getRequest()->getState());
+        $this->assertSame(['spam' => $question], $beforeEvents[0]->getRequest()->getQuestions());
         $this->assertSame($model, $beforeEvents[0]->getModel());
         $this->assertEquals(CapabilityEnum::decision(), $beforeEvents[0]->getCapability());
-        $this->assertSame(['comment' => 'Buy cheap pills!'], $afterEvents[0]->getState());
-        $this->assertSame(['spam' => $question], $afterEvents[0]->getQuestions());
+        $this->assertSame($model->lastRequest, $afterEvents[0]->getRequest());
         $this->assertEquals(CapabilityEnum::decision(), $afterEvents[0]->getCapability());
         $this->assertSame($result, $afterEvents[0]->getResult());
         $this->assertSame($returnedResult, $afterEvents[0]->getResult());

@@ -8,12 +8,17 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Builders\DecisionBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionOption;
 use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
 use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\DecisionAnswer;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
@@ -79,7 +84,7 @@ class DecisionBuilderTest extends TestCase
                 new DecisionQuestion(
                     DecisionQuestionTypeEnum::choice(),
                     'How should a moderator handle it?',
-                    ['approve' => 'Publish it.', 'hold' => 'Look closer.', 'trash' => 'Remove it.']
+                    [new DecisionOption('approve', 'Publish it.'), new DecisionOption('hold', 'Look closer.'), 'trash']
                 )
             )
             ->withQuestion(
@@ -126,63 +131,70 @@ class DecisionBuilderTest extends TestCase
     }
 
     /**
-     * Tests that withState() adds to and overwrites existing state.
+     * Tests that withState() replaces existing state.
      *
      * @return void
      */
-    public function testWithStateMergesState(): void
+    public function testWithStateReplacesState(): void
     {
         $builder = new DecisionBuilder($this->registry, ['comment' => 'First', 'author' => 'Jane']);
 
-        $builder->withState(['comment' => 'Second', 'post' => 'Hello world']);
+        $builder->withState('Second');
 
-        $this->assertSame(
-            ['comment' => 'Second', 'author' => 'Jane', 'post' => 'Hello world'],
-            $this->getBuilderProperty($builder, 'state')
-        );
+        $this->assertSame('Second', $this->getBuilderProperty($builder, 'state'));
     }
 
     /**
-     * Tests that withState() rejects empty state.
+     * Tests that decideResult() passes string, file, and list state to the model unchanged.
+     *
+     * @dataProvider provideValidState
+     *
+     * @param string|File|array<mixed> $state The state.
+     * @return void
+     */
+    public function testDecideResultPassesStateToModel($state): void
+    {
+        $model = $this->createMockDecisionModel($this->createTestDecisionResult());
+
+        $builder = new DecisionBuilder($this->registry, $state);
+        $builder->withQuestion('spam', $this->createSpamQuestion())->usingModel($model);
+        $builder->decideResult();
+
+        $this->assertNotNull($model->lastRequest);
+        $this->assertSame($state, $model->lastRequest->getState());
+    }
+
+    /**
+     * Provides state of each accepted form.
+     *
+     * @return array<string, array{string|File|array<mixed>}>
+     */
+    public function provideValidState(): array
+    {
+        $photo = self::createPhoto();
+
+        return [
+            'string' => ['Buy cheap pills!'],
+            'file' => [$photo],
+            'list' => [['Buy cheap pills!', 'Click here!']],
+            'map with file' => [['comment' => 'Look at this!', 'photo' => $photo]],
+        ];
+    }
+
+    /**
+     * Tests that decideResult() rejects invalid state.
      *
      * @return void
      */
-    public function testWithStateRejectsEmptyState(): void
+    public function testDecideResultRejectsInvalidState(): void
     {
+        $builder = new DecisionBuilder($this->registry, []);
+        $builder->withQuestion('spam', $this->createSpamQuestion());
+
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Decision state cannot be empty.');
 
-        new DecisionBuilder($this->registry, []);
-    }
-
-    /**
-     * Tests that withState() rejects state that is not keyed by name.
-     *
-     * @dataProvider provideStateWithInvalidKeys
-     *
-     * @param array<mixed> $state The state with invalid keys.
-     * @return void
-     */
-    public function testWithStateRejectsInvalidKeys(array $state): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Decision state keys must be non-empty, non-integer strings.');
-
-        (new DecisionBuilder($this->registry))->withState($state);
-    }
-
-    /**
-     * Provides state with keys that are not names.
-     *
-     * @return array<string, array{array<mixed>}>
-     */
-    public function provideStateWithInvalidKeys(): array
-    {
-        return [
-            'list' => [['Nice post!']],
-            'integer-like key' => [['1' => 'Nice post!']],
-            'empty key' => [['' => 'Nice post!']],
-        ];
+        $builder->decideResult();
     }
 
     /**
@@ -266,7 +278,9 @@ class DecisionBuilderTest extends TestCase
         $builder->withQuestion('spam', $question)->usingModel($model);
 
         $this->assertSame($result, $builder->decideResult());
-        $this->assertSame([['comment' => 'Buy cheap pills!'], ['spam' => $question]], $model->lastCall);
+        $this->assertNotNull($model->lastRequest);
+        $this->assertSame(['comment' => 'Buy cheap pills!'], $model->lastRequest->getState());
+        $this->assertSame(['spam' => $question], $model->lastRequest->getQuestions());
     }
 
     /**
@@ -282,7 +296,8 @@ class DecisionBuilderTest extends TestCase
         $this->registry->expects($this->once())
             ->method('findModelsMetadataForSupport')
             ->with($this->callback(static function (ModelRequirements $requirements): bool {
-                return $requirements->getRequiredCapabilities() == [CapabilityEnum::decision()];
+                return $requirements->getRequiredCapabilities() == [CapabilityEnum::decision()]
+                    && $requirements->getRequiredOptions()[0]->getValue() == [ModalityEnum::text()];
             }))
             ->willReturn([new ProviderModelsMetadata($model->providerMetadata(), [$model->metadata()])]);
 
@@ -295,6 +310,52 @@ class DecisionBuilderTest extends TestCase
         $builder->withQuestion('spam', $this->createSpamQuestion());
 
         $this->assertSame($result, $builder->decideResult());
+    }
+
+    /**
+     * Tests that files in the state require a model that accepts their input modality.
+     *
+     * @return void
+     */
+    public function testDecideResultRequiresModalitiesOfFilesInState(): void
+    {
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->callback(static function (ModelRequirements $requirements): bool {
+                return $requirements->getRequiredOptions()[0]->getValue()
+                    == [ModalityEnum::text(), ModalityEnum::image()];
+            }))
+            ->willReturn([]);
+
+        $builder = new DecisionBuilder($this->registry, ['post' => ['photos' => [self::createPhoto()]]]);
+        $builder->withQuestion('spam', $this->createSpamQuestion());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('No models found that support decision.');
+
+        $builder->decideResult();
+    }
+
+    /**
+     * Tests that isSupported() rejects a model that cannot read the files in the state.
+     *
+     * @return void
+     */
+    public function testIsSupportedRejectsModelWithoutFileModality(): void
+    {
+        $textOnlyMetadata = $this->createTestDecisionModelMetadata(
+            'text-only-decision-model',
+            'Text-only Decision Model',
+            [new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]])]
+        );
+        $model = $this->createMockDecisionModel($this->createTestDecisionResult(), $textOnlyMetadata);
+
+        $builder = new DecisionBuilder($this->registry, 'Is this spam?');
+        $builder->usingModel($model);
+        $this->assertTrue($builder->isSupported());
+
+        $builder->withState(['photo' => self::createPhoto()]);
+        $this->assertFalse($builder->isSupported());
     }
 
     /**
@@ -325,7 +386,7 @@ class DecisionBuilderTest extends TestCase
         $builder->withQuestion('spam', $this->createSpamQuestion());
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot decide on empty state. Add state using withState().');
+        $this->expectExceptionMessage('Cannot decide without state. Add state using withState().');
 
         $builder->decideResult();
     }
@@ -381,6 +442,49 @@ class DecisionBuilderTest extends TestCase
     }
 
     /**
+     * Tests that decideResult() accepts refusals in place of answers.
+     *
+     * @return void
+     */
+    public function testDecideResultAcceptsRefusals(): void
+    {
+        $answers = self::createValidAnswers();
+        $answers['route'] = new DecisionAnswer(DecisionQuestionTypeEnum::choice(), null);
+        $answers['tone'] = new DecisionAnswer(DecisionQuestionTypeEnum::score(), null);
+
+        $result = $this->createBuilderWithAnswers($answers)->decideResult();
+
+        $this->assertFalse($result->getAnswer('spam')->isRefusal());
+        $this->assertTrue($result->getAnswer('route')->isRefusal());
+        $this->assertTrue($result->getAnswer('tone')->isRefusal());
+    }
+
+    /**
+     * Tests that decideResult() accepts option values that PHP turns into integer keys.
+     *
+     * @return void
+     */
+    public function testDecideResultAcceptsIntegerLikeOptionValues(): void
+    {
+        $answer = new DecisionAnswer(
+            DecisionQuestionTypeEnum::choice(),
+            '3',
+            0.7,
+            ['1' => 0.1, '2' => 0.2, '3' => 0.7]
+        );
+
+        $builder = new DecisionBuilder($this->registry, 'Great post, thanks!');
+        $builder
+            ->withQuestion(
+                'rating',
+                new DecisionQuestion(DecisionQuestionTypeEnum::choice(), 'How many stars?', ['1', '2', '3'])
+            )
+            ->usingModel($this->createMockDecisionModel($this->createTestDecisionResult(['rating' => $answer])));
+
+        $this->assertSame('3', $builder->decideResult()->getAnswer('rating')->getChoice());
+    }
+
+    /**
      * Tests that decideResult() throws when an answer does not fit its question.
      *
      * @dataProvider provideInvalidAnswers
@@ -424,6 +528,11 @@ class DecisionBuilderTest extends TestCase
                 new DecisionAnswer($choice, 'approve'),
                 'Expected an answer to a binary question, but received an answer to a choice question.',
             ],
+            'refusal of the wrong type' => [
+                'spam',
+                new DecisionAnswer($choice, null),
+                'Expected an answer to a binary question, but received an answer to a choice question.',
+            ],
             // A probability of 1 must not be mistaken for the first level of a scale, or vice versa.
             'score answered as binary' => [
                 'tone',
@@ -437,8 +546,8 @@ class DecisionBuilderTest extends TestCase
             ],
             'probabilities for unknown options' => [
                 'route',
-                new DecisionAnswer($choice, 'approve', null, ['approve' => 0.8, 'delete' => 0.1, 'spam' => 0.1]),
-                'It has probabilities for options the question does not have: delete, spam.',
+                new DecisionAnswer($choice, 'approve', null, ['approve' => 0.8, 'delete' => 0.1, '7' => 0.1]),
+                'It has probabilities for options the question does not have: delete, 7.',
             ],
             'score beyond the scale' => [
                 'tone',
@@ -499,5 +608,15 @@ class DecisionBuilderTest extends TestCase
 
         $this->assertTrue($clone->isSupported());
         $this->assertFalse($builder->isSupported());
+    }
+
+    /**
+     * Creates an image file.
+     *
+     * @return File
+     */
+    private static function createPhoto(): File
+    {
+        return new File('https://example.com/photo.png', 'image/png');
     }
 }

@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Providers\Models\Decision\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionOption;
 use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
 use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 
@@ -25,7 +26,8 @@ class DecisionQuestionTest extends TestCase
 
         $this->assertTrue($question->getType()->isBinary());
         $this->assertSame('Is this comment spam?', $question->getInstructions());
-        $this->assertSame([], $question->getCriteria());
+        $this->assertSame([], $question->getOptions());
+        $this->assertSame([], $question->getLevels());
         $this->assertSame(
             [
                 DecisionQuestion::KEY_TYPE => 'binary',
@@ -36,27 +38,60 @@ class DecisionQuestionTest extends TestCase
     }
 
     /**
-     * Tests creating a choice question.
+     * Tests creating a choice question from option values and options with descriptions.
      *
      * @return void
      */
     public function testCreateChoiceQuestion(): void
     {
-        $criteria = [
-            'approve' => 'The comment is fine to publish.',
-            'hold' => 'The comment needs a closer look.',
-            'trash' => 'The comment should be removed.',
-        ];
+        $approve = new DecisionOption('approve', 'The comment is fine to publish.');
 
         $question = new DecisionQuestion(
             DecisionQuestionTypeEnum::choice(),
             'How should a moderator handle it?',
-            $criteria
+            [$approve, 'hold']
         );
 
         $this->assertTrue($question->getType()->isChoice());
-        $this->assertSame($criteria, $question->getCriteria());
-        $this->assertSame($criteria, $question->toArray()[DecisionQuestion::KEY_CRITERIA]);
+        $this->assertSame([], $question->getLevels());
+
+        $options = $question->getOptions();
+        $this->assertCount(2, $options);
+        $this->assertSame($approve, $options[0]);
+        $this->assertSame('hold', $options[1]->getValue());
+        $this->assertNull($options[1]->getDescription());
+
+        $this->assertSame(
+            [
+                ['value' => 'approve', 'description' => 'The comment is fine to publish.'],
+                ['value' => 'hold'],
+            ],
+            $question->toArray()[DecisionQuestion::KEY_OPTIONS]
+        );
+    }
+
+    /**
+     * Tests that a choice question accepts option values that PHP would turn into integer array keys.
+     *
+     * @return void
+     */
+    public function testChoiceQuestionAcceptsIntegerLikeOptionValues(): void
+    {
+        $question = new DecisionQuestion(
+            DecisionQuestionTypeEnum::choice(),
+            'How many stars?',
+            ['1', '2', new DecisionOption('3', 'Excellent.')]
+        );
+
+        $this->assertSame(
+            ['1', '2', '3'],
+            array_map(
+                static function (DecisionOption $option): string {
+                    return $option->getValue();
+                },
+                $question->getOptions()
+            )
+        );
     }
 
     /**
@@ -75,8 +110,9 @@ class DecisionQuestionTest extends TestCase
         );
 
         $this->assertTrue($question->getType()->isScore());
-        $this->assertSame($levels, $question->getCriteria());
-        $this->assertSame($levels, $question->toArray()[DecisionQuestion::KEY_CRITERIA]);
+        $this->assertSame($levels, $question->getLevels());
+        $this->assertSame([], $question->getOptions());
+        $this->assertSame($levels, $question->toArray()[DecisionQuestion::KEY_LEVELS]);
     }
 
     /**
@@ -108,8 +144,11 @@ class DecisionQuestionTest extends TestCase
                 new DecisionQuestion(
                     DecisionQuestionTypeEnum::choice(),
                     'How should a moderator handle it?',
-                    ['approve' => 'Publish it.', 'trash' => 'Remove it.']
+                    [new DecisionOption('approve', 'Publish it.'), 'trash']
                 ),
+            ],
+            'choice with integer-like values' => [
+                new DecisionQuestion(DecisionQuestionTypeEnum::choice(), 'How many stars?', ['1', '2', '3']),
             ],
             'score' => [
                 new DecisionQuestion(
@@ -119,25 +158,6 @@ class DecisionQuestionTest extends TestCase
                 ),
             ],
         ];
-    }
-
-    /**
-     * Tests that a choice question serializes its options as a JSON object.
-     *
-     * @return void
-     */
-    public function testChoiceCriteriaEncodeAsJsonObject(): void
-    {
-        $question = new DecisionQuestion(
-            DecisionQuestionTypeEnum::choice(),
-            'How should a moderator handle it?',
-            ['approve' => 'Publish it.', 'trash' => 'Remove it.']
-        );
-
-        $this->assertStringContainsString(
-            '"criteria":{"approve":"Publish it.","trash":"Remove it."}',
-            (string) json_encode($question->toArray())
-        );
     }
 
     /**
@@ -163,141 +183,121 @@ class DecisionQuestionTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Binary decision questions do not accept criteria.');
 
-        new DecisionQuestion(
-            DecisionQuestionTypeEnum::binary(),
-            'Is this comment spam?',
-            ['yes' => 'It is spam.', 'no' => 'It is not spam.']
-        );
+        new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?', ['yes', 'no']);
     }
 
     /**
-     * Tests that choice and score questions require at least two criteria.
+     * Tests that choice and score questions require a list of at least two criteria.
      *
-     * @dataProvider provideSingleCriterion
+     * @dataProvider provideInvalidCriteriaLists
      *
      * @param DecisionQuestionTypeEnum $type The question type.
-     * @param array<string, string>|list<string> $criteria A single criterion of the shape the type takes.
+     * @param array<mixed> $criteria Criteria that are too few or not a list.
      * @return void
      */
-    public function testRequiresAtLeastTwoCriteria(DecisionQuestionTypeEnum $type, array $criteria): void
+    public function testRequiresListOfAtLeastTwoCriteria(DecisionQuestionTypeEnum $type, array $criteria): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            sprintf('Decision questions of type "%s" require at least two criteria.', $type->value)
+            sprintf('Decision questions of type "%s" require a list of at least two criteria.', $type->value)
         );
 
         new DecisionQuestion($type, 'Pick one.', $criteria);
     }
 
     /**
-     * Provides a single criterion for each question type that requires criteria.
-     *
-     * @return array<string, array{DecisionQuestionTypeEnum, array<string, string>|list<string>}>
-     */
-    public function provideSingleCriterion(): array
-    {
-        return [
-            'choice' => [DecisionQuestionTypeEnum::choice(), ['only' => 'The only option.']],
-            'score' => [DecisionQuestionTypeEnum::score(), ['The only level.']],
-        ];
-    }
-
-    /**
-     * Tests that choice questions reject option keys that are not names.
-     *
-     * @dataProvider provideInvalidChoiceCriteria
-     *
-     * @param array<mixed> $criteria The invalid criteria.
-     * @return void
-     */
-    public function testChoiceQuestionRejectsInvalidOptionKeys(array $criteria): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'Choice decision question option keys must be non-empty, non-integer strings.'
-        );
-
-        new DecisionQuestion(DecisionQuestionTypeEnum::choice(), 'Pick one.', $criteria);
-    }
-
-    /**
-     * Provides choice criteria with invalid option keys.
-     *
-     * @return array<string, array{array<mixed>}>
-     */
-    public function provideInvalidChoiceCriteria(): array
-    {
-        return [
-            'list' => [['Publish it.', 'Remove it.']],
-            'integer-like keys' => [['1' => 'Publish it.', '2' => 'Remove it.']],
-            'empty key' => [['' => 'Publish it.', 'trash' => 'Remove it.']],
-            'whitespace key' => [[' ' => 'Publish it.', 'trash' => 'Remove it.']],
-        ];
-    }
-
-    /**
-     * Tests that score questions require a list of levels.
-     *
-     * @dataProvider provideInvalidScoreCriteria
-     *
-     * @param array<mixed> $criteria The invalid criteria.
-     * @return void
-     */
-    public function testScoreQuestionRequiresListOfLevels(array $criteria): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'Score decision question criteria must be a list of level descriptions, from lowest to highest.'
-        );
-
-        new DecisionQuestion(DecisionQuestionTypeEnum::score(), 'How toxic is it?', $criteria);
-    }
-
-    /**
-     * Provides score criteria that are not a list.
-     *
-     * @return array<string, array{array<mixed>}>
-     */
-    public function provideInvalidScoreCriteria(): array
-    {
-        return [
-            'named levels' => [['low' => 'Not toxic.', 'high' => 'Very toxic.']],
-            'levels counted from one' => [[1 => 'Not toxic.', 2 => 'Very toxic.']],
-        ];
-    }
-
-    /**
-     * Tests that criteria descriptions must be non-empty strings.
-     *
-     * @dataProvider provideInvalidDescriptions
-     *
-     * @param DecisionQuestionTypeEnum $type The question type.
-     * @param array<mixed> $criteria The criteria with an invalid description.
-     * @return void
-     */
-    public function testRejectsInvalidCriteriaDescriptions(DecisionQuestionTypeEnum $type, array $criteria): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Decision question criteria descriptions must be non-empty strings.');
-
-        new DecisionQuestion($type, 'Pick one.', $criteria);
-    }
-
-    /**
-     * Provides criteria with an invalid description.
+     * Provides criteria that are too few or not a list, for each question type that requires criteria.
      *
      * @return array<string, array{DecisionQuestionTypeEnum, array<mixed>}>
      */
-    public function provideInvalidDescriptions(): array
+    public function provideInvalidCriteriaLists(): array
     {
         $choice = DecisionQuestionTypeEnum::choice();
         $score = DecisionQuestionTypeEnum::score();
 
         return [
-            'non-string option' => [$choice, ['approve' => 'Publish it.', 'trash' => 1]],
-            'empty option' => [$choice, ['approve' => 'Publish it.', 'trash' => ' ']],
-            'non-string level' => [$score, ['Not toxic.', null]],
-            'empty level' => [$score, ['Not toxic.', '']],
+            'single option' => [$choice, ['only']],
+            'options keyed by value' => [$choice, ['approve' => 'Publish it.', 'trash' => 'Remove it.']],
+            'single level' => [$score, ['The only level.']],
+            'named levels' => [$score, ['low' => 'Not toxic.', 'high' => 'Very toxic.']],
+            'levels counted from one' => [$score, [1 => 'Not toxic.', 2 => 'Very toxic.']],
+        ];
+    }
+
+    /**
+     * Tests that choice questions reject options that are neither values nor DecisionOption instances.
+     *
+     * @return void
+     */
+    public function testChoiceQuestionRejectsInvalidOptions(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Choice decision question options must be option values or DecisionOption instances.'
+        );
+
+        new DecisionQuestion(DecisionQuestionTypeEnum::choice(), 'How many stars?', [1, 2]);
+    }
+
+    /**
+     * Tests that choice questions reject empty option values.
+     *
+     * @return void
+     */
+    public function testChoiceQuestionRejectsEmptyOptionValues(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Decision option values cannot be empty.');
+
+        new DecisionQuestion(DecisionQuestionTypeEnum::choice(), 'Pick one.', ['approve', ' ']);
+    }
+
+    /**
+     * Tests that choice questions reject options with the same value.
+     *
+     * @return void
+     */
+    public function testChoiceQuestionRejectsDuplicateOptions(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Choice decision question options must be unique, but "approve" is given more than once.'
+        );
+
+        new DecisionQuestion(
+            DecisionQuestionTypeEnum::choice(),
+            'Pick one.',
+            ['approve', 'trash', new DecisionOption('approve', 'Publish it.')]
+        );
+    }
+
+    /**
+     * Tests that score question levels must be non-empty descriptions.
+     *
+     * @dataProvider provideInvalidLevels
+     *
+     * @param array<mixed> $levels The levels with an invalid description.
+     * @return void
+     */
+    public function testScoreQuestionRejectsInvalidLevels(array $levels): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Score decision question levels must be non-empty descriptions.');
+
+        new DecisionQuestion(DecisionQuestionTypeEnum::score(), 'How toxic is it?', $levels);
+    }
+
+    /**
+     * Provides levels with an invalid description.
+     *
+     * @return array<string, array{array<mixed>}>
+     */
+    public function provideInvalidLevels(): array
+    {
+        return [
+            'non-string level' => [['Not toxic.', null]],
+            'empty level' => [['Not toxic.', '']],
+            'option instead of level' => [['Not toxic.', new DecisionOption('high', 'Very toxic.')]],
         ];
     }
 
@@ -327,9 +327,10 @@ class DecisionQuestionTest extends TestCase
             $schema['properties'][DecisionQuestion::KEY_TYPE]['enum']
         );
         $this->assertSame(
-            ['object', 'array'],
-            array_column($schema['properties'][DecisionQuestion::KEY_CRITERIA]['oneOf'], 'type')
+            DecisionOption::getJsonSchema(),
+            $schema['properties'][DecisionQuestion::KEY_OPTIONS]['items']
         );
+        $this->assertSame('array', $schema['properties'][DecisionQuestion::KEY_LEVELS]['type']);
         $this->assertSame(
             [DecisionQuestion::KEY_TYPE, DecisionQuestion::KEY_INSTRUCTIONS],
             $schema['required']

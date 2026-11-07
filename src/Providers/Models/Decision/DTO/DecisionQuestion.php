@@ -12,16 +12,19 @@ use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
  * Represents a typed question for a decision model to answer about the given state.
  *
  * A binary question asks whether a statement is true, and takes no criteria. A choice question asks the
- * model to pick one of several named options, given as criteria that map each option key to a description
- * of when it applies. A score question asks the model to place the state on a scale, given as criteria that
- * list a description of each level from lowest to highest.
+ * model to pick one of several options, each identified by a value and optionally described. A score
+ * question asks the model to place the state on a scale, given as a description of each level from lowest
+ * to highest.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type DecisionOptionArrayShape from DecisionOption
  *
  * @phpstan-type DecisionQuestionArrayShape array{
  *     type: string,
  *     instructions: string,
- *     criteria?: array<string, string>|list<string>
+ *     options?: list<DecisionOptionArrayShape>,
+ *     levels?: list<string>
  * }
  *
  * @extends AbstractDataTransferObject<DecisionQuestionArrayShape>
@@ -30,7 +33,8 @@ class DecisionQuestion extends AbstractDataTransferObject
 {
     public const KEY_TYPE = 'type';
     public const KEY_INSTRUCTIONS = 'instructions';
-    public const KEY_CRITERIA = 'criteria';
+    public const KEY_OPTIONS = 'options';
+    public const KEY_LEVELS = 'levels';
 
     /**
      * @var DecisionQuestionTypeEnum The question type.
@@ -43,10 +47,14 @@ class DecisionQuestion extends AbstractDataTransferObject
     private string $instructions;
 
     /**
-     * @var array<string, string>|list<string> The option descriptions keyed by option key, or the level
-     *      descriptions from lowest to highest.
+     * @var list<DecisionOption> The options of a choice question.
      */
-    private array $criteria;
+    private array $options = [];
+
+    /**
+     * @var list<string> The level descriptions of a score question, from lowest to highest.
+     */
+    private array $levels = [];
 
     /**
      * Constructor.
@@ -55,10 +63,10 @@ class DecisionQuestion extends AbstractDataTransferObject
      *
      * @param DecisionQuestionTypeEnum $type The question type.
      * @param string $instructions The question to answer.
-     * @param array<string, string>|list<string> $criteria For a choice question, the option descriptions keyed
-     *                                                     by option key. For a score question, the level
-     *                                                     descriptions from lowest to highest. Empty for a
-     *                                                     binary question.
+     * @param array<string|DecisionOption> $criteria For a choice question, a list of the options, each given
+     *                                               as its value or as a DecisionOption with a description.
+     *                                               For a score question, a list of the level descriptions
+     *                                               from lowest to highest. Empty for a binary question.
      *
      * @throws InvalidArgumentException If the instructions are empty or the criteria do not suit the type.
      */
@@ -72,41 +80,20 @@ class DecisionQuestion extends AbstractDataTransferObject
             if ($criteria !== []) {
                 throw new InvalidArgumentException('Binary decision questions do not accept criteria.');
             }
-        } elseif (count($criteria) < 2) {
+        } elseif (count($criteria) < 2 || !array_is_list($criteria)) {
             throw new InvalidArgumentException(
-                sprintf('Decision questions of type "%s" require at least two criteria.', $type->value)
+                sprintf('Decision questions of type "%s" require a list of at least two criteria.', $type->value)
             );
-        }
-
-        if ($type->isChoice()) {
-            foreach (array_keys($criteria) as $optionKey) {
-                // PHP converts integer-like string keys to integers, so those are rejected along with lists.
-                if (!is_string($optionKey) || trim($optionKey) === '') {
-                    throw new InvalidArgumentException(
-                        'Choice decision question option keys must be non-empty, non-integer strings.'
-                    );
-                }
-            }
-        }
-
-        if ($type->isScore() && !array_is_list($criteria)) {
-            throw new InvalidArgumentException(
-                'Score decision question criteria must be a list of level descriptions, '
-                . 'from lowest to highest.'
-            );
-        }
-
-        foreach ($criteria as $description) {
-            if (!is_string($description) || trim($description) === '') {
-                throw new InvalidArgumentException(
-                    'Decision question criteria descriptions must be non-empty strings.'
-                );
-            }
         }
 
         $this->type = $type;
         $this->instructions = $instructions;
-        $this->criteria = $criteria;
+
+        if ($type->isChoice()) {
+            $this->options = self::normalizeOptions($criteria);
+        } elseif ($type->isScore()) {
+            $this->levels = self::validateLevels($criteria);
+        }
     }
 
     /**
@@ -134,17 +121,93 @@ class DecisionQuestion extends AbstractDataTransferObject
     }
 
     /**
-     * Gets the criteria to answer the question with.
+     * Gets the options of a choice question.
      *
      * @since n.e.x.t
      *
-     * @return array<string, string>|list<string> The option descriptions keyed by option key for a choice
-     *                                            question, the level descriptions from lowest to highest for
-     *                                            a score question, or an empty array for a binary question.
+     * @return list<DecisionOption> The options, or an empty list if this is not a choice question.
      */
-    public function getCriteria(): array
+    public function getOptions(): array
     {
-        return $this->criteria;
+        return $this->options;
+    }
+
+    /**
+     * Gets the levels of a score question.
+     *
+     * @since n.e.x.t
+     *
+     * @return list<string> The level descriptions from lowest to highest, or an empty list if this is not a
+     *                      score question.
+     */
+    public function getLevels(): array
+    {
+        return $this->levels;
+    }
+
+    /**
+     * Converts the criteria of a choice question to options.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<mixed> $criteria The criteria, each an option value or a DecisionOption.
+     * @return list<DecisionOption> The options.
+     * @throws InvalidArgumentException If a criterion is not an option, or two options share a value.
+     */
+    private static function normalizeOptions(array $criteria): array
+    {
+        $options = [];
+        $values = [];
+
+        foreach ($criteria as $criterion) {
+            if (is_string($criterion)) {
+                $criterion = new DecisionOption($criterion);
+            } elseif (!$criterion instanceof DecisionOption) {
+                throw new InvalidArgumentException(
+                    'Choice decision question options must be option values or DecisionOption instances.'
+                );
+            }
+
+            if (isset($values[$criterion->getValue()])) {
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'Choice decision question options must be unique, but "%s" is given more than once.',
+                        $criterion->getValue()
+                    )
+                );
+            }
+
+            $values[$criterion->getValue()] = true;
+            $options[] = $criterion;
+        }
+
+        return $options;
+    }
+
+    /**
+     * Validates the criteria of a score question.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<mixed> $criteria The criteria, each a level description.
+     * @return list<string> The level descriptions.
+     * @throws InvalidArgumentException If a level description is not a non-empty string.
+     */
+    private static function validateLevels(array $criteria): array
+    {
+        $levels = [];
+
+        foreach ($criteria as $criterion) {
+            if (!is_string($criterion) || trim($criterion) === '') {
+                throw new InvalidArgumentException(
+                    'Score decision question levels must be non-empty descriptions.'
+                );
+            }
+
+            $levels[] = $criterion;
+        }
+
+        return $levels;
     }
 
     /**
@@ -166,25 +229,19 @@ class DecisionQuestion extends AbstractDataTransferObject
                     'type' => 'string',
                     'description' => 'The question to answer.',
                 ],
-                self::KEY_CRITERIA => [
-                    'oneOf' => [
-                        [
-                            'type' => 'object',
-                            'additionalProperties' => [
-                                'type' => 'string',
-                            ],
-                            'minProperties' => 2,
-                        ],
-                        [
-                            'type' => 'array',
-                            'items' => [
-                                'type' => 'string',
-                            ],
-                            'minItems' => 2,
-                        ],
+                self::KEY_OPTIONS => [
+                    'type' => 'array',
+                    'items' => DecisionOption::getJsonSchema(),
+                    'minItems' => 2,
+                    'description' => 'The options of a choice question.',
+                ],
+                self::KEY_LEVELS => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'string',
                     ],
-                    'description' => 'The option descriptions keyed by option key for a choice question, or the '
-                        . 'level descriptions from lowest to highest for a score question.',
+                    'minItems' => 2,
+                    'description' => 'The level descriptions of a score question, from lowest to highest.',
                 ],
             ],
             'required' => [self::KEY_TYPE, self::KEY_INSTRUCTIONS],
@@ -205,8 +262,17 @@ class DecisionQuestion extends AbstractDataTransferObject
             self::KEY_INSTRUCTIONS => $this->instructions,
         ];
 
-        if ($this->criteria !== []) {
-            $data[self::KEY_CRITERIA] = $this->criteria;
+        if ($this->options !== []) {
+            $data[self::KEY_OPTIONS] = array_map(
+                static function (DecisionOption $option): array {
+                    return $option->toArray();
+                },
+                $this->options
+            );
+        }
+
+        if ($this->levels !== []) {
+            $data[self::KEY_LEVELS] = $this->levels;
         }
 
         return $data;
@@ -221,10 +287,15 @@ class DecisionQuestion extends AbstractDataTransferObject
     {
         static::validateFromArrayData($array, [self::KEY_TYPE, self::KEY_INSTRUCTIONS]);
 
+        $criteria = $array[self::KEY_LEVELS] ?? [];
+        if (isset($array[self::KEY_OPTIONS])) {
+            $criteria = array_map([DecisionOption::class, 'fromArray'], $array[self::KEY_OPTIONS]);
+        }
+
         return new self(
             DecisionQuestionTypeEnum::from($array[self::KEY_TYPE]),
             $array[self::KEY_INSTRUCTIONS],
-            $array[self::KEY_CRITERIA] ?? []
+            $criteria
         );
     }
 }

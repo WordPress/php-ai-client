@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Events;
 
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
@@ -16,14 +16,9 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 class BeforeDecideEvent
 {
     /**
-     * @var array<string, mixed> The state to be sent to the model.
+     * @var DecisionRequest The state and questions to be sent to the model.
      */
-    private array $state;
-
-    /**
-     * @var array<string, DecisionQuestion> The questions to be sent to the model, keyed by question key.
-     */
-    private array $questions;
+    private DecisionRequest $request;
 
     /**
      * @var ModelInterface The model that will decide on the state.
@@ -40,42 +35,27 @@ class BeforeDecideEvent
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed>                  $state The state to be sent to the model.
-     * @param array<string, DecisionQuestion> $questions The questions to be sent to the model, keyed by
-     *                                                         question key.
-     * @param ModelInterface                        $model The model that will decide on the state.
-     * @param CapabilityEnum                        $capability The capability being used for decisions.
+     * @param DecisionRequest $request The state and questions to be sent to the model.
+     * @param ModelInterface $model The model that will decide on the state.
+     * @param CapabilityEnum $capability The capability being used for decisions.
      */
-    public function __construct(array $state, array $questions, ModelInterface $model, CapabilityEnum $capability)
+    public function __construct(DecisionRequest $request, ModelInterface $model, CapabilityEnum $capability)
     {
-        $this->state = $state;
-        $this->questions = $questions;
+        $this->request = $request;
         $this->model = $model;
         $this->capability = $capability;
     }
 
     /**
-     * Gets the state to be sent to the model.
+     * Gets the state and questions to be sent to the model.
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed> The state.
+     * @return DecisionRequest The request.
      */
-    public function getState(): array
+    public function getRequest(): DecisionRequest
     {
-        return $this->state;
-    }
-
-    /**
-     * Gets the questions to be sent to the model.
-     *
-     * @since n.e.x.t
-     *
-     * @return array<string, DecisionQuestion> The questions, keyed by question key.
-     */
-    public function getQuestions(): array
-    {
-        return $this->questions;
+        return $this->request;
     }
 
     /**
@@ -109,10 +89,6 @@ class BeforeDecideEvent
      */
     public function __clone()
     {
-        $clonedQuestions = [];
-        foreach ($this->questions as $key => $question) {
-            $clonedQuestions[$key] = clone $question;
-        }
-        $this->questions = $clonedQuestions;
+        $this->request = clone $this->request;
     }
 }

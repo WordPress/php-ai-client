@@ -11,6 +11,7 @@ use WordPress\AiClient\Builders\EmbeddingBuilder;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
 use WordPress\AiClient\Providers\ModelResolver;
@@ -281,11 +282,12 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed>|null $state Optional initial state to decide on.
+     * @param string|File|array<mixed>|null $state Optional state to decide on: a string, a file, or an array
+     *                                             of JSON-compatible values that may contain files.
      * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return DecisionBuilder The decision builder instance.
      */
-    public static function decide(?array $state = null, ?ProviderRegistry $registry = null): DecisionBuilder
+    public static function decide($state = null, ?ProviderRegistry $registry = null): DecisionBuilder
     {
         return new DecisionBuilder(
             $registry ?? self::defaultRegistry(),

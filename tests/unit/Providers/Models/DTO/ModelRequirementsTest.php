@@ -832,4 +832,53 @@ class ModelRequirementsTest extends TestCase
         $this->assertTrue($hasTopP, 'Top P option should be present');
         $this->assertTrue($hasDimensions, 'Dimensions option should be present');
     }
+
+    /**
+     * Tests that decision requirements always require text input.
+     *
+     * @return void
+     */
+    public function testFromDecisionDataWithoutFiles(): void
+    {
+        $config = new ModelConfig();
+        $config->setTemperature(0.2);
+
+        $requirements = ModelRequirements::fromDecisionData([], $config);
+
+        $this->assertEquals([CapabilityEnum::decision()], $requirements->getRequiredCapabilities());
+        $this->assertEquals(
+            [
+                new RequiredOption(OptionEnum::temperature(), 0.2),
+                new RequiredOption(OptionEnum::inputModalities(), [ModalityEnum::text()]),
+            ],
+            $requirements->getRequiredOptions()
+        );
+    }
+
+    /**
+     * Tests that each file in the decision state adds its input modality once.
+     *
+     * @return void
+     */
+    public function testFromDecisionDataWithFiles(): void
+    {
+        $requirements = ModelRequirements::fromDecisionData(
+            [
+                new File('https://example.com/photo.png', 'image/png'),
+                new File('https://example.com/other.jpg', 'image/jpeg'),
+                new File('https://example.com/clip.mp3', 'audio/mpeg'),
+            ],
+            new ModelConfig()
+        );
+
+        $this->assertEquals(
+            [
+                new RequiredOption(
+                    OptionEnum::inputModalities(),
+                    [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::audio()]
+                ),
+            ],
+            $requirements->getRequiredOptions()
+        );
+    }
 }

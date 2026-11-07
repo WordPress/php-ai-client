@@ -10,9 +10,12 @@ use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Events\AfterDecideEvent;
 use WordPress\AiClient\Events\BeforeDecideEvent;
+use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\Decision\Contracts\DecisionModelInterface;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionOption;
 use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
@@ -25,7 +28,11 @@ use WordPress\AiClient\Results\DTO\DecisionResult;
  *
  * Decision models answer typed questions about the given state, rather than generating content. Each
  * answer is a probability, a chosen option, or a position on a scale, optionally with a confidence and a
- * probability for each option or level.
+ * probability for each option or level. A model may also refuse to answer a question.
+ *
+ * The state is a string, a file, or an array of JSON-compatible values that may contain files, such as
+ * `['comment' => $text, 'photo' => $file]`. Files in the state are taken into account when finding a model
+ * that supports their input modality.
  *
  * Like {@see PromptBuilder}, this builder discovers a suitable model across the configured providers if
  * none is specified.
@@ -37,9 +44,9 @@ class DecisionBuilder
     use ModelResolutionTrait;
 
     /**
-     * @var array<string, mixed> The state to decide on.
+     * @var string|File|array<mixed>|null The state to decide on.
      */
-    protected array $state = [];
+    protected $state;
 
     /**
      * @var array<string, DecisionQuestion> The questions to answer, keyed by question key.
@@ -57,12 +64,12 @@ class DecisionBuilder
      * @since n.e.x.t
      *
      * @param ProviderRegistry $registry The provider registry for finding suitable models.
-     * @param array<string, mixed>|null $state Optional initial state to decide on.
+     * @param string|File|array<mixed>|null $state Optional state to decide on.
      * @param EventDispatcherInterface|null $eventDispatcher Optional event dispatcher for lifecycle events.
      */
     public function __construct(
         ProviderRegistry $registry,
-        ?array $state = null,
+        $state = null,
         ?EventDispatcherInterface $eventDispatcher = null
     ) {
         $this->modelConfig = new ModelConfig();
@@ -89,30 +96,19 @@ class DecisionBuilder
     }
 
     /**
-     * Adds state to decide on.
+     * Sets the state to decide on, replacing any state set before.
      *
-     * Keys that are already present are overwritten.
+     * The state is validated when the questions are answered, see {@see DecisionRequest}.
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed> $state The state to add, keyed by name.
+     * @param string|File|array<mixed> $state The state: a string, a file, or an array of JSON-compatible
+     *                                        values that may contain files.
      * @return self
-     * @throws InvalidArgumentException If the state is empty or not keyed by name.
      */
-    public function withState(array $state): self
+    public function withState($state): self
     {
-        if ($state === []) {
-            throw new InvalidArgumentException('Decision state cannot be empty.');
-        }
-
-        foreach (array_keys($state) as $key) {
-            // PHP converts integer-like string keys to integers, so those are rejected along with lists.
-            if (!is_string($key) || trim($key) === '') {
-                throw new InvalidArgumentException('Decision state keys must be non-empty, non-integer strings.');
-            }
-        }
-
-        $this->state = array_replace($this->state, $state);
+        $this->state = $state;
 
         return $this;
     }
@@ -159,15 +155,16 @@ class DecisionBuilder
      *
      * @since n.e.x.t
      *
-     * @return DecisionResult The result containing one answer per question.
-     * @throws InvalidArgumentException If no state or questions are configured, or no suitable model is found.
+     * @return DecisionResult The result containing one answer or refusal per question.
+     * @throws InvalidArgumentException If no state or questions are configured, the state is invalid, or no
+     *                                  suitable model is found.
      * @throws RuntimeException If the model does not support decisions, or does not give a valid answer
-     *                          to every question.
+     *                          or a refusal for every question.
      */
     public function decideResult(): DecisionResult
     {
-        if ($this->state === []) {
-            throw new InvalidArgumentException('Cannot decide on empty state. Add state using withState().');
+        if ($this->state === null) {
+            throw new InvalidArgumentException('Cannot decide without state. Add state using withState().');
         }
 
         if ($this->questions === []) {
@@ -175,6 +172,8 @@ class DecisionBuilder
                 'Cannot decide without questions. Add questions using withQuestion().'
             );
         }
+
+        $request = new DecisionRequest($this->state, $this->questions);
 
         $capability = CapabilityEnum::decision();
         $model = $this->modelResolver->resolve($this->getModelRequirements(), $this->modelConfig);
@@ -188,15 +187,13 @@ class DecisionBuilder
             );
         }
 
-        $this->dispatchEvent(new BeforeDecideEvent($this->state, $this->questions, $model, $capability));
+        $this->dispatchEvent(new BeforeDecideEvent($request, $model, $capability));
 
-        $result = $model->decideResult($this->state, $this->questions);
+        $result = $model->decideResult($request);
 
         $this->assertValidAnswers($result);
 
-        $this->dispatchEvent(
-            new AfterDecideEvent($this->state, $this->questions, $model, $capability, $result)
-        );
+        $this->dispatchEvent(new AfterDecideEvent($request, $model, $capability, $result));
 
         return $result;
     }
@@ -210,13 +207,37 @@ class DecisionBuilder
      */
     private function getModelRequirements(): ModelRequirements
     {
-        // Decisions take state and questions rather than messages, so only the capability and the
-        // model configuration contribute requirements.
-        return ModelRequirements::fromPromptData(CapabilityEnum::decision(), [], $this->modelConfig);
+        return ModelRequirements::fromDecisionData(self::findFiles($this->state), $this->modelConfig);
     }
 
     /**
-     * Asserts that the result holds a valid answer to every question.
+     * Finds the files in the state, at any depth.
+     *
+     * @since n.e.x.t
+     *
+     * @param mixed $state The state, or a value within it.
+     * @return list<File> The files in the state.
+     */
+    private static function findFiles($state): array
+    {
+        if ($state instanceof File) {
+            return [$state];
+        }
+
+        if (!is_array($state)) {
+            return [];
+        }
+
+        $files = [];
+        foreach ($state as $value) {
+            $files = array_merge($files, self::findFiles($value));
+        }
+
+        return $files;
+    }
+
+    /**
+     * Asserts that the result holds a valid answer or a refusal for every question.
      *
      * @since n.e.x.t
      *
@@ -228,7 +249,8 @@ class DecisionBuilder
     {
         $answers = $result->getAnswers();
 
-        // Answers map to questions by key, so every question must be answered.
+        // Answers map to questions by key, so every question must be answered. A model that will not answer a
+        // question must say so with a refusal, rather than leave the answer out.
         $unanswered = array_diff_key($this->questions, $answers);
         if ($unanswered !== []) {
             throw new RuntimeException(
@@ -270,25 +292,36 @@ class DecisionBuilder
             );
         }
 
-        $criteria = $question->getCriteria();
+        if ($answer->isRefusal()) {
+            return null;
+        }
+
         $probabilities = $answer->getProbabilities();
 
         if ($type->isChoice()) {
-            if (!array_key_exists($answer->getChoice(), $criteria)) {
+            $optionValues = array_map(
+                static function (DecisionOption $option): string {
+                    return $option->getValue();
+                },
+                $question->getOptions()
+            );
+
+            if (!in_array($answer->getChoice(), $optionValues, true)) {
                 return sprintf('"%s" is not one of its options.', $answer->getChoice());
             }
 
-            $unknownOptions = array_diff_key($probabilities, $criteria);
+            // PHP converts integer-like option values to integer keys, so the keys are compared as strings.
+            $unknownOptions = array_diff(array_map('strval', array_keys($probabilities)), $optionValues);
             if ($unknownOptions !== []) {
                 return sprintf(
                     'It has probabilities for options the question does not have: %s.',
-                    implode(', ', array_keys($unknownOptions))
+                    implode(', ', $unknownOptions)
                 );
             }
         }
 
         if ($type->isScore()) {
-            $levelCount = count($criteria);
+            $levelCount = count($question->getLevels());
 
             if ($answer->getScore() > $levelCount - 1) {
                 return sprintf(

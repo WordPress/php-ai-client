@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Events;
 
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Results\DTO\DecisionResult;
 
@@ -17,14 +17,9 @@ use WordPress\AiClient\Results\DTO\DecisionResult;
 class AfterDecideEvent
 {
     /**
-     * @var array<string, mixed> The state that was sent to the model.
+     * @var DecisionRequest The state and questions that were sent to the model.
      */
-    private array $state;
-
-    /**
-     * @var array<string, DecisionQuestion> The questions that were sent to the model, keyed by question key.
-     */
-    private array $questions;
+    private DecisionRequest $request;
 
     /**
      * @var ModelInterface The model that decided on the state.
@@ -46,49 +41,33 @@ class AfterDecideEvent
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed>                  $state The state that was sent to the model.
-     * @param array<string, DecisionQuestion> $questions The questions that were sent to the model, keyed
-     *                                                         by question key.
-     * @param ModelInterface                        $model The model that decided on the state.
-     * @param CapabilityEnum                        $capability The capability that was used for decisions.
-     * @param DecisionResult                  $result The result from the model.
+     * @param DecisionRequest $request The state and questions that were sent to the model.
+     * @param ModelInterface $model The model that decided on the state.
+     * @param CapabilityEnum $capability The capability that was used for decisions.
+     * @param DecisionResult $result The result from the model.
      */
     public function __construct(
-        array $state,
-        array $questions,
+        DecisionRequest $request,
         ModelInterface $model,
         CapabilityEnum $capability,
         DecisionResult $result
     ) {
-        $this->state = $state;
-        $this->questions = $questions;
+        $this->request = $request;
         $this->model = $model;
         $this->capability = $capability;
         $this->result = $result;
     }
 
     /**
-     * Gets the state that was sent to the model.
+     * Gets the state and questions that were sent to the model.
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed> The state.
+     * @return DecisionRequest The request.
      */
-    public function getState(): array
+    public function getRequest(): DecisionRequest
     {
-        return $this->state;
-    }
-
-    /**
-     * Gets the questions that were sent to the model.
-     *
-     * @since n.e.x.t
-     *
-     * @return array<string, DecisionQuestion> The questions, keyed by question key.
-     */
-    public function getQuestions(): array
-    {
-        return $this->questions;
+        return $this->request;
     }
 
     /**
@@ -134,11 +113,7 @@ class AfterDecideEvent
      */
     public function __clone()
     {
-        $clonedQuestions = [];
-        foreach ($this->questions as $key => $question) {
-            $clonedQuestions[$key] = clone $question;
-        }
-        $this->questions = $clonedQuestions;
+        $this->request = clone $this->request;
         $this->result = clone $this->result;
     }
 }

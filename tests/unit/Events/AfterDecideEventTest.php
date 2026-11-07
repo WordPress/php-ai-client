@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Tests\unit\Events;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Events\AfterDecideEvent;
 use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
+use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest;
 use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
@@ -19,48 +20,58 @@ class AfterDecideEventTest extends TestCase
     use MockModelCreationTrait;
 
     /**
+     * Creates a decision request.
+     *
+     * @return DecisionRequest
+     */
+    private function createRequest(): DecisionRequest
+    {
+        return new DecisionRequest(
+            ['comment' => 'Buy cheap pills!'],
+            ['spam' => new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is it spam?')]
+        );
+    }
+
+    /**
      * Tests event construction with all parameters.
      *
      * @return void
      */
     public function testConstruction(): void
     {
-        $state = ['comment' => 'Buy cheap pills!'];
-        $questions = ['spam' => new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is it spam?')];
+        $request = $this->createRequest();
         $result = $this->createTestDecisionResult();
         $model = $this->createMockDecisionModel($result);
         $capability = CapabilityEnum::decision();
 
-        $event = new AfterDecideEvent($state, $questions, $model, $capability, $result);
+        $event = new AfterDecideEvent($request, $model, $capability, $result);
 
-        $this->assertSame($state, $event->getState());
-        $this->assertSame($questions, $event->getQuestions());
+        $this->assertSame($request, $event->getRequest());
         $this->assertSame($model, $event->getModel());
         $this->assertSame($capability, $event->getCapability());
         $this->assertSame($result, $event->getResult());
     }
 
     /**
-     * Tests that cloning the event clones its questions and result.
+     * Tests that cloning the event clones its request and result.
      *
      * @return void
      */
-    public function testCloneClonesQuestionsAndResult(): void
+    public function testCloneClonesRequestAndResult(): void
     {
-        $question = new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is it spam?');
+        $request = $this->createRequest();
         $result = $this->createTestDecisionResult();
 
         $event = new AfterDecideEvent(
-            ['comment' => 'Buy cheap pills!'],
-            ['spam' => $question],
+            $request,
             $this->createMockDecisionModel($result),
             CapabilityEnum::decision(),
             $result
         );
         $clone = clone $event;
 
-        $this->assertSame(['spam'], array_keys($clone->getQuestions()));
-        $this->assertNotSame($question, $clone->getQuestions()['spam']);
+        $this->assertNotSame($request, $clone->getRequest());
+        $this->assertEquals($request, $clone->getRequest());
         $this->assertNotSame($result, $clone->getResult());
         $this->assertEquals($result, $clone->getResult());
     }

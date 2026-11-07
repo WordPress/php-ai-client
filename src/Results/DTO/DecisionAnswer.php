@@ -15,7 +15,7 @@ use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
  * An answer has the type of the question it answers, which determines its value:
  *
  * - binary: the probability, from 0 to 1, that the statement is true. See {@see self::getProbability()}.
- * - choice: the key of the chosen option. See {@see self::getChoice()}.
+ * - choice: the value of the chosen option. See {@see self::getChoice()}.
  * - score: the position on the scale, from 0 for the lowest level to one less than the number of levels.
  *   It may fall between levels, for example when a model reports a probability-weighted position. See
  *   {@see self::getScore()}.
@@ -23,13 +23,16 @@ use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
  * Models may also report how confident they are in the answer and, for choice and score questions, the
  * probability of each option or level.
  *
+ * A model may also refuse to answer a question, while still answering the others. A refusal has the type of
+ * the question but no value, so {@see self::isRefusal()} must be checked before reading the value.
+ *
  * @since n.e.x.t
  *
  * @phpstan-type DecisionAnswerArrayShape array{
  *     type: string,
- *     value: float|string,
+ *     value: float|string|null,
  *     confidence?: float,
- *     probabilities?: array<string, float>|list<float>
+ *     probabilities?: list<array{value: string, probability: float}>|list<float>
  * }
  *
  * @extends AbstractDataTransferObject<DecisionAnswerArrayShape>
@@ -40,6 +43,7 @@ class DecisionAnswer extends AbstractDataTransferObject
     public const KEY_VALUE = 'value';
     public const KEY_CONFIDENCE = 'confidence';
     public const KEY_PROBABILITIES = 'probabilities';
+    public const KEY_PROBABILITY = 'probability';
 
     /**
      * @var DecisionQuestionTypeEnum The type of the question answered.
@@ -47,7 +51,8 @@ class DecisionAnswer extends AbstractDataTransferObject
     private DecisionQuestionTypeEnum $type;
 
     /**
-     * @var float|string The probability, the chosen option key, or the position on the scale.
+     * @var float|string|null The probability, the chosen option value, the position on the scale, or null if
+     *      the model refused to answer.
      */
     private $value;
 
@@ -57,7 +62,8 @@ class DecisionAnswer extends AbstractDataTransferObject
     private ?float $confidence;
 
     /**
-     * @var array<string, float>|list<float> The probability of each option or level, if reported.
+     * @var array<float> The probability of each option keyed by option value, or of each level from lowest to
+     *      highest, if reported.
      */
     private array $probabilities;
 
@@ -67,14 +73,14 @@ class DecisionAnswer extends AbstractDataTransferObject
      * @since n.e.x.t
      *
      * @param DecisionQuestionTypeEnum $type The type of the question answered.
-     * @param float|string $value The probability for a binary question, the chosen option key for a choice
-     *                            question, or the position on the scale for a score question.
+     * @param float|string|null $value The probability for a binary question, the chosen option value for a
+     *                                 choice question, the position on the scale for a score question, or
+     *                                 null if the model refused to answer.
      * @param float|null $confidence The model's confidence in the answer, if reported.
-     * @param array<string, float>|list<float> $probabilities For a choice question, the probability of each
-     *                                                        option keyed by option key. For a score question,
-     *                                                        the probability of each level from lowest to
-     *                                                        highest. Empty if not reported, and always empty
-     *                                                        for a binary question.
+     * @param array<float> $probabilities For a choice question, the probability of each option keyed by option
+     *                                    value. For a score question, the probability of each level from lowest
+     *                                    to highest. Empty if not reported, and always empty for a binary
+     *                                    question or a refusal.
      *
      * @throws InvalidArgumentException If the value, confidence, or probabilities do not suit the type, or a
      *                                  confidence or probability is not between 0 and 1.
@@ -85,11 +91,17 @@ class DecisionAnswer extends AbstractDataTransferObject
         ?float $confidence = null,
         array $probabilities = []
     ) {
-        if ($type->isBinary()) {
+        if ($value === null) {
+            if ($confidence !== null || $probabilities !== []) {
+                throw new InvalidArgumentException(
+                    'Decision answers that refuse to answer do not accept a confidence or probabilities.'
+                );
+            }
+        } elseif ($type->isBinary()) {
             $value = self::validateProbability($value, 'Decision answer probability');
         } elseif ($type->isChoice()) {
             if (!is_string($value) || trim($value) === '') {
-                throw new InvalidArgumentException('Decision answer choice must be a non-empty option key.');
+                throw new InvalidArgumentException('Decision answer choice must be a non-empty option value.');
             }
         } else {
             if ((!is_int($value) && !is_float($value)) || !is_finite((float) $value) || $value < 0) {
@@ -119,9 +131,10 @@ class DecisionAnswer extends AbstractDataTransferObject
             }
 
             foreach ($probabilities as $key => $probability) {
-                if ($type->isChoice() && (!is_string($key) || trim($key) === '')) {
+                // PHP converts integer-like option values such as "5" to integer keys, so those are allowed.
+                if ($type->isChoice() && is_string($key) && trim($key) === '') {
                     throw new InvalidArgumentException(
-                        'Decision answer probabilities for a choice question must be keyed by option key.'
+                        'Decision answer probabilities for a choice question must be keyed by option value.'
                     );
                 }
 
@@ -151,12 +164,26 @@ class DecisionAnswer extends AbstractDataTransferObject
     }
 
     /**
+     * Checks whether the model refused to answer the question.
+     *
+     * A refusal has no value, so the typed getters throw for it.
+     *
+     * @since n.e.x.t
+     *
+     * @return bool True if the model refused to answer.
+     */
+    public function isRefusal(): bool
+    {
+        return $this->value === null;
+    }
+
+    /**
      * Gets the probability that the statement of a binary question is true.
      *
      * @since n.e.x.t
      *
      * @return float The probability, from 0 to 1.
-     * @throws RuntimeException If this is not an answer to a binary question.
+     * @throws RuntimeException If this is not an answer to a binary question, or is a refusal.
      */
     public function getProbability(): float
     {
@@ -170,8 +197,8 @@ class DecisionAnswer extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string The option key.
-     * @throws RuntimeException If this is not an answer to a choice question.
+     * @return string The option value.
+     * @throws RuntimeException If this is not an answer to a choice question, or is a refusal.
      */
     public function getChoice(): string
     {
@@ -186,7 +213,7 @@ class DecisionAnswer extends AbstractDataTransferObject
      * @since n.e.x.t
      *
      * @return float The position, from 0 for the lowest level to one less than the number of levels.
-     * @throws RuntimeException If this is not an answer to a score question.
+     * @throws RuntimeException If this is not an answer to a score question, or is a refusal.
      */
     public function getScore(): float
     {
@@ -212,10 +239,10 @@ class DecisionAnswer extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return array<string, float>|list<float> The probabilities keyed by option key for a choice question, or
-     *                                          listed from the lowest level to the highest for a score
-     *                                          question. Empty if not reported, and always empty for a binary
-     *                                          question.
+     * @return array<float> The probabilities keyed by option value for a choice question, or listed from the
+     *                      lowest level to the highest for a score question. As with any PHP array, an option
+     *                      value such as "5" becomes an integer key. Empty if not reported, and always empty
+     *                      for a binary question or a refusal.
      */
     public function getProbabilities(): array
     {
@@ -223,16 +250,20 @@ class DecisionAnswer extends AbstractDataTransferObject
     }
 
     /**
-     * Asserts that this is an answer to a question of the given type.
+     * Asserts that this is an answer to a question of the given type, and not a refusal.
      *
      * @since n.e.x.t
      *
      * @param DecisionQuestionTypeEnum $type The expected question type.
      * @return void
-     * @throws RuntimeException If this is an answer to a question of another type.
+     * @throws RuntimeException If this is an answer to a question of another type, or is a refusal.
      */
     private function assertType(DecisionQuestionTypeEnum $type): void
     {
+        if ($this->isRefusal()) {
+            throw new RuntimeException('The model refused to answer this question, so the answer has no value.');
+        }
+
         if (!$this->type->is($type)) {
             throw new RuntimeException(
                 sprintf(
@@ -294,9 +325,13 @@ class DecisionAnswer extends AbstractDataTransferObject
                         [
                             'type' => 'string',
                         ],
+                        [
+                            'type' => 'null',
+                        ],
                     ],
-                    'description' => 'The probability for a binary question, the chosen option key for a choice '
-                        . 'question, or the position on the scale for a score question.',
+                    'description' => 'The probability for a binary question, the chosen option value for a '
+                        . 'choice question, the position on the scale for a score question, or null if the '
+                        . 'model refused to answer.',
                 ],
                 self::KEY_CONFIDENCE => array_merge($probabilitySchema, [
                     'description' => 'The model\'s confidence in the answer.',
@@ -304,16 +339,25 @@ class DecisionAnswer extends AbstractDataTransferObject
                 self::KEY_PROBABILITIES => [
                     'oneOf' => [
                         [
-                            'type' => 'object',
-                            'additionalProperties' => $probabilitySchema,
+                            'type' => 'array',
+                            'items' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    self::KEY_VALUE => [
+                                        'type' => 'string',
+                                    ],
+                                    self::KEY_PROBABILITY => $probabilitySchema,
+                                ],
+                                'required' => [self::KEY_VALUE, self::KEY_PROBABILITY],
+                            ],
                         ],
                         [
                             'type' => 'array',
                             'items' => $probabilitySchema,
                         ],
                     ],
-                    'description' => 'The probability of each option keyed by option key for a choice question, '
-                        . 'or of each level from lowest to highest for a score question.',
+                    'description' => 'The probability of each option for a choice question, or of each level '
+                        . 'from lowest to highest for a score question.',
                 ],
             ],
             'required' => [self::KEY_TYPE, self::KEY_VALUE],
@@ -339,7 +383,9 @@ class DecisionAnswer extends AbstractDataTransferObject
         }
 
         if ($this->probabilities !== []) {
-            $data[self::KEY_PROBABILITIES] = $this->probabilities;
+            $data[self::KEY_PROBABILITIES] = $this->type->isChoice()
+                ? $this->getOptionProbabilitiesList()
+                : array_values($this->probabilities);
         }
 
         return $data;
@@ -354,11 +400,44 @@ class DecisionAnswer extends AbstractDataTransferObject
     {
         static::validateFromArrayData($array, [self::KEY_TYPE, self::KEY_VALUE]);
 
+        // Choice probabilities are listed with their option values, and score probabilities by level.
+        $probabilities = [];
+        foreach ($array[self::KEY_PROBABILITIES] ?? [] as $index => $entry) {
+            if (is_array($entry)) {
+                $probabilities[$entry[self::KEY_VALUE]] = $entry[self::KEY_PROBABILITY];
+            } else {
+                $probabilities[$index] = $entry;
+            }
+        }
+
         return new self(
             DecisionQuestionTypeEnum::from($array[self::KEY_TYPE]),
             $array[self::KEY_VALUE],
             $array[self::KEY_CONFIDENCE] ?? null,
-            $array[self::KEY_PROBABILITIES] ?? []
+            $probabilities
         );
+    }
+
+    /**
+     * Lists the probability of each option of a choice question with its option value.
+     *
+     * Unlike an array keyed by option value, the list keeps option values such as "5" as strings, and always
+     * serializes to a JSON array.
+     *
+     * @since n.e.x.t
+     *
+     * @return list<array{value: string, probability: float}> The option values and their probabilities.
+     */
+    private function getOptionProbabilitiesList(): array
+    {
+        $list = [];
+        foreach ($this->probabilities as $value => $probability) {
+            $list[] = [
+                self::KEY_VALUE => (string) $value,
+                self::KEY_PROBABILITY => $probability,
+            ];
+        }
+
+        return $list;
     }
 }
