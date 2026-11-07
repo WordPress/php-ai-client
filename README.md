@@ -165,7 +165,7 @@ foreach (AiClient::defaultRegistry()->findModelsMetadataForSupport($requirements
 
 Decision models answer typed questions about the state you give them rather than generating content. There are three types of question:
 
-* A `binary` question asks whether a statement is true, and is answered with the probability that it is.
+* A `binary` question asks whether a statement is true, optionally describing what counts as true and what counts as false, and is answered with the probability that it is true.
 * A `choice` question lists options, each a value with an optional description of when it applies, and is answered with the value of the chosen option.
 * A `score` question lists the levels of a scale from lowest to highest, and is answered with a position on that scale, from `0` for the lowest level to one less than the number of levels. The position may fall between two levels.
 
@@ -184,7 +184,14 @@ use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 $result = AiClient::decide(['comment' => $commentText])
     ->withQuestion(
         'spam',
-        new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?')
+        new DecisionQuestion(
+            DecisionQuestionTypeEnum::binary(),
+            'Is this comment spam?',
+            [
+                'true' => 'The comment advertises something unrelated to the post.',
+                'false' => 'The comment responds to the post, even if briefly.',
+            ]
+        )
     )
     ->withQuestion(
         'route',

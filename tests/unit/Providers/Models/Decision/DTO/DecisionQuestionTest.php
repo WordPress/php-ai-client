@@ -26,6 +26,8 @@ class DecisionQuestionTest extends TestCase
 
         $this->assertTrue($question->getType()->isBinary());
         $this->assertSame('Is this comment spam?', $question->getInstructions());
+        $this->assertNull($question->getTrueDescription());
+        $this->assertNull($question->getFalseDescription());
         $this->assertSame([], $question->getOptions());
         $this->assertSame([], $question->getLevels());
         $this->assertSame(
@@ -35,6 +37,56 @@ class DecisionQuestionTest extends TestCase
             ],
             $question->toArray()
         );
+    }
+
+    /**
+     * Tests creating a binary question that describes what counts as true and as false.
+     *
+     * @return void
+     */
+    public function testCreateBinaryQuestionWithDescriptions(): void
+    {
+        $question = new DecisionQuestion(
+            DecisionQuestionTypeEnum::binary(),
+            'Is this message a refund request?',
+            [
+                'true' => 'The customer asks for their money back.',
+                'false' => 'The customer only asks how the refund policy works.',
+            ]
+        );
+
+        $this->assertSame('The customer asks for their money back.', $question->getTrueDescription());
+        $this->assertSame(
+            'The customer only asks how the refund policy works.',
+            $question->getFalseDescription()
+        );
+        $this->assertSame(
+            [
+                DecisionQuestion::KEY_TYPE => 'binary',
+                DecisionQuestion::KEY_INSTRUCTIONS => 'Is this message a refund request?',
+                DecisionQuestion::KEY_TRUE_DESCRIPTION => 'The customer asks for their money back.',
+                DecisionQuestion::KEY_FALSE_DESCRIPTION => 'The customer only asks how the refund policy works.',
+            ],
+            $question->toArray()
+        );
+    }
+
+    /**
+     * Tests that either description of a binary question may be given on its own.
+     *
+     * @return void
+     */
+    public function testBinaryQuestionDescriptionsAreIndependent(): void
+    {
+        $question = new DecisionQuestion(
+            DecisionQuestionTypeEnum::binary(),
+            'Did the package arrive late?',
+            ['false' => 'The package arrived on time.']
+        );
+
+        $this->assertNull($question->getTrueDescription());
+        $this->assertSame('The package arrived on time.', $question->getFalseDescription());
+        $this->assertArrayNotHasKey(DecisionQuestion::KEY_TRUE_DESCRIPTION, $question->toArray());
     }
 
     /**
@@ -140,6 +192,13 @@ class DecisionQuestionTest extends TestCase
     {
         return [
             'binary' => [new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is it spam?')],
+            'binary with descriptions' => [
+                new DecisionQuestion(
+                    DecisionQuestionTypeEnum::binary(),
+                    'Is it spam?',
+                    ['true' => 'Unsolicited advertising.', 'false' => 'A legitimate conversation.']
+                ),
+            ],
             'choice' => [
                 new DecisionQuestion(
                     DecisionQuestionTypeEnum::choice(),
@@ -174,16 +233,38 @@ class DecisionQuestionTest extends TestCase
     }
 
     /**
-     * Tests that binary questions reject criteria.
+     * Tests that binary questions reject criteria other than true and false descriptions.
      *
+     * @dataProvider provideInvalidBinaryCriteria
+     *
+     * @param array<mixed> $criteria The invalid criteria.
+     * @param string $message The expected exception message.
      * @return void
      */
-    public function testBinaryQuestionRejectsCriteria(): void
+    public function testBinaryQuestionRejectsInvalidCriteria(array $criteria, string $message): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Binary decision questions do not accept criteria.');
+        $this->expectExceptionMessage($message);
 
-        new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?', ['yes', 'no']);
+        new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?', $criteria);
+    }
+
+    /**
+     * Provides invalid binary question criteria and the expected exception message.
+     *
+     * @return array<string, array{array<mixed>, string}>
+     */
+    public function provideInvalidBinaryCriteria(): array
+    {
+        $keyMessage = 'Binary decision question criteria may only describe what counts as "true" and as "false".';
+        $descriptionMessage = 'Binary decision question descriptions must be non-empty strings.';
+
+        return [
+            'list' => [['It is spam.', 'It is not spam.'], $keyMessage],
+            'other keys' => [['yes' => 'It is spam.', 'no' => 'It is not spam.'], $keyMessage],
+            'empty description' => [['true' => ' '], $descriptionMessage],
+            'non-string description' => [['false' => null], $descriptionMessage],
+        ];
     }
 
     /**
