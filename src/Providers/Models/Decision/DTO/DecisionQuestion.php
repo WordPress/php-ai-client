@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Providers\Models\Decision\DTO;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
+use WordPress\AiClient\Providers\Models\Decision\Util\DescriptionUtil;
 
 /**
  * Represents a typed question for a decision model to answer about the given state.
@@ -16,6 +17,9 @@ use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
  * optionally described. A score question asks the model to place the state on a scale, given as a
  * description of each level from lowest to highest.
  *
+ * Each description is a sentence, or an array for when structure makes it clearer, see
+ * {@see DescriptionUtil}.
+ *
  * @since n.e.x.t
  *
  * @phpstan-import-type DecisionOptionArrayShape from DecisionOption
@@ -23,10 +27,10 @@ use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
  * @phpstan-type DecisionQuestionArrayShape array{
  *     type: string,
  *     instructions: string,
- *     trueDescription?: string,
- *     falseDescription?: string,
+ *     trueDescription?: string|array<mixed>,
+ *     falseDescription?: string|array<mixed>,
  *     options?: list<DecisionOptionArrayShape>,
- *     levels?: list<string>
+ *     levels?: list<string|array<mixed>>
  * }
  *
  * @extends AbstractDataTransferObject<DecisionQuestionArrayShape>
@@ -51,14 +55,14 @@ class DecisionQuestion extends AbstractDataTransferObject
     private string $instructions;
 
     /**
-     * @var string|null The description of what counts as true for a binary question, if any.
+     * @var string|array<mixed>|null The description of what counts as true for a binary question, if any.
      */
-    private ?string $trueDescription = null;
+    private $trueDescription;
 
     /**
-     * @var string|null The description of what counts as false for a binary question, if any.
+     * @var string|array<mixed>|null The description of what counts as false for a binary question, if any.
      */
-    private ?string $falseDescription = null;
+    private $falseDescription;
 
     /**
      * @var list<DecisionOption> The options of a choice question.
@@ -66,7 +70,7 @@ class DecisionQuestion extends AbstractDataTransferObject
     private array $options = [];
 
     /**
-     * @var list<string> The level descriptions of a score question, from lowest to highest.
+     * @var list<string|array<mixed>> The level descriptions of a score question, from lowest to highest.
      */
     private array $levels = [];
 
@@ -77,7 +81,7 @@ class DecisionQuestion extends AbstractDataTransferObject
      *
      * @param DecisionQuestionTypeEnum $type The question type.
      * @param string $instructions The question to answer.
-     * @param array<string|DecisionOption> $criteria For a binary question, optional descriptions of what counts
+     * @param array<mixed> $criteria For a binary question, optional descriptions of what counts
      *                                               as true and as false, keyed by "true" and "false". For a
      *                                               choice question, a list of the options, each given as its
      *                                               value or as a DecisionOption with a description. For a
@@ -139,9 +143,10 @@ class DecisionQuestion extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string|null The description, or null if there is none or this is not a binary question.
+     * @return string|array<mixed>|null The description, or null if there is none or this is not a binary
+     *                                  question.
      */
-    public function getTrueDescription(): ?string
+    public function getTrueDescription()
     {
         return $this->trueDescription;
     }
@@ -151,9 +156,10 @@ class DecisionQuestion extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string|null The description, or null if there is none or this is not a binary question.
+     * @return string|array<mixed>|null The description, or null if there is none or this is not a binary
+     *                                  question.
      */
-    public function getFalseDescription(): ?string
+    public function getFalseDescription()
     {
         return $this->falseDescription;
     }
@@ -175,8 +181,8 @@ class DecisionQuestion extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return list<string> The level descriptions from lowest to highest, or an empty list if this is not a
-     *                      score question.
+     * @return list<string|array<mixed>> The level descriptions from lowest to highest, or an empty list if
+     *                                    this is not a score question.
      */
     public function getLevels(): array
     {
@@ -190,8 +196,7 @@ class DecisionQuestion extends AbstractDataTransferObject
      *
      * @param array<mixed> $criteria The criteria, with optional descriptions keyed by "true" and "false".
      * @return void
-     * @throws InvalidArgumentException If a key is not "true" or "false", or a description is not a non-empty
-     *                                  string.
+     * @throws InvalidArgumentException If a key is not "true" or "false", or a description is invalid.
      */
     private function validateBinaryCriteria(array $criteria): void
     {
@@ -202,11 +207,10 @@ class DecisionQuestion extends AbstractDataTransferObject
                 );
             }
 
-            if (!is_string($description) || trim($description) === '') {
-                throw new InvalidArgumentException(
-                    'Binary decision question descriptions must be non-empty strings.'
-                );
-            }
+            $description = DescriptionUtil::validate(
+                $description,
+                sprintf('The description of what counts as %s', $key)
+            );
 
             if ($key === 'true') {
                 $this->trueDescription = $description;
@@ -261,21 +265,15 @@ class DecisionQuestion extends AbstractDataTransferObject
      * @since n.e.x.t
      *
      * @param array<mixed> $criteria The criteria, each a level description.
-     * @return list<string> The level descriptions.
-     * @throws InvalidArgumentException If a level description is not a non-empty string.
+     * @return list<string|array<mixed>> The level descriptions.
+     * @throws InvalidArgumentException If a level description is invalid.
      */
     private static function validateLevels(array $criteria): array
     {
         $levels = [];
 
-        foreach ($criteria as $criterion) {
-            if (!is_string($criterion) || trim($criterion) === '') {
-                throw new InvalidArgumentException(
-                    'Score decision question levels must be non-empty descriptions.'
-                );
-            }
-
-            $levels[] = $criterion;
+        foreach ($criteria as $index => $criterion) {
+            $levels[] = DescriptionUtil::validate($criterion, sprintf('Score level %d', $index));
         }
 
         return $levels;
@@ -301,11 +299,11 @@ class DecisionQuestion extends AbstractDataTransferObject
                     'description' => 'The question to answer.',
                 ],
                 self::KEY_TRUE_DESCRIPTION => [
-                    'type' => 'string',
+                    'type' => ['string', 'object', 'array'],
                     'description' => 'The description of what counts as true for a binary question.',
                 ],
                 self::KEY_FALSE_DESCRIPTION => [
-                    'type' => 'string',
+                    'type' => ['string', 'object', 'array'],
                     'description' => 'The description of what counts as false for a binary question.',
                 ],
                 self::KEY_OPTIONS => [
@@ -317,7 +315,7 @@ class DecisionQuestion extends AbstractDataTransferObject
                 self::KEY_LEVELS => [
                     'type' => 'array',
                     'items' => [
-                        'type' => 'string',
+                        'type' => ['string', 'object', 'array'],
                     ],
                     'minItems' => 2,
                     'description' => 'The level descriptions of a score question, from lowest to highest.',

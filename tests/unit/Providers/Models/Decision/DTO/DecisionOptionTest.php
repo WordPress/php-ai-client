@@ -74,6 +74,12 @@ class DecisionOptionTest extends TestCase
             'with description' => [new DecisionOption('approve', 'Publish it.')],
             'without description' => [new DecisionOption('hold')],
             'integer-like value' => [new DecisionOption('1', 'One star.')],
+            'structured description' => [
+                new DecisionOption(
+                    'billing',
+                    ['what' => 'Payments and refunds.', 'not_for' => 'Questions about prices.', 'examples' => []]
+                ),
+            ],
         ];
     }
 
@@ -91,16 +97,52 @@ class DecisionOptionTest extends TestCase
     }
 
     /**
-     * Tests that empty descriptions are rejected.
+     * Tests creating an option with a structured description.
      *
      * @return void
      */
-    public function testRejectsEmptyDescription(): void
+    public function testCreateWithStructuredDescription(): void
+    {
+        $description = ['what' => 'Payments and refunds.', 'not_for' => 'Questions about prices.'];
+
+        $option = new DecisionOption('billing', $description);
+
+        $this->assertSame($description, $option->getDescription());
+        $this->assertSame(
+            [DecisionOption::KEY_VALUE => 'billing', DecisionOption::KEY_DESCRIPTION => $description],
+            $option->toArray()
+        );
+    }
+
+    /**
+     * Tests that invalid descriptions are rejected.
+     *
+     * @dataProvider provideInvalidDescriptions
+     *
+     * @param mixed $description The invalid description.
+     * @return void
+     */
+    public function testRejectsInvalidDescription($description): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Decision option descriptions cannot be empty. Omit the description instead.');
+        $this->expectExceptionMessage('A decision option description must be a non-empty string');
 
-        new DecisionOption('approve', '');
+        new DecisionOption('approve', $description);
+    }
+
+    /**
+     * Provides invalid descriptions.
+     *
+     * @return array<string, array{mixed}>
+     */
+    public function provideInvalidDescriptions(): array
+    {
+        return [
+            'empty string' => [''],
+            'empty array' => [[]],
+            'number' => [5],
+            'array with object' => [['what' => new \stdClass()]],
+        ];
     }
 
     /**
@@ -113,7 +155,10 @@ class DecisionOptionTest extends TestCase
         $schema = DecisionOption::getJsonSchema();
 
         $this->assertSame('string', $schema['properties'][DecisionOption::KEY_VALUE]['type']);
-        $this->assertSame('string', $schema['properties'][DecisionOption::KEY_DESCRIPTION]['type']);
+        $this->assertSame(
+            ['string', 'object', 'array'],
+            $schema['properties'][DecisionOption::KEY_DESCRIPTION]['type']
+        );
         $this->assertSame([DecisionOption::KEY_VALUE], $schema['required']);
     }
 }

@@ -6,18 +6,20 @@ namespace WordPress\AiClient\Providers\Models\Decision\DTO;
 
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Providers\Models\Decision\Util\DescriptionUtil;
 
 /**
  * Represents an option of a choice question.
  *
  * An option has a value, which a choice answer returns when the option is chosen, and optionally a
- * description of when it applies. An option without a description is interpreted by its value alone.
+ * description of when it applies. An option without a description is interpreted by its value alone. A
+ * description is a sentence, or an array for when structure makes it clearer, see {@see DescriptionUtil}.
  *
  * @since n.e.x.t
  *
  * @phpstan-type DecisionOptionArrayShape array{
  *     value: string,
- *     description?: string
+ *     description?: string|array<mixed>
  * }
  *
  * @extends AbstractDataTransferObject<DecisionOptionArrayShape>
@@ -33,9 +35,9 @@ class DecisionOption extends AbstractDataTransferObject
     private string $value;
 
     /**
-     * @var string|null The description of when the option applies, if any.
+     * @var string|array<mixed>|null The description of when the option applies, if any.
      */
-    private ?string $description;
+    private $description;
 
     /**
      * Constructor.
@@ -43,20 +45,20 @@ class DecisionOption extends AbstractDataTransferObject
      * @since n.e.x.t
      *
      * @param string $value The value identifying the option.
-     * @param string|null $description Optional description of when the option applies.
+     * @param string|array<mixed>|null $description Optional description of when the option applies: a sentence,
+     *                                              or an array of JSON-compatible values.
      *
-     * @throws InvalidArgumentException If the value or the description is empty.
+     * @throws InvalidArgumentException If the value is empty, or the description is neither null, a non-empty
+     *                                  string, nor a non-empty array of JSON-compatible values.
      */
-    public function __construct(string $value, ?string $description = null)
+    public function __construct(string $value, $description = null)
     {
         if (trim($value) === '') {
             throw new InvalidArgumentException('Decision option values cannot be empty.');
         }
 
-        if ($description !== null && trim($description) === '') {
-            throw new InvalidArgumentException(
-                'Decision option descriptions cannot be empty. Omit the description instead.'
-            );
+        if ($description !== null) {
+            $description = DescriptionUtil::validate($description, 'A decision option description');
         }
 
         $this->value = $value;
@@ -80,9 +82,9 @@ class DecisionOption extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string|null The option description, or null if the option has none.
+     * @return string|array<mixed>|null The option description, or null if the option has none.
      */
-    public function getDescription(): ?string
+    public function getDescription()
     {
         return $this->description;
     }
@@ -102,8 +104,9 @@ class DecisionOption extends AbstractDataTransferObject
                     'description' => 'The value identifying the option.',
                 ],
                 self::KEY_DESCRIPTION => [
-                    'type' => 'string',
-                    'description' => 'The description of when the option applies.',
+                    'type' => ['string', 'object', 'array'],
+                    'description' => 'The description of when the option applies: a sentence, or structured '
+                        . 'JSON.',
                 ],
             ],
             'required' => [self::KEY_VALUE],

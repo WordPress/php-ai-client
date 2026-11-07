@@ -216,6 +216,23 @@ class DecisionQuestionTest extends TestCase
                     ['Not toxic.', 'Very toxic.']
                 ),
             ],
+            'structured descriptions' => [
+                new DecisionQuestion(
+                    DecisionQuestionTypeEnum::score(),
+                    'How urgent is the ticket?',
+                    [
+                        ['situation' => 'Can wait a week.', 'examples' => ['A feature request.']],
+                        'Needs an answer today.',
+                    ]
+                ),
+            ],
+            'structured binary description' => [
+                new DecisionQuestion(
+                    DecisionQuestionTypeEnum::binary(),
+                    'Is it spam?',
+                    ['true' => ['definition' => 'Unsolicited advertising.', 'examples' => ['Buy cheap pills!']]]
+                ),
+            ],
         ];
     }
 
@@ -257,13 +274,18 @@ class DecisionQuestionTest extends TestCase
     public function provideInvalidBinaryCriteria(): array
     {
         $keyMessage = 'Binary decision question criteria may only describe what counts as "true" and as "false".';
-        $descriptionMessage = 'Binary decision question descriptions must be non-empty strings.';
 
         return [
             'list' => [['It is spam.', 'It is not spam.'], $keyMessage],
             'other keys' => [['yes' => 'It is spam.', 'no' => 'It is not spam.'], $keyMessage],
-            'empty description' => [['true' => ' '], $descriptionMessage],
-            'non-string description' => [['false' => null], $descriptionMessage],
+            'empty description' => [
+                ['true' => ' '],
+                'The description of what counts as true must be a non-empty string',
+            ],
+            'null description' => [
+                ['false' => null],
+                'The description of what counts as false must be a non-empty string',
+            ],
         ];
     }
 
@@ -363,7 +385,7 @@ class DecisionQuestionTest extends TestCase
     public function testScoreQuestionRejectsInvalidLevels(array $levels): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Score decision question levels must be non-empty descriptions.');
+        $this->expectExceptionMessage('must be a non-empty string, or a non-empty array');
 
         new DecisionQuestion(DecisionQuestionTypeEnum::score(), 'How toxic is it?', $levels);
     }
@@ -376,8 +398,9 @@ class DecisionQuestionTest extends TestCase
     public function provideInvalidLevels(): array
     {
         return [
-            'non-string level' => [['Not toxic.', null]],
+            'null level' => [['Not toxic.', null]],
             'empty level' => [['Not toxic.', '']],
+            'empty structured level' => [['Not toxic.', []]],
             'option instead of level' => [['Not toxic.', new DecisionOption('high', 'Very toxic.')]],
         ];
     }

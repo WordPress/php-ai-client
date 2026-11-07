@@ -169,6 +169,8 @@ Decision models answer typed questions about the state you give them rather than
 * A `choice` question lists options, each a value with an optional description of when it applies, and is answered with the value of the chosen option.
 * A `score` question lists the levels of a scale from lowest to highest, and is answered with a position on that scale, from `0` for the lowest level to one less than the number of levels. The position may fall between two levels.
 
+Each description, of an option, a level, or what counts as true or false, is a sentence, or an array such as `['what' => 'Payments and refunds.', 'not_for' => 'Questions about prices.']` when structure makes it clearer. An option without a description is interpreted by its value alone.
+
 Answers to `choice` and `score` questions may also carry the model's confidence and a probability for each option or level, depending on what the model reports. Every answer is checked against its question, so an answer of the wrong type, an option the question does not have, or a position outside the scale raises a `RuntimeException`.
 
 A model may refuse to answer a question while still answering the others. Check `isRefusal()` before reading the value of an answer, since reading the value of a refusal raises a `RuntimeException`.
