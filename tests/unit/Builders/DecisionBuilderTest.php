@@ -8,12 +8,12 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Builders\DecisionBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Decisions\DTO\DecisionOption;
+use WordPress\AiClient\Decisions\DTO\DecisionQuestion;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionOption;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
-use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
@@ -437,6 +437,39 @@ class DecisionBuilderTest extends TestCase
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The model did not answer the following questions: route, tone.');
+
+        $builder->decideResult();
+    }
+
+    /**
+     * Tests that decideResult() accepts a score just beyond the scale because of floating-point error.
+     *
+     * @return void
+     */
+    public function testDecideResultAcceptsScoreWithinTolerance(): void
+    {
+        $answers = self::createValidAnswers();
+        $answers['tone'] = new DecisionAnswer(DecisionQuestionTypeEnum::score(), 2.0000000000000004);
+
+        $result = $this->createBuilderWithAnswers($answers)->decideResult();
+
+        $this->assertEqualsWithDelta(2.0, $result->getAnswer('tone')->getScore(), DecisionAnswer::TOLERANCE);
+    }
+
+    /**
+     * Tests that decideResult() throws when the model answers a question that was not asked.
+     *
+     * @return void
+     */
+    public function testDecideResultRejectsAnswersToQuestionsNotAsked(): void
+    {
+        $answers = self::createValidAnswers();
+        $answers['zzz'] = new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.5);
+
+        $builder = $this->createBuilderWithAnswers($answers);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The model answered questions that were not asked: zzz.');
 
         $builder->decideResult();
     }

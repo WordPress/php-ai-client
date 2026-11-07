@@ -177,11 +177,13 @@ A model may refuse to answer a question while still answering the others. Check 
 
 As with content generation, a suitable model is discovered if you do not name one. Decisions require a registered provider with at least one model that supports them. If there is none, `decideResult()` throws an `InvalidArgumentException`, and `isSupported()` returns `false`.
 
+**Name the model when your code compares answers to thresholds.** Probabilities and confidences are calibrated per model: a probability of 0.8 can be reliable on one model and not on another, and each provider computes confidence in its own way. A check such as `$probability > 0.8` therefore changes meaning if a different model is chosen, for example when the registered providers change. Pick thresholds using labelled examples from your application, and name the model they were picked for with `usingModel()`, ideally by a versioned ID rather than an alias such as `latest`, since an alias moves to a new model on release. Providers also differ in their limits, such as how many questions, options, or levels a request may have, so a request that one model accepts may be rejected by another.
+
 ```php
 use WordPress\AiClient\AiClient;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionOption;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
-use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
+use WordPress\AiClient\Decisions\DTO\DecisionOption;
+use WordPress\AiClient\Decisions\DTO\DecisionQuestion;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
 
 $result = AiClient::decide(['comment' => $commentText])
     ->withQuestion(
@@ -233,8 +235,8 @@ The state can be a string, a file, or an array of values that may contain files,
 ```php
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Files\DTO\File;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
-use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
+use WordPress\AiClient\Decisions\DTO\DecisionQuestion;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
 
 $result = AiClient::decide([
         'caption' => $caption,

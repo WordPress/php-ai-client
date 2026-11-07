@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers\Models\Decision\Util;
+namespace WordPress\AiClient\Decisions\Util;
 
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 

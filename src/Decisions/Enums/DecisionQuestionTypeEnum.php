@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers\Models\Decision\Enums;
+namespace WordPress\AiClient\Decisions\Enums;
 
 use WordPress\AiClient\Common\AbstractEnum;
 

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers\Models\Decision\DTO;
+namespace WordPress\AiClient\Decisions\DTO;
 
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
-use WordPress\AiClient\Providers\Models\Decision\Util\DescriptionUtil;
+use WordPress\AiClient\Decisions\Util\DescriptionUtil;
 
 /**
  * Represents an option of a choice question.

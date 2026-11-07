@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers\Models\Decision\DTO;
+namespace WordPress\AiClient\Decisions\DTO;
 
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
-use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
-use WordPress\AiClient\Providers\Models\Decision\Util\DescriptionUtil;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
+use WordPress\AiClient\Decisions\Util\DescriptionUtil;
 
 /**
  * Represents a typed question for a decision model to answer about the given state.

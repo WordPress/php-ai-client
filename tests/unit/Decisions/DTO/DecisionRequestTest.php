@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers\Models\Decision\DTO;
+namespace WordPress\AiClient\Tests\unit\Decisions\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Decisions\DTO\DecisionQuestion;
+use WordPress\AiClient\Decisions\DTO\DecisionRequest;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Files\DTO\File;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest;
-use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 
 /**
- * @covers \WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest
+ * @covers \WordPress\AiClient\Decisions\DTO\DecisionRequest
  */
 class DecisionRequestTest extends TestCase
 {

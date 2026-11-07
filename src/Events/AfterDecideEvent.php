@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Events;
 
+use WordPress\AiClient\Decisions\DTO\DecisionRequest;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Results\DTO\DecisionResult;
 

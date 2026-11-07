@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers\Models\Decision\Util;
+namespace WordPress\AiClient\Tests\unit\Decisions\Util;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
-use WordPress\AiClient\Providers\Models\Decision\Util\DescriptionUtil;
+use WordPress\AiClient\Decisions\Util\DescriptionUtil;
 
 /**
- * @covers \WordPress\AiClient\Providers\Models\Decision\Util\DescriptionUtil
+ * @covers \WordPress\AiClient\Decisions\Util\DescriptionUtil
  */
 class DescriptionUtilTest extends TestCase
 {

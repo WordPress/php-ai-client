@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Results\DTO;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
-use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
 
 /**
  * Represents a decision model's answer to a single question.
@@ -44,6 +44,19 @@ class DecisionAnswer extends AbstractDataTransferObject
     public const KEY_CONFIDENCE = 'confidence';
     public const KEY_PROBABILITIES = 'probabilities';
     public const KEY_PROBABILITY = 'probability';
+
+    /**
+     * How far a number may fall outside its range before it is rejected.
+     *
+     * Scores and probabilities are computed with floating-point arithmetic, so a valid probability can come
+     * out as 1.0000000000000002. Numbers within this tolerance of their range are accepted, and probabilities
+     * and confidences are clamped into it.
+     *
+     * @since n.e.x.t
+     *
+     * @var float
+     */
+    public const TOLERANCE = 1.0E-6;
 
     /**
      * @var DecisionQuestionTypeEnum The type of the question answered.
@@ -98,17 +111,24 @@ class DecisionAnswer extends AbstractDataTransferObject
                 );
             }
         } elseif ($type->isBinary()) {
+            if ($confidence !== null) {
+                throw new InvalidArgumentException(
+                    'Decision answers to binary questions do not accept a confidence, '
+                    . 'as their value is the probability.'
+                );
+            }
+
             $value = self::validateProbability($value, 'Decision answer probability');
         } elseif ($type->isChoice()) {
             if (!is_string($value) || trim($value) === '') {
                 throw new InvalidArgumentException('Decision answer choice must be a non-empty option value.');
             }
         } else {
-            if ((!is_int($value) && !is_float($value)) || !is_finite((float) $value) || $value < 0) {
+            if ((!is_int($value) && !is_float($value)) || !is_finite((float) $value) || $value < -self::TOLERANCE) {
                 throw new InvalidArgumentException('Decision answer score must be a non-negative number.');
             }
 
-            $value = (float) $value;
+            $value = max(0.0, (float) $value);
         }
 
         if ($confidence !== null) {
@@ -227,7 +247,11 @@ class DecisionAnswer extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return float|null The confidence between 0 and 1, or null if not reported.
+     * Confidence measures how concentrated the probabilities of a choice or score answer are, and each provider
+     * computes it in its own way, so it is not comparable across providers or a measure of correctness.
+     *
+     * @return float|null The confidence between 0 and 1, or null if not reported. Always null for a binary
+     *                    question, whose value is the probability, and for a refusal.
      */
     public function getConfidence(): ?float
     {
@@ -282,17 +306,22 @@ class DecisionAnswer extends AbstractDataTransferObject
      *
      * @param mixed $value The value to validate.
      * @param string $label The label to use in the error message.
-     * @return float The validated value.
-     * @throws InvalidArgumentException If the value is not a number between 0 and 1.
+     * @return float The validated value, clamped between 0 and 1.
+     * @throws InvalidArgumentException If the value is not a number between 0 and 1, within the tolerance.
      */
     private static function validateProbability($value, string $label): float
     {
         // NaN fails no comparison, so it is excluded explicitly.
-        if ((!is_int($value) && !is_float($value)) || is_nan((float) $value) || $value < 0 || $value > 1) {
+        if (
+            (!is_int($value) && !is_float($value))
+            || is_nan((float) $value)
+            || $value < -self::TOLERANCE
+            || $value > 1 + self::TOLERANCE
+        ) {
             throw new InvalidArgumentException(sprintf('%s must be a number between 0 and 1.', $label));
         }
 
-        return (float) $value;
+        return min(1.0, max(0.0, (float) $value));
     }
 
     /**

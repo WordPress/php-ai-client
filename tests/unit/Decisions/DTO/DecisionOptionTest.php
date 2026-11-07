@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers\Models\Decision\DTO;
+namespace WordPress\AiClient\Tests\unit\Decisions\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionOption;
+use WordPress\AiClient\Decisions\DTO\DecisionOption;
 
 /**
- * @covers \WordPress\AiClient\Providers\Models\Decision\DTO\DecisionOption
+ * @covers \WordPress\AiClient\Decisions\DTO\DecisionOption
  */
 class DecisionOptionTest extends TestCase
 {

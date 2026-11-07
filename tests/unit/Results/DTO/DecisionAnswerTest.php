@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Tests\unit\Results\DTO;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
-use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Results\DTO\DecisionAnswer;
 
 /**
@@ -175,13 +175,52 @@ class DecisionAnswerTest extends TestCase
      */
     public function testNormalizesIntegers(): void
     {
-        $binary = new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 1, 1);
-        $score = new DecisionAnswer(DecisionQuestionTypeEnum::score(), 3, null, [0, 0, 0, 1]);
+        $binary = new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 1);
+        $score = new DecisionAnswer(DecisionQuestionTypeEnum::score(), 3, 1, [0, 0, 0, 1]);
 
         $this->assertSame(1.0, $binary->getProbability());
-        $this->assertSame(1.0, $binary->getConfidence());
+        $this->assertSame(1.0, $score->getConfidence());
         $this->assertSame(3.0, $score->getScore());
         $this->assertSame([0.0, 0.0, 0.0, 1.0], $score->getProbabilities());
+    }
+
+    /**
+     * Tests that numbers just outside their range because of floating-point error are clamped into it.
+     *
+     * @return void
+     */
+    public function testClampsFloatingPointError(): void
+    {
+        $binary = new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 1.0000000000000002);
+        $negativeBinary = new DecisionAnswer(DecisionQuestionTypeEnum::binary(), -1.0E-12);
+        $choice = new DecisionAnswer(
+            DecisionQuestionTypeEnum::choice(),
+            'approve',
+            1.0000000000000002,
+            ['approve' => 1.0000000000000002, 'trash' => -1.0E-12]
+        );
+        $score = new DecisionAnswer(DecisionQuestionTypeEnum::score(), -1.0E-12);
+
+        $this->assertSame(1.0, $binary->getProbability());
+        $this->assertSame(0.0, $negativeBinary->getProbability());
+        $this->assertSame(1.0, $choice->getConfidence());
+        $this->assertSame(['approve' => 1.0, 'trash' => 0.0], $choice->getProbabilities());
+        $this->assertSame(0.0, $score->getScore());
+    }
+
+    /**
+     * Tests that answers to binary questions reject a confidence.
+     *
+     * @return void
+     */
+    public function testBinaryAnswerRejectsConfidence(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Decision answers to binary questions do not accept a confidence, as their value is the probability.'
+        );
+
+        new DecisionAnswer(DecisionQuestionTypeEnum::binary(), 0.9, 0.8);
     }
 
     /**
@@ -261,12 +300,14 @@ class DecisionAnswerTest extends TestCase
         return [
             'binary below zero' => [$binary, -0.1, $probabilityMessage],
             'binary above one' => [$binary, 1.5, $probabilityMessage],
+            'binary beyond the tolerance' => [$binary, 1.00001, $probabilityMessage],
             'binary NaN' => [$binary, NAN, $probabilityMessage],
             'binary option key' => [$binary, 'yes', $probabilityMessage],
             'binary boolean' => [$binary, true, $probabilityMessage],
             'choice number' => [$choice, 1, $choiceMessage],
             'choice empty string' => [$choice, ' ', $choiceMessage],
             'score below zero' => [$score, -1, $scoreMessage],
+            'score below zero beyond the tolerance' => [$score, -0.00001, $scoreMessage],
             'score NaN' => [$score, NAN, $scoreMessage],
             'score infinite' => [$score, INF, $scoreMessage],
             'score level key' => [$score, 'high', $scoreMessage],

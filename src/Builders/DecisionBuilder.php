@@ -8,14 +8,14 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use WordPress\AiClient\Builders\Traits\ModelResolutionTrait;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Decisions\DTO\DecisionOption;
+use WordPress\AiClient\Decisions\DTO\DecisionQuestion;
+use WordPress\AiClient\Decisions\DTO\DecisionRequest;
 use WordPress\AiClient\Events\AfterDecideEvent;
 use WordPress\AiClient\Events\BeforeDecideEvent;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\Decision\Contracts\DecisionModelInterface;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionOption;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
@@ -158,8 +158,8 @@ class DecisionBuilder
      * @return DecisionResult The result containing one answer or refusal per question.
      * @throws InvalidArgumentException If no state or questions are configured, the state is invalid, or no
      *                                  suitable model is found.
-     * @throws RuntimeException If the model does not support decisions, or does not give a valid answer
-     *                          or a refusal for every question.
+     * @throws RuntimeException If the model does not support decisions, does not give a valid answer or a
+     *                          refusal for every question, or answers a question that was not asked.
      */
     public function decideResult(): DecisionResult
     {
@@ -243,7 +243,8 @@ class DecisionBuilder
      *
      * @param DecisionResult $result The result from the model.
      * @return void
-     * @throws RuntimeException If a question is unanswered, or an answer does not fit its question.
+     * @throws RuntimeException If a question is unanswered, a question that was not asked is answered, or an
+     *                          answer does not fit its question.
      */
     private function assertValidAnswers(DecisionResult $result): void
     {
@@ -257,6 +258,17 @@ class DecisionBuilder
                 sprintf(
                     'The model did not answer the following questions: %s.',
                     implode(', ', array_keys($unanswered))
+                )
+            );
+        }
+
+        // An answer to a question that was not asked points to the same kind of mistake in the model.
+        $unasked = array_diff_key($answers, $this->questions);
+        if ($unasked !== []) {
+            throw new RuntimeException(
+                sprintf(
+                    'The model answered questions that were not asked: %s.',
+                    implode(', ', array_keys($unasked))
                 )
             );
         }
@@ -323,7 +335,7 @@ class DecisionBuilder
         if ($type->isScore()) {
             $levelCount = count($question->getLevels());
 
-            if ($answer->getScore() > $levelCount - 1) {
+            if ($answer->getScore() > $levelCount - 1 + DecisionAnswer::TOLERANCE) {
                 return sprintf(
                     'The score %s is outside the scale, which runs from 0 to %d.',
                     $answer->getScore(),

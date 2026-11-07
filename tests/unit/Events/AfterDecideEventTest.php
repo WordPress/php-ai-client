@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Events;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Decisions\DTO\DecisionQuestion;
+use WordPress\AiClient\Decisions\DTO\DecisionRequest;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Events\AfterDecideEvent;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionQuestion;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest;
-use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 

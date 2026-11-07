@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers\Models\Decision\DTO;
+namespace WordPress\AiClient\Decisions\DTO;
 
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Files\DTO\File;

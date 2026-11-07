@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\Decision\Contracts;
 
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest;
+use WordPress\AiClient\Decisions\DTO\DecisionRequest;
 use WordPress\AiClient\Results\DTO\DecisionResult;
 
 /**

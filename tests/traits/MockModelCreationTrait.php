@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\traits;
 
+use WordPress\AiClient\Decisions\DTO\DecisionRequest;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -11,8 +13,6 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\Decision\Contracts\DecisionModelInterface;
-use WordPress\AiClient\Providers\Models\Decision\DTO\DecisionRequest;
-use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;

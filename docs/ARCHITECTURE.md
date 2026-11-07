@@ -22,7 +22,7 @@ The two builders differ fundamentally in how they arrive at a model:
 
 Both builders accumulate model configuration through the shared `ModelConfigurationTrait`, which provides `usingModelConfig()`.
 
-Decisions use a third builder, `DecisionBuilder`, because decision models take state and typed questions rather than a prompt, and answer each question with a probability, an option, or a position on a scale instead of generating content. Like `PromptBuilder`, it **resolves** a model through the `ModelResolutionTrait`, since answers are not tied to the model that produced them.
+Decisions use a third builder, `DecisionBuilder`, because decision models take state and typed questions rather than a prompt, and answer each question with a probability, an option, or a position on a scale instead of generating content. Like `PromptBuilder`, it **resolves** a model through the `ModelResolutionTrait`, since answers, unlike embedding vectors, are not stored and compared across requests. Probabilities and confidences are calibrated per model, however, so code that compares them to fixed thresholds should name the model, and the README recommends this.
 
 ### Code examples
 

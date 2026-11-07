@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers\Models\Decision\Enums;
+namespace WordPress\AiClient\Tests\unit\Decisions\Enums;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
 use WordPress\AiClient\Tests\traits\EnumTestTrait;
 
 /**
- * @covers \WordPress\AiClient\Providers\Models\Decision\Enums\DecisionQuestionTypeEnum
+ * @covers \WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum
  */
 class DecisionQuestionTypeEnumTest extends TestCase
 {
