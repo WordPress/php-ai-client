@@ -49,8 +49,9 @@ class DecisionAnswer extends AbstractDataTransferObject
      * How far a number may fall outside its range before it is rejected.
      *
      * Scores and probabilities are computed with floating-point arithmetic, so a valid probability can come
-     * out as 1.0000000000000002. Numbers within this tolerance of their range are accepted, and probabilities
-     * and confidences are clamped into it.
+     * out as 1.0000000000000002. Numbers within this tolerance of their range are accepted and clamped into
+     * it. Scores below zero are clamped here, and scores above the top level by the decision builder, which
+     * knows the scale of the question.
      *
      * @since n.e.x.t
      *
@@ -245,10 +246,10 @@ class DecisionAnswer extends AbstractDataTransferObject
     /**
      * Gets the model's confidence in the answer.
      *
-     * @since n.e.x.t
-     *
      * Confidence measures how concentrated the probabilities of a choice or score answer are, and each provider
      * computes it in its own way, so it is not comparable across providers or a measure of correctness.
+     *
+     * @since n.e.x.t
      *
      * @return float|null The confidence between 0 and 1, or null if not reported. Always null for a binary
      *                    question, whose value is the probability, and for a refusal.

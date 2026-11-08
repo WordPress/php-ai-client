@@ -192,6 +192,7 @@ class DecisionBuilder
         $result = $model->decideResult($request);
 
         $this->assertValidAnswers($result);
+        $result = $this->clampScores($result);
 
         $this->dispatchEvent(new AfterDecideEvent($request, $model, $capability, $result));
 
@@ -353,6 +354,56 @@ class DecisionBuilder
         }
 
         return null;
+    }
+
+    /**
+     * Clamps scores that lie above the top of their scale by no more than the tolerance.
+     *
+     * Floating-point error can put a valid score such as 2.0000000000000004 just above the top level of a
+     * three-level scale, which {@see self::describeInvalidAnswer()} accepts. An answer does not know the scale of
+     * its question, so such a score is clamped here, where the question is known.
+     *
+     * @since n.e.x.t
+     *
+     * @param DecisionResult $result The result from the model, with valid answers.
+     * @return DecisionResult The result with every score on its scale, or the given result if none needed
+     *                        clamping.
+     */
+    private function clampScores(DecisionResult $result): DecisionResult
+    {
+        $answers = $result->getAnswers();
+        $clamped = false;
+
+        foreach ($this->questions as $key => $question) {
+            $answer = $answers[$key];
+            if (!$question->getType()->isScore() || $answer->isRefusal()) {
+                continue;
+            }
+
+            $topLevel = (float) (count($question->getLevels()) - 1);
+            if ($answer->getScore() > $topLevel) {
+                $answers[$key] = new DecisionAnswer(
+                    $answer->getType(),
+                    $topLevel,
+                    $answer->getConfidence(),
+                    $answer->getProbabilities()
+                );
+                $clamped = true;
+            }
+        }
+
+        if (!$clamped) {
+            return $result;
+        }
+
+        return new DecisionResult(
+            $result->getId(),
+            $answers,
+            $result->getTokenUsage(),
+            $result->getProviderMetadata(),
+            $result->getModelMetadata(),
+            $result->getAdditionalData()
+        );
     }
 
     /**

@@ -442,18 +442,30 @@ class DecisionBuilderTest extends TestCase
     }
 
     /**
-     * Tests that decideResult() accepts a score just beyond the scale because of floating-point error.
+     * Tests that decideResult() accepts a score just beyond the scale because of floating-point error, and
+     * clamps it to the top level while keeping the rest of the answer and the result.
      *
      * @return void
      */
-    public function testDecideResultAcceptsScoreWithinTolerance(): void
+    public function testDecideResultClampsScoreWithinTolerance(): void
     {
         $answers = self::createValidAnswers();
-        $answers['tone'] = new DecisionAnswer(DecisionQuestionTypeEnum::score(), 2.0000000000000004);
+        $answers['tone'] = new DecisionAnswer(
+            DecisionQuestionTypeEnum::score(),
+            2.0000000000000004,
+            0.6,
+            [0.1, 0.2, 0.7]
+        );
 
         $result = $this->createBuilderWithAnswers($answers)->decideResult();
 
-        $this->assertEqualsWithDelta(2.0, $result->getAnswer('tone')->getScore(), DecisionAnswer::TOLERANCE);
+        $tone = $result->getAnswer('tone');
+        $this->assertSame(2.0, $tone->getScore());
+        $this->assertSame(0.6, $tone->getConfidence());
+        $this->assertSame([0.1, 0.2, 0.7], $tone->getProbabilities());
+        $this->assertSame($answers['spam'], $result->getAnswer('spam'));
+        $this->assertSame($answers['route'], $result->getAnswer('route'));
+        $this->assertSame('test-decision-result-id', $result->getId());
     }
 
     /**

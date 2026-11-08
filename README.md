@@ -166,10 +166,10 @@ foreach (AiClient::defaultRegistry()->findModelsMetadataForSupport($requirements
 Decision models answer typed questions about the state you give them rather than generating content. There are three types of question:
 
 * A `binary` question asks whether a statement is true, optionally describing what counts as true and what counts as false, and is answered with the probability that it is true.
-* A `choice` question lists options, each a value with an optional description of when it applies, and is answered with the value of the chosen option.
+* A `choice` question lists options, each a value with an optional description of when it applies, and is answered with the value of the chosen option. Option values are strings, and an integer value such as a star rating is converted to one, so the options `[1, 2, 3, 4, 5]` are answered with a value such as `'4'`.
 * A `score` question lists the levels of a scale from lowest to highest, and is answered with a position on that scale, from `0` for the lowest level to one less than the number of levels. The position may fall between two levels.
 
-Each description, of an option, a level, or what counts as true or false, is a sentence, or an array such as `['what' => 'Payments and refunds.', 'not_for' => 'Questions about prices.']` when structure makes it clearer. An option without a description is interpreted by its value alone.
+The instructions of a question, and each description of an option, a level, or what counts as true or false, are a sentence, or an array when structure makes them clearer, such as `['question' => 'Does the sender name match the email domain?', 'compare' => ['sender.name', 'sender.email']]` for instructions or `['what' => 'Payments and refunds.', 'not_for' => 'Questions about prices.']` for an option. An option without a description is interpreted by its value alone.
 
 Answers to `choice` and `score` questions may also carry the model's confidence and a probability for each option or level, depending on what the model reports. Every answer is checked against its question, so an answer of the wrong type, an option the question does not have, or a position outside the scale raises a `RuntimeException`.
 
@@ -177,7 +177,20 @@ A model may refuse to answer a question while still answering the others. Check 
 
 As with content generation, a suitable model is discovered if you do not name one. Decisions require a registered provider with at least one model that supports them. If there is none, `decideResult()` throws an `InvalidArgumentException`, and `isSupported()` returns `false`.
 
-**Name the model when your code compares answers to thresholds.** Probabilities and confidences are calibrated per model: a probability of 0.8 can be reliable on one model and not on another, and each provider computes confidence in its own way. A check such as `$probability > 0.8` therefore changes meaning if a different model is chosen, for example when the registered providers change. Pick thresholds using labelled examples from your application, and name the model they were picked for with `usingModel()`, ideally by a versioned ID rather than an alias such as `latest`, since an alias moves to a new model on release. Providers also differ in their limits, such as how many questions, options, or levels a request may have, so a request that one model accepts may be rejected by another.
+**Name the model when your code compares answers to thresholds.** Probabilities and confidences are calibrated per model: a probability of 0.8 can be reliable on one model and not on another, and each provider computes confidence in its own way. A check such as `$probability > 0.8` therefore changes meaning if a different model is chosen, for example when the registered providers change. Pick thresholds using labelled examples from your application, and pass the model they were picked for to `usingModel()`. Get the model by a versioned ID rather than an alias such as `latest` where the provider offers one, since an alias moves to a new model on release. Providers also differ in their limits, such as how many questions, options, or levels a request may have, so a request that one model accepts may be rejected by another.
+
+```php
+use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Decisions\DTO\DecisionQuestion;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
+
+$model = AiClient::defaultRegistry()->getProviderModel('example-provider', 'example-decision-model-1.2.0');
+
+$result = AiClient::decide(['comment' => $commentText])
+    ->usingModel($model)
+    ->withQuestion('spam', new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?'))
+    ->decideResult();
+```
 
 ```php
 use WordPress\AiClient\AiClient;
@@ -219,7 +232,10 @@ $result = AiClient::decide(['comment' => $commentText])
     )
     ->decideResult();
 
-$spamProbability = $result->getAnswer('spam')->getProbability(); // e.g. 0.03
+$spam = $result->getAnswer('spam');
+if (!$spam->isRefusal()) {
+    $spamProbability = $spam->getProbability(); // e.g. 0.03
+}
 
 $route = $result->getAnswer('route');
 if (!$route->isRefusal()) {
@@ -227,7 +243,10 @@ if (!$route->isRefusal()) {
     $confidence = $route->getConfidence(); // e.g. 0.91, or null if not reported
 }
 
-$tone = $result->getAnswer('tone')->getScore(); // e.g. 1.7, between 'Neutral.' and 'Friendly.'
+$tone = $result->getAnswer('tone');
+if (!$tone->isRefusal()) {
+    $civility = $tone->getScore(); // e.g. 1.7, between 'Neutral.' and 'Friendly.'
+}
 ```
 
 The state can be a string, a file, or an array of values that may contain files, such as images. A model is only chosen if it accepts the types of file in the state:

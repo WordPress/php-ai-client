@@ -147,6 +147,59 @@ class DecisionQuestionTest extends TestCase
     }
 
     /**
+     * Tests that a choice question converts integer option values, such as star ratings, to strings.
+     *
+     * @return void
+     */
+    public function testChoiceQuestionConvertsIntegerOptionValues(): void
+    {
+        $question = new DecisionQuestion(DecisionQuestionTypeEnum::choice(), 'How many stars?', [1, 2, 3, 0, -1]);
+
+        $this->assertSame(
+            ['1', '2', '3', '0', '-1'],
+            array_map(
+                static function (DecisionOption $option): string {
+                    return $option->getValue();
+                },
+                $question->getOptions()
+            )
+        );
+    }
+
+    /**
+     * Tests that an integer option value and the same value as a string count as duplicates.
+     *
+     * @return void
+     */
+    public function testChoiceQuestionRejectsIntegerAndStringDuplicates(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Choice decision question options must be unique, but "1" is given more than once.'
+        );
+
+        new DecisionQuestion(DecisionQuestionTypeEnum::choice(), 'How many stars?', [1, '1']);
+    }
+
+    /**
+     * Tests that instructions can be structured.
+     *
+     * @return void
+     */
+    public function testCreateQuestionWithStructuredInstructions(): void
+    {
+        $instructions = [
+            'question' => 'Does the sender name conflict with the email domain?',
+            'compare' => ['sender.name', 'sender.email'],
+        ];
+
+        $question = new DecisionQuestion(DecisionQuestionTypeEnum::binary(), $instructions);
+
+        $this->assertSame($instructions, $question->getInstructions());
+        $this->assertSame($instructions, $question->toArray()[DecisionQuestion::KEY_INSTRUCTIONS]);
+    }
+
+    /**
      * Tests creating a score question.
      *
      * @return void
@@ -226,6 +279,13 @@ class DecisionQuestionTest extends TestCase
                     ]
                 ),
             ],
+            'structured instructions' => [
+                new DecisionQuestion(
+                    DecisionQuestionTypeEnum::choice(),
+                    ['question' => 'Which department should handle it?', 'focus' => 'The latest message.'],
+                    ['billing', 'technical']
+                ),
+            ],
             'structured binary description' => [
                 new DecisionQuestion(
                     DecisionQuestionTypeEnum::binary(),
@@ -237,16 +297,40 @@ class DecisionQuestionTest extends TestCase
     }
 
     /**
-     * Tests that empty instructions are rejected.
+     * Tests that invalid instructions are rejected.
      *
+     * @dataProvider provideInvalidInstructions
+     *
+     * @param mixed $instructions The invalid instructions.
      * @return void
      */
-    public function testRejectsEmptyInstructions(): void
+    public function testRejectsInvalidInstructions($instructions): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Decision question instructions cannot be empty.');
+        $this->expectExceptionMessage(
+            'Decision question instructions must be a non-empty string, or a non-empty array of strings, '
+            . 'numbers, booleans, null, and arrays.'
+        );
 
-        new DecisionQuestion(DecisionQuestionTypeEnum::binary(), '  ');
+        new DecisionQuestion(DecisionQuestionTypeEnum::binary(), $instructions);
+    }
+
+    /**
+     * Provides invalid instructions.
+     *
+     * @return array<string, array{mixed}>
+     */
+    public function provideInvalidInstructions(): array
+    {
+        return [
+            'empty string' => [''],
+            'whitespace' => ['  '],
+            'empty array' => [[]],
+            'object in array' => [['question' => new \stdClass()]],
+            'non-finite number' => [['question' => 'Is it?', 'weight' => INF]],
+            'integer' => [42],
+            'null' => [null],
+        ];
     }
 
     /**
@@ -339,7 +423,7 @@ class DecisionQuestionTest extends TestCase
             'Choice decision question options must be option values or DecisionOption instances.'
         );
 
-        new DecisionQuestion(DecisionQuestionTypeEnum::choice(), 'How many stars?', [1, 2]);
+        new DecisionQuestion(DecisionQuestionTypeEnum::choice(), 'How many stars?', [1.5, 2.5]);
     }
 
     /**
@@ -435,6 +519,10 @@ class DecisionQuestionTest extends TestCase
             $schema['properties'][DecisionQuestion::KEY_OPTIONS]['items']
         );
         $this->assertSame('array', $schema['properties'][DecisionQuestion::KEY_LEVELS]['type']);
+        $this->assertSame(
+            ['string', 'object', 'array'],
+            $schema['properties'][DecisionQuestion::KEY_INSTRUCTIONS]['type']
+        );
         $this->assertSame(
             [DecisionQuestion::KEY_TYPE, DecisionQuestion::KEY_INSTRUCTIONS],
             $schema['required']

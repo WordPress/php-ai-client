@@ -12,12 +12,15 @@ use WordPress\AiClient\Decisions\Util\DescriptionUtil;
 /**
  * Represents a typed question for a decision model to answer about the given state.
  *
+ * The instructions state the question. They are a sentence, or an array for when structure makes the
+ * question clearer, such as `['question' => 'Is the sender legitimate?', 'compare' => ['name', 'email']]`.
+ *
  * A binary question asks whether a statement is true, and may describe what counts as true and what counts
  * as false. A choice question asks the model to pick one of several options, each identified by a value and
  * optionally described. A score question asks the model to place the state on a scale, given as a
  * description of each level from lowest to highest.
  *
- * Each description is a sentence, or an array for when structure makes it clearer, see
+ * Like the instructions, each description is a sentence, or an array for when structure makes it clearer, see
  * {@see DescriptionUtil}.
  *
  * @since n.e.x.t
@@ -26,7 +29,7 @@ use WordPress\AiClient\Decisions\Util\DescriptionUtil;
  *
  * @phpstan-type DecisionQuestionArrayShape array{
  *     type: string,
- *     instructions: string,
+ *     instructions: string|array<mixed>,
  *     trueDescription?: string|array<mixed>,
  *     falseDescription?: string|array<mixed>,
  *     options?: list<DecisionOptionArrayShape>,
@@ -50,9 +53,9 @@ class DecisionQuestion extends AbstractDataTransferObject
     private DecisionQuestionTypeEnum $type;
 
     /**
-     * @var string The question to answer.
+     * @var string|array<mixed> The question to answer.
      */
-    private string $instructions;
+    private $instructions;
 
     /**
      * @var string|array<mixed>|null The description of what counts as true for a binary question, if any.
@@ -80,21 +83,21 @@ class DecisionQuestion extends AbstractDataTransferObject
      * @since n.e.x.t
      *
      * @param DecisionQuestionTypeEnum $type The question type.
-     * @param string $instructions The question to answer.
-     * @param array<mixed> $criteria For a binary question, optional descriptions of what counts
-     *                                               as true and as false, keyed by "true" and "false". For a
-     *                                               choice question, a list of the options, each given as its
-     *                                               value or as a DecisionOption with a description. For a
-     *                                               score question, a list of the level descriptions from
-     *                                               lowest to highest.
+     * @param string|array<mixed> $instructions The question to answer: a sentence, or an array of
+     *                                          JSON-compatible values.
+     * @param array<mixed> $criteria For a binary question, optional descriptions of what counts as true and
+     *                               as false, keyed by "true" and "false". For a choice question, a list of the
+     *                               options, each given as its value or as a DecisionOption with a
+     *                               description. An integer value, such as a star rating, is converted to a
+     *                               string. For a score question, a list of the level descriptions from lowest
+     *                               to highest.
      *
-     * @throws InvalidArgumentException If the instructions are empty or the criteria do not suit the type.
+     * @throws InvalidArgumentException If the instructions are neither a non-empty string nor a non-empty array
+     *                                  of JSON-compatible values, or the criteria do not suit the type.
      */
-    public function __construct(DecisionQuestionTypeEnum $type, string $instructions, array $criteria = [])
+    public function __construct(DecisionQuestionTypeEnum $type, $instructions, array $criteria = [])
     {
-        if (trim($instructions) === '') {
-            throw new InvalidArgumentException('Decision question instructions cannot be empty.');
-        }
+        $instructions = DescriptionUtil::validate($instructions, 'Decision question instructions');
 
         if (!$type->isBinary() && (count($criteria) < 2 || !array_is_list($criteria))) {
             throw new InvalidArgumentException(
@@ -131,9 +134,9 @@ class DecisionQuestion extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string The question instructions.
+     * @return string|array<mixed> The question instructions: a sentence, or an array of JSON-compatible values.
      */
-    public function getInstructions(): string
+    public function getInstructions()
     {
         return $this->instructions;
     }
@@ -225,7 +228,8 @@ class DecisionQuestion extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @param array<mixed> $criteria The criteria, each an option value or a DecisionOption.
+     * @param array<mixed> $criteria The criteria, each an option value or a DecisionOption. Integer option
+     *                               values are converted to strings.
      * @return list<DecisionOption> The options.
      * @throws InvalidArgumentException If a criterion is not an option, or two options share a value.
      */
@@ -235,6 +239,10 @@ class DecisionQuestion extends AbstractDataTransferObject
         $values = [];
 
         foreach ($criteria as $criterion) {
+            if (is_int($criterion)) {
+                $criterion = (string) $criterion;
+            }
+
             if (is_string($criterion)) {
                 $criterion = new DecisionOption($criterion);
             } elseif (!$criterion instanceof DecisionOption) {
@@ -295,8 +303,8 @@ class DecisionQuestion extends AbstractDataTransferObject
                     'description' => 'The question type.',
                 ],
                 self::KEY_INSTRUCTIONS => [
-                    'type' => 'string',
-                    'description' => 'The question to answer.',
+                    'type' => ['string', 'object', 'array'],
+                    'description' => 'The question to answer: a sentence, or structured JSON.',
                 ],
                 self::KEY_TRUE_DESCRIPTION => [
                     'type' => ['string', 'object', 'array'],

@@ -10,6 +10,11 @@ use WordPress\AiClient\Results\DTO\DecisionResult;
 /**
  * Interface for models that support decisions.
  *
+ * As with text generation and embeddings, a decision model is only found by model discovery if its metadata
+ * declares the `inputModalities` option with the combinations of input it accepts. Every decision requires
+ * text input, and each file in the state adds its modality, so a text-only model declares `[[text]]` and a
+ * model that also accepts images in the state declares `[[text], [text, image]]`.
+ *
  * @since n.e.x.t
  */
 interface DecisionModelInterface

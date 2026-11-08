@@ -7,36 +7,36 @@ namespace WordPress\AiClient\Decisions\Util;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 
 /**
- * Class with static utility methods to validate the descriptions in decision questions.
+ * Class with static utility methods to validate the instructions and descriptions in decision questions.
  *
- * A description explains an option, a level, or what counts as true or false. It is either a sentence, or
- * a JSON-compatible array for when structure makes it clearer, such as
- * `['what' => 'Payments and refunds.', 'not_for' => 'Questions about prices.']`. Providers whose APIs only
- * take text send a structured description as JSON.
+ * The instructions state a question, and a description explains an option, a level, or what counts as true
+ * or false. Each is either a sentence, or a JSON-compatible array for when structure makes it clearer, such
+ * as `['what' => 'Payments and refunds.', 'not_for' => 'Questions about prices.']`. Providers whose APIs only
+ * take text send a structured value as JSON.
  *
  * @since n.e.x.t
  */
 class DescriptionUtil
 {
     /**
-     * Validates a description.
+     * Validates instructions or a description.
      *
      * @since n.e.x.t
      *
-     * @param mixed $description The description to validate.
-     * @param string $label The label of the description, for the error message.
-     * @return string|array<mixed> The validated description.
-     * @throws InvalidArgumentException If the description is not a non-empty string or a non-empty array of
+     * @param mixed $value The instructions or description to validate.
+     * @param string $label The label of the value, for the error message.
+     * @return string|array<mixed> The validated value.
+     * @throws InvalidArgumentException If the value is not a non-empty string or a non-empty array of
      *                                  JSON-compatible values.
      */
-    public static function validate($description, string $label)
+    public static function validate($value, string $label)
     {
-        if (is_string($description) && trim($description) !== '') {
-            return $description;
+        if (is_string($value) && trim($value) !== '') {
+            return $value;
         }
 
-        if (is_array($description) && $description !== [] && self::isJsonCompatible($description)) {
-            return $description;
+        if (is_array($value) && $value !== [] && self::isJsonCompatible($value)) {
+            return $value;
         }
 
         throw new InvalidArgumentException(
