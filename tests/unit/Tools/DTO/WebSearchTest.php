@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
@@ -448,5 +449,191 @@ class WebSearchTest extends TestCase
     {
         $webSearch = new WebSearch();
         $this->assertImplementsArrayTransformation($webSearch);
+    }
+
+    /**
+     * Tests creating WebSearch with provider specific options.
+     *
+     * @return void
+     */
+    public function testCreateWithProviderOptions(): void
+    {
+        $webSearch = new WebSearch(['example.com'], [], ['anthropic' => ['max_uses' => 3]]);
+
+        $this->assertSame(['anthropic' => ['max_uses' => 3]], $webSearch->getProviderOptions());
+    }
+
+    /**
+     * Tests the provider options default to an empty array.
+     *
+     * @return void
+     */
+    public function testProviderOptionsDefaultToEmptyArray(): void
+    {
+        $webSearch = new WebSearch();
+
+        $this->assertSame([], $webSearch->getProviderOptions());
+    }
+
+    /**
+     * Tests reading the provider options for a single provider.
+     *
+     * @return void
+     */
+    public function testGetProviderOptionsForReturnsOptionsOfThatProviderOnly(): void
+    {
+        $webSearch = new WebSearch([], [], [
+            'anthropic' => ['max_uses' => 3],
+            'openai' => ['search_context_size' => 'low'],
+        ]);
+
+        $this->assertSame(['max_uses' => 3], $webSearch->getProviderOptionsFor('anthropic'));
+        $this->assertSame(['search_context_size' => 'low'], $webSearch->getProviderOptionsFor('openai'));
+    }
+
+    /**
+     * Tests reading the provider options for a provider without any returns an empty array.
+     *
+     * @return void
+     */
+    public function testGetProviderOptionsForUnknownProviderReturnsEmptyArray(): void
+    {
+        $webSearch = new WebSearch([], [], ['anthropic' => ['max_uses' => 3]]);
+
+        $this->assertSame([], $webSearch->getProviderOptionsFor('google'));
+    }
+
+    /**
+     * Tests provider options keyed by something other than a provider ID are rejected.
+     *
+     * @return void
+     */
+    public function testRejectsProviderOptionsWithNonStringKey(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be keyed by a non-empty provider ID');
+
+        new WebSearch([], [], [['max_uses' => 3]]);
+    }
+
+    /**
+     * Tests provider options keyed by an empty provider ID are rejected.
+     *
+     * @return void
+     */
+    public function testRejectsProviderOptionsWithEmptyProviderId(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be keyed by a non-empty provider ID');
+
+        new WebSearch([], [], ['' => ['max_uses' => 3]]);
+    }
+
+    /**
+     * Tests a provider options entry that is not an array is rejected.
+     *
+     * @return void
+     */
+    public function testRejectsNonArrayProviderOptionsEntry(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Web search provider options for "anthropic" must be an array.');
+
+        /** @phpstan-ignore-next-line Intentionally invalid to assert the guard. */
+        new WebSearch([], [], ['anthropic' => 'max_uses=3']);
+    }
+
+    /**
+     * Tests array transformation omits the provider options when none are set.
+     *
+     * @return void
+     */
+    public function testToArrayOmitsProviderOptionsWhenEmpty(): void
+    {
+        $json = $this->assertToArrayReturnsArray(new WebSearch(['example.com']));
+
+        $this->assertArrayNotHasKey(WebSearch::KEY_PROVIDER_OPTIONS, $json);
+    }
+
+    /**
+     * Tests array transformation includes the provider options when they are set.
+     *
+     * @return void
+     */
+    public function testToArrayIncludesProviderOptions(): void
+    {
+        $json = $this->assertToArrayReturnsArray(
+            new WebSearch(['example.com'], [], ['anthropic' => ['max_uses' => 5]])
+        );
+
+        $this->assertArrayHasKey(WebSearch::KEY_PROVIDER_OPTIONS, $json);
+        $this->assertSame(['anthropic' => ['max_uses' => 5]], $json[WebSearch::KEY_PROVIDER_OPTIONS]);
+    }
+
+    /**
+     * Tests fromArray reads the provider options.
+     *
+     * @return void
+     */
+    public function testFromArrayWithProviderOptions(): void
+    {
+        $webSearch = WebSearch::fromArray([
+            WebSearch::KEY_ALLOWED_DOMAINS => ['example.com'],
+            WebSearch::KEY_PROVIDER_OPTIONS => ['anthropic' => ['max_uses' => 2]],
+        ]);
+
+        $this->assertSame(['example.com'], $webSearch->getAllowedDomains());
+        $this->assertSame(['max_uses' => 2], $webSearch->getProviderOptionsFor('anthropic'));
+    }
+
+    /**
+     * Tests fromArray defaults the provider options to an empty array when absent.
+     *
+     * @return void
+     */
+    public function testFromArrayWithoutProviderOptionsDefaultsToEmptyArray(): void
+    {
+        $webSearch = WebSearch::fromArray([
+            WebSearch::KEY_ALLOWED_DOMAINS => ['example.com'],
+        ]);
+
+        $this->assertSame([], $webSearch->getProviderOptions());
+    }
+
+    /**
+     * Tests round-trip array transformation preserves the provider options.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripWithProviderOptions(): void
+    {
+        $this->assertArrayRoundTrip(
+            new WebSearch(
+                ['wikipedia.org'],
+                [],
+                ['anthropic' => ['max_uses' => 4, 'user_location' => ['type' => 'approximate', 'country' => 'FI']]]
+            ),
+            function ($original, $restored) {
+                $this->assertEquals($original->getProviderOptions(), $restored->getProviderOptions());
+                $this->assertEquals($original->getAllowedDomains(), $restored->getAllowedDomains());
+            }
+        );
+    }
+
+    /**
+     * Tests the JSON schema describes the provider options.
+     *
+     * @return void
+     */
+    public function testJsonSchemaDescribesProviderOptions(): void
+    {
+        $schema = WebSearch::getJsonSchema();
+
+        $this->assertArrayHasKey(WebSearch::KEY_PROVIDER_OPTIONS, $schema['properties']);
+
+        $providerOptionsSchema = $schema['properties'][WebSearch::KEY_PROVIDER_OPTIONS];
+        $this->assertEquals('object', $providerOptionsSchema['type']);
+        $this->assertEquals(['type' => 'object'], $providerOptionsSchema['additionalProperties']);
+        $this->assertArrayHasKey('description', $providerOptionsSchema);
     }
 }

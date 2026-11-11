@@ -15,7 +15,9 @@ use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
@@ -466,5 +468,100 @@ class ModelResolverTest extends TestCase
         $cloned = clone $original;
 
         $this->assertNull($this->getResolverProperty($cloned, 'requestOptions'));
+    }
+
+    /**
+     * Tests resolve names the unsatisfied option when the capability itself is supported.
+     *
+     * @return void
+     */
+    public function testResolveNamesUnsupportedOptionWhenCapabilityIsSupported(): void
+    {
+        $metadata = $this->createTestTextModelMetadata();
+        $providerMetadata = new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud());
+
+        // The first lookup applies the options and finds nothing; the second drops them and
+        // finds a model, proving the option rather than the capability is the cause.
+        $this->registry->expects($this->exactly(2))
+            ->method('findModelsMetadataForSupport')
+            ->willReturnOnConsecutiveCalls(
+                [],
+                [new ProviderModelsMetadata($providerMetadata, [$metadata])]
+            );
+
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration()],
+            [new RequiredOption(OptionEnum::webSearch(), true)]
+        );
+
+        $resolver = new ModelResolver($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'No models found that support text_generation.'
+            . ' The following requested option is not supported by any of those models: webSearch.'
+        );
+
+        $resolver->resolve($requirements, new ModelConfig());
+    }
+
+    /**
+     * Tests resolve does not blame an option when no model supports the capability either.
+     *
+     * @return void
+     */
+    public function testResolveOmitsOptionDetailWhenCapabilityIsUnsupported(): void
+    {
+        $this->registry->expects($this->exactly(2))
+            ->method('findModelsMetadataForSupport')
+            ->willReturn([]);
+
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration()],
+            [new RequiredOption(OptionEnum::webSearch(), true)]
+        );
+
+        $resolver = new ModelResolver($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('No models found that support text_generation.');
+
+        $resolver->resolve($requirements, new ModelConfig());
+    }
+
+    /**
+     * Tests resolve names every option that no otherwise-suitable model supports.
+     *
+     * @return void
+     */
+    public function testResolveNamesAllUnsupportedOptions(): void
+    {
+        $metadata = $this->createTestTextModelMetadata();
+        $providerMetadata = new ProviderMetadata('mock', 'Mock Provider', ProviderTypeEnum::cloud());
+
+        $this->registry->expects($this->exactly(2))
+            ->method('findModelsMetadataForSupport')
+            ->willReturnOnConsecutiveCalls(
+                [],
+                [new ProviderModelsMetadata($providerMetadata, [$metadata])]
+            );
+
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration()],
+            [
+                new RequiredOption(OptionEnum::webSearch(), true),
+                new RequiredOption(OptionEnum::functionDeclarations(), true),
+            ]
+        );
+
+        $resolver = new ModelResolver($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'The following requested options are not supported by any of those models: '
+            . 'webSearch, functionDeclarations.'
+        );
+
+        $resolver->resolve($requirements, new ModelConfig());
     }
 }

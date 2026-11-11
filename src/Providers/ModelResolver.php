@@ -231,6 +231,10 @@ class ModelResolver
         $candidateMap = $this->getCandidateModelsMap($requirements);
 
         if (empty($candidateMap)) {
+            // An unsatisfiable option, rather than the requested capability, is a common cause of an
+            // empty candidate map. Naming it turns an opaque failure into an actionable one.
+            $optionSuffix = $this->describeUnsupportedOptions($requirements);
+
             // The primary capability is always the first required capability (see
             // ModelRequirements::fromPromptData()/fromEmbeddingData()).
             $requiredCapabilities = $requirements->getRequiredCapabilities();
@@ -245,7 +249,7 @@ class ModelResolver
                     );
                 }
 
-                throw new InvalidArgumentException($message);
+                throw new InvalidArgumentException($message . $optionSuffix);
             }
 
             $capabilityValue = $primaryCapability->value;
@@ -277,7 +281,7 @@ class ModelResolver
                 }
             }
 
-            throw new InvalidArgumentException($message);
+            throw new InvalidArgumentException($message . $optionSuffix);
         }
 
         // Check if any preferred models match the candidates, in priority order.
@@ -467,5 +471,83 @@ class ModelResolver
     private function createModelPreferenceKey(string $modelId): string
     {
         return 'model::' . $modelId;
+    }
+
+    /**
+     * Describes which of the required options no otherwise-suitable model supports.
+     *
+     * When model resolution fails, the requested capability is often supported while a requested
+     * option is not. This method identifies the options that every model meeting the required
+     * capabilities fails to support, so that the resulting error can name the actual cause.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelRequirements $requirements The requirements that produced no candidates.
+     * @return string A sentence naming the unsupported options, or an empty string if the options
+     *                are not the cause.
+     */
+    private function describeUnsupportedOptions(ModelRequirements $requirements): string
+    {
+        if ($requirements->getRequiredOptions() === []) {
+            return '';
+        }
+
+        $modelsMetadata = $this->findMetadataMeetingCapabilities($requirements);
+        if ($modelsMetadata === []) {
+            // No model supports the capability either, so the capability is the cause.
+            return '';
+        }
+
+        $unsupported = null;
+        foreach ($modelsMetadata as $modelMetadata) {
+            $unmetNames = [];
+            foreach ($requirements->getUnmetRequirements($modelMetadata)['options'] as $unmetOption) {
+                $unmetNames[$unmetOption->getName()->value] = true;
+            }
+
+            $unsupported = $unsupported === null
+                ? $unmetNames
+                : array_intersect_key($unsupported, $unmetNames);
+
+            if ($unsupported === []) {
+                // At least one model supports every requested option, so they are not the cause.
+                return '';
+            }
+        }
+
+        return sprintf(
+            ' The following requested %s not supported by any of those models: %s.',
+            count($unsupported) === 1 ? 'option is' : 'options are',
+            implode(', ', array_keys($unsupported))
+        );
+    }
+
+    /**
+     * Finds the metadata of all models that meet the required capabilities, ignoring options.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelRequirements $requirements The requirements to take the capabilities from.
+     * @return list<ModelMetadata> The metadata of the models meeting the required capabilities.
+     */
+    private function findMetadataMeetingCapabilities(ModelRequirements $requirements): array
+    {
+        $capabilityOnlyRequirements = new ModelRequirements($requirements->getRequiredCapabilities(), []);
+
+        if ($this->providerIdOrClassName !== null) {
+            return $this->registry->findProviderModelsMetadataForSupport(
+                $this->providerIdOrClassName,
+                $capabilityOnlyRequirements
+            );
+        }
+
+        $modelsMetadata = [];
+        foreach ($this->registry->findModelsMetadataForSupport($capabilityOnlyRequirements) as $providerModels) {
+            foreach ($providerModels->getModels() as $modelMetadata) {
+                $modelsMetadata[] = $modelMetadata;
+            }
+        }
+
+        return $modelsMetadata;
     }
 }
