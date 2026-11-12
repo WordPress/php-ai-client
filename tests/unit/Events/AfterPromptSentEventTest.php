@@ -9,6 +9,7 @@ use WordPress\AiClient\Events\AfterGenerateResultEvent;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
 /**
@@ -79,6 +80,7 @@ class AfterPromptSentEventTest extends TestCase
         );
 
         $this->assertSame($result, $event->getResult());
+        $this->assertInstanceOf(GenerativeAiResult::class, $event->getResult());
         $this->assertCount(1, $event->getResult()->getCandidates());
     }
 
