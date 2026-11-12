@@ -267,7 +267,9 @@ class File extends AbstractDataTransferObject
 
         // Deprecated: local file path detection (kept for backward compatibility, before the base64 check).
         // Stream wrappers were rejected above, so this cannot open a network connection.
-        if (strpos($file, "\0") === false && is_file($file)) {
+        // The length guard avoids calling is_file() on over-length strings (e.g. base64 data),
+        // which would emit a warning containing the entire string.
+        if (strlen($file) < PHP_MAXPATHLEN && strpos($file, "\0") === false && @is_file($file)) {
             @trigger_error(
                 'Passing a local file path to ' . self::class . '::__construct() is deprecated since 1.5.1; '
                 . 'use File::fromLocalPath() instead.',
