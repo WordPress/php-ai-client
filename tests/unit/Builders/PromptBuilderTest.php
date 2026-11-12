@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\Builders\PromptBuilder;
+use WordPress\AiClient\Common\Exception\TokenLimitReachedException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
@@ -30,6 +31,7 @@ use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
+use WordPress\AiClient\Providers\Models\Tokenization\Contracts\TokenCounterInterface;
 use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
@@ -1433,7 +1435,6 @@ class PromptBuilderTest extends TestCase
         $this->assertEquals('application/json', $config->getOutputMimeType());
         $this->assertEquals($schema, $config->getOutputSchema());
     }
-
 
     /**
      * Tests validateMessages with empty messages throws exception.
@@ -3101,7 +3102,6 @@ class PromptBuilderTest extends TestCase
         $this->assertTrue($outputModalities[0]->isImage());
     }
 
-
     /**
      * Tests generateImage shorthand method returns file directly.
      *
@@ -3176,7 +3176,6 @@ class PromptBuilderTest extends TestCase
         $this->assertTrue($outputModalities[0]->isVideo());
     }
 
-
     /**
      * Tests generateVideo shorthand method returns file directly.
      *
@@ -3209,8 +3208,6 @@ class PromptBuilderTest extends TestCase
         $generatedFile = $builder->generateVideo();
         $this->assertSame($file, $generatedFile);
     }
-
-
 
     /**
      * Tests generateText with no candidates throws exception.
@@ -3271,7 +3268,6 @@ class PromptBuilderTest extends TestCase
 
         $builder->generateText();
     }
-
 
     /**
      * Tests isSupportedForText convenience method.
@@ -4160,7 +4156,6 @@ class PromptBuilderTest extends TestCase
         $this->assertEquals(['STOP', 'END'], $config->getStopSequences());
     }
 
-
     /**
      * Tests withFile() still accepts a local file path.
      *
@@ -4268,7 +4263,6 @@ class PromptBuilderTest extends TestCase
         }
     }
 
-
     /**
      * Tests withFile() with an empty local file.
      *
@@ -4317,5 +4311,135 @@ class PromptBuilderTest extends TestCase
 
         $this->assertCount(1, $messages);
         $this->assertEquals('Hello', array_values($messages[0]->getParts())[0]->getText());
+    }
+
+    /**
+     * Tests that usingTokenCounter is fluent.
+     *
+     * @return void
+     */
+    public function testUsingTokenCounterIsFluent(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $result = $builder->usingTokenCounter($this->createFixedTokenCounter(1));
+
+        $this->assertSame($builder, $result);
+    }
+
+    /**
+     * Tests that generation throws when the estimated prompt exceeds the context window.
+     *
+     * @return void
+     */
+    public function testGenerateThrowsWhenPromptExceedsContextWindow(): void
+    {
+        $metadata = new ModelMetadata('tiny', 'Tiny', [CapabilityEnum::textGeneration()], [], 1);
+        $model = $this->createMockTextGenerationModel($this->createTestResult(), $metadata);
+
+        $builder = new PromptBuilder($this->registry, str_repeat('word ', 200));
+        $builder->usingModel($model);
+
+        try {
+            $builder->generateTextResult();
+            $this->fail('Expected TokenLimitReachedException was not thrown.');
+        } catch (TokenLimitReachedException $exception) {
+            $this->assertSame(1, $exception->getMaxTokens());
+        }
+    }
+
+    /**
+     * Tests that generation proceeds when the estimated prompt fits the context window.
+     *
+     * @return void
+     */
+    public function testGenerateDoesNotThrowWhenPromptFitsContextWindow(): void
+    {
+        $result = $this->createTestResult('Fits');
+        $metadata = new ModelMetadata('roomy', 'Roomy', [CapabilityEnum::textGeneration()], [], 100000);
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Short prompt');
+        $builder->usingModel($model);
+
+        $this->assertSame($result, $builder->generateTextResult());
+    }
+
+    /**
+     * Tests that no check is performed when the model does not expose a context window.
+     *
+     * @return void
+     */
+    public function testGenerateDoesNotCheckWhenContextWindowUnknown(): void
+    {
+        $result = $this->createTestResult('Unknown window');
+        $metadata = new ModelMetadata('unknown', 'Unknown', [CapabilityEnum::textGeneration()], []);
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $builder = new PromptBuilder($this->registry, str_repeat('word ', 5000));
+        $builder->usingModel($model);
+
+        $this->assertSame($result, $builder->generateTextResult());
+    }
+
+    /**
+     * Tests that reserved output tokens are counted against the context window.
+     *
+     * @return void
+     */
+    public function testGenerateCountsReservedOutputTokens(): void
+    {
+        $metadata = new ModelMetadata('cap', 'Cap', [CapabilityEnum::textGeneration()], [], 100);
+        $model = $this->createMockTextGenerationModel($this->createTestResult(), $metadata);
+
+        // Small input on its own fits, but the reserved output cap pushes the total over the window.
+        $builder = new PromptBuilder($this->registry, 'Short prompt');
+        $builder->usingModel($model)->usingMaxTokens(500);
+
+        $this->expectException(TokenLimitReachedException::class);
+
+        $builder->generateTextResult();
+    }
+
+    /**
+     * Tests that an injected token counter overrides the default estimate.
+     *
+     * @return void
+     */
+    public function testUsingTokenCounterOverridesDefaultEstimate(): void
+    {
+        $metadata = new ModelMetadata('roomy', 'Roomy', [CapabilityEnum::textGeneration()], [], 50);
+        $model = $this->createMockTextGenerationModel($this->createTestResult(), $metadata);
+
+        // A tiny prompt that the default heuristic would pass, but the injected counter reports as huge.
+        $builder = new PromptBuilder($this->registry, 'Hi');
+        $builder->usingModel($model)->usingTokenCounter($this->createFixedTokenCounter(1000));
+
+        $this->expectException(TokenLimitReachedException::class);
+
+        $builder->generateTextResult();
+    }
+
+    /**
+     * Creates a token counter that always reports a fixed count.
+     *
+     * @param int $count The token count to report.
+     * @return TokenCounterInterface The fixed token counter.
+     */
+    private function createFixedTokenCounter(int $count): TokenCounterInterface
+    {
+        return new class ($count) implements TokenCounterInterface {
+            private int $count;
+
+            public function __construct(int $count)
+            {
+                $this->count = $count;
+            }
+
+            public function countTokens(array $messages, ModelMetadata $modelMetadata): int
+            {
+                return $this->count;
+            }
+        };
     }
 }
