@@ -40,6 +40,7 @@ class CapabilityEnumTest extends TestCase
             'MUSIC_GENERATION' => 'music_generation',
             'VIDEO_GENERATION' => 'video_generation',
             'EMBEDDING_GENERATION' => 'embedding_generation',
+            'DECISION' => 'decision',
             'CHAT_HISTORY' => 'chat_history',
         ];
     }
@@ -62,5 +63,9 @@ class CapabilityEnumTest extends TestCase
         $chatHistory = CapabilityEnum::chatHistory();
         $this->assertTrue($chatHistory->isChatHistory());
         $this->assertFalse($chatHistory->isEmbeddingGeneration());
+
+        $decision = CapabilityEnum::decision();
+        $this->assertTrue($decision->isDecision());
+        $this->assertFalse($decision->isEmbeddingGeneration());
     }
 }

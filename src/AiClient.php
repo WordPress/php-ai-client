@@ -6,10 +6,12 @@ namespace WordPress\AiClient;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\SimpleCache\CacheInterface;
+use WordPress\AiClient\Builders\DecisionBuilder;
 use WordPress\AiClient\Builders\EmbeddingBuilder;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
 use WordPress\AiClient\Providers\ModelResolver;
@@ -267,6 +269,29 @@ class AiClient
         return new EmbeddingBuilder(
             $registry ?? self::defaultRegistry(),
             $input,
+            self::$eventDispatcher
+        );
+    }
+
+    /**
+     * Creates a decision builder for fluent decisions.
+     *
+     * Decision models answer typed questions about the given state rather than generating content. Add
+     * questions via withQuestion() on the returned builder, then chain decideResult() to get one answer
+     * per question.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|File|array<mixed>|null $state Optional state to decide on: a string, a file, or an array
+     *                                             of JSON-compatible values that may contain files.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
+     * @return DecisionBuilder The decision builder instance.
+     */
+    public static function decide($state = null, ?ProviderRegistry $registry = null): DecisionBuilder
+    {
+        return new DecisionBuilder(
+            $registry ?? self::defaultRegistry(),
+            $state,
             self::$eventDispatcher
         );
     }

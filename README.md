@@ -161,7 +161,114 @@ foreach (AiClient::defaultRegistry()->findModelsMetadataForSupport($requirements
 }
 ```
 
-See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php) and the [`EmbeddingBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/EmbeddingBuilder.php) and their public methods for all the ways you can configure generation.
+### Decisions using any compatible model
+
+Decision models answer typed questions about the state you give them rather than generating content. There are three types of question:
+
+* A `binary` question asks whether a statement is true, optionally describing what counts as true and what counts as false, and is answered with the probability that it is true.
+* A `choice` question lists options, each a value with an optional description of when it applies, and is answered with the value of the chosen option. Option values are strings, and an integer value such as a star rating is converted to one, so the options `[1, 2, 3, 4, 5]` are answered with a value such as `'4'`.
+* A `score` question lists the levels of a scale from lowest to highest, and is answered with a position on that scale, from `0` for the lowest level to one less than the number of levels. The position may fall between two levels.
+
+The instructions of a question, and each description of an option, a level, or what counts as true or false, are a sentence, or an array when structure makes them clearer, such as `['question' => 'Does the sender name match the email domain?', 'compare' => ['sender.name', 'sender.email']]` for instructions or `['what' => 'Payments and refunds.', 'not_for' => 'Questions about prices.']` for an option. An option without a description is interpreted by its value alone.
+
+Answers to `choice` and `score` questions may also carry the model's confidence and a probability for each option or level, depending on what the model reports. Every answer is checked against its question, so an answer of the wrong type, an option the question does not have, or a position outside the scale raises a `RuntimeException`.
+
+A model may refuse to answer a question while still answering the others. Check `isRefusal()` before reading the value of an answer, since reading the value of a refusal raises a `RuntimeException`.
+
+As with content generation, a suitable model is discovered if you do not name one. Decisions require a registered provider with at least one model that supports them. If there is none, `decideResult()` throws an `InvalidArgumentException`, and `isSupported()` returns `false`.
+
+**Name the model when your code compares answers to thresholds.** Probabilities and confidences are calibrated per model: a probability of 0.8 can be reliable on one model and not on another, and each provider computes confidence in its own way. A check such as `$probability > 0.8` therefore changes meaning if a different model is chosen, for example when the registered providers change. Pick thresholds using labelled examples from your application, and pass the model they were picked for to `usingModel()`. Get the model by a versioned ID rather than an alias such as `latest` where the provider offers one, since an alias moves to a new model on release. Providers also differ in their limits, such as how many questions, options, or levels a request may have, so a request that one model accepts may be rejected by another.
+
+```php
+use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Decisions\DTO\DecisionQuestion;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
+
+$model = AiClient::defaultRegistry()->getProviderModel('example-provider', 'example-decision-model-1.2.0');
+
+$result = AiClient::decide(['comment' => $commentText])
+    ->usingModel($model)
+    ->withQuestion('spam', new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Is this comment spam?'))
+    ->decideResult();
+```
+
+```php
+use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Decisions\DTO\DecisionOption;
+use WordPress\AiClient\Decisions\DTO\DecisionQuestion;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
+
+$result = AiClient::decide(['comment' => $commentText])
+    ->withQuestion(
+        'spam',
+        new DecisionQuestion(
+            DecisionQuestionTypeEnum::binary(),
+            'Is this comment spam?',
+            [
+                'true' => 'The comment advertises something unrelated to the post.',
+                'false' => 'The comment responds to the post, even if briefly.',
+            ]
+        )
+    )
+    ->withQuestion(
+        'route',
+        new DecisionQuestion(
+            DecisionQuestionTypeEnum::choice(),
+            'How should a moderator handle it?',
+            [
+                new DecisionOption('approve', 'The comment is fine to publish.'),
+                new DecisionOption('hold', 'The comment needs a closer look.'),
+                'trash',
+            ]
+        )
+    )
+    ->withQuestion(
+        'tone',
+        new DecisionQuestion(
+            DecisionQuestionTypeEnum::score(),
+            'How civil is the comment?',
+            ['Hostile.', 'Neutral.', 'Friendly.']
+        )
+    )
+    ->decideResult();
+
+$spam = $result->getAnswer('spam');
+if (!$spam->isRefusal()) {
+    $spamProbability = $spam->getProbability(); // e.g. 0.03
+}
+
+$route = $result->getAnswer('route');
+if (!$route->isRefusal()) {
+    $choice = $route->getChoice(); // e.g. 'approve'
+    $confidence = $route->getConfidence(); // e.g. 0.91, or null if not reported
+}
+
+$tone = $result->getAnswer('tone');
+if (!$tone->isRefusal()) {
+    $civility = $tone->getScore(); // e.g. 1.7, between 'Neutral.' and 'Friendly.'
+}
+```
+
+The state can be a string, a file, or an array of values that may contain files, such as images. A model is only chosen if it accepts the types of file in the state:
+
+```php
+use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Decisions\DTO\DecisionQuestion;
+use WordPress\AiClient\Decisions\Enums\DecisionQuestionTypeEnum;
+
+$result = AiClient::decide([
+        'caption' => $caption,
+        'photo' => File::fromLocalPath('/path/to/photo.jpg'),
+    ])
+    ->withQuestion(
+        'matches',
+        new DecisionQuestion(DecisionQuestionTypeEnum::binary(), 'Does the caption describe the photo?')
+    )
+    ->decideResult();
+```
+
+See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php), the [`EmbeddingBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/EmbeddingBuilder.php), and the [`DecisionBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/DecisionBuilder.php) and their public methods for all the ways you can configure generation.
 
 **More documentation is coming soon.**
 
@@ -175,6 +282,8 @@ The AI Client supports PSR-14 event dispatching for prompt lifecycle events. Thi
 - `AfterGenerateResultEvent` - Dispatched after a result is received from the model
 - `BeforeGenerateEmbeddingEvent` - Dispatched before embedding inputs are sent to the model
 - `AfterGenerateEmbeddingEvent` - Dispatched after an embedding result is received from the model
+- `BeforeDecideEvent` - Dispatched before the decision request, with its state and questions, is sent to the model
+- `AfterDecideEvent` - Dispatched after the model's answers have been received and checked against the questions
 
 **Important:** Event listeners should not return a value, as they will be ignored. In order to modify data that is passed with the event object, you need to rely on setters on the event object. Any event data for which there are no setters on the event object is meant to be immutable or, in other words, read-only for the event listener.
 

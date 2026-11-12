@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Providers\Models\DTO;
 
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -265,6 +266,39 @@ class ModelRequirements extends AbstractDataTransferObject
         }
 
         return new self($capabilities, $requiredOptions);
+    }
+
+    /**
+     * Creates ModelRequirements from decision data and model configuration.
+     *
+     * Decision questions are always text, so text input is always required. Each file in the state adds
+     * its input modality to the requirements.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<File> $files The files in the decision state.
+     * @param ModelConfig $modelConfig The model configuration.
+     * @return self The created requirements.
+     */
+    public static function fromDecisionData(array $files, ModelConfig $modelConfig): self
+    {
+        $inputModalities = [ModalityEnum::text()];
+        foreach ($files as $file) {
+            $modality = self::inputModalityForPart(new MessagePart($file));
+            if ($modality !== null) {
+                $inputModalities[] = $modality;
+            }
+        }
+
+        $requiredOptions = self::includeInRequiredOptions(
+            self::toRequiredOptions($modelConfig),
+            new RequiredOption(
+                OptionEnum::inputModalities(),
+                array_values(array_unique($inputModalities, SORT_REGULAR))
+            )
+        );
+
+        return new self([CapabilityEnum::decision()], $requiredOptions);
     }
 
     /**
