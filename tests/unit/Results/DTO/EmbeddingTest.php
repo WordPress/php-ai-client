@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Results\DTO;
 
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Results\DTO\Embedding;
 
@@ -33,6 +34,18 @@ class EmbeddingTest extends TestCase
         }
 
         $this->assertSame([0.1, 0.2, 0.3], $values);
+    }
+
+    public function testPreservesFiniteBoundaryValues(): void
+    {
+        $values = [PHP_FLOAT_MAX, -PHP_FLOAT_MAX, -0.0, 0.0, 0, 1, -1, PHP_INT_MAX, PHP_INT_MIN];
+        $embedding = new Embedding($values, 9);
+
+        $this->assertSame($values, $embedding->getValues());
+        $this->assertSame(9, $embedding->getDimensions());
+        $this->assertSame(pack('d', -0.0), pack('d', $embedding->getValues()[2]));
+        $this->assertSame(pack('d', 0.0), pack('d', $embedding->getValues()[3]));
+        $this->assertIsString(json_encode($embedding, JSON_THROW_ON_ERROR));
     }
 
     public function testFromArray(): void
@@ -66,11 +79,56 @@ class EmbeddingTest extends TestCase
         new Embedding([0.1, 0.2], 3);
     }
 
-    public function testValuesMustBeNumeric(): void
+    /**
+     * @dataProvider invalidValueProvider
+     *
+     * @param mixed $value The invalid component.
+     * @param string $type The safely reported type.
+     */
+    public function testValuesMustBeNumeric($value, string $type): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Embedding values must be integers or floats.');
+        $this->expectExceptionMessage('Invalid value at index 1: ' . $type . '.');
 
-        new Embedding([0.1, '0.2'], 2);
+        new Embedding([0.1, $value], 2);
+    }
+
+    /**
+     * @return array<string, array{mixed, string}>
+     */
+    public static function invalidValueProvider(): array
+    {
+        return [
+            'numeric string' => ['0.2', 'string'],
+            'boolean' => [true, 'boolean'],
+            'null' => [null, 'NULL'],
+            'array' => [[0.2], 'array'],
+            'object' => [new stdClass(), 'object'],
+        ];
+    }
+
+    /**
+     * @dataProvider nonFiniteValueProvider
+     */
+    public function testValuesMustBeFinite(float $value, string $label): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Embedding values must be integers or finite floats. Invalid value at index 1: ' . $label . '.'
+        );
+
+        new Embedding([0.1, $value], 2);
+    }
+
+    /**
+     * @return array<string, array{float, string}>
+     */
+    public static function nonFiniteValueProvider(): array
+    {
+        return [
+            'NAN'  => [NAN, 'NAN'],
+            'INF'  => [INF, 'INF'],
+            '-INF' => [-INF, '-INF'],
+        ];
     }
 }

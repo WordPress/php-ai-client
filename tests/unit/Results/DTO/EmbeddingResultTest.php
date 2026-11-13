@@ -59,6 +59,60 @@ class EmbeddingResultTest extends TestCase
         $this->assertEquals($result, EmbeddingResult::fromArray($result->toArray()));
     }
 
+    /**
+     * @dataProvider nonFiniteValueProvider
+     */
+    public function testFromArrayRejectsNonFiniteValuesInLaterVectors(float $value): void
+    {
+        $array = $this->createEmbeddingResult()->toArray();
+        $array[EmbeddingResult::KEY_EMBEDDINGS][1][2] = $value;
+
+        $this->expectException(InvalidArgumentException::class);
+
+        EmbeddingResult::fromArray($array);
+    }
+
+    public function testConstructorRejectsNonFiniteValuesInRawVectors(): void
+    {
+        $result = $this->createEmbeddingResult();
+
+        $this->expectException(InvalidArgumentException::class);
+
+        new EmbeddingResult(
+            $result->getId(),
+            [[0.1, 0.2, 0.3], [0.4, INF, 0.6]],
+            3,
+            $result->getTokenUsage(),
+            $result->getProviderMetadata(),
+            $result->getModelMetadata()
+        );
+    }
+
+    /**
+     * @dataProvider nonFiniteValueProvider
+     */
+    public function testIsArrayShapeRejectsNonFiniteValues(float $value): void
+    {
+        $array = $this->createEmbeddingResult()->toArray();
+        $this->assertTrue(EmbeddingResult::isArrayShape($array));
+
+        $array[EmbeddingResult::KEY_EMBEDDINGS][1][2] = $value;
+
+        $this->assertFalse(EmbeddingResult::isArrayShape($array));
+    }
+
+    /**
+     * @return array<string, array{float}>
+     */
+    public static function nonFiniteValueProvider(): array
+    {
+        return [
+            'NAN' => [NAN],
+            'INF' => [INF],
+            '-INF' => [-INF],
+        ];
+    }
+
     public function testRequiresAtLeastOneEmbedding(): void
     {
         $this->expectException(InvalidArgumentException::class);
