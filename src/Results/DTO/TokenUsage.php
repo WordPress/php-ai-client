@@ -15,13 +15,18 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * Note that thought tokens are a subset of completion tokens, not additive.
  * In other words: completionTokens - thoughtTokens = tokens of actual output content.
  *
+ * Similarly, cached tokens are a subset of prompt tokens, not additive.
+ * In other words: promptTokens - cachedTokens = prompt tokens that were not served from a provider cache.
+ *
  * @since 0.1.0
  *
  * @phpstan-type TokenUsageArrayShape array{
  *     promptTokens: int,
  *     completionTokens: int,
  *     totalTokens: int,
- *     thoughtTokens?: int
+ *     thoughtTokens?: int,
+ *     cachedTokens?: int,
+ *     cacheCreationTokens?: int
  * }
  *
  * @extends AbstractDataTransferObject<TokenUsageArrayShape>
@@ -32,6 +37,8 @@ class TokenUsage extends AbstractDataTransferObject
     public const KEY_COMPLETION_TOKENS = 'completionTokens';
     public const KEY_TOTAL_TOKENS = 'totalTokens';
     public const KEY_THOUGHT_TOKENS = 'thoughtTokens';
+    public const KEY_CACHED_TOKENS = 'cachedTokens';
+    public const KEY_CACHE_CREATION_TOKENS = 'cacheCreationTokens';
     /**
      * @var int Number of tokens in the prompt.
      */
@@ -53,6 +60,16 @@ class TokenUsage extends AbstractDataTransferObject
     private ?int $thoughtTokens;
 
     /**
+     * @var int|null Number of prompt tokens served from a provider cache, as a subset of prompt tokens.
+     */
+    private ?int $cachedTokens;
+
+    /**
+     * @var int|null Number of tokens written to a provider cache while processing the request.
+     */
+    private ?int $cacheCreationTokens;
+
+    /**
      * Constructor.
      *
      * @since 0.1.0
@@ -61,13 +78,24 @@ class TokenUsage extends AbstractDataTransferObject
      * @param int $completionTokens Number of tokens in the completion, including any thought tokens.
      * @param int $totalTokens Total number of tokens used.
      * @param int|null $thoughtTokens Number of tokens used for thinking, as a subset of completion tokens.
+     * @param int|null $cachedTokens Number of prompt tokens served from a provider cache, as a subset of prompt
+     *                               tokens.
+     * @param int|null $cacheCreationTokens Number of tokens written to a provider cache while processing the request.
      */
-    public function __construct(int $promptTokens, int $completionTokens, int $totalTokens, ?int $thoughtTokens = null)
-    {
+    public function __construct(
+        int $promptTokens,
+        int $completionTokens,
+        int $totalTokens,
+        ?int $thoughtTokens = null,
+        ?int $cachedTokens = null,
+        ?int $cacheCreationTokens = null
+    ) {
         $this->promptTokens = $promptTokens;
         $this->completionTokens = $completionTokens;
         $this->totalTokens = $totalTokens;
         $this->thoughtTokens = $thoughtTokens;
+        $this->cachedTokens = $cachedTokens;
+        $this->cacheCreationTokens = $cacheCreationTokens;
     }
 
     /**
@@ -119,6 +147,30 @@ class TokenUsage extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the number of cached tokens, which is a subset of the prompt token count.
+     *
+     * @since n.e.x.t
+     *
+     * @return int|null The cached token count or null if not available.
+     */
+    public function getCachedTokens(): ?int
+    {
+        return $this->cachedTokens;
+    }
+
+    /**
+     * Gets the number of tokens written to a provider cache while processing the request.
+     *
+     * @since n.e.x.t
+     *
+     * @return int|null The cache creation token count or null if not available.
+     */
+    public function getCacheCreationTokens(): ?int
+    {
+        return $this->cacheCreationTokens;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -144,6 +196,15 @@ class TokenUsage extends AbstractDataTransferObject
                     'type' => 'integer',
                     'description' => 'Number of tokens used for thinking, as a subset of completion tokens.',
                 ],
+                self::KEY_CACHED_TOKENS => [
+                    'type' => 'integer',
+                    'description' => 'Number of prompt tokens served from a provider cache, as a subset of prompt'
+                        . ' tokens.',
+                ],
+                self::KEY_CACHE_CREATION_TOKENS => [
+                    'type' => 'integer',
+                    'description' => 'Number of tokens written to a provider cache while processing the request.',
+                ],
             ],
             'required' => [self::KEY_PROMPT_TOKENS, self::KEY_COMPLETION_TOKENS, self::KEY_TOTAL_TOKENS],
         ];
@@ -168,6 +229,14 @@ class TokenUsage extends AbstractDataTransferObject
             $data[self::KEY_THOUGHT_TOKENS] = $this->thoughtTokens;
         }
 
+        if ($this->cachedTokens !== null) {
+            $data[self::KEY_CACHED_TOKENS] = $this->cachedTokens;
+        }
+
+        if ($this->cacheCreationTokens !== null) {
+            $data[self::KEY_CACHE_CREATION_TOKENS] = $this->cacheCreationTokens;
+        }
+
         return $data;
     }
 
@@ -188,7 +257,9 @@ class TokenUsage extends AbstractDataTransferObject
             $array[self::KEY_PROMPT_TOKENS],
             $array[self::KEY_COMPLETION_TOKENS],
             $array[self::KEY_TOTAL_TOKENS],
-            $array[self::KEY_THOUGHT_TOKENS] ?? null
+            $array[self::KEY_THOUGHT_TOKENS] ?? null,
+            $array[self::KEY_CACHED_TOKENS] ?? null,
+            $array[self::KEY_CACHE_CREATION_TOKENS] ?? null
         );
     }
 }
