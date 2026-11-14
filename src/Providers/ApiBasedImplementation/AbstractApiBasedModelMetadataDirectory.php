@@ -9,8 +9,10 @@ use WordPress\AiClient\Common\Contracts\CachesDataInterface;
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Common\Traits\WithDataCachingTrait;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
+use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Http\Traits\WithRequestAuthenticationTrait;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -27,7 +29,9 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     CachesDataInterface
 {
     use WithHttpTransporterTrait;
-    use WithRequestAuthenticationTrait;
+    use WithRequestAuthenticationTrait {
+        setRequestAuthentication as private setRequestAuthenticationOriginal;
+    }
     use WithDataCachingTrait;
 
     /**
@@ -47,6 +51,22 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
      * @var array<string, ModelMetadata|null>
      */
     private array $explicitModelMetadataCache = [];
+
+    /**
+     * {@inheritDoc}
+     *
+     * Clears request-local explicit metadata when the authentication cache scope changes.
+     *
+     * @since n.e.x.t
+     */
+    public function setRequestAuthentication(RequestAuthenticationInterface $requestAuthentication): void
+    {
+        $previousAuthenticationScope = $this->getAuthenticationCacheScope();
+        $this->setRequestAuthenticationOriginal($requestAuthentication);
+        if ($previousAuthenticationScope !== $this->getAuthenticationCacheScope()) {
+            $this->explicitModelMetadataCache = [];
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -160,7 +180,24 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
      */
     protected function getBaseCacheKey(): string
     {
-        return 'ai_client_' . AiClient::VERSION . '_' . md5(static::class);
+        return 'ai_client_' . AiClient::VERSION . '_' . md5(static::class) . '_'
+            . $this->getAuthenticationCacheScope();
+    }
+
+    /**
+     * Gets the cache scope for the effective API key authentication.
+     *
+     * @since n.e.x.t
+     *
+     * @return string The credential fingerprint, or a marker when no API key is set.
+     */
+    private function getAuthenticationCacheScope(): string
+    {
+        // Model access and availability depend on the API key, not just the provider class.
+        // Never include the raw credential in a cache key or reuse legacy unscoped entries.
+        return $this->requestAuthentication instanceof ApiKeyRequestAuthentication
+            ? hash('sha256', $this->requestAuthentication->getApiKey())
+            : 'no_api_key';
     }
 
     /**

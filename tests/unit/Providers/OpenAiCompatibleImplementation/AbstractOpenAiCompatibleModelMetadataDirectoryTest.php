@@ -135,7 +135,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
 
         // Seed the cache with ModelMetadata objects.
         $cacheKey = 'ai_client_' . AiClient::VERSION . '_'
-            . md5(MockOpenAiCompatibleModelMetadataDirectory::class) . '_models';
+            . md5(MockOpenAiCompatibleModelMetadataDirectory::class) . '_no_api_key_models';
         $cachedData = [
             'cached-model-a' => ModelMetadata::fromArray([
                 'id' => 'cached-model-a',
@@ -217,7 +217,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
         $this->assertCount(1, $setOperations);
 
         $cacheKey = 'ai_client_' . AiClient::VERSION . '_'
-            . md5(MockOpenAiCompatibleModelMetadataDirectory::class) . '_models';
+            . md5(MockOpenAiCompatibleModelMetadataDirectory::class) . '_no_api_key_models';
         $this->assertEquals($cacheKey, $setOperations[0]['key']);
 
         // Verify cached data structure (ModelMetadata objects).
@@ -277,7 +277,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
 
         // Seed cache for the first directory class with ModelMetadata objects.
         $cacheKey1 = 'ai_client_' . AiClient::VERSION . '_'
-            . md5(MockOpenAiCompatibleModelMetadataDirectory::class) . '_models';
+            . md5(MockOpenAiCompatibleModelMetadataDirectory::class) . '_no_api_key_models';
         $cachedData1 = [
             'first-provider-model' => ModelMetadata::fromArray([
                 'id' => 'first-provider-model',
@@ -290,7 +290,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
 
         // Seed cache for the second directory class with different data.
         $cacheKey2 = 'ai_client_' . AiClient::VERSION . '_'
-            . md5(AnotherMockOpenAiCompatibleModelMetadataDirectory::class) . '_models';
+            . md5(AnotherMockOpenAiCompatibleModelMetadataDirectory::class) . '_no_api_key_models';
         $cachedData2 = [
             'second-provider-model' => ModelMetadata::fromArray([
                 'id' => 'second-provider-model',

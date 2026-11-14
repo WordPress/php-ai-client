@@ -103,7 +103,8 @@ class AbstractApiBasedModelMetadataDirectoryTest extends TestCase
     public function testGetModelMetadataPrefersExplicitMetadataOverCachedMetadata(): void
     {
         $cache = new MockCache();
-        $cacheKey = 'ai_client_' . AiClient::VERSION . '_' . md5(MockApiBasedModelMetadataDirectory::class) . '_models';
+        $cacheKey = 'ai_client_' . AiClient::VERSION . '_'
+            . md5(MockApiBasedModelMetadataDirectory::class) . '_no_api_key_models';
         $cachedModelMetadata = $this->createStub(ModelMetadata::class);
         $cachedModelMetadata->method('getId')->willReturn('explicit-model');
         $cache->seed($cacheKey, ['explicit-model' => $cachedModelMetadata]);
@@ -125,7 +126,8 @@ class AbstractApiBasedModelMetadataDirectoryTest extends TestCase
     public function testGetModelMetadataUsesExplicitMetadataAfterCachedMetadataMiss(): void
     {
         $cache = new MockCache();
-        $cacheKey = 'ai_client_' . AiClient::VERSION . '_' . md5(MockApiBasedModelMetadataDirectory::class) . '_models';
+        $cacheKey = 'ai_client_' . AiClient::VERSION . '_'
+            . md5(MockApiBasedModelMetadataDirectory::class) . '_no_api_key_models';
         $otherModelMetadata = $this->createStub(ModelMetadata::class);
         $otherModelMetadata->method('getId')->willReturn('other-model');
         $cache->seed($cacheKey, ['other-model' => $otherModelMetadata]);
@@ -188,7 +190,8 @@ class AbstractApiBasedModelMetadataDirectoryTest extends TestCase
     public function testListModelMetadataAppliesExplicitMetadataOverridesToCachedModels(): void
     {
         $cache = new MockCache();
-        $cacheKey = 'ai_client_' . AiClient::VERSION . '_' . md5(MockApiBasedModelMetadataDirectory::class) . '_models';
+        $cacheKey = 'ai_client_' . AiClient::VERSION . '_'
+            . md5(MockApiBasedModelMetadataDirectory::class) . '_no_api_key_models';
 
         $cachedModelMetadata = $this->createStub(ModelMetadata::class);
         $cachedModelMetadata->method('getId')->willReturn('explicit-model');
