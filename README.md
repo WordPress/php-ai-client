@@ -16,6 +16,20 @@ While this project is stewarded by [WordPress AI Team](https://make.wordpress.or
 composer require wordpress/php-ai-client
 ```
 
+### HTTP client adapter
+
+The client uses [HTTPlug](https://httplug.io/) and PSR-18 for HTTP transport. Composer installs the abstraction, but your application must also provide a compatible HTTP client adapter before sending requests. Choose an adapter that fits your application:
+
+```bash
+# cURL adapter
+composer require php-http/curl-client
+
+# or Guzzle 7 adapter
+composer require php-http/guzzle7-adapter
+```
+
+If no adapter is available, HTTP client discovery will fail when a provider request is created. Install and configure the adapter in the same application where the PHP AI Client runs; a provider package alone does not supply a transport implementation.
+
 ## Code examples
 
 ### Text generation using a specific model
